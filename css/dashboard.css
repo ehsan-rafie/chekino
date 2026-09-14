@@ -293,6 +293,77 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   margin-bottom: 44px;
 }
 
+/* ===== Due-date alert bar ===== */
+.due-alert-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--error);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+}
+.due-alert-bar[hidden] { display: none; }
+.due-alert-icon { width: 20px; height: 20px; color: var(--error); flex-shrink: 0; }
+.due-alert-viewport { flex: 1; min-width: 0; overflow: hidden; height: 22px; position: relative; }
+.due-alert-track { position: absolute; inset: 0; display: flex; align-items: center; }
+.due-alert-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  cursor: pointer;
+}
+.due-alert-item.enter { animation: dueAlertSlideIn 0.4s ease; }
+@keyframes dueAlertSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.due-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+.due-alert-item.due-overdue .due-alert-dot,
+.due-alert-item.due-today .due-alert-dot { background: var(--error); }
+.due-alert-item.due-soon .due-alert-dot { background: #E8833A; }
+.due-alert-text {
+  font-size: 13px;
+  color: var(--ink);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.due-alert-text b { font-variation-settings: var(--f-label); }
+.due-alert-when {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  font-variation-settings: var(--f-micro);
+  white-space: nowrap;
+}
+.due-alert-item.due-overdue .due-alert-when,
+.due-alert-item.due-today .due-alert-when { color: var(--error); }
+.due-alert-item.due-soon .due-alert-when { color: #E8833A; }
+.due-alert-count {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  font-variation-settings: var(--f-micro);
+}
+@media (max-width: 600px) {
+  .due-alert-bar { padding: 8px 12px; }
+  .due-alert-when { display: none; }
+}
+
+@keyframes rowFlash {
+  0%   { background: var(--blue-100); }
+  100% { background: transparent; }
+}
+#chequeBody tr.row-flash,
+#chequeCards .cq-card.row-flash { animation: rowFlash 1.6s ease; }
+
 .add-check-btn {
   position: relative;
   z-index: 1;

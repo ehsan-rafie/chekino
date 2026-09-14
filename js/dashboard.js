@@ -2920,6 +2920,106 @@ function statusById(id) { return STATUSES.find(s => s.id === id) || STATUSES[0];
 function faDate(str) { return str ? toFa(str) : '—'; }
 function faAmount(raw) { return raw ? toFa(groupDigits(raw)) : '—'; }
 
+// ---- Due-date alert bar: a slim rotating banner for checks whose due date
+// is close (or already past) and that haven't been marked spent yet. Reads
+// from the full unfiltered list on purpose, so it stays accurate regardless
+// of whatever search/filter the user currently has the table set to. ----
+const dueAlertBar = document.getElementById('dueAlertBar');
+const dueAlertTrack = document.getElementById('dueAlertTrack');
+const dueAlertCount = document.getElementById('dueAlertCount');
+const DUE_ALERT_WINDOW_DAYS = 3;
+const DUE_ALERT_ROTATE_MS = 4000;
+let dueAlertItems = [];
+let dueAlertIndex = 0;
+let dueAlertTimer = null;
+
+function daysUntilJalali(dateStr) {
+  if (!dateStr) return null;
+  return -daysSinceJalali(dateStr);
+}
+
+function getUpcomingChecks() {
+  return loadCheques()
+    .filter(c => c.dueDate && !c.spendDate && !isArchived(c))
+    .map(c => ({ c, days: daysUntilJalali(c.dueDate) }))
+    .filter(x => x.days !== null && x.days <= DUE_ALERT_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days);
+}
+
+function dueAlertUrgencyClass(days) {
+  if (days < 0) return 'due-overdue';
+  if (days === 0) return 'due-today';
+  return 'due-soon';
+}
+function dueAlertUrgencyLabel(days) {
+  if (days < 0) return `${toFa(Math.abs(days))} روز گذشته`;
+  if (days === 0) return 'امروز سررسید';
+  return `${toFa(days)} روز مانده`;
+}
+
+function renderDueAlertItem() {
+  if (!dueAlertItems.length) return;
+  const { c, days } = dueAlertItems[dueAlertIndex];
+  const cls = dueAlertUrgencyClass(days);
+  dueAlertTrack.innerHTML = `
+    <div class="due-alert-item ${cls} enter" data-goto="${c.id}">
+      <span class="due-alert-dot"></span>
+      <span class="due-alert-text">چک <b>${toFa(c.serial)}</b> به مبلغ <b>${faAmount(c.amount)} ریال</b> در وجه <b>${escapeHtml(c.benef)}</b></span>
+      <span class="due-alert-when">${dueAlertUrgencyLabel(days)}</span>
+    </div>`;
+}
+
+function stopDueAlertRotation() {
+  if (dueAlertTimer) { clearInterval(dueAlertTimer); dueAlertTimer = null; }
+}
+function startDueAlertRotation() {
+  stopDueAlertRotation();
+  if (dueAlertItems.length <= 1) return;
+  dueAlertTimer = setInterval(() => {
+    dueAlertIndex = (dueAlertIndex + 1) % dueAlertItems.length;
+    renderDueAlertItem();
+  }, DUE_ALERT_ROTATE_MS);
+}
+
+function renderDueAlertBar() {
+  dueAlertItems = getUpcomingChecks();
+  if (!dueAlertItems.length) {
+    dueAlertBar.hidden = true;
+    stopDueAlertRotation();
+    return;
+  }
+  if (dueAlertIndex >= dueAlertItems.length) dueAlertIndex = 0;
+  dueAlertBar.hidden = false;
+  dueAlertCount.textContent = dueAlertItems.length > 1 ? `${toFa(dueAlertItems.length)} چک` : '';
+  renderDueAlertItem();
+  startDueAlertRotation();
+}
+
+function jumpToCheck(id) {
+  filterClearBtn.click();
+  const all = getFilteredCheques().slice().reverse();
+  const idx = all.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  tablePage = Math.floor(idx / PAGE_SIZE) + 1;
+  renderTable();
+  requestAnimationFrame(() => {
+    const els = document.querySelectorAll(`[data-id="${id}"]`);
+    let visible = null;
+    els.forEach(el => {
+      el.classList.add('row-flash');
+      setTimeout(() => el.classList.remove('row-flash'), 1600);
+      if (el.offsetParent !== null) visible = el;
+    });
+    (visible || els[0])?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
+dueAlertTrack.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-goto]');
+  if (!item) return;
+  jumpToCheck(parseInt(item.dataset.goto, 10));
+});
+
 function statusButtonHtml(c, st) {
   return `<button type="button" class="status-btn" data-status-for="${c.id}">
     <span class="st-dot" style="background:${st.color}"></span>${st.name}
@@ -3160,6 +3260,7 @@ function clearOneFilter(key) {
 function updateTableHeadStrip(list) {
   tableCountBadge.textContent = `${toFa(list.length)} چک`;
   reportBtn.style.display = list.length === 0 ? 'none' : 'flex';
+  excelExportBtn.style.display = list.length === 0 ? 'none' : 'flex';
   const archivedCount = showArchivedCheckbox.checked ? 0 : loadCheques().filter(isArchived).length;
   const archivedStat = archivedCount > 0
     ? `<span class="ths-stat">بایگانی‌شده (مخفی): <b>${toFa(archivedCount)}</b></span>` : '';
@@ -3501,6 +3602,40 @@ function generateReport() {
 }
 reportBtn.addEventListener('click', generateReport);
 
+// ---- Excel export: same filtered/sorted list the on-screen table and the
+// print report use, so what a user exports always matches what they see. ----
+const excelExportBtn = document.getElementById('excelExportBtn');
+function exportChecksToExcel() {
+  const all = getFilteredCheques().slice().reverse();
+  if (!all.length) return;
+  const header = [
+    'ردیف', 'شماره سریال', 'شناسه صیادی', 'مبلغ (ریال)',
+    'تاریخ سررسید (شمسی)', 'تاریخ سررسید (میلادی)',
+    'صاحب چک', 'طرف حساب', 'ذینفع', 'کد ملی ذینفع', 'وضعیت', 'یادداشت',
+  ];
+  const rows = all.map((c, i) => [
+    i + 1,
+    c.serial || '',
+    c.sayad || '',
+    parseInt(c.amount, 10) || 0,
+    c.dueDate || '',
+    jalaliStrToIso(c.dueDate) || '',
+    c.owner || '',
+    c.party || '',
+    c.benef || '',
+    c.nid || '',
+    statusById(c.status || 'pending').name,
+    c.notes || '',
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = header.map(() => ({ wch: 16 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'چک‌ها');
+  const [jy, jm, jd] = todayJalali();
+  XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
+}
+excelExportBtn.addEventListener('click', exportChecksToExcel);
+
 function renderTable() {
   const all = getFilteredCheques().slice().reverse();      // newest first
   const pages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
@@ -3509,6 +3644,7 @@ function renderTable() {
   const rows = all.slice(start, start + PAGE_SIZE);
 
   updateTableHeadStrip(all);
+  renderDueAlertBar();
   tableEmpty.style.display = all.length ? 'none' : 'flex';
   chequeTable.style.display = all.length ? '' : 'none';
   chequeCards.style.display = all.length ? '' : 'none';
