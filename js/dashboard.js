@@ -3035,14 +3035,19 @@ ${faDate(c.statusChangedAt)}`;
 }
 // Rows without a receipt still render an empty slot of the same width, so the
 // eye button lands in the same spot on every row instead of sliding around.
+// The slot is placed inboard of the eye (see rowActionsHtml) so the gap falls
+// between the two columns rather than along the table's outer edge.
 function receiptButtonHtml(c) {
   if (c.status !== 'done') return '<span class="row-actions-slot" aria-hidden="true"></span>';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" title="کپی پیام رسید ثبت">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
 }
+// Receipt first, eye last: the eye is on every row, so putting it at the outer
+// end keeps that edge straight, and the slot a receipt-less row leaves behind
+// falls inboard where it reads as spacing rather than a ragged column.
 function rowActionsHtml(c) {
-  return `<span class="row-actions">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</span>`;
+  return `<span class="row-actions">${receiptButtonHtml(c)}${eyeButtonHtml(c)}</span>`;
 }
 function showToast(message) {
   const el = document.getElementById('appToast');
