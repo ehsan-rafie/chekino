@@ -17,6 +17,19 @@
   --f-body:   'wght' 430, 'dots' 2;   /* ordinary text */
   --f-hint:   'wght' 330, 'dots' 2;   /* placeholders & quiet hints */
   --f-micro:  'wght' 480, 'dots' 2;   /* small captions */
+
+  /* One easing curve for everything that moves, so no two animations feel
+     like they come from different apps. */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Elevation: surfaces lift off the page instead of relying on borders
+     alone. Dark mode overrides these with deeper, tighter shadows. */
+  --shadow-1: 0 1px 2px rgba(15, 27, 51, 0.04), 0 2px 8px rgba(15, 27, 51, 0.05);
+  --shadow-2: 0 2px 6px rgba(15, 27, 51, 0.06), 0 10px 28px rgba(15, 27, 51, 0.08);
+
+  /* Loading-skeleton base and the lighter band that sweeps across it. */
+  --sk-base: #E7EBF2;
+  --sk-sheen: #F6F8FC;
 }
 
 html[data-theme="dark"] {
@@ -36,6 +49,10 @@ html[data-theme="dark"] {
   --error-border: rgba(255,122,112,0.4);
   --border: #2C3341;
   --muted: #94A0B4;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.26);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.36), 0 10px 28px rgba(0, 0, 0, 0.42);
+  --sk-base: #232A37;
+  --sk-sheen: #2F394A;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -48,6 +65,24 @@ html[data-theme="dark"] {
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, fill 0.25s ease, stroke 0.25s ease;
 }
 button, input, textarea, select { font-family: inherit; }
+
+/* Keyboard users get a clear, branded focus ring; mouse users never see it.
+   Fields keep their own focus treatment, so they're left out here. */
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible,
+.ms-option:focus-visible,
+.radio-opt:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+::selection { background: var(--blue-600); color: #fff; }
+
+/* Digits line up column-to-column instead of jittering by glyph width —
+   matters most in a table full of amounts and dates. */
+.num, .amount, .ths-stat b, .cq-amount { font-variant-numeric: tabular-nums; }
 
 /* A slim, theme-aware scrollbar everywhere the page scrolls, instead of the
    browser's stark default (which stays white even in dark mode). */
@@ -293,6 +328,96 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   margin-bottom: 44px;
 }
 
+/* ===== Due-date alert bar ===== */
+.due-alert-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--error);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-1);
+}
+.due-alert-bar[hidden] { display: none; }
+/* The bell nudges every few seconds so an overdue cheque catches the eye
+   without the whole bar flashing. */
+.due-alert-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--error);
+  flex-shrink: 0;
+  transform-origin: 50% 15%;
+  animation: bellNudge 5s var(--ease) infinite;
+}
+@keyframes bellNudge {
+  0%, 88%, 100% { transform: rotate(0deg); }
+  91% { transform: rotate(9deg); }
+  94% { transform: rotate(-7deg); }
+  97% { transform: rotate(3deg); }
+}
+.due-alert-viewport { flex: 1; min-width: 0; overflow: hidden; height: 22px; position: relative; }
+.due-alert-track { position: absolute; inset: 0; display: flex; align-items: center; }
+.due-alert-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  cursor: pointer;
+}
+.due-alert-item.enter { animation: dueAlertSlideIn 0.4s var(--ease); }
+.due-alert-item:hover .due-alert-text { color: var(--blue-700); }
+.due-alert-item:hover .due-alert-dot { transform: scale(1.35); }
+.due-alert-dot { transition: transform 0.18s var(--ease); }
+@keyframes dueAlertSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.due-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+.due-alert-item.due-overdue .due-alert-dot,
+.due-alert-item.due-today .due-alert-dot { background: var(--error); }
+.due-alert-item.due-soon .due-alert-dot { background: #E8833A; }
+.due-alert-text {
+  font-size: 13px;
+  color: var(--ink);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.due-alert-text b { font-variation-settings: var(--f-label); }
+.due-alert-when {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  font-variation-settings: var(--f-micro);
+  white-space: nowrap;
+}
+.due-alert-item.due-overdue .due-alert-when,
+.due-alert-item.due-today .due-alert-when { color: var(--error); }
+.due-alert-item.due-soon .due-alert-when { color: #E8833A; }
+.due-alert-count {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+  font-variation-settings: var(--f-micro);
+}
+@media (max-width: 600px) {
+  .due-alert-bar { padding: 8px 12px; }
+  .due-alert-when { display: none; }
+}
+
+@keyframes rowFlash {
+  0%   { background: var(--blue-100); }
+  100% { background: transparent; }
+}
+#chequeBody tr.row-flash,
+#chequeCards .cq-card.row-flash { animation: rowFlash 1.6s ease; }
+
 .add-check-btn {
   position: relative;
   z-index: 1;
@@ -424,34 +549,35 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   margin-bottom: 14px;
   position: sticky;
   top: 12px;
   z-index: 40;
+  box-shadow: var(--shadow-1);
 }
 .search-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .search-box {
-  flex: 1 1 260px;
-  min-width: 200px;
-  max-width: 380px;
+  flex: 1 1 240px;
+  min-width: 190px;
+  max-width: 360px;
   position: relative;
   display: flex;
   align-items: center;
-  height: 46px;
-  padding: 0 14px;
+  height: 38px;
+  padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.search-box:focus-within { border-color: var(--blue-600); }
-.search-icon { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; margin-left: 9px; }
+.search-box:focus-within { border-color: var(--blue-600); box-shadow: 0 0 0 3px var(--blue-100); }
+.search-icon { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; margin-left: 8px; }
 .search-box input {
   flex: 1; min-width: 0;
   border: none; outline: none; background: none;
   font-family: inherit;
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-variation-settings: var(--f-value);
   color: var(--ink);
   direction: ltr;
@@ -471,31 +597,42 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .search-clear svg { width: 13px; height: 13px; }
 
 .filter-by-label {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   font-variation-settings: var(--f-label);
   flex-shrink: 0;
+  /* Search sits at one end of the bar and the filter controls at the other,
+     instead of both bunching up and leaving dead space on the far side. */
+  margin-inline-start: auto;
 }
 .filter-pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
 .filter-pill-btn {
-  height: 46px;
-  padding: 0 19px;
+  height: 38px;
+  padding: 0 15px;
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-variation-settings: var(--f-label);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease),
+              color 0.16s var(--ease), transform 0.12s var(--ease);
 }
-.filter-pill-btn:hover { border-color: var(--blue-600); }
+.filter-pill-btn:hover { border-color: var(--blue-600); color: var(--blue-700); }
+.filter-pill-btn:active { transform: scale(0.96); }
 .filter-pill-btn.open { background: var(--blue-100); border-color: var(--blue-600); color: var(--blue-900); }
 .filter-pill-btn.active {
   background: var(--blue-700);
   border-color: var(--blue-700);
   color: #fff;
+}
+/* Touch targets stay comfortable on phones even though the row is tighter
+   on desktop. */
+@media (max-width: 700px) {
+  .search-box { height: 42px; }
+  .filter-pill-btn { height: 42px; padding: 0 16px; font-size: 13.5px; }
 }
 
 .filter-clear-btn {
@@ -504,7 +641,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   height: 34px;
   padding: 0 12px;
-  margin-right: auto;
   border: 1.5px solid transparent;
   border-radius: 9px;
   background: var(--bg);
@@ -570,8 +706,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   z-index: 500;
   max-height: 70vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-2);
 }
-.filter-popover.show { display: block; animation: riseIn 0.16s ease; }
+.filter-popover.show { display: block; animation: riseIn 0.16s var(--ease); }
 @media (max-width: 480px) {
   .filter-popover { width: calc(100vw - 56px); }
 }
@@ -660,8 +797,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 @media (max-width: 600px) {
   .filter-bar { position: static; top: auto; }
-  .search-box { width: 100%; }
-  .filter-clear-btn { margin-right: 0; }
+  /* Full-width search on its own row, with the label and pills below it —
+     capping the width here just stranded the label out on the far edge. */
+  .search-box { width: 100%; max-width: none; flex-basis: 100%; }
+  /* Search owns the first row here, so the label starts the second row
+     normally rather than being pushed to the far edge. */
+  .filter-by-label { margin-inline-start: 0; }
 }
 
 /* ===== Cheque table ===== */
@@ -709,26 +850,96 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-wrap: wrap;
   min-width: 0;
 }
-.ths-report-btn {
-  display: flex;
+.ths-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Icon-first action buttons: a square icon at rest, and the label unrolls
+   beside it on hover/focus so the strip stays quiet until you reach for it. */
+.icon-action {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 13px;
+  height: 36px;
+  padding: 0 9px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 9px;
   background: var(--surface);
-  color: var(--ink);
+  color: var(--muted);
   font-family: inherit;
   font-size: 12.5px;
   font-variation-settings: var(--f-btn);
   white-space: nowrap;
+  overflow: hidden;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease),
+              color 0.18s var(--ease), max-width 0.3s var(--ease),
+              padding 0.3s var(--ease), opacity 0.2s var(--ease),
+              transform 0.12s var(--ease);
 }
-.ths-report-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.ths-report-btn:hover { background: var(--blue-100); border-color: var(--blue-600); color: var(--blue-700); }
-.ths-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-@media (max-width: 600px) { .ths-report-btn span { display: none; } .ths-report-btn { padding: 8px; } }
+.icon-action svg { width: 17px; height: 17px; flex-shrink: 0; }
+.icon-action .ia-label {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.32s var(--ease), opacity 0.22s var(--ease), margin 0.32s var(--ease);
+}
+.icon-action:hover,
+.icon-action:focus-visible {
+  background: var(--blue-100);
+  border-color: var(--blue-600);
+  color: var(--blue-700);
+}
+.icon-action:hover .ia-label,
+.icon-action:focus-visible .ia-label {
+  max-width: 150px;
+  opacity: 1;
+  margin-inline-start: 7px;
+}
+.icon-action:active { transform: scale(0.95); }
+
+/* Export cluster: the trigger collapses away and the two format buttons
+   unroll into the space it leaves behind. */
+.export-cluster { display: inline-flex; align-items: center; gap: 6px; }
+.export-cluster.open #reportBtn {
+  max-width: 0;
+  padding: 0;
+  opacity: 0;
+  border-color: transparent;
+  pointer-events: none;
+}
+.export-opt {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  max-width: 0;
+  padding: 0;
+  opacity: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-variation-settings: var(--f-btn);
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: none;
+  transition: max-width 0.32s var(--ease), padding 0.32s var(--ease),
+              opacity 0.24s var(--ease), background 0.18s var(--ease),
+              color 0.18s var(--ease), transform 0.12s var(--ease);
+}
+.export-opt svg { width: 16px; height: 16px; flex-shrink: 0; }
+.export-opt span { margin-inline-start: 6px; }
+.export-cluster.open .export-opt {
+  max-width: 130px;
+  padding: 0 12px;
+  opacity: 1;
+  pointer-events: auto;
+}
+.export-cluster.open .opt-pdf { transition-delay: 0.02s; }
+.export-cluster.open .opt-excel { transition-delay: 0.08s; }
+.export-opt:active { transform: scale(0.95); }
+.opt-pdf { background: var(--error-bg); color: var(--error); border-color: var(--error-border); }
+.opt-pdf:hover, .opt-pdf:focus-visible { background: var(--error); color: #fff; border-color: var(--error); }
+.opt-excel { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+.opt-excel:hover, .opt-excel:focus-visible { background: var(--success); color: #fff; border-color: var(--success); }
 .ths-stat {
   display: flex;
   align-items: baseline;
@@ -754,6 +965,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: var(--shadow-1);
 }
 .table-scroll {
   overflow-x: auto;
@@ -891,8 +1103,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   white-space: nowrap;
   transition: filter 0.15s ease;
 }
-.status-btn:hover { filter: brightness(0.96); transform: translateY(-1px); }
-.status-btn { transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease; }
+.status-btn { transition: filter 0.15s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease); }
+.status-btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
+.st-pending .status-btn:hover { box-shadow: 0 0 0 3px rgba(11,92,255,0.15), 0 5px 14px rgba(11,92,255,0.36); }
+.st-done .status-btn:hover { box-shadow: 0 0 0 3px rgba(23,168,94,0.15), 0 5px 14px rgba(23,168,94,0.36); }
+.st-problem .status-btn:hover { box-shadow: 0 0 0 3px rgba(232,131,58,0.15), 0 5px 14px rgba(232,131,58,0.36); }
+.status-btn:active { transform: translateY(0) scale(0.97); }
 .status-btn .st-dot { display: none; }
 .status-btn svg { width: 13px; height: 13px; opacity: 0.7; }
 .status-btn::before {
@@ -912,7 +1128,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: #fff;
   border-color: #0B5CFF;
   font-variation-settings: var(--f-label);
-  box-shadow: 0 0 0 3px rgba(11,92,255,0.16), 0 0 16px rgba(11,92,255,0.38);
+  box-shadow: 0 0 0 3px rgba(11,92,255,0.13), 0 2px 8px rgba(11,92,255,0.30);
 }
 .st-pending .status-btn::before {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 7 12 12 15.5 14'/%3E%3C/svg%3E");
@@ -923,7 +1139,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: #fff;
   border-color: #17A85E;
   font-variation-settings: var(--f-label);
-  box-shadow: 0 0 0 3px rgba(23,168,94,0.16), 0 0 16px rgba(23,168,94,0.4);
+  box-shadow: 0 0 0 3px rgba(23,168,94,0.13), 0 2px 8px rgba(23,168,94,0.30);
 }
 .st-done .status-btn::before {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
@@ -934,7 +1150,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: #fff;
   border-color: #E8833A;
   font-variation-settings: var(--f-label);
-  box-shadow: 0 0 0 3px rgba(232,131,58,0.16), 0 0 16px rgba(232,131,58,0.4);
+  box-shadow: 0 0 0 3px rgba(232,131,58,0.13), 0 2px 8px rgba(232,131,58,0.30);
 }
 .st-problem .status-btn::before {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 9v4M12 17h.01M10.3 3.86 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0Z'/%3E%3C/svg%3E");
@@ -1031,26 +1247,22 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .sr-save { background: var(--blue-hover); color: #fff; }
 .sr-cancel { background: var(--bg); color: var(--muted); }
 
-.eye-btn {
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 9px;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
+/* Both row actions sit in fixed-width slots, and the receipt slot is still
+   reserved (just empty) on rows that have no receipt yet — otherwise the eye
+   button would shift sideways from row to row as statuses change. */
+.row-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  gap: 2px;
 }
-.eye-btn:hover { background: var(--blue-100); color: var(--blue-600); transform: scale(1.08); }
-.eye-btn { transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease; }
-.eye-btn svg { width: 19px; height: 19px; }
+.row-actions-slot { width: 34px; height: 34px; flex-shrink: 0; }
 
+.eye-btn,
 .receipt-btn {
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   border: none;
   border-radius: 9px;
   background: none;
@@ -1059,9 +1271,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), transform 0.15s var(--ease);
 }
-.receipt-btn:hover { background: var(--blue-100); color: var(--blue-600); }
+.eye-btn:hover, .receipt-btn:hover { background: var(--blue-100); color: var(--blue-600); transform: scale(1.08); }
+.eye-btn:active, .receipt-btn:active { transform: scale(0.94); }
+.eye-btn svg { width: 19px; height: 19px; }
 .receipt-btn svg { width: 18px; height: 18px; }
 .receipt-btn.copied { color: var(--success); background: var(--success-bg); }
 .table-empty {
@@ -1071,6 +1285,32 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 70px 24px;
   color: var(--muted);
+}
+
+/* Until the first fetch lands, shimmer placeholders stand in for the rows.
+   Without this the empty state ("no cheques yet") flashes up for as long as
+   the request takes, telling the user something that isn't true yet. */
+.table-skeleton { display: none; padding: 14px 16px 18px; }
+.table-wrap.is-loading .table-skeleton { display: block; }
+.table-wrap.is-loading .table-scroll,
+.table-wrap.is-loading .cheque-cards,
+.table-wrap.is-loading .table-empty,
+.table-wrap.is-loading .table-pager { display: none !important; }
+.sk-row {
+  height: 44px;
+  border-radius: 9px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, var(--sk-base) 25%, var(--sk-sheen) 37%, var(--sk-base) 63%);
+  background-size: 400% 100%;
+  animation: skShimmer 1.3s var(--ease) infinite;
+}
+.sk-row:nth-child(2) { animation-delay: 0.08s; opacity: 0.9; }
+.sk-row:nth-child(3) { animation-delay: 0.16s; opacity: 0.8; }
+.sk-row:nth-child(4) { animation-delay: 0.24s; opacity: 0.7; }
+.sk-row:nth-child(5) { animation-delay: 0.32s; opacity: 0.6; }
+@keyframes skShimmer {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
 }
 .table-empty svg { width: 34px; height: 34px; opacity: 0.45; margin-bottom: 4px; }
 .table-empty .p-title { font-size: 15px; color: var(--ink); font-variation-settings: var(--f-value); }
@@ -1125,7 +1365,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .ths-info { justify-content: space-between; }
   .ths-amount { margin-right: 0; }
   .ths-actions { justify-content: stretch; }
-  .table-head-strip .ths-report-btn { flex: 1; justify-content: center; }
+  /* There's no hover on a phone, so the labels that unroll on desktop are
+     simply always out here — and the buttons share the row evenly. */
+  .table-head-strip .icon-action { flex: 1; justify-content: center; }
+  .table-head-strip .icon-action .ia-label { max-width: 150px; opacity: 1; margin-inline-start: 7px; }
+  .table-head-strip .export-cluster { flex: 1; }
+  .table-head-strip .export-cluster #reportBtn { width: 100%; }
+  .table-head-strip .export-cluster.open .export-opt { flex: 1; justify-content: center; }
 }
 
 .cq-card {
@@ -1188,7 +1434,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalIn 0.18s ease;
+  animation: modalIn 0.22s var(--ease);
+  box-shadow: var(--shadow-2);
 }
 @media (min-width: 601px) {
   .modal-box { max-width: 700px; max-height: 82vh; }

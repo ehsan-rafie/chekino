@@ -2902,6 +2902,7 @@ const tableStats = document.getElementById('tableStats');
 const chequeTable = document.getElementById('chequeTable');
 const chequeBody = document.getElementById('chequeBody');
 const chequeCards = document.getElementById('chequeCards');
+const tableWrap = document.getElementById('tableWrap');
 const tableEmpty = document.getElementById('tableEmpty');
 const tablePager = document.getElementById('tablePager');
 
@@ -2919,6 +2920,106 @@ function statusById(id) { return STATUSES.find(s => s.id === id) || STATUSES[0];
 
 function faDate(str) { return str ? toFa(str) : '—'; }
 function faAmount(raw) { return raw ? toFa(groupDigits(raw)) : '—'; }
+
+// ---- Due-date alert bar: a slim rotating banner for checks whose due date
+// is close (or already past) and that haven't been marked spent yet. Reads
+// from the full unfiltered list on purpose, so it stays accurate regardless
+// of whatever search/filter the user currently has the table set to. ----
+const dueAlertBar = document.getElementById('dueAlertBar');
+const dueAlertTrack = document.getElementById('dueAlertTrack');
+const dueAlertCount = document.getElementById('dueAlertCount');
+const DUE_ALERT_WINDOW_DAYS = 3;
+const DUE_ALERT_ROTATE_MS = 4000;
+let dueAlertItems = [];
+let dueAlertIndex = 0;
+let dueAlertTimer = null;
+
+function daysUntilJalali(dateStr) {
+  if (!dateStr) return null;
+  return -daysSinceJalali(dateStr);
+}
+
+function getUpcomingChecks() {
+  return loadCheques()
+    .filter(c => c.dueDate && !c.spendDate && !isArchived(c))
+    .map(c => ({ c, days: daysUntilJalali(c.dueDate) }))
+    .filter(x => x.days !== null && x.days <= DUE_ALERT_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days);
+}
+
+function dueAlertUrgencyClass(days) {
+  if (days < 0) return 'due-overdue';
+  if (days === 0) return 'due-today';
+  return 'due-soon';
+}
+function dueAlertUrgencyLabel(days) {
+  if (days < 0) return `${toFa(Math.abs(days))} روز گذشته`;
+  if (days === 0) return 'امروز سررسید';
+  return `${toFa(days)} روز مانده`;
+}
+
+function renderDueAlertItem() {
+  if (!dueAlertItems.length) return;
+  const { c, days } = dueAlertItems[dueAlertIndex];
+  const cls = dueAlertUrgencyClass(days);
+  dueAlertTrack.innerHTML = `
+    <div class="due-alert-item ${cls} enter" data-goto="${c.id}">
+      <span class="due-alert-dot"></span>
+      <span class="due-alert-text">چک <b>${toFa(c.serial)}</b> به مبلغ <b>${faAmount(c.amount)} ریال</b> در وجه <b>${escapeHtml(c.benef)}</b></span>
+      <span class="due-alert-when">${dueAlertUrgencyLabel(days)}</span>
+    </div>`;
+}
+
+function stopDueAlertRotation() {
+  if (dueAlertTimer) { clearInterval(dueAlertTimer); dueAlertTimer = null; }
+}
+function startDueAlertRotation() {
+  stopDueAlertRotation();
+  if (dueAlertItems.length <= 1) return;
+  dueAlertTimer = setInterval(() => {
+    dueAlertIndex = (dueAlertIndex + 1) % dueAlertItems.length;
+    renderDueAlertItem();
+  }, DUE_ALERT_ROTATE_MS);
+}
+
+function renderDueAlertBar() {
+  dueAlertItems = getUpcomingChecks();
+  if (!dueAlertItems.length) {
+    dueAlertBar.hidden = true;
+    stopDueAlertRotation();
+    return;
+  }
+  if (dueAlertIndex >= dueAlertItems.length) dueAlertIndex = 0;
+  dueAlertBar.hidden = false;
+  dueAlertCount.textContent = dueAlertItems.length > 1 ? `${toFa(dueAlertItems.length)} چک` : '';
+  renderDueAlertItem();
+  startDueAlertRotation();
+}
+
+function jumpToCheck(id) {
+  filterClearBtn.click();
+  const all = getFilteredCheques().slice().reverse();
+  const idx = all.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  tablePage = Math.floor(idx / PAGE_SIZE) + 1;
+  renderTable();
+  requestAnimationFrame(() => {
+    const els = document.querySelectorAll(`[data-id="${id}"]`);
+    let visible = null;
+    els.forEach(el => {
+      el.classList.add('row-flash');
+      setTimeout(() => el.classList.remove('row-flash'), 1600);
+      if (el.offsetParent !== null) visible = el;
+    });
+    (visible || els[0])?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
+dueAlertTrack.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-goto]');
+  if (!item) return;
+  jumpToCheck(parseInt(item.dataset.goto, 10));
+});
 
 function statusButtonHtml(c, st) {
   return `<button type="button" class="status-btn" data-status-for="${c.id}">
@@ -2939,11 +3040,16 @@ function buildReceiptMessage(c) {
   return `چک به شماره سریال ${toFa(c.serial)}، به شناسه صیادی ${toFa(c.sayad)}، به مبلغ ${amountFa} ریال و تاریخ سررسید ${faDate(c.dueDate)} در وجه ${c.benef} با کد ملی ${toFa(c.nid)} در سامانه صیاد ثبت گردید.
 ${faDate(c.statusChangedAt)}`;
 }
+// Rows without a receipt still render an empty slot of the same width, so the
+// eye button lands in the same spot on every row instead of sliding around.
 function receiptButtonHtml(c) {
-  if (c.status !== 'done') return '';
+  if (c.status !== 'done') return '<span class="row-actions-slot" aria-hidden="true"></span>';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" title="کپی پیام رسید ثبت">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
+}
+function rowActionsHtml(c) {
+  return `<span class="row-actions">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</span>`;
 }
 function showToast(message) {
   const el = document.getElementById('appToast');
@@ -3159,7 +3265,8 @@ function clearOneFilter(key) {
 
 function updateTableHeadStrip(list) {
   tableCountBadge.textContent = `${toFa(list.length)} چک`;
-  reportBtn.style.display = list.length === 0 ? 'none' : 'flex';
+  exportCluster.style.display = list.length === 0 ? 'none' : 'inline-flex';
+  if (list.length === 0) closeExportMenu();
   const archivedCount = showArchivedCheckbox.checked ? 0 : loadCheques().filter(isArchived).length;
   const archivedStat = archivedCount > 0
     ? `<span class="ths-stat">بایگانی‌شده (مخفی): <b>${toFa(archivedCount)}</b></span>` : '';
@@ -3499,7 +3606,65 @@ function generateReport() {
   reportWin.document.write(html);
   reportWin.document.close();
 }
-reportBtn.addEventListener('click', generateReport);
+// ---- Export cluster: the report button opens into a PDF / Excel pair
+// rather than crowding the strip with three buttons at rest. ----
+const exportCluster = document.getElementById('exportCluster');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+function closeExportMenu() {
+  if (!exportCluster.classList.contains('open')) return;
+  exportCluster.classList.remove('open');
+  reportBtn.setAttribute('aria-expanded', 'false');
+}
+function openExportMenu() {
+  exportCluster.classList.add('open');
+  reportBtn.setAttribute('aria-expanded', 'true');
+  pushBackGuard();
+}
+reportBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (exportCluster.classList.contains('open')) closeExportMenu();
+  else openExportMenu();
+});
+// Clicking anywhere else rolls it back up, the same way the status menu behaves.
+document.addEventListener('click', (e) => {
+  if (!exportCluster.contains(e.target)) closeExportMenu();
+});
+exportPdfBtn.addEventListener('click', () => { closeExportMenu(); generateReport(); });
+exportExcelBtn.addEventListener('click', () => { closeExportMenu(); exportChecksToExcel(); });
+
+// ---- Excel export: same filtered/sorted list the on-screen table and the
+// print report use, so what a user exports always matches what they see. ----
+function exportChecksToExcel() {
+  const all = getFilteredCheques().slice().reverse();
+  if (!all.length) return;
+  const header = [
+    'ردیف', 'شماره سریال', 'شناسه صیادی', 'مبلغ (ریال)',
+    'تاریخ سررسید (شمسی)', 'تاریخ سررسید (میلادی)',
+    'صاحب چک', 'طرف حساب', 'ذینفع', 'کد ملی ذینفع', 'وضعیت', 'یادداشت',
+  ];
+  const rows = all.map((c, i) => [
+    i + 1,
+    c.serial || '',
+    c.sayad || '',
+    parseInt(c.amount, 10) || 0,
+    c.dueDate || '',
+    jalaliStrToIso(c.dueDate) || '',
+    c.owner || '',
+    c.party || '',
+    c.benef || '',
+    c.nid || '',
+    statusById(c.status || 'pending').name,
+    c.notes || '',
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = header.map(() => ({ wch: 16 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'چک‌ها');
+  const [jy, jm, jd] = todayJalali();
+  XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
+}
 
 function renderTable() {
   const all = getFilteredCheques().slice().reverse();      // newest first
@@ -3509,6 +3674,9 @@ function renderTable() {
   const rows = all.slice(start, start + PAGE_SIZE);
 
   updateTableHeadStrip(all);
+  renderDueAlertBar();
+  // First render means the data is in — the loading skeleton can go.
+  tableWrap.classList.remove('is-loading');
   tableEmpty.style.display = all.length ? 'none' : 'flex';
   chequeTable.style.display = all.length ? '' : 'none';
   chequeCards.style.display = all.length ? '' : 'none';
@@ -3537,7 +3705,7 @@ function renderTable() {
       <td data-label="وضعیت" class="status-cell">
         ${statusHtml}${reason}
       </td>
-      <td data-label="" class="col-eye">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</td>
+      <td data-label="" class="col-eye">${rowActionsHtml(c)}</td>
     </tr>`;
   }).join('');
 
@@ -3559,7 +3727,7 @@ function renderTable() {
       </div>
       <div class="cq-bottom">
         ${statusButtonHtml(c, st)}
-        <div class="cq-icon-group">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</div>
+        <div class="cq-icon-group">${rowActionsHtml(c)}</div>
       </div>
     </div>`;
   }).join('');
@@ -4157,6 +4325,7 @@ document.addEventListener('keydown', (e) => {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (channelList.classList.contains('show')) { closeChannelList(); return; }
   if (activePopover) { closePopover(); return; }
+  if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return; }
@@ -4185,6 +4354,7 @@ function closeTopmostLayer() {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (channelList.classList.contains('show')) { closeChannelList(); return true; }
   if (activePopover) { closePopover(); return true; }
+  if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return true; }
