@@ -46,7 +46,7 @@ body {
   max-width: 480px;
   background: var(--surface);
   border-radius: 12px;
-  padding: 40px 34px 34px;
+  padding: 40px 32px 32px;
   border: 1px solid var(--border);
   overflow: hidden;
 }
@@ -68,7 +68,7 @@ body {
 
 .brand {
   text-align: center;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
 }
 
 .brand h1 {
@@ -90,7 +90,7 @@ form { margin-top: 8px; }
 
 .field {
   position: relative;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .field input {
@@ -120,7 +120,7 @@ form { margin-top: 8px; }
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 0 5px;
+  padding: 0 4px;
   font-size: 15px;
   color: var(--muted);
   pointer-events: none;
@@ -176,7 +176,7 @@ form { margin-top: 8px; }
   color: var(--error);
   border: 1px solid var(--error-border);
   border-radius: 8px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   font-size: 13px;
   margin-bottom: 16px;
   font-variation-settings: 'wght' 460, 'dots' 2;
@@ -209,7 +209,7 @@ button.submit:active { transform: scale(0.99); }
 
 .hint {
   text-align: center;
-  margin-top: 18px;
+  margin-top: 16px;
   font-size: 13px;
   color: var(--muted);
   font-variation-settings: 'wght' 400, 'dots' 2;
@@ -243,7 +243,7 @@ button.submit:active { transform: scale(0.99); }
   color: var(--ink);
   border: 1px solid var(--border);
   font-size: 13px;
-  padding: 7px 12px;
+  padding: 6px 12px;
   border-radius: 8px;
   white-space: nowrap;
   opacity: 0;

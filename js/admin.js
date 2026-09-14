@@ -49,6 +49,61 @@ async function adminFetch(path, opts) {
   return data;
 }
 
+// ---- Confirmation dialog ----
+// Resolves true/false, so a caller reads the same as the confirm() it
+// replaced. Escape and a backdrop click both count as "no", and focus lands
+// on the confirm button so the keyboard path is one Enter away.
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmTitleEl = document.getElementById('confirmTitle');
+const confirmBodyEl = document.getElementById('confirmBody');
+const confirmOkBtn = document.getElementById('confirmOk');
+const confirmCancelBtn = document.getElementById('confirmCancel');
+let confirmResolve = null;
+
+function closeConfirm(answer) {
+  if (!confirmResolve) return;
+  confirmOverlay.classList.remove('show');
+  confirmOkBtn.classList.remove('danger');
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  resolve(answer);
+}
+function askConfirm({ title, body, confirmLabel, danger }) {
+  confirmTitleEl.textContent = title;
+  confirmBodyEl.textContent = body || '';
+  confirmBodyEl.style.display = body ? '' : 'none';
+  confirmOkBtn.textContent = confirmLabel || 'تأیید';
+  confirmOkBtn.classList.toggle('danger', !!danger);
+  confirmOverlay.classList.add('show');
+  confirmOkBtn.focus();
+  return new Promise((resolve) => { confirmResolve = resolve; });
+}
+confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+confirmOverlay.addEventListener('click', (e) => {
+  if (e.target === confirmOverlay) closeConfirm(false);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && confirmResolve) { e.preventDefault(); closeConfirm(false); }
+});
+
+// ---- Async button guard ----
+// Every one of these handlers posts to the API; without this a second click
+// while the first is still in flight creates a duplicate company, plan or
+// password change.
+async function withBusy(btn, label, fn) {
+  if (btn.disabled) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = label;
+  try {
+    await fn();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -128,7 +183,8 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   showLogin();
 });
 
-document.getElementById('accountSaveBtn').addEventListener('click', async () => {
+document.getElementById('accountSaveBtn').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال ذخیره…', async () => {
   hideAlert('accountAlert');
   const currentPassword = document.getElementById('accountCurrentPassword').value;
   const newUsername = document.getElementById('accountNewUsername').value.trim();
@@ -157,7 +213,7 @@ document.getElementById('accountSaveBtn').addEventListener('click', async () => 
   } catch (e) {
     showAlert('accountAlert', e.message);
   }
-});
+}));
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -210,7 +266,8 @@ async function loadPlans() {
   });
 }
 
-document.getElementById('addPlanBtn').addEventListener('click', async () => {
+document.getElementById('addPlanBtn').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال افزودن…', async () => {
   hideAlert('newPlanAlert');
   const name = document.getElementById('newPlanName').value.trim();
   if (!name) { showAlert('newPlanAlert', 'نام پلن الزامی است'); return; }
@@ -243,7 +300,7 @@ document.getElementById('addPlanBtn').addEventListener('click', async () => {
   } catch (e) {
     showAlert('newPlanAlert', e.message);
   }
-});
+}));
 
 function openEditPlan(id) {
   const plan = plansCache.find(p => p.id === id);
@@ -262,7 +319,8 @@ function openEditPlan(id) {
 document.getElementById('editPlanCancel').addEventListener('click', () => {
   document.getElementById('editPlanOverlay').classList.remove('show');
 });
-document.getElementById('editPlanSave').addEventListener('click', async () => {
+document.getElementById('editPlanSave').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال ذخیره…', async () => {
   const id = document.getElementById('editPlanOverlay').dataset.id;
   const maxPeopleRaw = document.getElementById('editPlanMaxPeople').value;
   const maxChecksRaw = document.getElementById('editPlanMaxChecks').value;
@@ -288,9 +346,19 @@ document.getElementById('editPlanSave').addEventListener('click', async () => {
   } catch (e) {
     showAlert('editPlanAlert', e.message);
   }
-});
+}));
 
 async function deletePlan(id) {
+  // This used to delete on the first click with nothing asked — an
+  // irreversible action one stray tap away.
+  const p = plansCache.find(x => x.id === id);
+  const ok = await askConfirm({
+    title: `حذف پلن ${p ? p.name : ''}؟`.replace('  ', ' '),
+    body: 'شرکت‌هایی که روی این پلن هستند بدون پلن می‌مانند.',
+    confirmLabel: 'حذف پلن',
+    danger: true,
+  });
+  if (!ok) return;
   try {
     await adminFetch(`/admin/plans/${id}`, { method: 'DELETE' });
     showToast('پلن حذف شد');
@@ -343,7 +411,8 @@ async function loadCompanies() {
   });
 }
 
-document.getElementById('addCompanyBtn').addEventListener('click', async () => {
+document.getElementById('addCompanyBtn').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال افزودن…', async () => {
   hideAlert('newCompanyAlert');
   const name = document.getElementById('newCompanyName').value.trim();
   const username = document.getElementById('newCompanyUsername').value.trim();
@@ -366,7 +435,7 @@ document.getElementById('addCompanyBtn').addEventListener('click', async () => {
   } catch (e) {
     showAlert('newCompanyAlert', e.message);
   }
-});
+}));
 
 function openEditCompany(id) {
   const c = companiesCache.find(x => x.id === id);
@@ -391,7 +460,8 @@ function openEditCompany(id) {
 document.getElementById('editCompanyCancel').addEventListener('click', () => {
   document.getElementById('editCompanyOverlay').classList.remove('show');
 });
-document.getElementById('editCompanySave').addEventListener('click', async () => {
+document.getElementById('editCompanySave').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال ذخیره…', async () => {
   const id = document.getElementById('editCompanyOverlay').dataset.id;
   const readOverride = (selectId) => {
     const v = document.getElementById(selectId).value;
@@ -417,7 +487,7 @@ document.getElementById('editCompanySave').addEventListener('click', async () =>
   } catch (e) {
     showAlert('editCompanyAlert', e.message);
   }
-});
+}));
 
 // ==================== CHANGE PASSWORD ====================
 function randomPassword() {
@@ -444,7 +514,8 @@ document.getElementById('changePasswordCancel').addEventListener('click', () => 
 document.getElementById('generateRandomPasswordBtn').addEventListener('click', () => {
   document.getElementById('newPasswordInput').value = randomPassword();
 });
-document.getElementById('changePasswordSave').addEventListener('click', async () => {
+document.getElementById('changePasswordSave').addEventListener('click', (ev) =>
+  withBusy(ev.currentTarget, 'در حال ذخیره…', async () => {
   const id = document.getElementById('changePasswordOverlay').dataset.id;
   const newPassword = document.getElementById('newPasswordInput').value;
   hideAlert('changePasswordAlert');
@@ -464,7 +535,7 @@ document.getElementById('changePasswordSave').addEventListener('click', async ()
   } catch (e) {
     showAlert('changePasswordAlert', e.message);
   }
-});
+}));
 document.getElementById('copyPasswordBtn').addEventListener('click', async () => {
   const input = document.getElementById('revealedPassword');
   input.select();
@@ -500,14 +571,26 @@ async function toggleCompanyStatus(id, btn) {
 async function deleteCompany(id) {
   const c = companiesCache.find(x => x.id === id);
   const label = c ? c.name : 'این شرکت';
-  if (!confirm(`${label} حذف شود؟`)) return;
+  const ok = await askConfirm({
+    title: `حذف ${label}؟`,
+    body: 'این شرکت از فهرست حذف می‌شود و دسترسی‌اش به سامانه قطع خواهد شد.',
+    confirmLabel: 'حذف شرکت',
+    danger: true,
+  });
+  if (!ok) return;
   try {
     await adminFetch(`/admin/companies/${id}`, { method: 'DELETE', body: JSON.stringify({}) });
     showToast('شرکت حذف شد');
     loadCompanies();
   } catch (e) {
     if (e.status === 409 && e.data && e.data.requires_confirm) {
-      if (confirm(e.data.error + '\n\nبرای حذف قطعی (همراه با تمام اشخاص و چک‌های این شرکت) تأیید کنید.')) {
+      const sure = await askConfirm({
+        title: 'حذف قطعی همراه با تمام داده‌ها؟',
+        body: `${e.data.error} با تأیید، تمام اشخاص و چک‌های این شرکت هم برای همیشه پاک می‌شوند. این کار قابل بازگشت نیست.`,
+        confirmLabel: 'حذف قطعی',
+        danger: true,
+      });
+      if (sure) {
         try {
           await adminFetch(`/admin/companies/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm: true }) });
           showToast('شرکت و تمام داده‌هایش حذف شد');

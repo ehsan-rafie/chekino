@@ -604,6 +604,20 @@
   </svg>
 </button>
 <div class="tg-tooltip" id="tgTooltip">پشتیبانی تلگرام</div>
+<!-- Discard-changes confirmation. Replaces the browser's own confirm() box,
+     which arrived in the OS language with OS buttons in the middle of an
+     otherwise Persian, RTL app. -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+    <h2 id="confirmTitle"></h2>
+    <p class="confirm-body" id="confirmBody"></p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-cancel" id="confirmCancel">برگشت به فرم</button>
+      <button type="button" class="confirm-ok" id="confirmOk"></button>
+    </div>
+  </div>
+</div>
+
 <div class="app-toast" id="appToast"></div>
 
 <script src="/js/shared.js"></script>

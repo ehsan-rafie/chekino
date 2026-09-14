@@ -586,18 +586,87 @@ function resetAllFields(opts) {
   }
 }
 
+// ---- Styled confirmation dialog ----
+// The browser's own confirm() showed up in the OS language, with OS buttons,
+// left-to-right, in the middle of an otherwise Persian app. This replaces it.
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmTitleEl = document.getElementById('confirmTitle');
+const confirmBodyEl = document.getElementById('confirmBody');
+const confirmOkBtn = document.getElementById('confirmOk');
+const confirmCancelBtn = document.getElementById('confirmCancel');
+let confirmResolve = null;
+let confirmReturnFocus = null;
+
+function confirmIsOpen() { return confirmResolve !== null; }
+function closeConfirm(answer) {
+  if (!confirmResolve) return;
+  confirmOverlay.classList.remove('show');
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  resolve(answer);
+  // Answering "no" puts the user back in the form, so the caret goes back
+  // where it was too. Answering "yes" closes the form, so there is nothing
+  // to return to.
+  const back = confirmReturnFocus;
+  confirmReturnFocus = null;
+  if (!answer && back && document.contains(back)) back.focus();
+}
+function askConfirm({ title, body, confirmLabel, cancelLabel }) {
+  confirmTitleEl.textContent = title;
+  confirmBodyEl.textContent = body || '';
+  confirmBodyEl.style.display = body ? '' : 'none';
+  confirmOkBtn.textContent = confirmLabel || 'تأیید';
+  confirmCancelBtn.textContent = cancelLabel || 'انصراف';
+  confirmReturnFocus = document.activeElement;
+  confirmOverlay.classList.add('show');
+  // Focus lands on "keep working", the non-destructive side, so Enter never
+  // throws the form away.
+  confirmCancelBtn.focus();
+  return new Promise((resolve) => { confirmResolve = resolve; });
+}
+confirmOkBtn.addEventListener('click', () => closeConfirm(true));
+confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+confirmOverlay.addEventListener('click', (e) => {
+  if (e.target === confirmOverlay) closeConfirm(false);
+});
+// Tab stays inside the dialog while it is up — otherwise it walks into the
+// form underneath, which is exactly the thing being asked about.
+confirmOverlay.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  e.preventDefault();
+  (document.activeElement === confirmCancelBtn ? confirmOkBtn : confirmCancelBtn).focus();
+});
+
+// closeModal stays synchronous for every caller (the × button, the Escape
+// chain, and the mobile back handler, whose return value drives the history
+// guard). When a confirmation is needed it returns after putting the dialog
+// up, and re-enters itself with force once the answer comes back.
 function closeModal(force) {
-  const wasViewOrEdit = modalMode !== 'add';
   if (!force) {
+    if (confirmIsOpen()) return;   // already asking — a second Escape must not stack a second dialog
+    let ask = null;
     if (modalMode === 'editing' && veHasEdited) {
-      const ok = confirm('تغییرات ذخیره نشده. مطمئنید می‌خواید ببندید؟');
-      if (!ok) return;
+      ask = {
+        title: 'تغییرات ذخیره نشده',
+        body: 'اگر ببندید، ویرایش‌هایی که روی این چک انجام دادید از بین می‌رود.',
+        confirmLabel: 'بستن بدون ذخیره',
+        cancelLabel: 'برگشت به فرم',
+      };
     } else if (modalMode === 'add' && isFormDirty()) {
-      const ok = confirm('اطلاعات وارد شده ذخیره نشده. مطمئنید می‌خواید ببندید؟');
-      if (!ok) return;
+      ask = {
+        title: 'اطلاعات ذخیره نشده',
+        body: 'اگر ببندید، چیزی که تا اینجا وارد کردید ثبت نمی‌شود.',
+        confirmLabel: 'بستن بدون ثبت',
+        cancelLabel: 'برگشت به فرم',
+      };
     }
     // modalMode === 'view' (nothing changed yet) always closes freely
+    if (ask) {
+      askConfirm(ask).then((ok) => { if (ok) closeModal(true); });
+      return;
+    }
   }
+  const wasViewOrEdit = modalMode !== 'add';
   modalOverlay.classList.remove('show');
   document.body.style.overflow = '';
   resetAllFields();
@@ -1981,8 +2050,12 @@ function renderChannelChips() {
     return;
   }
   channelPlaceholder.style.display = 'none';
+  // A channel id the front-end doesn't know (an older record, a channel
+  // retired from the list) used to throw here and leave the whole view
+  // modal blank. Show the raw id instead and keep the form usable.
   channelChips.innerHTML = selectedChannels.map(id => {
     const c = CHANNELS.find(x => x.id === id);
+    if (!c) return `<span class="ms-chip"><span class="ch-dot" style="background:var(--muted)"></span>${escapeHtml(id)}</span>`;
     return `<span class="ms-chip"><span class="ch-dot" style="background:${c.color === '#FFFFFF' ? 'var(--blue-600)' : c.color}"></span>${c.name}</span>`;
   }).join('');
 }
@@ -4318,6 +4391,7 @@ lightboxShareBtn.addEventListener('click', async () => {
 // in stacking order and stops at the first one that's actually open.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
+  if (confirmIsOpen()) { closeConfirm(false); return; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
@@ -4347,6 +4421,7 @@ function closeTopmostLayer() {
   // still up, when the modal closes underneath it — so it's done here
   // explicitly to match what a normal close already does.
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  if (confirmIsOpen()) { closeConfirm(false); return true; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return true; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }

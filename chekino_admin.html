@@ -304,6 +304,20 @@
   </div>
 </div>
 
+<!-- Shared confirmation dialog. Replaces the browser's own confirm(), which
+     can't be styled, can't be themed, and on a phone drops a system sheet in
+     front of the panel. -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-box confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle"></h2>
+    <p class="confirm-body" id="confirmBody"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="confirmCancel">انصراف</button>
+      <button type="button" class="btn-primary" id="confirmOk"></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="/js/shared.js"></script>

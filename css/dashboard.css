@@ -196,7 +196,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   font-size: 13px;
   font-variation-settings: var(--f-num);
-  padding: 6px 11px;
+  padding: 6px 10px;
   border-radius: 8px;
   white-space: nowrap;
   opacity: 0;
@@ -218,7 +218,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   font-size: 13px;
   font-variation-settings: var(--f-num);
-  padding: 6px 11px;
+  padding: 6px 10px;
   border-radius: 8px;
   white-space: nowrap;
   opacity: 0;
@@ -262,13 +262,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px 100px;
+  padding: var(--s6) var(--s5) 96px;
 }
 
 .add-check-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 44px;
+  margin-bottom: var(--s6);
 }
 
 /* ===== Due-date alert bar ===== */
@@ -373,7 +373,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--white);
   border: none;
   border-radius: 8px;
-  padding: 18px 36px;
+  padding: 16px 32px;
   font-family: inherit;
   font-size: 17px;
   font-variation-settings: var(--f-btn);
@@ -448,7 +448,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1.5px dashed var(--border);
   border-radius: 12px;
   background: var(--surface);
-  padding: 70px 24px;
+  padding: 72px var(--s5);
   color: var(--muted);
 }
 .placeholder-area svg { width: 34px; height: 34px; opacity: 0.5; margin-bottom: 6px; }
@@ -553,7 +553,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
 .filter-pill-btn {
   height: 38px;
-  padding: 0 15px;
+  padding: 0 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -615,8 +615,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .active-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 6px 5px 10px;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
   border-radius: 12px;
   background: var(--blue-100);
   border: 1px solid var(--accent-line);
@@ -693,11 +693,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .amount-filter-box input:focus { border-color: var(--blue-600); }
 .amount-filter-box input::placeholder { color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); text-align: right; }
-.af-sep { padding-bottom: 11px; color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); flex-shrink: 0; }
+.af-sep { padding-bottom: 10px; color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); flex-shrink: 0; }
 
 .amount-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .af-preset {
-  padding: 6px 11px;
+  padding: 6px 10px;
   border: 1.5px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
@@ -711,7 +711,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .af-preset:hover { border-color: var(--blue-600); color: var(--blue-700); }
 .af-preset.active { background: var(--blue-700); border-color: var(--blue-700); color: #fff; }
 
-.filter-people-row { display: flex; flex-direction: column; gap: 18px; }
+.filter-people-row { display: flex; flex-direction: column; gap: 16px; }
 #filterOwnerList, #filterPartyList, #filterBenefList { max-height: 150px; }
 .filter-people-row .form-field { margin-bottom: 0; }
 .filter-people-row .ac-input { height: 42px; font-size: 13px; padding: 0 12px; }
@@ -725,8 +725,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-filter-chip {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 13px;
+  gap: 8px;
+  padding: 10px 12px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -756,7 +756,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 13px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
   flex-wrap: wrap;
@@ -777,7 +777,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variation-settings: var(--f-title);
 }
 .ths-count {
-  padding: 3px 10px;
+  padding: 2px 10px;
   border-radius: 12px;
   background: var(--blue-100);
   color: var(--blue-900);
@@ -803,7 +803,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: inline-flex;
   align-items: center;
   height: 36px;
-  padding: 0 9px;
+  padding: 0 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -836,7 +836,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .icon-action:focus-visible .ia-label {
   max-width: 150px;
   opacity: 1;
-  margin-inline-start: 7px;
+  margin-inline-start: var(--s2);
 }
 .icon-action:active { transform: scale(0.95); }
 
@@ -888,7 +888,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ths-stat {
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  gap: 4px;
   font-size: 13px;
   color: var(--muted);
   font-variation-settings: var(--f-micro);
@@ -924,7 +924,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .cheque-table thead th {
   text-align: center;
-  padding: 13px 16px;
+  padding: 12px 16px;
   font-size: 13px;
   color: var(--muted);
   font-variation-settings: var(--f-label);
@@ -937,7 +937,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   z-index: 5;
 }
 .cheque-table td {
-  padding: 11px 16px;
+  padding: 10px 16px;
   font-size: 15px;
   color: var(--ink);
   font-variation-settings: var(--f-body);
@@ -1035,8 +1035,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 12px;
+  gap: 6px;
+  padding: 6px 12px;
   border: 1px solid transparent;
   border-radius: 999px;
   font-family: inherit;
@@ -1108,8 +1108,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-opt {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 11px;
+  gap: 8px;
+  padding: 10px 10px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
@@ -1157,7 +1157,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-reason textarea {
   width: 100%;
   min-height: 62px;
-  padding: 9px 11px;
+  padding: 8px 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-family: inherit;
@@ -1170,7 +1170,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   outline: none;
 }
 .status-reason textarea:focus { border-color: var(--blue-600); }
-.status-reason-actions { display: flex; gap: 6px; margin-top: 7px; }
+.status-reason-actions { display: flex; gap: 6px; margin-top: 6px; }
 .status-reason-actions button {
   flex: 1;
   padding: 8px;
@@ -1220,14 +1220,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 70px 24px;
+  padding: 72px var(--s5);
   color: var(--muted);
 }
 
 /* Until the first fetch lands, shimmer placeholders stand in for the rows.
    Without this the empty state ("no cheques yet") flashes up for as long as
    the request takes, telling the user something that isn't true yet. */
-.table-skeleton { display: none; padding: 14px 16px 18px; }
+.table-skeleton { display: none; padding: 14px 16px 16px; }
 .table-wrap.is-loading .table-skeleton { display: block; }
 .table-wrap.is-loading .table-scroll,
 .table-wrap.is-loading .cheque-cards,
@@ -1305,7 +1305,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   /* There's no hover on a phone, so the labels that unroll on desktop are
      simply always out here — and the buttons share the row evenly. */
   .table-head-strip .icon-action { flex: 1; justify-content: center; }
-  .table-head-strip .icon-action .ia-label { max-width: 150px; opacity: 1; margin-inline-start: 7px; }
+  .table-head-strip .icon-action .ia-label { max-width: 150px; opacity: 1; margin-inline-start: var(--s2); }
   .table-head-strip .export-cluster { flex: 1; }
   .table-head-strip .export-cluster #reportBtn { width: 100%; }
   .table-head-strip .export-cluster.open .export-opt { flex: 1; justify-content: center; }
@@ -1340,11 +1340,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .cq-serial span { color: var(--muted); font-variation-settings: var(--f-micro); font-size: 12px; margin-left: 6px; }
 .cq-amount { font-size: 15px; color: var(--blue-900); font-variation-settings: var(--f-num); }
-.cq-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+.cq-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .cq-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13px; }
 .cq-row .cq-label { color: var(--muted); font-variation-settings: var(--f-micro); flex-shrink: 0; }
 .cq-row .cq-value { color: var(--ink); font-variation-settings: var(--f-body); text-align: left; }
-.cq-row .cq-value .benef-nid { font-size: 12px; display: inline-block; margin-top: 3px; }
+.cq-row .cq-value .benef-nid { font-size: 12px; display: inline-block; margin-top: 2px; }
 .cq-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cq-icon-group { display: flex; align-items: center; gap: 2px; }
 
@@ -1391,7 +1391,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-shrink: 0;
 }
 @media (min-width: 601px) {
-  .modal-header { padding: 11px 20px; }
+  .modal-header { padding: 10px 20px; }
 }
 .modal-header h2 {
   margin: 0;
@@ -1416,7 +1416,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-close svg { width: 16px; height: 16px; }
 
 .modal-body {
-  padding: 14px 18px;
+  padding: 14px 16px;
   overflow-y: auto;
 }
 @media (min-width: 601px) {
@@ -1425,14 +1425,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
     grid-template-columns: 1fr 1fr;
     gap: 2px 16px;
     align-items: start;
-    padding: 18px 22px;
+    padding: 16px 20px;
   }
   .form-field.field-full { grid-column: 1 / -1; }
 }
 
 .form-field {
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 .form-field:last-child { margin-bottom: 0; }
 /* serialField ends up as the only child of its own wrapper (split off so
@@ -1440,7 +1440,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    #sayadField/.sayad-static), which makes the :last-child rule above
    strip its bottom margin even though sayadField visually follows right
    after it. Restoring it explicitly keeps the two fields from touching. */
-#serialField { margin-bottom: 15px; }
+#serialField { margin-bottom: 14px; }
 
 .form-field input {
   width: 100%;
@@ -1493,14 +1493,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   z-index: 2;
   right: 14px;
   top: -8px;
-  padding: 0 5px;
+  padding: 0 4px;
   font-size: 12px;
   color: var(--muted);
   background: var(--surface);
   font-variation-settings: var(--f-label);
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 .form-field label .req { color: var(--error); }
 .form-field label .opt { color: var(--muted); font-variation-settings: var(--f-hint); }
@@ -1519,7 +1519,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .form-field.error label { color: var(--error); }
 
 .field-msg {
-  margin-top: 7px;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--error);
   display: none;
@@ -1637,7 +1637,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   overflow-y: auto;
   z-index: 550;
   display: none;
-  padding: 5px;
+  padding: 4px;
 }
 .ac-list.show { display: block; animation: slideDown 0.16s ease; }
 .ac-item {
@@ -1645,7 +1645,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 15px;
@@ -1692,7 +1692,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 100%;
   height: auto;
   min-height: 46px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -1748,7 +1748,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 9px 4px 6px;
+  padding: 4px 8px 4px 6px;
   border-radius: 999px;
   background: var(--blue-100);
   color: var(--blue-900);
@@ -1779,7 +1779,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ms-option {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 10px 10px;
   border-radius: 8px;
   cursor: pointer;
@@ -1905,7 +1905,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 26px;
+  padding: 24px;
 }
 .photo-editor-overlay.show { display: flex; animation: riseIn 0.15s ease; }
 .pe-card {
@@ -1980,7 +1980,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: absolute;
   width: 34px;
   height: 34px;
-  margin: -17px;
+  margin: -16px;
   z-index: 5;
 }
 .pe-handle::after {
@@ -2009,8 +2009,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 9px 16px;
+  gap: 4px;
+  padding: 8px 16px;
   border: none;
   border-radius: 8px;
   background: rgba(255,255,255,0.08);
@@ -2049,7 +2049,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .photo-editor-overlay { padding: 0; }
   .pe-card { max-width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
   .pe-body { padding: 10px; }
-  .pe-ctrl-btn { padding: 11px 18px; font-size: 13px; }
+  .pe-ctrl-btn { padding: 10px 16px; font-size: 13px; }
   .pe-ctrl-btn svg { width: 22px; height: 22px; }
   .pe-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 12px)); }
 }
@@ -2063,7 +2063,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 26px;
+  padding: 24px;
 }
 .lightbox-overlay.show { display: flex; animation: riseIn 0.15s ease; }
 .lightbox-card {
@@ -2088,8 +2088,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .lightbox-btn {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 14px;
+  gap: 6px;
+  padding: 8px 14px;
   border: none;
   border-radius: 8px;
   background: rgba(255,255,255,0.12);
@@ -2201,7 +2201,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
+  padding: 6px 12px;
   border: 1.5px solid var(--success-border);
   border-radius: 8px;
   background: var(--surface);
@@ -2236,7 +2236,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 16px;
 }
 .ve-history-arrow {
   display: flex;
@@ -2312,7 +2312,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .people-add-row input:focus { border-color: var(--blue-600); outline: none; }
 .people-add-row button {
-  padding: 0 18px;
+  padding: 0 16px;
   border: none;
   border-radius: 8px;
   background: var(--blue-700);
@@ -2328,7 +2328,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -2439,7 +2439,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-benef-party-select label { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .people-benef-party-select select {
   flex: 1;
-  height: 40px;
+  height: var(--h-md);
   padding: 0 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
@@ -2522,7 +2522,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px;
+  padding: 16px;
   z-index: 601;
   display: none;
 }
@@ -2565,7 +2565,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-label);
-  padding: 8px 14px 8px 26px;
+  padding: 8px 14px 8px 24px;
   border-radius: 8px;
   cursor: pointer;
   text-align: center;
@@ -2647,7 +2647,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-today-btn {
   width: 100%;
   margin-top: 10px;
-  padding: 9px;
+  padding: 8px;
   border: none;
   border-radius: 8px;
   background: var(--bg);
@@ -2708,13 +2708,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-footer {
   display: flex;
   gap: 10px;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
   background: var(--surface);
 }
 @media (min-width: 601px) {
-  .modal-footer { padding: 13px 22px; }
+  .modal-footer { padding: 12px 20px; }
 }
 .btn-submit {
   flex: 1;
@@ -2767,7 +2767,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   overflow: hidden;
   white-space: nowrap;
   transition: width 0.28s ease, padding 0.28s ease, border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
@@ -2908,7 +2908,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--ink);
   border: 1px solid var(--border);
   font-size: 13px;
-  padding: 7px 12px;
+  padding: 6px 12px;
   border-radius: 8px;
   white-space: nowrap;
   opacity: 0;
@@ -2949,7 +2949,71 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .header-user { gap: 6px; }
   .header-logo { font-size: 21px; }
   .clock-box { display: none; }
-  .main { padding: 24px 14px 100px; }
+  .main { padding: var(--s5) 14px 96px; }
 .add-check-btn { width: 100%; justify-content: center; padding: 16px 24px; font-size: 15px; }
   .tg-float { bottom: 20px; left: 20px; width: 52px; height: 52px; }
 }
+
+/* ===== Discard-changes confirmation ===== */
+/* Sits above the cheque form (z-index 300) because it is asking about it. */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,27,51,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  padding: 24px;
+}
+.confirm-overlay.show { display: flex; }
+.confirm-box {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-2);
+  animation: modalIn 0.18s var(--ease);
+}
+.confirm-box h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--ink);
+  font-variation-settings: var(--f-title);
+}
+.confirm-body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.confirm-actions button {
+  flex: 1;
+  height: var(--h-md);
+  border: none;
+  border-radius: var(--rad-ctl);
+  font-family: inherit;
+  font-size: 13px;
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+/* Keeping the work is the safe default, so it is the one the keyboard
+   lands on and the one that carries the filled-in weight. */
+.confirm-actions .confirm-cancel {
+  background: var(--accent);
+  color: #fff;
+}
+.confirm-actions .confirm-cancel:hover { background: var(--accent-hover); }
+.confirm-actions .confirm-ok {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--state-bad);
+}
+.confirm-actions .confirm-ok:hover { border-color: var(--state-bad); background: var(--state-bad-bg); }
