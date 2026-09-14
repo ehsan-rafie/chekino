@@ -1,6 +1,24 @@
 
 const TOKEN_KEY = 'chekino_admin_token';
 
+// ---- Theme: same key and same rules as the dashboard, so an admin who set
+// dark on one side of the product doesn't land in light on the other ----
+const THEME_KEY = 'chekino_theme_v1';
+function autoThemeByTime() {
+  const h = new Date().getHours();
+  return (h >= 19 || h < 6) ? 'dark' : 'light';
+}
+function currentSavedTheme() {
+  try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+}
+function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
+applyTheme(currentSavedTheme() || autoThemeByTime());
+document.getElementById('themeToggleBtn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+});
+
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 
 // Company/plan names come from admin-entered text, not from a fixed list —

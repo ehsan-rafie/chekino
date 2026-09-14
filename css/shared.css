@@ -1,7 +1,14 @@
-/* Shared across chekino_login.html, chekino_dashboard.html, chekino_admin.html:
-   the brand font and the color tokens that are byte-identical on all three pages.
-   Anything that differs between pages (borders, surface colors, dark-mode strategy,
-   the dashboard's extra typography scale) stays in that page's own stylesheet. */
+/* Shared across chekino_login.html, chekino_dashboard.html, chekino_admin.html.
+   This file is the single source of truth for the design system: the brand
+   font, the colour primitives, the semantic roles every page styles through,
+   and the spacing / type / radius scales. Page stylesheets add layout on top
+   of these but never invent their own palette or sizes.
+
+   Themes are resolved here too, for all three pages at once, in three states:
+     · bare :root                      → light
+     · prefers-color-scheme: dark      → dark, unless the user forced light
+     · html[data-theme="dark"]         → dark, whatever the OS says
+*/
 @font-face {
   font-family: 'IRANYekanX';
   src: url('/fonts/IRANYekanXVFaNumVF.woff2') format('woff2'),
@@ -10,17 +17,197 @@
   font-display: swap;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   1 · PRIMITIVES — raw scales. Components never reference these
+   directly; they go through the semantic roles in section 2.
+   The neutrals carry a slight blue bias so they sit with the brand
+   blue instead of reading as flat, unconsidered grey.
+   ════════════════════════════════════════════════════════════════ */
 :root {
-  --ink: #0F1B33;
-  --blue-900: #0A4ED6;
-  --blue-hover: #0A4ED6;
-  --blue-700: #0B5CFF;
-  --blue-600: #2D8CFF;
-  --blue-100: #EAF2FF;
-  --bg: #F4F6FA;
-  --error: #C4342B;
-  --error-bg: #FDECEC;
-  --error-border: #F3C6C2;
-  --success: #1A7A4C;
-  --muted: #64748B;
+  --n-1:  #FBFCFD;  --n-2:  #F6F8FA;  --n-3:  #EDF0F4;  --n-4:  #E4E8EE;
+  --n-5:  #D9DEE7;  --n-6:  #C7CEDA;  --n-7:  #A8B2C3;  --n-8:  #8792A6;
+  --n-9:  #67728A;  --n-10: #4A5568;  --n-11: #2C3648;  --n-12: #0F1728;
+
+  --blue-wash: #EEF4FF;  --blue-soft: #DCE8FF;  --blue-line: #A8C6FF;
+  --blue-base: #0B5CFF;  --blue-deep: #0A4ED6;
+
+  --green-wash: #E7F6EE;  --green-base: #12855A;
+  --amber-wash: #FDF3E4;  --amber-base: #B26A08;
+  --red-wash:   #FDECEC;  --red-base:   #C4342B;  --red-line: #F3C6C2;
+
+  /* ── spacing: 4pt grid, seven steps, nothing off-scale ── */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px;
+
+  /* ── radius: three values, assigned by role ── */
+  --rad-ctl: 8px;   /* inputs, buttons, chips */
+  --rad-card: 12px; /* panels, cards, modals */
+  --rad-pill: 999px;
+
+  /* ── type scale: seven steps, no half-pixels ── */
+  --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
+  --t-sub: 17px;   --t-title: 21px; --t-display: 28px;
+
+  /* ── control heights: three sizes, shared by every page ── */
+  --h-sm: 32px; --h-md: 40px; --h-lg: 48px;
+
+  /* ── font weight axes (IRANYekanX is variable, 100–1000) ── */
+  --f-brand:  'wght' 830, 'dots' 2;
+  --f-title:  'wght' 720, 'dots' 2;
+  --f-label:  'wght' 600, 'dots' 2;
+  --f-btn:    'wght' 650, 'dots' 2;
+  --f-value:  'wght' 520, 'dots' 2;
+  --f-num:    'wght' 560, 'dots' 2;
+  --f-body:   'wght' 430, 'dots' 2;
+  --f-hint:   'wght' 330, 'dots' 2;
+  --f-micro:  'wght' 480, 'dots' 2;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   2 · SEMANTIC ROLES — one token per purpose, so the "wrong blue"
+   can't be picked by accident. The accent means exactly one thing:
+   this is interactive. Status colours are reserved for state and
+   are never used as decoration.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --bg: var(--n-2);
+  --surface: #FFFFFF;
+  --surface-2: var(--n-1);
+  --surface-sunken: var(--n-3);
+  --border: var(--n-4);
+  --border-strong: var(--n-6);
+
+  --ink: var(--n-12);
+  --ink-2: var(--n-10);
+  --muted: var(--n-9);
+
+  --accent: var(--blue-base);
+  --accent-hover: var(--blue-deep);
+  --accent-text: var(--blue-deep);
+  --accent-wash: var(--blue-wash);
+  --accent-line: var(--blue-line);
+
+  --state-idle: var(--n-10);   --state-idle-bg: var(--n-3);      --state-idle-dot: var(--n-8);
+  --state-ok: var(--green-base);   --state-ok-bg: var(--green-wash);
+  --state-warn: var(--amber-base); --state-warn-bg: var(--amber-wash);
+  --state-bad: var(--red-base);    --state-bad-bg: var(--red-wash);
+
+  --shadow-1: 0 1px 2px rgba(15, 23, 40, 0.05);
+  --shadow-2: 0 8px 24px -6px rgba(15, 23, 40, 0.14), 0 2px 6px -2px rgba(15, 23, 40, 0.07);
+
+  --skeleton-base: var(--n-3);
+  --skeleton-sheen: var(--n-1);
+
+  /* ── legacy aliases: the three page stylesheets were written against
+     these names, so they keep resolving — now to system values. ── */
+  --white: #FFFFFF;
+  --blue-900: var(--accent-text);
+  --blue-hover: var(--accent-hover);
+  --blue-700: var(--accent);
+  --blue-600: var(--blue-line);
+  --blue-100: var(--accent-wash);
+  --error: var(--state-bad);
+  --error-bg: var(--state-bad-bg);
+  --error-border: var(--red-line);
+  --success: var(--state-ok);
+  --success-bg: var(--state-ok-bg);
+  --success-border: #9BDDBB;
+  --card-bg: var(--surface);
+}
+
+/* The dark palette, defined once. Both selectors below load the same
+   values so the OS setting and the in-app toggle can't drift apart. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1017;
+    --surface: #141922;
+    --surface-2: #191F29;
+    --surface-sunken: #10151D;
+    --border: #242C38;
+    --border-strong: #37414F;
+
+    --ink: #E9EDF4;
+    --ink-2: #BAC3D2;
+    --muted: #8D99AC;
+
+    --accent: #3D8BFF;
+    --accent-hover: #5AA0FF;
+    --accent-text: #7FB5FF;
+    --accent-wash: rgba(61, 139, 255, 0.14);
+    --accent-line: rgba(61, 139, 255, 0.42);
+
+    --state-idle: #AEB8C8;   --state-idle-bg: rgba(174, 184, 200, 0.13); --state-idle-dot: #8D99AC;
+    --state-ok: #45C98C;     --state-ok-bg: rgba(69, 201, 140, 0.14);
+    --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
+    --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 10px 28px -6px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+
+    --skeleton-base: #1D242F;
+    --skeleton-sheen: #283040;
+
+    --blue-600: var(--accent-hover);
+    --error-border: rgba(255, 122, 112, 0.4);
+    --success-border: rgba(69, 201, 140, 0.38);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1017;
+  --surface: #141922;
+  --surface-2: #191F29;
+  --surface-sunken: #10151D;
+  --border: #242C38;
+  --border-strong: #37414F;
+
+  --ink: #E9EDF4;
+  --ink-2: #BAC3D2;
+  --muted: #8D99AC;
+
+  --accent: #3D8BFF;
+  --accent-hover: #5AA0FF;
+  --accent-text: #7FB5FF;
+  --accent-wash: rgba(61, 139, 255, 0.14);
+  --accent-line: rgba(61, 139, 255, 0.42);
+
+  --state-idle: #AEB8C8;   --state-idle-bg: rgba(174, 184, 200, 0.13); --state-idle-dot: #8D99AC;
+  --state-ok: #45C98C;     --state-ok-bg: rgba(69, 201, 140, 0.14);
+  --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
+  --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 10px 28px -6px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+
+  --skeleton-base: #1D242F;
+  --skeleton-sheen: #283040;
+
+  --blue-600: var(--accent-hover);
+  --error-border: rgba(255, 122, 112, 0.4);
+  --success-border: rgba(69, 201, 140, 0.38);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3 · BASELINE — the few rules that belong to every page.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Persian script is cursive and tall; the browser default (~1.2) crowds
+   the ascenders and descenders together. */
+body { line-height: 1.7; }
+
+/* Keyboard users get a visible, branded ring; pointer users never see it.
+   Inputs keep their own focus treatment and are left out. */
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection { background: var(--accent); color: #fff; }
+
+/* Digits line up column-to-column instead of jittering by glyph width —
+   it matters most anywhere amounts or dates stack vertically. */
+.num, .amount, .fig { font-variant-numeric: tabular-nums; }

@@ -166,12 +166,14 @@ setInterval(() => {
   if (!currentSavedTheme()) applyTheme(autoThemeByTime());
 }, 5 * 60 * 1000);
 
-// ---- Analog clock face: build the ticks + Persian numerals once ----
+// ---- Analog clock face: build the hour ticks once ----
+// Only the twelve hour positions are drawn. At the size this face is
+// rendered, sixty minute ticks turn into a grey smudge and the numerals
+// are too small to read, so both were dropped rather than kept as noise.
 (function buildClockFace() {
   const ticksG = document.getElementById('acTicks');
-  const numsG = document.getElementById('acNumerals');
   if (!ticksG) return;
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 60; i += 5) {
     const angle = i * 6;
     const major = i % 5 === 0;
     const r1 = 47, r2 = major ? 41 : 44;
@@ -183,15 +185,6 @@ setInterval(() => {
     line.setAttribute('x2', x2); line.setAttribute('y2', y2);
     line.setAttribute('class', 'ac-tick' + (major ? ' ac-tick-major' : ''));
     ticksG.appendChild(line);
-  }
-  for (let h = 1; h <= 12; h++) {
-    const rad = (h * 30 - 90) * Math.PI / 180;
-    const x = 50 + 36 * Math.cos(rad), y = 50 + 36 * Math.sin(rad);
-    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    t.setAttribute('x', x); t.setAttribute('y', y);
-    t.setAttribute('class', 'ac-numeral');
-    t.textContent = toFa(h);
-    numsG.appendChild(t);
   }
 })();
 

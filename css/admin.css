@@ -1,26 +1,6 @@
-:root {
-  --card-bg: #FFFFFF;
-  --success-bg: #E8F6EE;
-  --border: #D8DEE8;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #E7EBF4;
-    --blue-900: #8FC3FF;
-    --blue-700: #4A9BFF;
-    --blue-600: #5AA6FF;
-    --blue-100: rgba(45,140,255,0.16);
-    --bg: #10141C;
-    --card-bg: #171C26;
-    --error: #FF7A70;
-    --error-bg: rgba(196,52,43,0.18);
-    --error-border: rgba(255,122,112,0.4);
-    --success: #4ADE80;
-    --success-bg: rgba(74,222,128,0.14);
-    --border: #2C3341;
-    --muted: #94A0B4;
-  }
-}
+/* Palette, theme handling and the shared scales live in shared.css.
+   Deferring to it is also what gives this panel the same manual
+   light/dark toggle the rest of the app has. */
 
 * { box-sizing: border-box; }
 body {
@@ -45,17 +25,17 @@ body {
   width: 100%;
   max-width: 380px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--card-bg);
   padding: 32px 28px;
 }
-.login-card h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+.login-card h1 { font-size: 21px; margin: 0 0 4px; text-align: center; }
 .login-card p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 24px; }
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .field input, .field select {
   width: 100%;
-  height: 42px;
+  height: var(--h-md);
   border: 1.5px solid var(--border);
   border-radius: 8px;
   padding: 0 12px;
@@ -64,7 +44,11 @@ body {
   background: var(--card-bg);
   color: var(--ink);
 }
-.field input:focus, .field select:focus { outline: none; border-color: var(--blue-600); }
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
 button {
   font-family: inherit;
   cursor: pointer;
@@ -72,12 +56,12 @@ button {
 }
 .btn-primary {
   width: 100%;
-  height: 44px;
+  height: var(--h-md);
   background: var(--blue-700);
   color: #fff;
   border-radius: 8px;
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-variation-settings: var(--f-btn);
 }
 .btn-primary:hover { background: var(--blue-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: default; }
@@ -104,7 +88,7 @@ button {
   flex-wrap: wrap;
   gap: 12px;
 }
-.topbar h1 { font-size: 20px; margin: 0; }
+.topbar h1 { font-size: 21px; margin: 0; }
 .topbar-user { display: flex; align-items: center; gap: 12px; }
 .admin-name { font-size: 13px; color: var(--muted); }
 .btn-ghost {
@@ -115,7 +99,27 @@ button {
   padding: 8px 16px;
   font-size: 13px;
 }
-.btn-ghost:hover { border-color: var(--blue-600); color: var(--blue-700); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-wash); }
+
+/* Square icon button, same footprint as the dashboard's so the two panels
+   feel like one product. */
+.btn-icon {
+  width: var(--h-sm);
+  height: var(--h-sm);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: transparent;
+  color: var(--muted);
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.btn-icon:hover { color: var(--accent-text); border-color: var(--accent); background: var(--accent-wash); }
+.btn-icon:active { transform: scale(0.94); }
+.btn-icon svg { width: 16px; height: 16px; }
+.btn-icon .icon-moon { display: none; }
+html[data-theme="dark"] .btn-icon .icon-sun { display: none; }
+html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
 
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
 .tab-btn {
@@ -147,7 +151,7 @@ button {
   background: var(--blue-700);
   color: #fff;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -156,9 +160,9 @@ button {
 .checkbox-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
 .checkbox-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
 
-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
+th { color: var(--muted); font-weight: 600; font-size: 13px; }
 tbody tr:hover { background: var(--blue-100); }
 .table-wrap { overflow-x: auto; }
 
@@ -203,13 +207,13 @@ tbody tr:hover { background: var(--blue-100); }
   max-width: 460px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 24px;
   max-height: 90vh;
   overflow-y: auto;
 }
-.modal-box h2 { font-size: 16px; margin: 0 0 18px; }
-.modal-sub { font-size: 12.5px; color: var(--muted); margin: -12px 0 16px; }
+.modal-box h2 { font-size: 15px; margin: 0 0 18px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin: -12px 0 16px; }
 .input-with-btn { display: flex; gap: 8px; }
 .input-with-btn input { flex: 1; }
 .btn-inline {
@@ -219,12 +223,12 @@ tbody tr:hover { background: var(--blue-100); }
   background: transparent;
   color: var(--ink);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   white-space: nowrap;
 }
 .btn-inline:hover { border-color: var(--blue-600); color: var(--blue-700); }
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-.modal-actions button { flex: 1; height: 42px; border-radius: 8px; font-size: 13.5px; font-weight: 600; }
+.modal-actions button { flex: 1; height: 42px; border-radius: 8px; font-size: 13px; font-weight: 600; }
 .modal-actions .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--ink); }
 .toast {
   position: fixed;
