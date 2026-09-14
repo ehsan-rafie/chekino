@@ -1,0 +1,26 @@
+/* Shared across chekino_login.html, chekino_dashboard.html, chekino_admin.html:
+   the brand font and the color tokens that are byte-identical on all three pages.
+   Anything that differs between pages (borders, surface colors, dark-mode strategy,
+   the dashboard's extra typography scale) stays in that page's own stylesheet. */
+@font-face {
+  font-family: 'IRANYekanX';
+  src: url('/fonts/IRANYekanXVFaNumVF.woff2') format('woff2'),
+       url('/fonts/IRANYekanXVFaNumVF.ttf') format('truetype');
+  font-weight: 100 1000;
+  font-display: swap;
+}
+
+:root {
+  --ink: #0F1B33;
+  --blue-900: #0A4ED6;
+  --blue-hover: #0A4ED6;
+  --blue-700: #0B5CFF;
+  --blue-600: #2D8CFF;
+  --blue-100: #EAF2FF;
+  --bg: #F4F6FA;
+  --error: #C4342B;
+  --error-bg: #FDECEC;
+  --error-border: #F3C6C2;
+  --success: #1A7A4C;
+  --muted: #64748B;
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>چکینو | ورود</title>
+<link rel="stylesheet" href="/css/shared.css">
+<link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <h1>چکینو</h1>
+    <p>سیستم مدیریت ثبت چک صیادی</p>
+  </div>
+
+  <div class="alert" id="alertBox">
+    <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <span id="alertText">لطفاً نام کاربری و رمز عبور خود را وارد کنید</span>
+  </div>
+
+  <form id="loginForm" novalidate>
+    <div class="field" id="usernameField">
+      <input type="text" id="username" placeholder=" " autocomplete="username" dir="ltr" style="text-align:right">
+      <label for="username">نام کاربری</label>
+    </div>
+
+    <div class="field" id="passField">
+      <input type="password" id="password" placeholder=" " autocomplete="current-password">
+      <label for="password">رمز عبور</label>
+      <span class="toggle-eye" id="eyeToggle">
+        <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </span>
+    </div>
+
+    <button type="submit" class="submit">ورود به سیستم</button>
+  </form>
+
+</div>
+
+<button class="tg-float" id="tgBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+  </svg>
+</button>
+<div class="tg-tooltip" id="tgTooltip">پشتیبانی تلگرام</div>
+
+<script src="/js/shared.js"></script>
+<script src="/js/login.js"></script>
+
+</body>
+</html>

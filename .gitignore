@@ -1,0 +1,9 @@
+.env
+.env.*
+credentials.md
+node_modules/
+.claude/
+doprax_vm.html
+*.log
+.DS_Store
+Thumbs.db
