@@ -2902,6 +2902,7 @@ const tableStats = document.getElementById('tableStats');
 const chequeTable = document.getElementById('chequeTable');
 const chequeBody = document.getElementById('chequeBody');
 const chequeCards = document.getElementById('chequeCards');
+const tableWrap = document.getElementById('tableWrap');
 const tableEmpty = document.getElementById('tableEmpty');
 const tablePager = document.getElementById('tablePager');
 
@@ -3039,11 +3040,16 @@ function buildReceiptMessage(c) {
   return `چک به شماره سریال ${toFa(c.serial)}، به شناسه صیادی ${toFa(c.sayad)}، به مبلغ ${amountFa} ریال و تاریخ سررسید ${faDate(c.dueDate)} در وجه ${c.benef} با کد ملی ${toFa(c.nid)} در سامانه صیاد ثبت گردید.
 ${faDate(c.statusChangedAt)}`;
 }
+// Rows without a receipt still render an empty slot of the same width, so the
+// eye button lands in the same spot on every row instead of sliding around.
 function receiptButtonHtml(c) {
-  if (c.status !== 'done') return '';
+  if (c.status !== 'done') return '<span class="row-actions-slot" aria-hidden="true"></span>';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" title="کپی پیام رسید ثبت">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
+}
+function rowActionsHtml(c) {
+  return `<span class="row-actions">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</span>`;
 }
 function showToast(message) {
   const el = document.getElementById('appToast');
@@ -3259,8 +3265,8 @@ function clearOneFilter(key) {
 
 function updateTableHeadStrip(list) {
   tableCountBadge.textContent = `${toFa(list.length)} چک`;
-  reportBtn.style.display = list.length === 0 ? 'none' : 'flex';
-  excelExportBtn.style.display = list.length === 0 ? 'none' : 'flex';
+  exportCluster.style.display = list.length === 0 ? 'none' : 'inline-flex';
+  if (list.length === 0) closeExportMenu();
   const archivedCount = showArchivedCheckbox.checked ? 0 : loadCheques().filter(isArchived).length;
   const archivedStat = archivedCount > 0
     ? `<span class="ths-stat">بایگانی‌شده (مخفی): <b>${toFa(archivedCount)}</b></span>` : '';
@@ -3600,11 +3606,36 @@ function generateReport() {
   reportWin.document.write(html);
   reportWin.document.close();
 }
-reportBtn.addEventListener('click', generateReport);
+// ---- Export cluster: the report button opens into a PDF / Excel pair
+// rather than crowding the strip with three buttons at rest. ----
+const exportCluster = document.getElementById('exportCluster');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+function closeExportMenu() {
+  if (!exportCluster.classList.contains('open')) return;
+  exportCluster.classList.remove('open');
+  reportBtn.setAttribute('aria-expanded', 'false');
+}
+function openExportMenu() {
+  exportCluster.classList.add('open');
+  reportBtn.setAttribute('aria-expanded', 'true');
+  pushBackGuard();
+}
+reportBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (exportCluster.classList.contains('open')) closeExportMenu();
+  else openExportMenu();
+});
+// Clicking anywhere else rolls it back up, the same way the status menu behaves.
+document.addEventListener('click', (e) => {
+  if (!exportCluster.contains(e.target)) closeExportMenu();
+});
+exportPdfBtn.addEventListener('click', () => { closeExportMenu(); generateReport(); });
+exportExcelBtn.addEventListener('click', () => { closeExportMenu(); exportChecksToExcel(); });
 
 // ---- Excel export: same filtered/sorted list the on-screen table and the
 // print report use, so what a user exports always matches what they see. ----
-const excelExportBtn = document.getElementById('excelExportBtn');
 function exportChecksToExcel() {
   const all = getFilteredCheques().slice().reverse();
   if (!all.length) return;
@@ -3634,7 +3665,6 @@ function exportChecksToExcel() {
   const [jy, jm, jd] = todayJalali();
   XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
 }
-excelExportBtn.addEventListener('click', exportChecksToExcel);
 
 function renderTable() {
   const all = getFilteredCheques().slice().reverse();      // newest first
@@ -3645,6 +3675,8 @@ function renderTable() {
 
   updateTableHeadStrip(all);
   renderDueAlertBar();
+  // First render means the data is in — the loading skeleton can go.
+  tableWrap.classList.remove('is-loading');
   tableEmpty.style.display = all.length ? 'none' : 'flex';
   chequeTable.style.display = all.length ? '' : 'none';
   chequeCards.style.display = all.length ? '' : 'none';
@@ -3673,7 +3705,7 @@ function renderTable() {
       <td data-label="وضعیت" class="status-cell">
         ${statusHtml}${reason}
       </td>
-      <td data-label="" class="col-eye">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</td>
+      <td data-label="" class="col-eye">${rowActionsHtml(c)}</td>
     </tr>`;
   }).join('');
 
@@ -3695,7 +3727,7 @@ function renderTable() {
       </div>
       <div class="cq-bottom">
         ${statusButtonHtml(c, st)}
-        <div class="cq-icon-group">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</div>
+        <div class="cq-icon-group">${rowActionsHtml(c)}</div>
       </div>
     </div>`;
   }).join('');
@@ -4293,6 +4325,7 @@ document.addEventListener('keydown', (e) => {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (channelList.classList.contains('show')) { closeChannelList(); return; }
   if (activePopover) { closePopover(); return; }
+  if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return; }
@@ -4321,6 +4354,7 @@ function closeTopmostLayer() {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (channelList.classList.contains('show')) { closeChannelList(); return true; }
   if (activePopover) { closePopover(); return true; }
+  if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return true; }
