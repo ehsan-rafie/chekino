@@ -4,15 +4,13 @@ const TOKEN_KEY = 'chekino_admin_token';
 // ---- Theme: same key and same rules as the dashboard, so an admin who set
 // dark on one side of the product doesn't land in light on the other ----
 const THEME_KEY = 'chekino_theme_v1';
-function autoThemeByTime() {
-  const h = new Date().getHours();
-  return (h >= 19 || h < 6) ? 'dark' : 'light';
-}
+// Dark by default, same as the dashboard — a saved choice always wins.
+const DEFAULT_THEME = 'dark';
 function currentSavedTheme() {
   try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
 }
 function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
-applyTheme(currentSavedTheme() || autoThemeByTime());
+applyTheme(currentSavedTheme() || DEFAULT_THEME);
 document.getElementById('themeToggleBtn').addEventListener('click', () => {
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   applyTheme(next);

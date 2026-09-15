@@ -116,10 +116,12 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
 const THEME_KEY = 'chekino_theme_v1';
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 
-function autoThemeByTime() {
-  const h = new Date().getHours();
-  return (h >= 19 || h < 6) ? 'dark' : 'light';
-}
+// Dark is the default, not a time-of-day guess. The palette is built for a
+// near-black ground — that is where the border tiers and the lit edges do
+// their work — and a session that silently flipped to light at 6am was
+// changing the product's appearance for a reason the user never asked for.
+// A saved choice still wins, in both directions, forever.
+const DEFAULT_THEME = 'dark';
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
 }
@@ -127,8 +129,7 @@ function currentSavedTheme() {
   try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
 }
 function initTheme() {
-  const saved = currentSavedTheme();
-  applyTheme(saved || autoThemeByTime());
+  applyTheme(currentSavedTheme() || DEFAULT_THEME);
 }
 themeToggleBtn.addEventListener('click', () => {
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -160,11 +161,6 @@ function decodeJwtPayload(token) {
     document.getElementById('companyNameLabel').textContent = payload.name;
   }
 })();
-// Re-checks every few minutes so an untouched (no manual choice) session
-// still crosses over automatically as the time of day changes.
-setInterval(() => {
-  if (!currentSavedTheme()) applyTheme(autoThemeByTime());
-}, 5 * 60 * 1000);
 
 // ---- Analog clock face: build the hour ticks once ----
 // Only the twelve hour positions are drawn. At the size this face is

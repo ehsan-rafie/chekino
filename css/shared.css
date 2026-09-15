@@ -71,11 +71,17 @@
      tighter than the old 56px so more cheques fit on one screen. */
   --h-sm: 32px; --h-md: 40px; --h-lg: 48px; --h-row: 44px;
 
-  /* ── font weight axes (IRANYekanX is variable, 100–1000) ── */
-  --f-brand:  'wght' 830, 'dots' 2;
-  --f-title:  'wght' 720, 'dots' 2;
+  /* ── font weight axes (IRANYekanX is variable, 100–1000) ──
+     Large text is deliberately not bold. The weight that reads as premium
+     at display sizes is a medium one — linear.app sets its 64px headline at
+     510 — and letting size carry the emphasis instead of weight is most of
+     what separates an elegant heading from a shouty one. These sit a little
+     above Inter's numbers because Persian script, being cursive and
+     lower-contrast, thins out faster than Latin at the same weight. */
+  --f-brand:  'wght' 700, 'dots' 2;
+  --f-title:  'wght' 620, 'dots' 2;
   --f-label:  'wght' 600, 'dots' 2;
-  --f-btn:    'wght' 650, 'dots' 2;
+  --f-btn:    'wght' 600, 'dots' 2;
   --f-value:  'wght' 520, 'dots' 2;
   --f-num:    'wght' 560, 'dots' 2;
   --f-body:   'wght' 430, 'dots' 2;
@@ -138,6 +144,8 @@
      dark one that reads as contact, and a wide soft one that reads as height. */
   --shadow-2: 0 1px 2px rgba(15, 23, 40, 0.10), 0 12px 32px -8px rgba(15, 23, 40, 0.18);
   --shadow-float: var(--shadow-2);
+  /* On light there is no lit edge to simulate — the border already reads. */
+  --inset-hairline: none;
 
   --skeleton-base: var(--n-3);
   --skeleton-sheen: var(--n-1);
@@ -163,73 +171,109 @@
    values so the OS setting and the in-app toggle can't drift apart. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0C1017;
-    --surface: #141922;
-    --surface-2: #191F29;
-    --surface-sunken: #10151D;
-    --border-subtle: #1C232E;
-    --border: #242C38;
-    --border-strong: #37414F;
+    /* Near-black, neutral — not a blue-black. The surfaces above it are the
+       same colour lifted by a few percent of white, which is how the site
+       this is modelled on separates layers: by light, not by hue. */
+    --bg: #08090A;
+    --surface: #0F1011;        /* bg + 3% white */
+    --surface-2: #141516;      /* bg + 5% white */
+    --surface-sunken: #0B0C0D;
 
-    --ink: #E9EDF4;
-    --ink-2: #BAC3D2;
-    --muted: #8D99AC;
+    /* Lines are translucent white rather than a lighter grey. On a near-black
+       ground that reads as an edge catching light instead of a stroke drawn
+       on top, and it stays correct over whatever surface sits beneath it. */
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.12);
 
-    --accent: #3D8BFF;
-    --accent-hover: #5AA0FF;
-    --accent-text: #7FB5FF;
-    --accent-wash: rgba(61, 139, 255, 0.14);
-    --accent-line: rgba(61, 139, 255, 0.42);
+    --ink: #F7F8F8;
+    --ink-2: #D0D6E0;
+    --muted: #8A8F98;
 
-    --state-idle: #AEB8C8;   --state-idle-bg: rgba(174, 184, 200, 0.13); --state-idle-dot: #8D99AC;
-    --state-ok: #45C98C;     --state-ok-bg: rgba(69, 201, 140, 0.14);
-    --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
-    --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
+    --accent: #4C8DFF;
+    --accent-hover: #6BA3FF;
+    --accent-text: #8FBAFF;
+    --accent-wash: rgba(76, 141, 255, 0.13);
+    --accent-line: rgba(76, 141, 255, 0.38);
+
+    --state-idle: #AEB8C8;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8A8F98;
+    --state-ok: #4CC38A;     --state-ok-bg: rgba(76, 195, 138, 0.13);
+    --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.13);
+    --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.13);
 
     --shadow-1: none;
-    --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 36px -8px rgba(0, 0, 0, 0.7);
+    /* Four stacked shadows that tighten as they darken, the way the site does
+       it. One big soft shadow reads as a drop shadow; this reads as an object
+       resting on a surface. */
+    --shadow-2:
+      0 8px 2px rgba(0, 0, 0, 0),
+      0 5px 2px rgba(0, 0, 0, 0.02),
+      0 3px 2px rgba(0, 0, 0, 0.06),
+      0 1px 1px rgba(0, 0, 0, 0.10),
+      0 16px 40px -12px rgba(0, 0, 0, 0.7);
+    /* An inner hairline of white — what makes a dark panel look lit from
+       inside its own edge rather than cut out of the page. */
+    --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
-    --skeleton-base: #1D242F;
-    --skeleton-sheen: #283040;
+    --skeleton-base: rgba(255, 255, 255, 0.05);
+    --skeleton-sheen: rgba(255, 255, 255, 0.10);
 
     --blue-600: var(--accent-line);
-    --error-border: rgba(255, 122, 112, 0.4);
-    --success-border: rgba(69, 201, 140, 0.38);
+    --error-border: rgba(255, 128, 120, 0.32);
+    --success-border: rgba(76, 195, 138, 0.32);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0C1017;
-  --surface: #141922;
-  --surface-2: #191F29;
-  --surface-sunken: #10151D;
-  --border-subtle: #1C232E;
-  --border: #242C38;
-  --border-strong: #37414F;
+  /* Near-black, neutral — not a blue-black. The surfaces above it are the
+     same colour lifted by a few percent of white, which is how the site
+     this is modelled on separates layers: by light, not by hue. */
+  --bg: #08090A;
+  --surface: #0F1011;        /* bg + 3% white */
+  --surface-2: #141516;      /* bg + 5% white */
+  --surface-sunken: #0B0C0D;
 
-  --ink: #E9EDF4;
-  --ink-2: #BAC3D2;
-  --muted: #8D99AC;
+  /* Lines are translucent white rather than a lighter grey. On a near-black
+     ground that reads as an edge catching light instead of a stroke drawn
+     on top, and it stays correct over whatever surface sits beneath it. */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
 
-  --accent: #3D8BFF;
-  --accent-hover: #5AA0FF;
-  --accent-text: #7FB5FF;
-  --accent-wash: rgba(61, 139, 255, 0.14);
-  --accent-line: rgba(61, 139, 255, 0.42);
+  --ink: #F7F8F8;
+  --ink-2: #D0D6E0;
+  --muted: #8A8F98;
 
-  --state-idle: #AEB8C8;   --state-idle-bg: rgba(174, 184, 200, 0.13); --state-idle-dot: #8D99AC;
-  --state-ok: #45C98C;     --state-ok-bg: rgba(69, 201, 140, 0.14);
-  --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
-  --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
+  --accent: #4C8DFF;
+  --accent-hover: #6BA3FF;
+  --accent-text: #8FBAFF;
+  --accent-wash: rgba(76, 141, 255, 0.13);
+  --accent-line: rgba(76, 141, 255, 0.38);
+
+  --state-idle: #AEB8C8;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8A8F98;
+  --state-ok: #4CC38A;     --state-ok-bg: rgba(76, 195, 138, 0.13);
+  --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.13);
+  --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.13);
 
   --shadow-1: none;
-  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 36px -8px rgba(0, 0, 0, 0.7);
+  /* Four stacked shadows that tighten as they darken, the way the site does
+     it. One big soft shadow reads as a drop shadow; this reads as an object
+     resting on a surface. */
+  --shadow-2:
+    0 8px 2px rgba(0, 0, 0, 0),
+    0 5px 2px rgba(0, 0, 0, 0.02),
+    0 3px 2px rgba(0, 0, 0, 0.06),
+    0 1px 1px rgba(0, 0, 0, 0.10),
+    0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  /* An inner hairline of white — what makes a dark panel look lit from
+     inside its own edge rather than cut out of the page. */
+  --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
-  --skeleton-base: #1D242F;
-  --skeleton-sheen: #283040;
+  --skeleton-base: rgba(255, 255, 255, 0.05);
+  --skeleton-sheen: rgba(255, 255, 255, 0.10);
 
   --blue-600: var(--accent-line);
-  --error-border: rgba(255, 122, 112, 0.4);
-  --success-border: rgba(69, 201, 140, 0.38);
+  --error-border: rgba(255, 128, 120, 0.32);
+  --success-border: rgba(76, 195, 138, 0.32);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -449,4 +493,94 @@ kbd {
   .cp-box { max-height: 78vh; }
   .cp-hint { display: none; }
   .cp-foot { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   5 · THE SITE FINISH
+   Four details carried over from linear.app itself. Each is small; the
+   combination is most of why that page reads as expensive.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Tracking tightens as type grows ──
+   Letter-spacing on the site scales negatively with size: roughly -0.022em
+   at display sizes, easing to normal by body copy. Large text set at default
+   tracking is the single most common tell of an unconsidered interface. */
+.brand h1,
+.header-logo,
+.topbar h1 { letter-spacing: -0.02em; }
+
+/* ── Buttons are pills ──
+   Eighty-two elements on that page carry a 9999px radius. It is the most
+   recognisable thing about the design after the palette. Inputs and data
+   surfaces keep the 6px from the system scale, so the shape itself tells you
+   which things you press and which things you read. */
+:root button.btn-primary,
+:root button.btn-add,
+:root button.submit,
+:root .add-check-btn,
+:root .btn-ghost,
+:root .icon-action,
+:root .filter-pill-btn,
+:root .filter-clear-btn,
+:root .ths-report-btn,
+:root .tab-btn,
+:root .cp-item,
+:root .modal-actions button,
+:root .confirm-actions button,
+:root .btn-inline,
+:root .status-btn,
+:root .status-filter-chip,
+:root .ths-count,
+:root .badge,
+:root .ms-chip,
+:root .file-chip,
+:root .ac-tag,
+:root .due-alert-count,
+:root .export-opt,
+:root .st-opt { border-radius: var(--rad-pill); }
+
+/* ── Panels are lit from inside their own edge ──
+   A translucent white hairline set inside the border. On the light theme it
+   resolves to nothing, because there is no darkness for an edge to catch. */
+:root .table-wrap,
+:root .filter-bar,
+:root .due-alert-bar,
+:root .card,
+:root .login-card,
+:root .modal-box,
+:root .confirm-box,
+:root .cp-box,
+:root .filter-popover,
+:root .cal-popup,
+:root .status-menu,
+:root .ac-list,
+:root .ms-list { box-shadow: var(--shadow-1), var(--inset-hairline); }
+
+/* The floating set keeps its own depth, with the hairline on top of it. */
+:root .modal-box,
+:root .confirm-box,
+:root .cp-box,
+:root .filter-popover,
+:root .cal-popup,
+:root .status-menu,
+:root .ac-list,
+:root .ms-list { box-shadow: var(--shadow-2), var(--inset-hairline); }
+
+/* ── An ambient pool of light behind the page ──
+   Not a gradient people should notice; a very slight lift at the top of the
+   viewport so the page doesn't read as a flat sheet of black. Fixed, so it
+   costs one paint and never moves. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(60% 50% at 50% 0%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 100%);
+}
+:root:not([data-theme="dark"]) body::before { background: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body::before {
+    background: radial-gradient(60% 50% at 50% 0%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 100%);
+  }
 }
