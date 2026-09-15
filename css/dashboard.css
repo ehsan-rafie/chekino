@@ -104,7 +104,7 @@ html, body {
   user-select: none;
   flex-shrink: 0;
 }
-.header-brand-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+.header-brand-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; margin-inline: 4px; }
 .company-name {
   font-size: 13px;
   color: var(--muted);
@@ -112,7 +112,8 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 220px;
+  padding-inline-end: 4px;
 }
 @media (max-width: 720px) { .company-name, .header-brand-sep { display: none; } }
 
@@ -175,24 +176,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .header-support-btn:hover { background: var(--blue-100); }
 .header-support-btn svg { width: 19px; height: 19px; }
 @media (max-width: 720px) { .header-support-btn { display: flex; } }
-
-/* A calendar icon and the Jalali date — a business tool that manages due
-   dates by the Iranian calendar is exactly where "today's date" earns its
-   place in the header; the second-precision ticking clock it replaced
-   didn't carry information anyone here acts on. */
-.header-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 10px;
-  font-size: 12.5px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-  white-space: nowrap;
-}
-.header-date svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.75; }
-@media (max-width: 560px) { .header-date { display: none; } }
 
 /* A small shared tooltip for table cells that carry extra info on hover
    (serial→sayad id, owner→send date, etc.), positioned via JS. */
@@ -663,29 +646,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-people-row .form-field { margin-bottom: 0; }
 .filter-people-row .ac-input { height: 42px; font-size: 13px; padding: 0 12px; }
 
-.status-chip-row { display: flex; flex-direction: column; gap: 8px; }
+/* Archiving is a function of how long a cheque has sat, so the toggle for
+   it lives with the date filter now that the status filter is gone. */
 .archive-toggle {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
-.status-filter-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 13px;
-  font-variation-settings: var(--f-body);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.status-filter-chip .st-dot { width: 9px; height: 9px; border-radius: 50%; }
-.status-filter-chip.active { border-color: var(--blue-600); background: var(--blue-100); }
 
 @media (max-width: 600px) {
   .filter-bar { position: static; top: auto; }
@@ -3300,28 +3267,28 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border-radius: var(--rad-card);
   overflow: hidden;
   padding: var(--s3);
+  /* Never compress. The column list is a flex column with a capped
+     height, and a flex item shrinks by default — which squashed every
+     card in a full column until its content was clipped. Cards keep
+     their size; the column scrolls instead. */
+  flex-shrink: 0;
   cursor: grab;
   transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
   touch-action: pan-y;   /* vertical scroll still works; the drag handler owns horizontal/press-hold */
 }
 .check-card:hover { border-color: var(--border-strong); }
 .check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* A coloured top edge, matched to the column's own badge colour — the one
-   signal that survives even when a card is seen on its own, out of column
-   context (cropped into a screenshot, a shared link). Safe against the
-   card's own rounded corners now that overflow: hidden actually clips it. */
-.check-card.st-pending { border-top: 3px solid var(--state-idle-dot); }
-.check-card.st-done { border-top: 3px solid var(--state-ok); }
-.check-card.st-problem { border-top: 3px solid var(--state-warn); }
 
 /* A fixed two-column grid: every row pairs one right-aligned field with
    one left-aligned field, always the same two fields in the same spots,
    so scanning down a column reads like scanning a table instead of
-   hunting for where a given field landed on this particular card. */
-.chk-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
-.chk-row-mid { margin-top: var(--s2); align-items: flex-start; }
+   hunting for where a given field landed on this particular card. Every
+   row is always present — the reason line included, empty or not — which
+   is what keeps every card in every column exactly the same height. */
+.chk-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-width: 0; }
+.chk-row-mid { margin-top: 10px; align-items: flex-start; }
 .chk-row-bottom {
-  margin-top: var(--s3);
+  margin-top: 10px;
   padding-top: var(--s2);
   border-top: 1px solid var(--border-subtle);
   align-items: center;
@@ -3330,12 +3297,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .chk-due {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: var(--t-micro);
-  color: var(--muted);
+  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
-.chk-due svg { width: 13px; height: 13px; opacity: 0.7; flex-shrink: 0; }
+.chk-due svg { width: 13px; height: 13px; opacity: 0.6; flex-shrink: 0; }
 /* A cheque still waiting to be registered, with its due date within reach,
    needs to read as urgent before the text is even parsed — colour first,
    digits second. Resolved once it leaves "منتظر ثبت", by design. */
@@ -3350,34 +3318,41 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .chk-serial b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
 
-.chk-benef-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.chk-benef-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .chk-benef {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--t-value);
   color: var(--ink);
   font-variation-settings: var(--f-title);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
 }
+.chk-benef svg { width: 14px; height: 14px; opacity: 0.45; flex-shrink: 0; }
+.chk-benef span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chk-nid {
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-hint);
+  letter-spacing: 0.02em;
+  padding-inline-start: 19px;   /* lines up under the name, clear of the person icon */
 }
 .chk-amount {
   font-size: var(--t-cap);
-  color: var(--ink-2);
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.chk-sent { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-micro); color: var(--muted); }
+.chk-sent { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-micro); color: var(--muted); min-width: 0; }
+.chk-sent > svg { width: 13px; height: 13px; opacity: 0.55; flex-shrink: 0; }
 .chk-sent-date { font-variant-numeric: tabular-nums; }
 .chk-platform-badge {
   width: 16px; height: 16px;
@@ -3392,14 +3367,23 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .chk-platform-plain { border: 1px solid var(--border); }
 .chk-platform-plain svg { width: 12px; height: 12px; }
 
+/* Rendered on every card, filled only on a problem one. Keeping the slot
+   in the layout either way is what makes all three columns' cards line
+   up at the same height instead of stepping up and down the board. */
 .chk-reason {
-  margin-top: var(--s2);
-  padding: 6px 9px;
+  margin-top: 10px;
+  padding: 5px 9px;
   border-radius: var(--rad-ctl);
-  background: var(--state-warn-bg);
-  color: var(--state-warn);
+  background: var(--state-bad-bg);
+  color: var(--state-bad);
   font-size: var(--t-micro);
+  line-height: 1.5;
+  height: 27px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.chk-reason-empty { visibility: hidden; }
 .chk-icon-group { display: flex; align-items: center; gap: 2px; }
 
 /* ---- Dragging ---- */
@@ -3464,25 +3448,25 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s3);
   margin-bottom: var(--s4);
 }
-/* Search, the filter pills and "clear filters" read as one instrument —
-   boxed together so the eye knows where that instrument ends and the
-   report/export action (outside the box) begins. */
+/* One bar across the full width of the board below it: search, the filter
+   pills and "clear filters" grouped at the start, the report/export
+   cluster pinned to the far end inside the same frame — so the bar spans
+   the same span the three columns do, with nothing floating outside it. */
 .board-search-box {
   display: flex;
   align-items: center;
   gap: var(--s2);
+  width: 100%;
   padding: 5px;
   border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
-  flex-shrink: 0;
 }
 .board-search-box .search-box {
-  flex: 0 1 300px;
+  flex: 0 1 320px;
   min-width: 190px;
   height: 34px;
   padding: 0 var(--s3);
@@ -3498,38 +3482,47 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   opacity: 0.8;
 }
 .board-search-box .search-box:focus-within .search-kbd { display: none; }
+/* The one auto margin in the bar, and it's inside a single bordered
+   frame — so the space it opens reads as the bar's own span, not as two
+   disconnected clusters with a dead gap between them. */
+.board-search-box .export-cluster { margin-inline-start: auto; }
 
-.board-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  flex-shrink: 0;
-}
-
-/* The four filter types sit right in the box now, next to the search
-   box — no funnel icon gating them behind a click. */
+/* Date / amount / people — filtering by status went with the board,
+   since the three columns already are that filter. */
 .board-search-box .filter-pill-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .board-search-box .filter-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 34px;
   padding: 0 12px;
   font-size: 12.5px;
 }
+.board-search-box .filter-pill-btn svg { width: 14px; height: 14px; opacity: 0.75; flex-shrink: 0; }
+.board-search-box .filter-pill-btn.active svg,
+.board-search-box .filter-pill-btn.open svg { opacity: 1; }
 .board-search-box .filter-clear-btn { height: 34px; flex-shrink: 0; }
 
+@media (max-width: 860px) {
+  .board-search-box .filter-pill-btn span,
+  .board-search-box .filter-pill-btn { font-size: 12px; }
+}
 @media (max-width: 700px) {
   .board-page-head { flex-wrap: wrap; }
   .board-page-actions { width: 100%; }
   .board-page-actions .add-check-btn { flex: 1; justify-content: center; }
   .board-toolbar { flex-wrap: wrap; }
-  .board-search-box { width: 100%; flex-wrap: wrap; }
+  .board-search-box { flex-wrap: wrap; }
   .board-search-box .search-box { max-width: none; flex-basis: 100%; }
+  .board-search-box .export-cluster { margin-inline-start: 0; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   BOARD COLUMN — a coloured badge (icon slot via the dot + name + a
-   count in its own pill) instead of a plain header bar; no visible
-   column border or background, cards sit directly on the page the way
-   the reference shows — separation comes from the column gap alone.
+   BOARD COLUMN — a coloured badge (icon + name + a count in its own
+   pill) heading a boxed panel, and a wash of that same status colour
+   fading down the top of the panel. The wash is what tells the three
+   columns apart at a glance; the cards inside stay plain white, so
+   nothing on the card itself has to carry a status stripe.
    ═══════════════════════════════════════════════════════════════════ */
 
 .board-column {
@@ -3537,6 +3530,17 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   border-radius: var(--rad-card);
   min-height: 0;
+}
+.board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(18, 58, 154, 0.09), rgba(18, 58, 154, 0) 180px), var(--surface-2); }
+.board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(20, 128, 92, 0.10), rgba(20, 128, 92, 0) 180px), var(--surface-2); }
+.board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(194, 69, 60, 0.09), rgba(194, 69, 60, 0) 180px), var(--surface-2); }
+:root[data-theme="dark"] .board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(92, 135, 232, 0.12), rgba(92, 135, 232, 0) 180px), var(--surface-2); }
+:root[data-theme="dark"] .board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(76, 195, 138, 0.12), rgba(76, 195, 138, 0) 180px), var(--surface-2); }
+:root[data-theme="dark"] .board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(255, 128, 120, 0.12), rgba(255, 128, 120, 0) 180px), var(--surface-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(92, 135, 232, 0.12), rgba(92, 135, 232, 0) 180px), var(--surface-2); }
+  :root:not([data-theme="light"]) .board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(76, 195, 138, 0.12), rgba(76, 195, 138, 0) 180px), var(--surface-2); }
+  :root:not([data-theme="light"]) .board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(255, 128, 120, 0.12), rgba(255, 128, 120, 0) 180px), var(--surface-2); }
 }
 .board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
@@ -3590,7 +3594,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
 }
 
-.board-col-add {
+/* Add-a-cheque and export-this-column: both stay out of the way until
+   the column is hovered, then sit together at the head's far end. */
+.board-col-tools { display: flex; align-items: center; gap: 2px; }
+.board-col-btn {
   width: 26px; height: 26px;
   display: none;              /* revealed on column hover, see below */
   align-items: center;
@@ -3602,10 +3609,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
 .board-col-head { display: flex; align-items: center; justify-content: space-between; }
-.board-col-add svg { width: 15px; height: 15px; }
-.board-col-add:hover { background: var(--surface-2); color: var(--ink); }
-.board-column:hover .board-col-add,
-.board-col-add:focus-visible { display: inline-flex; }
+.board-col-btn svg { width: 15px; height: 15px; }
+.board-col-btn:hover { background: var(--surface); color: var(--ink); }
+.board-column:hover .board-col-btn,
+.board-col-btn:focus-visible { display: inline-flex; }
 
 .board-col-list { padding: var(--s3); }
 

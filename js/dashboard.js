@@ -33,8 +33,6 @@ function gregorianToJalali(gy, gm, gd) {
   return [jy, jm, jd];
 }
 
-const weekdayNames = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
-
 function pad2(n) { return String(n).padStart(2, '0'); }
 
 // ---- Jalali to Gregorian conversion (for calendar rendering) ----
@@ -160,19 +158,9 @@ function decodeJwtPayload(token) {
   }
 })();
 
-// ---- Header date, Jalali ----
-// Just today's date — a business tool built around due dates earns its
-// header space with the calendar it actually manages checks by, not with
-// a ticking analog clock face nobody here needs second-level precision from.
-function updateClock() {
-  const now = new Date();
-  const [jy, jm, jd] = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  const weekday = weekdayNames[now.getDay()];
-  const dateStr = `${weekday}، ${jy}/${pad2(jm)}/${pad2(jd)}`;
-  document.getElementById('clockDate').textContent = toFa(dateStr);
-}
-updateClock();
-setInterval(updateClock, 60000);
+// The header carries no clock and no date any more: every date that
+// matters in this app is on a cheque, and the date picker fills today in
+// by itself, so a header copy of it was one more thing to read past.
 
 // ---- Add check button (opens modal) ----
 const modalOverlay = document.getElementById('modalOverlay');
@@ -2895,7 +2883,6 @@ const activeFiltersRow = document.getElementById('activeFiltersRow');
 const popDate = document.getElementById('popDate');
 const popAmount = document.getElementById('popAmount');
 const popPeople = document.getElementById('popPeople');
-const popStatus = document.getElementById('popStatus');
 const filterRangeField = document.getElementById('filterRangeField');
 const filterRangeWrap = document.getElementById('filterRangeWrap');
 const filterRangeInput = document.getElementById('filterRangeInput');
@@ -2912,7 +2899,6 @@ const filterPartyList = document.getElementById('filterPartyList');
 const filterBenefField = document.getElementById('filterBenefField');
 const filterBenefInput = document.getElementById('filterBenefInput');
 const filterBenefList = document.getElementById('filterBenefList');
-const statusFilterRow = document.getElementById('statusFilterRow');
 const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
 const filterClearBtn = document.getElementById('filterClearBtn');
 const boardColumns = document.getElementById('boardColumns');
@@ -2920,9 +2906,9 @@ const boardWrap = document.getElementById('boardWrap');
 const tableEmpty = document.getElementById('tableEmpty');
 
 const STATUSES = [
-  { id: 'pending', name: 'منتظر ثبت',   color: '#2D8CFF', cls: 'st-pending' },
-  { id: 'done',    name: 'ثبت شد',      color: '#1A7A4C', cls: 'st-done' },
-  { id: 'problem', name: 'مشکل در ثبت', color: '#E8833A', cls: 'st-problem' }
+  { id: 'pending', name: 'منتظر ثبت',   color: '#123A9A', cls: 'st-pending' },
+  { id: 'done',    name: 'ثبت شد',      color: '#14805C', cls: 'st-done' },
+  { id: 'problem', name: 'مشکل در ثبت', color: '#C2453C', cls: 'st-problem' }
 ];
 const STATUSES_IDS = new Set(STATUSES.map(s => s.id));
 let openStatusMenu = null;
@@ -2931,6 +2917,9 @@ function statusById(id) { return STATUSES.find(s => s.id === id) || STATUSES[0];
 
 function faDate(str) { return str ? toFa(str) : '—'; }
 function faAmount(raw) { return raw ? toFa(groupDigits(raw)) : '—'; }
+// Cards and anywhere else a figure stands alone need the unit spelled out —
+// an unlabelled number on a cheque card is ambiguous by itself.
+function faAmountRial(raw) { return raw ? `${toFa(groupDigits(raw))} ریال` : '—'; }
 
 
 function statusButtonHtml(c, st) {
@@ -2952,12 +2941,12 @@ function buildReceiptMessage(c) {
   return `چک به شماره سریال ${toFa(c.serial)}، به شناسه صیادی ${toFa(c.sayad)}، به مبلغ ${amountFa} ریال و تاریخ سررسید ${faDate(c.dueDate)} در وجه ${c.benef} با کد ملی ${toFa(c.nid)} در سامانه صیاد ثبت گردید.
 ${faDate(c.statusChangedAt)}`;
 }
-// Rows without a receipt still render an empty slot of the same width, so the
-// eye button lands in the same spot on every row instead of sliding around.
-// The slot is placed inboard of the eye (see rowActionsHtml) so the gap falls
-// between the two columns rather than along the table's outer edge.
+// Only a registered cheque has a receipt message to copy. Nothing is
+// rendered in its place: the eye is the last child either way, so it stays
+// flush with the card's edge, and the status dot simply sits closer — no
+// invisible 34px placeholder opening a gap in the middle of the group.
 function receiptButtonHtml(c) {
-  if (c.status !== 'done') return '<span class="row-actions-slot" aria-hidden="true"></span>';
+  if (c.status !== 'done') return '';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" title="کپی پیام رسید ثبت">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
@@ -3021,7 +3010,6 @@ filterRangeWrap.addEventListener('click', (e) => {
 // =========================================================
 // ---- Search & filter engine ----
 // =========================================================
-let statusFilterSet = new Set();
 
 function amountToRial(str) { return parseInt(str, 10) || 0; }
 
@@ -3108,11 +3096,6 @@ function getFilteredCheques() {
       normalizeName(c.benef).includes(benefNorm) || (benefDigits && toEnDigits(c.nid).includes(benefDigits)));
   }
 
-  // status — any number of the three may be picked
-  if (statusFilterSet.size > 0) {
-    list = list.filter(c => statusFilterSet.has(c.status || 'pending'));
-  }
-
   return list;
 }
 
@@ -3125,14 +3108,12 @@ function updateFilterUI() {
   const partyOn = !!filterPartySelected.trim();
   const benefOn = !!filterBenefSelected.trim();
   const peopleOn = ownerOn || partyOn || benefOn;
-  const statusOn = statusFilterSet.size > 0;
 
   pillBtn('popDate').classList.toggle('active', dateOn);
   pillBtn('popAmount').classList.toggle('active', amountOn);
   pillBtn('popPeople').classList.toggle('active', peopleOn);
-  pillBtn('popStatus').classList.toggle('active', statusOn);
 
-  filterClearBtn.classList.toggle('show', dateOn || amountOn || peopleOn || statusOn);
+  filterClearBtn.classList.toggle('show', dateOn || amountOn || peopleOn);
 
   const basisLabel = document.querySelector('input[name="dateBasis"]:checked').value === 'dueDate' ? 'تاریخ سررسید' : 'تاریخ ثبت';
   const chips = [];
@@ -3150,14 +3131,6 @@ function updateFilterUI() {
   if (ownerOn) chips.push({ key: 'owner', label: `صاحب چک: ${filterOwnerSelected.trim()}` });
   if (partyOn) chips.push({ key: 'party', label: `طرف حساب: ${filterPartySelected.trim()}` });
   if (benefOn) chips.push({ key: 'benef', label: `ذینفع: ${filterBenefSelected.trim()}` });
-  if (statusOn) {
-    const namesHtml = [...statusFilterSet].map(id => {
-      const st = statusById(id);
-      return `<span style="color:${st.color}">${escapeHtml(st.name)}</span>`;
-    }).join('، ');
-    chips.push({ key: 'status', html: `وضعیت: ${namesHtml}` });
-  }
-
   activeFiltersRow.innerHTML = chips.map(c => `
     <span class="active-chip" data-key="${c.key}">${c.html || escapeHtml(c.label)}
       <button type="button" data-clear="${c.key}">
@@ -3176,7 +3149,6 @@ function clearOneFilter(key) {
   else if (key === 'owner') { filterOwnerInput.value = ''; filterOwnerSelected = ''; }
   else if (key === 'party') { filterPartyInput.value = ''; filterPartySelected = ''; }
   else if (key === 'benef') { filterBenefInput.value = ''; filterBenefSelected = ''; }
-  else if (key === 'status') { statusFilterSet.clear(); renderStatusFilterChips(); }
   refreshTable();
 }
 
@@ -3208,7 +3180,7 @@ searchClearBtn.addEventListener('click', () => {
 });
 
 // ---- filter popovers: fixed, positioned under their own pill button ----
-const filterPopovers = { popDate, popAmount, popPeople, popStatus };
+const filterPopovers = { popDate, popAmount, popPeople };
 let activePopover = null;
 let activePopoverBtn = null;
 
@@ -3341,23 +3313,8 @@ wireFilterAutocomplete(filterOwnerInput, filterOwnerList, allOwners, (name) => {
 wireFilterAutocomplete(filterPartyInput, filterPartyList, allParties, (name) => { filterPartySelected = name; });
 wireFilterAutocomplete(filterBenefInput, filterBenefList, beneficiariesForParty, (name) => { filterBenefSelected = name; });
 
-// ---- status filter chips ----
-function renderStatusFilterChips() {
-  statusFilterRow.innerHTML = STATUSES.map(s => `
-    <button type="button" class="status-filter-chip${statusFilterSet.has(s.id) ? ' active' : ''}" data-id="${s.id}">
-      <span class="st-dot" style="background:${s.color}"></span>${s.name}
-    </button>`).join('');
-  statusFilterRow.querySelectorAll('.status-filter-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (statusFilterSet.has(id)) statusFilterSet.delete(id);
-      else statusFilterSet.add(id);
-      renderStatusFilterChips();
-      refreshTable();
-    });
-  });
-}
-
+// Filtering by status went away with the board: the three columns already
+// are that filter, and each one exports its own set from its header.
 showArchivedCheckbox.addEventListener('change', refreshTable);
 
 // ---- clear all filters ----
@@ -3378,13 +3335,9 @@ filterClearBtn.addEventListener('click', () => {
   filterOwnerSelected = '';
   filterPartySelected = '';
   filterBenefSelected = '';
-  statusFilterSet.clear();
-  renderStatusFilterChips();
   showArchivedCheckbox.checked = false;
   refreshTable();
 });
-
-renderStatusFilterChips();
 
 // Builds the printable report from whatever the current filters show (the
 // full matching set, not just the page currently visible in the table),
@@ -3539,9 +3492,12 @@ exportExcelBtn.addEventListener('click', () => { closeExportMenu(); exportChecks
 
 // ---- Excel export: same filtered/sorted list the on-screen table and the
 // print report use, so what a user exports always matches what they see. ----
-function exportChecksToExcel() {
-  const all = getFilteredCheques().slice().reverse();
-  if (!all.length) return;
+// statusId narrows the export to one board column; without it the whole
+// filtered set goes out, which is what the toolbar's own button does.
+function exportChecksToExcel(statusId) {
+  let all = getFilteredCheques().slice().reverse();
+  if (statusId) all = all.filter(c => (c.status || 'pending') === statusId);
+  if (!all.length) { showToast('چکی برای خروجی گرفتن نیست'); return; }
   const header = [
     'ردیف', 'شماره سریال', 'شناسه صیادی', 'مبلغ (ریال)',
     'تاریخ سررسید (شمسی)', 'تاریخ سررسید (میلادی)',
@@ -3564,9 +3520,10 @@ function exportChecksToExcel() {
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
   ws['!cols'] = header.map(() => ({ wch: 16 }));
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'چک‌ها');
+  XLSX.utils.book_append_sheet(wb, ws, statusId ? statusById(statusId).name : 'چک‌ها');
   const [jy, jm, jd] = todayJalali();
-  XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
+  const scope = statusId ? `-${statusId}` : '';
+  XLSX.writeFile(wb, `chekino-checks${scope}-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
 }
 
 // Only a still-pending cheque has a due date someone needs to act before —
@@ -3615,30 +3572,39 @@ function statusDotTriggerHtml(c, st) {
   </button>`;
 }
 
+// Two dates sit on this card, so neither is left to be guessed at: the due
+// date carries a calendar, the send date carries a send arrow followed by
+// the platform it went out on. The beneficiary gets the person icon the
+// reference board uses for the same kind of field.
+const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+const ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
-  const reason = c.status === 'problem' && c.statusReason
-    ? `<div class="chk-reason">${escapeHtml(c.statusReason)}</div>` : '';
+  const reasonText = c.status === 'problem' && c.statusReason ? c.statusReason : '';
   const platformHtml = (Array.isArray(c.channels) ? c.channels : []).map(channelBadgeHtml).join('');
   const urgency = dueUrgencyClass(c);
+  // The reason line is always in the DOM, empty or not, so every card in
+  // every column comes out exactly the same height.
+  const reason = `<div class="chk-reason${reasonText ? '' : ' chk-reason-empty'}" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</div>`;
   return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
     <div class="chk-row">
-      <span class="chk-due${urgency}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
-      <span class="chk-serial">چک <b>#${toFa(c.serial)}</b></span>
+      <span class="chk-due${urgency}" title="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
+      <span class="chk-serial" title="شماره سریال چک">چک <b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
       <div class="chk-benef-col">
-        <span class="chk-benef">${escapeHtml(c.benef)}</span>
-        ${c.nid ? `<span class="chk-nid">${toFa(c.nid)}</span>` : ''}
+        <span class="chk-benef" title="ذینفع: ${escapeHtml(c.benef)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
+        <span class="chk-nid" title="کد ملی ذینفع">${c.nid ? toFa(c.nid) : '—'}</span>
       </div>
-      <span class="chk-amount">${faAmount(c.amount)}</span>
+      <span class="chk-amount" title="مبلغ چک">${faAmountRial(c.amount)}</span>
     </div>
     ${reason}
     <div class="chk-row chk-row-bottom">
-      <div class="chk-sent">
-        <span class="chk-sent-date">${faDate(c.sendDate)}</span>
-        ${platformHtml}
-      </div>
+      <span class="chk-sent" title="تاریخ و بستر ارسال">
+        ${ICON_SEND}<span class="chk-sent-date">${faDate(c.sendDate)}</span>${platformHtml}
+      </span>
       <div class="chk-icon-group">
         ${statusDotTriggerHtml(c, st)}
         ${rowActionsHtml(c)}
@@ -3664,9 +3630,14 @@ function boardColumnHtml(st) {
         ${st.name}
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
-      <button type="button" class="board-col-add" data-add-status="${st.id}" title="افزودن چک جدید" aria-label="افزودن چک جدید">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
+      <span class="board-col-tools">
+        <button type="button" class="board-col-btn" data-export-status="${st.id}" title="خروجی اکسل «${st.name}»" aria-label="خروجی اکسل «${st.name}»">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button type="button" class="board-col-btn" data-add-status="${st.id}" title="افزودن چک جدید" aria-label="افزودن چک جدید">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </span>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
   </div>`;
@@ -3682,7 +3653,9 @@ function ensureBoardColumns() {
   // clicked — that's the real rule, so the button opens the one add form
   // rather than pretending it can drop a new cheque straight into "ثبت شد".
   boardColumns.addEventListener('click', (e) => {
-    if (e.target.closest('[data-add-status]')) addCheckBtn.click();
+    if (e.target.closest('[data-add-status]')) { addCheckBtn.click(); return; }
+    const exportBtn = e.target.closest('[data-export-status]');
+    if (exportBtn) exportChecksToExcel(exportBtn.dataset.exportStatus);
   });
 }
 
