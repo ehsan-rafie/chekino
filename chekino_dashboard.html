@@ -32,8 +32,6 @@
 </head>
 <body class="chekino-auth-pending">
 
-<canvas id="particleBg"></canvas>
-
 <header class="header">
   <div class="header-user">
     <span class="company-name" id="companyNameLabel"></span>
@@ -82,18 +80,6 @@
     <div class="due-alert-viewport"><div class="due-alert-track" id="dueAlertTrack"></div></div>
     <span class="due-alert-count" id="dueAlertCount"></span>
   </div>
-
-  <div class="add-check-wrap">
-    <button class="add-check-btn" id="addCheckBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      افزودن چک
-    </button>
-  </div>
-
-  <div class="section-divider plain"></div>
 
   <div class="filter-bar" id="filterBar">
     <div class="search-row">
@@ -195,6 +181,14 @@
         <div class="ths-stats" id="tableStats"></div>
       </div>
       <div class="ths-actions">
+        <button class="add-check-btn" id="addCheckBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          افزودن چک
+          <kbd class="btn-kbd">N</kbd>
+        </button>
         <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -622,6 +616,7 @@
 
 <script src="/js/shared.js?v=20260915"></script>
 <script src="/js/vendor/xlsx.full.min.js"></script>
+<script src="/js/palette.js?v=20260915"></script>
 <script src="/js/dashboard.js?v=20260915"></script>
 <script>if (window.__chekinoAuthOK) document.body.classList.remove('chekino-auth-pending');</script>
 

@@ -625,3 +625,75 @@ if (getToken()) {
 } else {
   showLogin();
 }
+
+// ==========================================================
+// Command palette registration (⌘K)
+// ==========================================================
+// Every command is gated on the panel actually being visible: while the
+// login screen is up there is nothing to command, and a stray keystroke
+// shouldn't quietly switch tabs behind the login card.
+(function registerCommands() {
+  if (!window.ChekinoPalette) return;
+  const panelUp = () => {
+    const p = document.getElementById('panel');
+    return !!p && getComputedStyle(p).display !== 'none';
+  };
+  const tab = (name) => () => {
+    const btn = document.querySelector(`[data-tab="${name}"]`);
+    if (btn) btn.click();
+  };
+  const icon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+  window.ChekinoPalette.register([
+    {
+      title: 'شرکت‌ها', group: 'بخش‌ها', key: 'c', shortcut: 'C', order: 1, when: panelUp,
+      keywords: 'companies لیست شرکت',
+      icon: icon('<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/>'),
+      run: tab('companies'),
+    },
+    {
+      title: 'پلن‌ها', group: 'بخش‌ها', key: 'p', shortcut: 'P', order: 2, when: panelUp,
+      keywords: 'plans پلن اشتراک',
+      icon: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+      run: tab('plans'),
+    },
+    {
+      title: 'تنظیمات حساب من', group: 'بخش‌ها', key: 'a', shortcut: 'A', order: 3, when: panelUp,
+      keywords: 'account settings password username حساب رمز',
+      icon: icon('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>'),
+      run: tab('account'),
+    },
+    {
+      title: 'افزودن شرکت جدید', group: 'عملیات', key: 'n', shortcut: 'N', order: 4, when: panelUp,
+      keywords: 'new company add ثبت شرکت',
+      icon: icon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+      run: () => {
+        tab('companies')();
+        const el = document.getElementById('newCompanyName');
+        if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      },
+    },
+    {
+      title: 'افزودن پلن جدید', group: 'عملیات', order: 5, when: panelUp,
+      keywords: 'new plan add ثبت پلن',
+      icon: icon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+      run: () => {
+        tab('plans')();
+        const el = document.getElementById('newPlanName');
+        if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      },
+    },
+    {
+      title: 'تغییر تم روشن و تاریک', group: 'نمایش', key: 't', shortcut: 'T', order: 6,
+      keywords: 'theme dark light تم تیره روشن',
+      icon: icon('<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
+      run: () => { const el = document.getElementById('themeToggleBtn'); if (el) el.click(); },
+    },
+    {
+      title: 'خروج از حساب', group: 'حساب', order: 7, when: panelUp,
+      keywords: 'logout signout خروج',
+      icon: icon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'),
+      run: () => { const el = document.getElementById('logoutBtn'); if (el) el.click(); },
+    },
+  ]);
+})();

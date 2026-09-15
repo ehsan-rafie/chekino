@@ -4097,61 +4097,6 @@ toTopBtn.addEventListener('click', () => {
   });
 })();
 
-// ---- Drifting particle background (self-contained — no external library) ----
-(function () {
-  const canvas = document.getElementById('particleBg');
-  const ctx = canvas.getContext('2d');
-  const COLORS = ['#2D8CFF', '#0A4ED6', '#7FB6FF'];
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let W, H, particles, dpr;
-
-  function resize() {
-    dpr = window.devicePixelRatio || 1;
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function makeParticles() {
-    const count = Math.min(160, Math.max(50, Math.round((W * H) / 13000)));
-    particles = Array.from({ length: count }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: 1 + Math.random() * 2.2,
-      baseOpacity: 0.10 + Math.random() * 0.24,
-      phase: Math.random() * Math.PI * 2,
-      vx: (Math.random() - 0.5) * 0.16,
-      vy: (Math.random() - 0.5) * 0.16,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
-    }));
-  }
-
-  function draw(t) {
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < -6) p.x = W + 6; else if (p.x > W + 6) p.x = -6;
-      if (p.y < -6) p.y = H + 6; else if (p.y > H + 6) p.y = -6;
-      const pulse = 0.55 + 0.45 * Math.sin(t / 1900 + p.phase);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.baseOpacity * pulse;
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1;
-    if (!reduceMotion) requestAnimationFrame(draw);
-  }
-
-  resize();
-  makeParticles();
-  window.addEventListener('resize', () => { resize(); makeParticles(); });
-  requestAnimationFrame(draw);
-})();
 // =========================================================
 // ---- Photo editor: crop + rotate, redesigned flow ----
 // =========================================================
@@ -4458,4 +4403,77 @@ window.addEventListener('popstate', () => {
   renderTable();
   // ---- Restore any unsaved draft (e.g. after switching desktop/mobile view) ----
   restoreDraftIfAny();
+})();
+
+// ==========================================================
+// Command palette registration (⌘K)
+// ==========================================================
+// Commands drive the existing controls rather than calling internals: a
+// command is "press this button for me", so the palette can never diverge
+// from what clicking actually does, and nothing here has to be kept in
+// step when a handler changes.
+(function registerCommands() {
+  if (!window.ChekinoPalette) return;
+  const click = (id) => () => { const el = document.getElementById(id); if (el) el.click(); };
+  const icon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+  window.ChekinoPalette.register([
+    {
+      title: 'افزودن چک جدید', group: 'چک‌ها', key: 'n', shortcut: 'N', order: 1,
+      keywords: 'ثبت چک جدید add new cheque',
+      icon: icon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+      run: click('addCheckBtn'),
+    },
+    {
+      title: 'جستجوی چک', hint: 'سریال یا شناسه صیادی', group: 'چک‌ها', key: '/', shortcut: '/', order: 2,
+      keywords: 'search serial sayad جستجو',
+      icon: icon('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+      run: () => {
+        const el = document.getElementById('searchInput');
+        if (el) { el.focus(); el.select(); }
+      },
+    },
+    {
+      title: 'حذف همه‌ی فیلترها', group: 'چک‌ها', order: 3,
+      keywords: 'clear filters پاک کردن فیلتر',
+      icon: icon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'),
+      run: click('filterClearBtn'),
+    },
+    {
+      title: 'مدیریت اشخاص', group: 'اشخاص', key: 'p', shortcut: 'P', order: 4,
+      keywords: 'people owners parties beneficiaries صاحب طرف حساب ذینفع',
+      icon: icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>'),
+      run: click('peopleMgmtBtn'),
+    },
+    {
+      title: 'دریافت گزارش', hint: 'PDF یا اکسل', group: 'گزارش', key: 'e', shortcut: 'E', order: 5,
+      keywords: 'report export excel pdf خروجی',
+      icon: icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'),
+      run: click('reportBtn'),
+    },
+    {
+      title: 'تغییر تم روشن و تاریک', group: 'نمایش', key: 't', shortcut: 'T', order: 6,
+      keywords: 'theme dark light تم تیره روشن',
+      icon: icon('<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
+      run: click('themeToggleBtn'),
+    },
+    {
+      title: 'برو به بالای صفحه', group: 'نمایش', order: 7,
+      keywords: 'scroll top بالا',
+      icon: icon('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
+      run: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+    },
+    {
+      title: 'پشتیبانی تلگرام', group: 'حساب', order: 8,
+      keywords: 'support telegram پشتیبانی',
+      icon: icon('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
+      run: click('tgBtn'),
+    },
+    {
+      title: 'خروج از حساب', group: 'حساب', order: 9,
+      keywords: 'logout signout خروج',
+      icon: icon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'),
+      run: click('logoutBtn'),
+    },
+  ]);
 })();

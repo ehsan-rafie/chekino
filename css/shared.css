@@ -1,8 +1,22 @@
 /* Shared across chekino_login.html, chekino_dashboard.html, chekino_admin.html.
    This file is the single source of truth for the design system: the brand
    font, the colour primitives, the semantic roles every page styles through,
-   and the spacing / type / radius scales. Page stylesheets add layout on top
-   of these but never invent their own palette or sizes.
+   and the spacing / type / radius / motion scales. Page stylesheets add
+   layout on top of these but never invent their own palette or sizes.
+
+   The system follows two rules borrowed from Linear:
+
+     1 · The data layer is flat. Tables, panels, filter bars and cards carry
+         a 1px line and nothing else — no shadow. Depth is reserved for
+         things that genuinely float above the page (modals, popovers,
+         dropdowns, the command palette). That's why --shadow-1 is `none`:
+         every data surface already asks for it, so flattening happens here
+         instead of in three page stylesheets.
+
+     2 · Hierarchy comes from weight, size and spacing — not from colour or
+         ornament. Colour carries meaning only: the accent means "this is
+         interactive", and the status colours mean state. Neither is ever
+         decoration.
 
    Themes are resolved here too, for all three pages at once, in three states:
      · bare :root                      → light
@@ -39,17 +53,23 @@
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
   --s5: 24px; --s6: 32px; --s7: 48px;
 
-  /* ── radius: three values, assigned by role ── */
-  --rad-ctl: 8px;   /* inputs, buttons, chips */
-  --rad-card: 12px; /* panels, cards, modals */
+  /* ── radius, assigned by role ──
+     Data surfaces and controls share one soft value. Floating things get
+     slightly more, which is what makes them read as lifted even before the
+     shadow registers. */
+  --rad-ctl: 6px;    /* inputs, buttons, chips, table/panel surfaces */
+  --rad-card: 6px;   /* panels, cards — same value, named by role */
+  --rad-float: 8px;  /* modals, popovers, dropdowns, command palette */
   --rad-pill: 999px;
 
   /* ── type scale: seven steps, no half-pixels ── */
   --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
   --t-sub: 17px;   --t-title: 21px; --t-display: 28px;
 
-  /* ── control heights: three sizes, shared by every page ── */
-  --h-sm: 32px; --h-md: 40px; --h-lg: 48px;
+  /* ── control + row heights ──
+     --h-row is the list/table rhythm: roomy enough to scan comfortably,
+     tighter than the old 56px so more cheques fit on one screen. */
+  --h-sm: 32px; --h-md: 40px; --h-lg: 48px; --h-row: 44px;
 
   /* ── font weight axes (IRANYekanX is variable, 100–1000) ── */
   --f-brand:  'wght' 830, 'dots' 2;
@@ -62,7 +82,15 @@
   --f-hint:   'wght' 330, 'dots' 2;
   --f-micro:  'wght' 480, 'dots' 2;
 
+  /* ── motion ──
+     Everything the user causes lands inside 200ms; the common case is
+     140ms. Only opacity, transform and colour are animated — never a
+     property that forces layout. */
+  --dur-1: 90ms;    /* instant feedback: hover, press */
+  --dur-2: 140ms;   /* the default */
+  --dur-3: 200ms;   /* entrances, state changes worth noticing */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);   /* overshoot-free entrances */
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -76,6 +104,14 @@
   --surface: #FFFFFF;
   --surface-2: var(--n-1);
   --surface-sunken: var(--n-3);
+
+  /* Three border tiers. With shadows gone from the data layer, these lines
+     carry all of the structure, so which tier a line uses is the difference
+     between a panel reading as one object or as loose parts:
+       subtle → row dividers, internal separators
+       default → inputs, buttons, table headers
+       strong → outer edges of a panel, sticky headers, filter bars */
+  --border-subtle: var(--n-3);
   --border: var(--n-4);
   --border-strong: var(--n-6);
 
@@ -94,8 +130,14 @@
   --state-warn: var(--amber-base); --state-warn-bg: var(--amber-wash);
   --state-bad: var(--red-base);    --state-bad-bg: var(--red-wash);
 
-  --shadow-1: 0 1px 2px rgba(15, 23, 40, 0.05);
-  --shadow-2: 0 8px 24px -6px rgba(15, 23, 40, 0.14), 0 2px 6px -2px rgba(15, 23, 40, 0.07);
+  /* The data layer is flat: every panel, table and bar in the app asks for
+     --shadow-1, and it resolves to nothing. Structure comes from the border
+     tiers and from stepping the background between layers. */
+  --shadow-1: none;
+  /* Reserved for genuinely floating surfaces. Two stacked shadows: a tight
+     dark one that reads as contact, and a wide soft one that reads as height. */
+  --shadow-2: 0 1px 2px rgba(15, 23, 40, 0.10), 0 12px 32px -8px rgba(15, 23, 40, 0.18);
+  --shadow-float: var(--shadow-2);
 
   --skeleton-base: var(--n-3);
   --skeleton-sheen: var(--n-1);
@@ -106,7 +148,7 @@
   --blue-900: var(--accent-text);
   --blue-hover: var(--accent-hover);
   --blue-700: var(--accent);
-  --blue-600: var(--blue-line);
+  --blue-600: var(--accent-line);
   --blue-100: var(--accent-wash);
   --error: var(--state-bad);
   --error-bg: var(--state-bad-bg);
@@ -125,6 +167,7 @@
     --surface: #141922;
     --surface-2: #191F29;
     --surface-sunken: #10151D;
+    --border-subtle: #1C232E;
     --border: #242C38;
     --border-strong: #37414F;
 
@@ -143,13 +186,13 @@
     --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
     --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
 
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-2: 0 10px 28px -6px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-1: none;
+    --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 36px -8px rgba(0, 0, 0, 0.7);
 
     --skeleton-base: #1D242F;
     --skeleton-sheen: #283040;
 
-    --blue-600: var(--accent-hover);
+    --blue-600: var(--accent-line);
     --error-border: rgba(255, 122, 112, 0.4);
     --success-border: rgba(69, 201, 140, 0.38);
   }
@@ -159,6 +202,7 @@
   --surface: #141922;
   --surface-2: #191F29;
   --surface-sunken: #10151D;
+  --border-subtle: #1C232E;
   --border: #242C38;
   --border-strong: #37414F;
 
@@ -177,13 +221,13 @@
   --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.14);
   --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.14);
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 10px 28px -6px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-1: none;
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 36px -8px rgba(0, 0, 0, 0.7);
 
   --skeleton-base: #1D242F;
   --skeleton-sheen: #283040;
 
-  --blue-600: var(--accent-hover);
+  --blue-600: var(--accent-line);
   --error-border: rgba(255, 122, 112, 0.4);
   --success-border: rgba(69, 201, 140, 0.38);
 }
@@ -203,7 +247,7 @@ a:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
 }
 
 ::selection { background: var(--accent); color: #fff; }
@@ -211,3 +255,198 @@ a:focus-visible,
 /* Digits line up column-to-column instead of jittering by glyph width —
    it matters most anywhere amounts or dates stack vertically. */
 .num, .amount, .fig { font-variant-numeric: tabular-nums; }
+
+/* Serial numbers, sayad ids and national ids are machine values, not prose.
+   Tabular figures plus a touch of tracking makes them read as data at a
+   glance and makes a wrong digit easier to spot — the job a monospace font
+   does in a Latin UI, done with the one font that has Persian numerals. */
+.data-value {
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+  letter-spacing: 0.02em;
+}
+
+/* A press should register before the network does. 90ms, transform only —
+   never a property that forces layout. */
+button:not(:disabled):active { transform: scale(0.97); }
+button { transition: transform var(--dur-1) var(--ease); }
+
+/* Thin, self-effacing scrollbars: the content is the subject, not the
+   chrome around it. */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--rad-pill);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+
+/* One central honouring of the OS setting, for all three pages. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4 · SHARED COMPONENTS
+   Things more than one page renders. They live here so the dashboard
+   and the admin panel can't drift apart on them.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ---- Command palette (⌘K) ----
+   The one surface in the app that is deliberately theatrical: it arrives
+   over a blurred page, because it is a mode, and the user needs to know
+   the rest of the screen is inert while it's up. */
+.cp-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(15, 23, 40, 0.38);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  padding: 12vh 16px 16px;
+  justify-content: center;
+  align-items: flex-start;
+}
+:root[data-theme="dark"] .cp-overlay { background: rgba(0, 0, 0, 0.55); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cp-overlay { background: rgba(0, 0, 0, 0.55); }
+}
+.cp-overlay.show { display: flex; animation: cpFade var(--dur-2) var(--ease) both; }
+.cp-overlay.show .cp-box { animation: cpRise var(--dur-3) var(--ease-out) both; }
+@keyframes cpFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cpRise {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cp-box {
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--rad-float);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  font-family: 'IRANYekanX', 'Tahoma', sans-serif;
+}
+
+.cp-search {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cp-search-icon { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; }
+.cp-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-value);
+  font-variation-settings: var(--f-body);
+}
+.cp-search input::placeholder { color: var(--muted); }
+
+.cp-list { overflow-y: auto; padding: var(--s1) 0 var(--s2); }
+.cp-group {
+  padding: var(--s3) var(--s4) var(--s1);
+  font-size: var(--t-micro);
+  color: var(--muted);
+  font-variation-settings: var(--f-label);
+  letter-spacing: 0.04em;
+}
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin: 0 var(--s2);
+  padding: 0 var(--s2);
+  height: var(--h-md);
+  border-radius: var(--rad-ctl);
+  cursor: pointer;
+  color: var(--ink);
+  font-size: var(--t-body);
+}
+.cp-item.is-active { background: var(--accent-wash); }
+.cp-icon {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.cp-item.is-active .cp-icon { color: var(--accent-text); }
+.cp-icon svg { width: 16px; height: 16px; }
+.cp-title { font-variation-settings: var(--f-value); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-hint {
+  color: var(--muted);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-hint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-keys { margin-inline-start: auto; display: flex; gap: var(--s1); flex-shrink: 0; }
+.cp-empty {
+  display: none;
+  padding: var(--s6) var(--s4);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-cap);
+}
+.cp-foot {
+  display: flex;
+  gap: var(--s4);
+  padding: var(--s2) var(--s4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--t-micro);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.cp-foot span { display: inline-flex; align-items: center; gap: var(--s1); }
+
+/* One key chip style, used by the palette footer, the command rows and
+   anywhere else a shortcut is shown. */
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-micro);
+  line-height: 1;
+}
+.cp-esc { flex-shrink: 0; }
+
+@media (max-width: 560px) {
+  .cp-overlay { padding: 8vh 12px 12px; }
+  .cp-box { max-height: 78vh; }
+  .cp-hint { display: none; }
+  .cp-foot { display: none; }
+}

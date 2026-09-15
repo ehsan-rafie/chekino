@@ -21,7 +21,7 @@ a:focus-visible,
 .radio-opt:focus-visible {
   outline: 2px solid var(--blue-600);
   outline-offset: 2px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
 }
 
 ::selection { background: var(--blue-600); color: #fff; }
@@ -40,7 +40,7 @@ a:focus-visible,
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -70,14 +70,6 @@ html, body {
    (calendar, dropdowns, autocomplete) out of sync with its anchor field.
    Given that's broken it twice, it's left off for reliability. */
 
-#particleBg {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
 .main { position: relative; }
 
 /* ===== Header ===== */
@@ -131,7 +123,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--muted);
   cursor: pointer;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   transition: color 0.15s ease, background 0.15s ease;
 }
 .logout-btn:hover { color: var(--error); background: var(--error-bg); }
@@ -155,7 +147,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--blue-600);
   cursor: pointer;
@@ -197,7 +189,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: 13px;
   font-variation-settings: var(--f-num);
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -219,7 +211,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: 13px;
   font-variation-settings: var(--f-num);
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -279,7 +271,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-inline-start: 4px solid var(--error);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 10px 16px;
   margin-bottom: 20px;
   box-shadow: var(--shadow-1);
@@ -372,7 +364,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--blue-700);
   color: var(--white);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 16px 32px;
   font-family: inherit;
   font-size: 17px;
@@ -446,7 +438,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   gap: 10px;
   border: 1.5px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--surface);
   padding: 72px var(--s5);
   color: var(--muted);
@@ -493,7 +485,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-bar {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 10px 12px;
   margin-bottom: 14px;
   position: sticky;
@@ -512,7 +504,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 38px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -531,7 +523,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .search-box input::placeholder { color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); text-align: right; }
 .search-clear {
   width: 24px; height: 24px;
-  border: none; border-radius: 6px;
+  border: none; border-radius: var(--rad-ctl);
   background: none; color: var(--muted);
   display: none; align-items: center; justify-content: center;
   cursor: pointer; flex-shrink: 0;
@@ -555,7 +547,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 38px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
@@ -587,7 +579,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 34px;
   padding: 0 12px;
   border: 1.5px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--muted);
   font-family: inherit;
@@ -617,7 +609,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 6px;
   padding: 4px 6px 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--blue-100);
   border: 1px solid var(--accent-line);
   color: var(--accent-text);
@@ -646,7 +638,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 92vw;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 16px;
   z-index: 500;
   max-height: 70vh;
@@ -680,7 +672,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 42px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 13px;
@@ -699,7 +691,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .af-preset {
   padding: 6px 10px;
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -728,7 +720,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 10px 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
@@ -778,7 +770,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .ths-count {
   padding: 2px 10px;
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--blue-100);
   color: var(--blue-900);
   font-size: 12px;
@@ -805,7 +797,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 36px;
   padding: 0 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -858,7 +850,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   opacity: 0;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-btn);
@@ -908,7 +900,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .table-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
   box-shadow: var(--shadow-1);
 }
@@ -1038,7 +1030,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 6px 12px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-micro);
@@ -1099,7 +1091,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 190px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 6px;
   z-index: 500;
   display: none;
@@ -1110,7 +1102,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 8px;
   padding: 10px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 13px;
   font-variation-settings: var(--f-body);
@@ -1134,7 +1126,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -1159,7 +1151,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-height: 62px;
   padding: 8px 10px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-body);
@@ -1175,7 +1167,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex: 1;
   padding: 8px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-label);
@@ -1201,7 +1193,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 34px;
   flex-shrink: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -1235,7 +1227,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .table-wrap.is-loading .table-pager { display: none !important; }
 .sk-row {
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   margin-bottom: 8px;
   background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-sheen) 37%, var(--skeleton-base) 63%);
   background-size: 400% 100%;
@@ -1267,7 +1259,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 34px;
   padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
@@ -1291,7 +1283,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .table-head-strip {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--rad-card);
     margin-bottom: 12px;
     /* Two buttons plus the info cluster no longer read well trying to
        share one wrapping row on a narrow screen — a clean stack instead:
@@ -1316,7 +1308,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-right: 3px solid var(--state-idle-dot);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 12px 14px;
   margin-bottom: 10px;
   cursor: default;
@@ -1367,7 +1359,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 88vh;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1402,7 +1394,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-close {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: none;
   background: var(--bg);
   color: var(--muted);
@@ -1447,7 +1439,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
@@ -1468,7 +1460,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
@@ -1539,7 +1531,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   direction: ltr;
   text-align: left;
@@ -1566,7 +1558,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   transition: border-color 0.15s ease;
 }
@@ -1632,7 +1624,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   max-height: 210px;
   overflow-y: auto;
   z-index: 550;
@@ -1646,7 +1638,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 15px;
   font-variation-settings: var(--f-body);
@@ -1694,7 +1686,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-height: 46px;
   padding: 10px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 15px;
@@ -1728,7 +1720,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 8px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   cursor: pointer;
   font-family: inherit;
@@ -1749,7 +1741,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 6px;
   padding: 4px 8px 4px 6px;
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   background: var(--blue-100);
   color: var(--blue-900);
   font-size: 13px;
@@ -1767,7 +1759,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 6px;
   z-index: 500;
   display: none;
@@ -1781,7 +1773,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 8px;
   padding: 10px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 15px;
   font-variation-settings: var(--f-body);
@@ -1792,7 +1784,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 20px;
   height: 20px;
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1806,7 +1798,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ms-option .ms-icon {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1819,7 +1811,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 .file-box {
   border: 1.5px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   padding: 12px;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -1835,7 +1827,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: relative;
   width: 58px;
   height: 58px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   overflow: visible;
   flex-shrink: 0;
 }
@@ -1844,7 +1836,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 58px;
   height: 58px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: 1px solid var(--border);
   display: block;
   cursor: pointer;
@@ -1852,7 +1844,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .file-chip .file-view-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(15,27,51,0.45);
   display: flex;
   align-items: center;
@@ -1867,7 +1859,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .file-chip .file-doc {
   width: 58px;
   height: 58px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-100);
   color: var(--blue-700);
   display: flex;
@@ -1916,7 +1908,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 85vh;
   background: #14181f;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
 }
 .pe-topbar {
@@ -1935,7 +1927,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.1);
   color: #fff;
   cursor: pointer;
@@ -2012,7 +2004,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 4px;
   padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.85);
   font-family: inherit;
@@ -2034,7 +2026,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 100%;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2074,7 +2066,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 78vh;
   background: #14181f;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
 }
 .lightbox-topbar {
@@ -2091,7 +2083,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 8px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.12);
   color: #fff;
   font-family: inherit;
@@ -2122,7 +2114,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
      actual quality changes. */
   max-height: 62vh;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
 }
 @media (max-width: 600px) {
   .lightbox-overlay { padding: 0; background: rgba(10,15,25,0.94); }
@@ -2145,7 +2137,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   margin-top: 0;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: none;
   color: var(--blue-700);
   font-family: inherit;
@@ -2169,7 +2161,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   gap: 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 14px 16px;
   font-size: 14px;
   font-variation-settings: var(--f-body);
@@ -2186,7 +2178,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 14px 16px;
   font-size: 13px;
   line-height: 1.9;
@@ -2203,7 +2195,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 6px 12px;
   border: 1.5px solid var(--success-border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--success);
   font-family: inherit;
@@ -2303,7 +2295,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 42px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 14px;
   background: var(--surface);
@@ -2314,7 +2306,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-add-row button {
   padding: 0 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2330,7 +2322,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
 }
 .people-item-edit {
@@ -2343,7 +2335,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -2359,7 +2351,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
@@ -2375,7 +2367,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
@@ -2406,7 +2398,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-item-edit-fields input {
   flex: 1;
   border: 1.5px solid var(--blue-600);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 13px;
@@ -2429,7 +2421,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
 }
 .people-item-delete:hover { background: var(--error-bg); color: var(--error); }
@@ -2442,7 +2434,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: var(--h-md);
   padding: 0 10px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   background: var(--surface);
@@ -2521,7 +2513,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 90vw;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 16px;
   z-index: 601;
   display: none;
@@ -2566,7 +2558,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: 13px;
   font-variation-settings: var(--f-label);
   padding: 8px 14px 8px 24px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   text-align: center;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -2576,7 +2568,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-nav-btn {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: none;
   background: var(--bg);
   color: var(--muted);
@@ -2613,7 +2605,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-num);
@@ -2641,15 +2633,15 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-day.range-start, .cal-day.range-end { background: var(--blue-hover); color: var(--white); }
 .cal-day.range-start.holiday, .cal-day.range-end.holiday { color: var(--white); }
 .cal-day.range-start { border-radius: 0 9px 9px 0; }
-.cal-day.range-end { border-radius: 9px 0 0 9px; }
-.cal-day.range-start.range-end { border-radius: 8px; }
+.cal-day.range-end { border-radius: var(--rad-ctl) 0 0 var(--rad-ctl); }
+.cal-day.range-start.range-end { border-radius: var(--rad-ctl); }
 
 .cal-today-btn {
   width: 100%;
   margin-top: 10px;
   padding: 8px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--blue-700);
   font-family: inherit;
@@ -2666,7 +2658,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2680,7 +2672,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 44px;
   flex-shrink: 0;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   display: flex;
@@ -2721,7 +2713,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 0;
   height: 46px;
   border: 1.5px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: var(--white);
   font-family: inherit;
@@ -2759,7 +2751,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 46px;
   height: 46px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: 1.5px solid var(--border);
   background: var(--surface);
   color: var(--muted);
@@ -2801,7 +2793,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--success);
   color: #fff;
   display: flex;
@@ -2824,7 +2816,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -2909,7 +2901,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   font-size: 13px;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -2927,7 +2919,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--surface);
   border: 1px solid rgba(255,255,255,0.15);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 13px;
   font-variation-settings: var(--f-value);
   opacity: 0;
@@ -2972,7 +2964,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 380px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 24px;
   box-shadow: var(--shadow-2);
   animation: modalIn 0.18s var(--ease);
@@ -3017,3 +3009,161 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--state-bad);
 }
 .confirm-actions .confirm-ok:hover { border-color: var(--state-bad); background: var(--state-bad-bg); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LINEAR PASS
+   Calibrates this page to the rules set out at the top of shared.css.
+   It lives at the end of the file, as overrides, rather than rewritten
+   in place: the sections above are organised by feature, and unpicking
+   them by hand would have risked the behaviour they carry. Everything
+   here is presentation only.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Depth belongs to floating surfaces only ──
+   These are the six things in the app that genuinely sit above the page.
+   They get the larger radius, which is what makes them read as lifted
+   even before the shadow registers. Everything else stays flat. */
+.modal-box,
+.confirm-box,
+.filter-popover,
+.cal-popup,
+.status-menu,
+.ac-list,
+.ms-list,
+.cell-tooltip,
+.clock-tooltip,
+.tg-tooltip,
+.app-toast,
+.lightbox-card,
+.pe-card {
+  border-radius: var(--rad-float);
+}
+
+/* ── 2 · The cheque table ──
+   Zebra striping went out. It was doing the job a divider does, and it
+   was actively harmful here: the stripe colour and the hover colour were
+   the same token, so hovering an even row changed nothing at all. One
+   subtle divider per row plus a real hover state reads cleaner and makes
+   the pointer position unambiguous. */
+.cheque-table tbody tr:nth-child(even) td { background: transparent; }
+
+.cheque-table td {
+  padding: 11px 16px;          /* → 44px row rhythm at 14px text */
+  font-size: var(--t-body);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--dur-1) var(--ease);
+}
+.cheque-table thead th {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.cheque-table tbody tr:hover td { background: var(--accent-wash); }
+
+/* Rows no longer fly in one after another. The stagger was decorative —
+   it animated something the user didn't do, and it put 100ms of theatre
+   between the data arriving and the data being readable. */
+.cheque-table tbody tr { animation: none; }
+
+/* Serial numbers, sayad ids and national ids are machine values. Tabular
+   figures plus a little tracking is what tells the eye "this is data" and
+   makes a transposed digit findable. */
+.cheque-table .num,
+.cheque-table .benef-nid,
+.cq-serial,
+.sayad-static {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.cheque-table .amount { font-size: var(--t-value); }
+
+/* ── 3 · Structure through border tiers ──
+   Outer edges of a panel take the strong tier so the panel reads as one
+   object; internal dividers take the subtle tier so they separate without
+   competing. */
+.table-wrap,
+.filter-bar,
+.due-alert-bar { border-color: var(--border); }
+.table-head-strip { border-bottom-color: var(--border); }
+.table-pager { border-top-color: var(--border-subtle); }
+
+/* ── 4 · Motion, normalised ──
+   Hover and press land at 90ms; anything that enters the screen lands at
+   200ms on the expo curve. Nothing animates a layout property. */
+.status-btn,
+.eye-btn,
+.filter-pill-btn,
+.icon-action,
+.add-check-btn,
+.ths-report-btn,
+.file-chip,
+.st-opt {
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.modal-overlay.show .modal-box,
+.confirm-overlay.show .confirm-box {
+  animation: floatIn var(--dur-3) var(--ease-out) both;
+}
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 5 · Empty state ──
+   A centred mark, a plain sentence, and the one action that resolves it.
+   "Nothing found" on its own tells the user a fact and leaves them there. */
+.table-empty { padding: 64px var(--s5); gap: var(--s2); }
+.table-empty svg { width: 30px; height: 30px; opacity: 0.35; }
+
+/* ── 6 · Scanning: one consistent edge ──
+   Every cell used to be centre-aligned, which reads tidy on a mockup and
+   badly in use: with nothing sharing an edge, the eye re-finds the start of
+   each value on every row. Text now starts at the row's start edge (the
+   right, in RTL) so a column becomes a single line to scan down. The
+   utility columns — row number, status, the eye — stay centred, because
+   they are marks rather than values. */
+.cheque-table thead th,
+.cheque-table td { text-align: start; }
+.cheque-table th.col-row,  .cheque-table td.col-row,
+.cheque-table th.col-status, .cheque-table td.status-cell,
+.cheque-table th.col-eye,  .cheque-table td.col-eye { text-align: center; }
+.cheque-table .benef-name { text-align: start; }
+
+/* ── 7 · Row height ──
+   The beneficiary cell carries a name over its national id, and that pair
+   was setting the height of every row in the table. Tightening the two
+   leadings gets the row back near the 44px rhythm without dropping the id,
+   which is the field people actually check a cheque against. */
+.cheque-table td { padding: 8px 16px; line-height: 1.35; }
+.cheque-table .benef-name { display: block; line-height: 1.35; }
+.cheque-table .benef-nid { display: block; font-size: var(--t-micro); line-height: 1.25; color: var(--muted); }
+
+/* ── 8 · The primary action belongs in the toolbar ──
+   It used to sit alone in a centred band above the filters, spending a
+   whole horizontal stripe of the page on one button. In the table's own
+   header it is still the most prominent control on screen, and the table
+   starts most of a screenful higher. */
+.ths-actions .add-check-btn {
+  height: var(--h-sm);
+  padding: 0 var(--s3);
+  gap: var(--s2);
+  font-size: var(--t-cap);
+  border-radius: var(--rad-ctl);
+  white-space: nowrap;
+}
+.ths-actions .add-check-btn svg { width: 15px; height: 15px; }
+.ths-actions .add-check-btn:hover { background: var(--accent-hover); }
+/* The shortcut rides on the button itself — the same way the palette shows
+   it — so the keyboard path is learned by using the mouse. */
+.btn-kbd {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .btn-kbd { display: none; }
+  .ths-actions .add-check-btn { height: var(--h-md); font-size: var(--t-body); }
+}
