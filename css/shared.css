@@ -35,18 +35,16 @@
    1 · PRIMITIVES — raw scales. Components never reference these
    directly; they go through the semantic roles in section 2.
 
-   The neutrals carry a slight WARM bias — not blue. A blue-tinted grey
-   next to a blue accent competes with it; warmth sits underneath the
-   accent instead of arguing with it, and reads calmer across a full
-   working day of looking at a table of numbers. Same idea as the paper
-   tone under PostHog and Arc's interfaces, dialed down to something a
-   finance tool can stand behind: the difference from pure white is felt,
-   not seen.
+   The neutrals are close to true grey — an earlier pass leaned warm
+   (PostHog/Arc's paper tone) and it read as cream/yellow against the
+   reference this app is now matched to, which runs a clean, barely-there
+   grey. What warmth is left is a hair, not a tint anyone should be able
+   to name.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  --n-1:  #FCFCFB;  --n-2:  #F7F7F4;  --n-3:  #EFEEEA;  --n-4:  #E3E2DB;
-  --n-5:  #D6D4CA;  --n-6:  #C2C0B3;  --n-7:  #A3A192;  --n-8:  #868476;
-  --n-9:  #68675C;  --n-10: #4B4A41;  --n-11: #2F2E28;  --n-12: #161511;
+  --n-1:  #FCFCFC;  --n-2:  #F7F7F6;  --n-3:  #EFEFED;  --n-4:  #E4E4E1;
+  --n-5:  #D6D6D2;  --n-6:  #C2C2BD;  --n-7:  #A3A39E;  --n-8:  #878782;
+  --n-9:  #696964;  --n-10: #4B4B46;  --n-11: #2E2E2B;  --n-12: #181816;
 
   --blue-wash: #EEF4FF;  --blue-soft: #DCE8FF;  --blue-line: #A8C6FF;
   --blue-base: #0B5CFF;  --blue-deep: #0A4ED6;

@@ -2984,103 +2984,6 @@ function statusById(id) { return STATUSES.find(s => s.id === id) || STATUSES[0];
 function faDate(str) { return str ? toFa(str) : '—'; }
 function faAmount(raw) { return raw ? toFa(groupDigits(raw)) : '—'; }
 
-// ---- Due-date alert bar: a slim rotating banner for checks whose due date
-// is close (or already past) and that haven't been marked spent yet. Reads
-// from the full unfiltered list on purpose, so it stays accurate regardless
-// of whatever search/filter the user currently has the table set to. ----
-const dueAlertBar = document.getElementById('dueAlertBar');
-const dueAlertTrack = document.getElementById('dueAlertTrack');
-const dueAlertCount = document.getElementById('dueAlertCount');
-const DUE_ALERT_WINDOW_DAYS = 3;
-const DUE_ALERT_ROTATE_MS = 4000;
-let dueAlertItems = [];
-let dueAlertIndex = 0;
-let dueAlertTimer = null;
-
-function daysUntilJalali(dateStr) {
-  if (!dateStr) return null;
-  return -daysSinceJalali(dateStr);
-}
-
-function getUpcomingChecks() {
-  return loadCheques()
-    .filter(c => c.dueDate && !c.spendDate && !isArchived(c))
-    .map(c => ({ c, days: daysUntilJalali(c.dueDate) }))
-    .filter(x => x.days !== null && x.days <= DUE_ALERT_WINDOW_DAYS)
-    .sort((a, b) => a.days - b.days);
-}
-
-function dueAlertUrgencyClass(days) {
-  if (days < 0) return 'due-overdue';
-  if (days === 0) return 'due-today';
-  return 'due-soon';
-}
-function dueAlertUrgencyLabel(days) {
-  if (days < 0) return `${toFa(Math.abs(days))} روز گذشته`;
-  if (days === 0) return 'امروز سررسید';
-  return `${toFa(days)} روز مانده`;
-}
-
-function renderDueAlertItem() {
-  if (!dueAlertItems.length) return;
-  const { c, days } = dueAlertItems[dueAlertIndex];
-  const cls = dueAlertUrgencyClass(days);
-  dueAlertTrack.innerHTML = `
-    <div class="due-alert-item ${cls} enter" data-goto="${c.id}">
-      <span class="due-alert-dot"></span>
-      <span class="due-alert-text">چک <b>${toFa(c.serial)}</b> به مبلغ <b>${faAmount(c.amount)} ریال</b> در وجه <b>${escapeHtml(c.benef)}</b></span>
-      <span class="due-alert-when">${dueAlertUrgencyLabel(days)}</span>
-    </div>`;
-}
-
-function stopDueAlertRotation() {
-  if (dueAlertTimer) { clearInterval(dueAlertTimer); dueAlertTimer = null; }
-}
-function startDueAlertRotation() {
-  stopDueAlertRotation();
-  if (dueAlertItems.length <= 1) return;
-  dueAlertTimer = setInterval(() => {
-    dueAlertIndex = (dueAlertIndex + 1) % dueAlertItems.length;
-    renderDueAlertItem();
-  }, DUE_ALERT_ROTATE_MS);
-}
-
-function renderDueAlertBar() {
-  dueAlertItems = getUpcomingChecks();
-  if (!dueAlertItems.length) {
-    dueAlertBar.hidden = true;
-    stopDueAlertRotation();
-    return;
-  }
-  if (dueAlertIndex >= dueAlertItems.length) dueAlertIndex = 0;
-  dueAlertBar.hidden = false;
-  dueAlertCount.textContent = dueAlertItems.length > 1 ? `${toFa(dueAlertItems.length)} چک` : '';
-  renderDueAlertItem();
-  startDueAlertRotation();
-}
-
-function jumpToCheck(id) {
-  filterClearBtn.click();
-  const all = getFilteredCheques();
-  if (!all.some(c => c.id === id)) return;
-  renderTable();
-  requestAnimationFrame(() => {
-    const els = document.querySelectorAll(`[data-id="${id}"]`);
-    let visible = null;
-    els.forEach(el => {
-      el.classList.add('row-flash');
-      setTimeout(() => el.classList.remove('row-flash'), 1600);
-      if (el.offsetParent !== null) visible = el;
-    });
-    (visible || els[0])?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
-}
-
-dueAlertTrack.addEventListener('click', (e) => {
-  const item = e.target.closest('[data-goto]');
-  if (!item) return;
-  jumpToCheck(parseInt(item.dataset.goto, 10));
-});
 
 function statusButtonHtml(c, st) {
   return `<button type="button" class="status-btn" data-status-for="${c.id}">
@@ -3745,6 +3648,7 @@ function checkCardHtml(c) {
     return `<span class="chk-tag"><i style="background:${dot}"></i>${escapeHtml(ch.name)}</span>`;
   }).join('');
   return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
+    <div class="chk-eyebrow">چک <b>#${toFa(c.serial)}</b></div>
     <div class="chk-top">
       <span class="chk-title">${escapeHtml(c.party)}</span>
       <span class="chk-amount">${faAmount(c.amount)}</span>
@@ -3752,7 +3656,6 @@ function checkCardHtml(c) {
     <div class="chk-sub">صاحب چک: ${escapeHtml(c.owner)} &nbsp;·&nbsp; ذینفع: ${escapeHtml(c.benef)}</div>
     <div class="chk-meta">
       <span class="chk-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
-      <span class="chk-serial">#${toFa(c.serial)}</span>
     </div>
     ${tagsHtml ? `<div class="chk-tags">${tagsHtml}</div>` : ''}
     ${reason}
@@ -3763,11 +3666,21 @@ function checkCardHtml(c) {
   </div>`;
 }
 
+// One icon per state, chosen for what the state means rather than for
+// decoration: waiting, done, needs attention — so the badge reads before
+// the label text even registers.
+const BOARD_COL_ICON = {
+  pending: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+  done: '<path d="M20 6 9 17l-5-5"/>',
+  problem: '<path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><circle cx="12" cy="16.3" r="0.1" fill="currentColor" stroke-width="2.4"/>',
+};
+
 function boardColumnHtml(st) {
   return `<div class="board-column" data-status="${st.id}">
     <div class="board-col-head">
       <span class="board-col-badge board-col-badge-${st.id}">
-        <i class="board-col-dot"></i>${st.name}
+        <svg class="board-col-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${BOARD_COL_ICON[st.id] || ''}</svg>
+        ${st.name}
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
       <button type="button" class="board-col-add" data-add-status="${st.id}" title="افزودن چک جدید" aria-label="افزودن چک جدید">
@@ -3775,7 +3688,6 @@ function boardColumnHtml(st) {
       </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
-    <div class="board-col-foot">جمع: <b id="boardColTotal-${st.id}">—</b></div>
   </div>`;
 }
 
@@ -3798,7 +3710,6 @@ function renderTable() {
   const all = getFilteredCheques().slice().reverse();      // newest first
 
   updateBoardCountBadge(all);
-  renderDueAlertBar();
   // First render means the data is in — the loading skeleton can go.
   boardWrap.classList.remove('is-loading');
   tableEmpty.style.display = all.length ? 'none' : 'flex';
@@ -3806,10 +3717,7 @@ function renderTable() {
 
   STATUSES.forEach((st) => {
     const colChecks = all.filter((c) => (c.status || 'pending') === st.id);
-    const total = colChecks.reduce((s, c) => s + (parseInt(c.amount, 10) || 0), 0);
     document.getElementById(`boardColCount-${st.id}`).textContent = toFa(colChecks.length);
-    document.getElementById(`boardColTotal-${st.id}`).textContent =
-      colChecks.length ? `${toFa(groupDigits(String(total)))} ریال` : '—';
     const listEl = document.getElementById(`boardColList-${st.id}`);
     listEl.innerHTML = colChecks.length
       ? colChecks.map(checkCardHtml).join('')
@@ -3869,6 +3777,17 @@ window.addEventListener('resize', updateBoardHeight);
   let dragging = false;
   let overColumn = null;
   let offsetX = 0, offsetY = 0;
+  let baseLeft = 0, baseTop = 0;
+
+  // The pointer fires far more often than the screen repaints — writing to
+  // style and calling elementFromPoint on every single event is what made
+  // this feel heavy. Only the latest coordinates are recorded synchronously;
+  // the actual work happens once per animation frame, and the ghost moves
+  // on transform (compositor-only) instead of left/top (which forces a
+  // layout pass on every move).
+  let pendingX = 0, pendingY = 0;
+  let rafId = null;
+  const GHOST_TILT = 'rotate(-1.5deg) scale(1.02)';   // the card's own tilt, held constant under the translate
 
   function cardUnderPointer(target) {
     return target.closest && target.closest('.check-card');
@@ -3885,16 +3804,31 @@ window.addEventListener('resize', updateBoardHeight);
     const r = sourceCard.getBoundingClientRect();
     offsetX = startX - r.left;
     offsetY = startY - r.top;
+    baseLeft = r.left;
+    baseTop = r.top;
     ghost = sourceCard.cloneNode(true);
     ghost.className = 'check-card-ghost';
     ghost.style.width = r.width + 'px';
+    ghost.style.left = baseLeft + 'px';
+    ghost.style.top = baseTop + 'px';
+    ghost.style.transform = GHOST_TILT;
     document.body.appendChild(ghost);
-    positionGhost(e.clientX, e.clientY);
+    scheduleFrame(e.clientX, e.clientY);
   }
 
-  function positionGhost(x, y) {
-    ghost.style.left = (x - offsetX) + 'px';
-    ghost.style.top = (y - offsetY) + 'px';
+  function scheduleFrame(x, y) {
+    pendingX = x; pendingY = y;
+    if (rafId !== null) return;
+    rafId = requestAnimationFrame(applyFrame);
+  }
+
+  function applyFrame() {
+    rafId = null;
+    if (!dragging || !ghost) return;
+    const dx = pendingX - offsetX - baseLeft;
+    const dy = pendingY - offsetY - baseTop;
+    ghost.style.transform = `translate3d(${dx}px, ${dy}px, 0) ${GHOST_TILT}`;
+    updateOverColumn(pendingX, pendingY);
   }
 
   function updateOverColumn(x, y) {
@@ -3907,6 +3841,7 @@ window.addEventListener('resize', updateBoardHeight);
   }
 
   function cleanup() {
+    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
     if (sourceCard) sourceCard.classList.remove('dragging');
     if (ghost) { ghost.remove(); ghost = null; }
     if (overColumn) { overColumn.classList.remove('drag-over'); overColumn = null; }
@@ -3930,12 +3865,10 @@ window.addEventListener('resize', updateBoardHeight);
       if (Math.abs(e.clientX - startX) < DRAG_THRESHOLD && Math.abs(e.clientY - startY) < DRAG_THRESHOLD) return;
       sourceCard.setPointerCapture(pointerId);
       beginDrag(e);
+      return;
     }
-    if (dragging) {
-      positionGhost(e.clientX, e.clientY);
-      updateOverColumn(e.clientX, e.clientY);
-    }
-  });
+    scheduleFrame(e.clientX, e.clientY);
+  }, { passive: true });
 
   function onPointerUp(e) {
     if (pointerId === null || e.pointerId !== pointerId) return;

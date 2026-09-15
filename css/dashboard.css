@@ -3309,21 +3309,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    column controls, because there's nothing to configure.
    ═══════════════════════════════════════════════════════════════════ */
 
-.board-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s3);
-  margin-bottom: var(--s4);
-  flex-wrap: wrap;
-}
-.board-count {
-  font-size: var(--t-cap);
-  color: var(--muted);
-  font-variation-settings: var(--f-value);
-}
-.board-actions { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
-
 .board-columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3380,7 +3365,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--ink);
   font-variation-settings: var(--f-title);
 }
-.board-col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .board-col-count {
   min-width: 22px;
   height: 22px;
@@ -3410,16 +3394,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--muted);
   font-size: var(--t-cap);
 }
-.board-col-foot {
-  padding: var(--s2) var(--s4);
-  border-top: 1px solid var(--border-subtle);
-  background: var(--surface-2);
-  font-size: var(--t-cap);
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.board-col-foot b { color: var(--ink); font-variation-settings: var(--f-num); font-variant-numeric: tabular-nums; }
-
 /* ---- The card itself ---- */
 .check-card {
   background: var(--surface);
@@ -3435,6 +3409,19 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .check-card.st-pending { border-inline-start: 3px solid var(--state-idle-dot); }
 .check-card.st-done { border-inline-start: 3px solid var(--state-ok); }
 .check-card.st-problem { border-inline-start: 3px solid var(--state-warn); position: relative; }
+
+/* The serial is the one thing a person actually says out loud to refer to
+   a specific cheque ("چک ۴۸۲۹۱۰") — it gets first billing on the card
+   instead of being buried next to the due date, so identifying which
+   cheque this is doesn't require reading the whole card first. */
+.chk-eyebrow {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+.chk-eyebrow b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
 
 .chk-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
 .chk-title {
@@ -3466,7 +3453,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .chk-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s2);
   margin-top: var(--s2);
   font-size: var(--t-micro);
@@ -3474,7 +3460,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .chk-date { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
 .chk-date svg { width: 13px; height: 13px; opacity: 0.7; }
-.chk-serial { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; direction: ltr; }
 .chk-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--s2); }
 .chk-tag {
   display: inline-flex;
@@ -3516,11 +3501,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .check-card-ghost {
   position: fixed;
   z-index: 500;
+  margin: 0;
   pointer-events: none;
   opacity: 0.96;
   box-shadow: var(--shadow-2);
-  transform: rotate(-1.5deg) scale(1.02);
   cursor: grabbing;
+  will-change: transform;   /* GPU layer up front — no promotion hitch on the first move */
 }
 
 /* ---- Loading skeleton ---- */
@@ -3588,8 +3574,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    than the bordered box this replaces, and it reads as "type here"
    without a focus ring having to do all of that work. */
 .board-toolbar .search-box {
-  flex: 1 1 auto;
-  max-width: 420px;
+  flex: 0 1 340px;    /* fixed width, not stretching — keeps every control clustered together */
   min-width: 200px;
   height: 40px;
   padding: 0 var(--s3);
@@ -3606,18 +3591,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .board-toolbar .search-box:focus-within .search-kbd { display: none; }
 
-.board-count {
-  margin-inline-start: var(--s2);
-  font-size: var(--t-cap);
-  color: var(--muted);
-  font-variation-settings: var(--f-value);
-  white-space: nowrap;
-}
 .board-toolbar-actions {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  margin-inline-start: auto;
   flex-shrink: 0;
 }
 
@@ -3668,36 +3645,50 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border-bottom: none;
   background: none;
 }
+/* Bold enough to read as three distinct states from across the screen —
+   the pale versions of these tokens used for a status pill inside a card
+   are correct there (near text, need to stay quiet); a column header is
+   the one place in the app whose entire job is to be told apart at a
+   glance, so it earns the more saturated tint. */
 .board-col-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 30px;
-  padding: 0 6px 0 10px;
+  height: 32px;
+  padding: 0 8px 0 12px;
   border-radius: var(--rad-pill);
-  font-size: 13px;
+  font-size: 13.5px;
   font-variation-settings: var(--f-label);
 }
-.board-col-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.board-col-icon { width: 15px; height: 15px; flex-shrink: 0; }
 .board-col-count {
-  min-width: 20px;
-  height: 20px;
+  min-width: 21px;
+  height: 21px;
   padding: 0 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--rad-pill);
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.6);
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
-:root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.28); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.28); } }
+:root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.3); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.3); } }
 
-.board-col-badge-pending { background: var(--state-idle-bg); color: var(--state-idle); }
-.board-col-badge-done { background: var(--state-ok-bg); color: var(--state-ok); }
-.board-col-badge-problem { background: var(--state-warn-bg); color: var(--state-warn); }
+.board-col-badge-pending { background: rgba(45, 140, 255, 0.16); color: #0A5CE0; }
+.board-col-badge-done    { background: rgba(26, 122, 76, 0.16);  color: #0E6B49; }
+.board-col-badge-problem { background: rgba(232, 131, 58, 0.18); color: #9A5B12; }
+
+:root[data-theme="dark"] .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
+:root[data-theme="dark"] .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
+:root[data-theme="dark"] .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
+  :root:not([data-theme="light"]) .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
+  :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+}
 
 .board-col-add {
   width: 26px; height: 26px;
@@ -3717,12 +3708,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-col-add:focus-visible { display: inline-flex; }
 
 .board-col-list { padding: 0; }
-.board-col-foot {
-  padding: var(--s2) var(--s1);
-  border-top: none;
-  background: none;
-  font-size: var(--t-cap);
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    CARD — white surface with real depth (this is the one place in the
