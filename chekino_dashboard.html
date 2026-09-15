@@ -76,7 +76,6 @@
 
 <main class="main">
   <div class="board-page-head">
-    <h1 class="board-title">چک‌ها</h1>
     <div class="board-page-actions">
       <button class="add-check-btn" id="addCheckBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -84,16 +83,19 @@
           <line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         افزودن چک
-        <kbd class="btn-kbd">N</kbd>
+      </button>
+      <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="ia-label">مدیریت اشخاص</span>
       </button>
     </div>
+    <h1 class="board-title">چک‌ها</h1>
   </div>
 
   <div class="board-toolbar" id="filterBar">
-    <button type="button" class="board-filter-toggle" id="filterToggleBtn" title="فیلترها" aria-expanded="false" aria-controls="filterPillPanel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    </button>
-
     <div class="search-box">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" inputmode="numeric" placeholder="جستجو (سریال / شناسه صیادی)">
@@ -103,15 +105,11 @@
       </button>
     </div>
 
-    <div class="board-toolbar-actions">
-      <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        <span class="ia-label">مدیریت اشخاص</span>
-      </button>
+    <button type="button" class="board-filter-toggle" id="filterToggleBtn" title="فیلترها" aria-expanded="false" aria-controls="filterPillPanel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    </button>
 
+    <div class="board-toolbar-actions">
       <div class="export-cluster" id="exportCluster">
         <button type="button" class="icon-action" id="reportBtn" title="گزارش‌گیری" aria-label="گزارش‌گیری" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
