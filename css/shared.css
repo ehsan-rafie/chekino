@@ -536,7 +536,6 @@ kbd {
    Metronic, GitHub, Linear's own app: status, count, tag. */
 :root .status-btn,
 :root .status-filter-chip,
-:root .filter-pill-btn,
 :root .ths-count,
 :root .badge,
 :root .ms-chip,
@@ -554,6 +553,7 @@ kbd {
 :root .add-check-btn,
 :root .btn-ghost,
 :root .icon-action,
+:root .filter-pill-btn,
 :root .filter-clear-btn,
 :root .ths-report-btn,
 :root .tab-btn,

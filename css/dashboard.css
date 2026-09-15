@@ -3313,51 +3313,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-column {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
   overflow: hidden;
-  min-height: 140px;
   transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
-}
-/* The drop target under a dragged card — a wash of the accent, not a
-   border that would nudge every card inside sideways by a pixel. */
-.board-column.drag-over {
-  border-color: var(--accent);
-  background: var(--accent-wash);
-}
-
-.board-col-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s2);
-  padding: var(--s3) var(--s4);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-  flex-shrink: 0;
-}
-.board-col-name {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  font-size: var(--t-value);
-  color: var(--ink);
-  font-variation-settings: var(--f-title);
-}
-.board-col-count {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--rad-pill);
-  background: var(--surface-sunken);
-  color: var(--muted);
-  font-size: var(--t-cap);
-  font-variant-numeric: tabular-nums;
-  font-variation-settings: var(--f-num);
 }
 
 .board-col-list {
@@ -3378,7 +3335,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .check-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--rad-ctl);
+  border-radius: var(--rad-card);
+  overflow: hidden;
   padding: var(--s3);
   cursor: grab;
   transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
@@ -3386,9 +3344,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .check-card:hover { border-color: var(--border-strong); }
 .check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.check-card.st-pending { border-inline-start: 3px solid var(--state-idle-dot); }
-.check-card.st-done { border-inline-start: 3px solid var(--state-ok); }
-.check-card.st-problem { border-inline-start: 3px solid var(--state-warn); position: relative; }
 
 /* The serial is the one thing a person actually says out loud to refer to
    a specific cheque ("چک ۴۸۲۹۱۰") — it gets first billing on the card

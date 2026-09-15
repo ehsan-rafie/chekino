@@ -3796,7 +3796,7 @@ window.addEventListener('resize', updateBoardHeight);
     baseLeft = r.left;
     baseTop = r.top;
     ghost = sourceCard.cloneNode(true);
-    ghost.className = 'check-card-ghost';
+    ghost.className = 'check-card check-card-ghost';
     ghost.style.width = r.width + 'px';
     ghost.style.left = baseLeft + 'px';
     ghost.style.top = baseTop + 'px';
