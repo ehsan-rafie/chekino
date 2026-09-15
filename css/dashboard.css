@@ -770,9 +770,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .ths-count {
   padding: 2px 10px;
-  border-radius: var(--rad-card);
-  background: var(--blue-100);
-  color: var(--blue-900);
+  border-radius: var(--rad-pill);
+  background: var(--accent-wash);
+  color: var(--accent-text);
   font-size: 12px;
   font-variation-settings: var(--f-num);
 }
@@ -783,7 +783,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .ths-stats {
   display: flex;
-  gap: 16px;
+  gap: var(--s2);
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -877,21 +877,37 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .opt-pdf:hover, .opt-pdf:focus-visible { background: var(--error); color: #fff; border-color: var(--error); }
 .opt-excel { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
 .opt-excel:hover, .opt-excel:focus-visible { background: var(--success); color: #fff; border-color: var(--success); }
+/* Status chips: a dot in the status colour, the label, the count. The
+   total-amount stat above stays plain text — it isn't a status, so it
+   doesn't get a chip. A zero-count chip dims instead of vanishing, so the
+   three don't reflow as the day's pending pile empties out. */
 .ths-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-micro);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--rad-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-variation-settings: var(--f-value);
   min-width: 0;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
+.ths-amount .ths-stat { background: none; border: none; padding: 0; }
+.ths-stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .ths-stat b {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 12.5px;
   font-variation-settings: var(--f-num);
+  font-variant-numeric: tabular-nums;
   word-break: break-word;
 }
+.ths-stat.is-zero { opacity: 0.5; }
+.ths-stat-pending { border-color: color-mix(in srgb, var(--state-idle-dot) 35%, var(--border)); }
+.ths-stat-done { border-color: color-mix(in srgb, var(--state-ok) 30%, var(--border)); }
+.ths-stat-problem:not(.is-zero) { border-color: color-mix(in srgb, var(--state-warn) 35%, var(--border)); background: var(--state-warn-bg); }
 @media (max-width: 700px) {
   .table-head-strip { padding: 14px 16px; }
   .ths-stats { width: 100%; order: 3; }
@@ -3166,4 +3182,122 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 @media (max-width: 720px) {
   .btn-kbd { display: none; }
   .ths-actions .add-check-btn { height: var(--h-md); font-size: var(--t-body); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   V2 POLISH PASS
+   A second calibration pass — same method as the one above, wider net.
+   Every field, control, overlay and motion value audited against the
+   tokens in shared.css and against what shadcn/ui, Linear and Vuexy
+   actually ship, not against how those look from a screenshot.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 9 · Fields get a real focus state ──
+   The search box already had a focus ring; the cheque form's own fields
+   only changed border colour, which is the one focus signal least visible
+   to anyone scanning quickly rather than reading closely. Every text field
+   in the app now gets the same ring, at the same strength. */
+.form-field input,
+.sayad-static,
+.date-mask-input,
+.amount-input,
+.notes-input,
+.ac-input {
+  height: var(--h-lg);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.form-field input:focus,
+.date-mask-input:focus,
+.amount-box:focus-within,
+.notes-input:focus,
+.ac-field:focus-within .ac-input {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+.form-field.error input:focus { box-shadow: 0 0 0 3px var(--state-bad-bg); }
+
+/* ── 10 · Overlays match the command palette's own treatment ──
+   The palette blurs the page behind it; the cheque form and the confirm
+   dialog used to just darken it. Same backdrop everywhere a surface takes
+   over the screen, and the tint now comes from the system's own ink
+   instead of a leftover blue that predates the warm palette. */
+.modal-overlay,
+.confirm-overlay,
+.photo-editor-overlay,
+.lightbox-overlay {
+  background: rgba(22, 21, 17, 0.44);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+:root[data-theme="dark"] .modal-overlay,
+:root[data-theme="dark"] .confirm-overlay,
+:root[data-theme="dark"] .photo-editor-overlay,
+:root[data-theme="dark"] .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modal-overlay,
+  :root:not([data-theme="light"]) .confirm-overlay,
+  :root:not([data-theme="light"]) .photo-editor-overlay,
+  :root:not([data-theme="light"]) .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
+}
+
+/* ── 11 · A problem row asks for attention once, not forever ──
+   A slow, three-beat pulse on the status dot — not the whole row, not
+   endless — draws the eye on arrival without turning into a distraction
+   during the minutes someone spends working near it. */
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 131, 58, 0.35); }
+  50%      { box-shadow: 0 0 0 5px rgba(232, 131, 58, 0); }
+}
+.cheque-table tr.st-problem td:first-child::after,
+.cq-card.st-problem::after {
+  content: '';
+  position: absolute;
+  top: 50%; right: -1.5px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--state-warn);
+  transform: translateY(-50%);
+  animation: statusPulse 2.4s var(--ease) 3;
+}
+.cq-card.st-problem { position: relative; }
+
+/* ── 12 · Toast rides the spring curve ──
+   Everything else in the app enters on the expo-out curve; the toast is
+   the one notification that arrives uninvited, so it gets the single
+   deliberate overshoot in the system — enough to feel noticed, not enough
+   to feel bouncy. */
+.app-toast.show { animation: toastIn var(--dur-3) var(--ease-spring) both; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── 13 · Icon buttons, unified ──
+   The eye button, the receipt button and the filter-pill buttons each had
+   their own hover treatment, arrived at separately over three features.
+   One wash-and-scale response for all of them now. */
+.eye-btn, .receipt-btn {
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.eye-btn:hover, .receipt-btn:hover { background: var(--accent-wash); color: var(--accent-text); }
+
+/* ── 14 · Skeleton shimmer, retimed ──
+   1.3s read as sluggish next to a 150ms interface; the sweep now matches
+   the pace of everything else that moves on this page. */
+.sk-row { animation-duration: 1s; }
+
+/* ── 15 · Dropdowns and menus enter, they don't just appear ──
+   The autocomplete list, the status menu and the filter popovers used
+   display:block with no transition. A menu that snaps into existence
+   reads as a bug the first time you see it and gets ignored after —
+   neither is the goal. */
+.ac-list.show, .ms-list.show, .status-menu.show, .filter-popover.show {
+  animation: menuIn var(--dur-2) var(--ease-out) both;
+}
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }

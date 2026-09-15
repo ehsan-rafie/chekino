@@ -116,12 +116,10 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
 const THEME_KEY = 'chekino_theme_v1';
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 
-// Dark is the default, not a time-of-day guess. The palette is built for a
-// near-black ground — that is where the border tiers and the lit edges do
-// their work — and a session that silently flipped to light at 6am was
-// changing the product's appearance for a reason the user never asked for.
-// A saved choice still wins, in both directions, forever.
-const DEFAULT_THEME = 'dark';
+// Light is the default — the working theme for a table looked at all day
+// — not a time-of-day guess. Dark stays one click away and, once chosen,
+// wins forever: a saved choice is never silently overridden by the clock.
+const DEFAULT_THEME = 'light';
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
 }
@@ -3346,10 +3344,16 @@ function updateTableHeadStrip(list) {
   const counts = { pending: 0, done: 0, problem: 0 };
   list.forEach(c => { counts[c.status || 'pending']++; });
   tableAmount.innerHTML = `<span class="ths-stat">جمع مبلغ: <b>${toFa(groupDigits(String(total)))} ریال</b></span>`;
-  tableStats.innerHTML = `
-    <span class="ths-stat">منتظر ثبت: <b>${toFa(counts.pending)}</b></span>
-    <span class="ths-stat">ثبت شد: <b>${toFa(counts.done)}</b></span>
-    <span class="ths-stat">مشکل در ثبت: <b>${toFa(counts.problem)}</b></span>${archivedStat}`;
+  // One chip per STATUSES entry — a count, not an amount, so the colour is
+  // the only thing telling pending from done from problem. A zero count
+  // still renders (dimmed) rather than disappearing, so the three chips
+  // hold their place in the strip instead of the layout jumping around
+  // as a working day empties the pending pile.
+  tableStats.innerHTML = STATUSES.map(s => `
+    <span class="ths-stat ths-stat-${s.id}${counts[s.id] === 0 ? ' is-zero' : ''}">
+      <i class="ths-stat-dot" style="background:${s.color}"></i>${s.name}
+      <b>${toFa(counts[s.id])}</b>
+    </span>`).join('') + archivedStat;
 }
 
 function refreshTable() {

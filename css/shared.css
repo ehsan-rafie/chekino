@@ -34,13 +34,19 @@
 /* ════════════════════════════════════════════════════════════════
    1 · PRIMITIVES — raw scales. Components never reference these
    directly; they go through the semantic roles in section 2.
-   The neutrals carry a slight blue bias so they sit with the brand
-   blue instead of reading as flat, unconsidered grey.
+
+   The neutrals carry a slight WARM bias — not blue. A blue-tinted grey
+   next to a blue accent competes with it; warmth sits underneath the
+   accent instead of arguing with it, and reads calmer across a full
+   working day of looking at a table of numbers. Same idea as the paper
+   tone under PostHog and Arc's interfaces, dialed down to something a
+   finance tool can stand behind: the difference from pure white is felt,
+   not seen.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  --n-1:  #FBFCFD;  --n-2:  #F6F8FA;  --n-3:  #EDF0F4;  --n-4:  #E4E8EE;
-  --n-5:  #D9DEE7;  --n-6:  #C7CEDA;  --n-7:  #A8B2C3;  --n-8:  #8792A6;
-  --n-9:  #67728A;  --n-10: #4A5568;  --n-11: #2C3648;  --n-12: #0F1728;
+  --n-1:  #FCFCFB;  --n-2:  #F7F7F4;  --n-3:  #EFEEEA;  --n-4:  #E3E2DB;
+  --n-5:  #D6D4CA;  --n-6:  #C2C0B3;  --n-7:  #A3A192;  --n-8:  #868476;
+  --n-9:  #68675C;  --n-10: #4B4A41;  --n-11: #2F2E28;  --n-12: #161511;
 
   --blue-wash: #EEF4FF;  --blue-soft: #DCE8FF;  --blue-line: #A8C6FF;
   --blue-base: #0B5CFF;  --blue-deep: #0A4ED6;
@@ -54,13 +60,16 @@
   --s5: 24px; --s6: 32px; --s7: 48px;
 
   /* ── radius, assigned by role ──
-     Data surfaces and controls share one soft value. Floating things get
-     slightly more, which is what makes them read as lifted even before the
-     shadow registers. */
-  --rad-ctl: 6px;    /* inputs, buttons, chips, table/panel surfaces */
-  --rad-card: 6px;   /* panels, cards — same value, named by role */
-  --rad-float: 8px;  /* modals, popovers, dropdowns, command palette */
-  --rad-pill: 999px;
+     Verified against shadcn/ui's own computed styles (the de-facto
+     standard right now): its default button is rounded-md, 8px, not a
+     pill. Pills stay — they're a real, near-universal convention — but
+     narrowed to exactly the things a pill means somewhere else too:
+     status, count and tag. A button you press keeps the same soft
+     rectangle as the field you type into. */
+  --rad-ctl: 8px;     /* inputs, buttons, table/panel surfaces */
+  --rad-card: 10px;   /* panels, cards — one step softer than a control */
+  --rad-float: 12px;  /* modals, popovers, dropdowns, command palette */
+  --rad-pill: 999px;  /* status, count, tag — never a button */
 
   /* ── type scale: seven steps, no half-pixels ── */
   --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
@@ -74,29 +83,32 @@
   /* ── font weight axes (IRANYekanX is variable, 100–1000) ──
      Large text is deliberately not bold. The weight that reads as premium
      at display sizes is a medium one — linear.app sets its 64px headline at
-     510 — and letting size carry the emphasis instead of weight is most of
-     what separates an elegant heading from a shouty one. These sit a little
-     above Inter's numbers because Persian script, being cursive and
-     lower-contrast, thins out faster than Latin at the same weight. */
-  --f-brand:  'wght' 700, 'dots' 2;
-  --f-title:  'wght' 620, 'dots' 2;
-  --f-label:  'wght' 600, 'dots' 2;
-  --f-btn:    'wght' 600, 'dots' 2;
-  --f-value:  'wght' 520, 'dots' 2;
-  --f-num:    'wght' 560, 'dots' 2;
+     510, shadcn's own button label at 500 — and letting size carry the
+     emphasis instead of weight is most of what separates an elegant
+     heading from a shouty one. These sit a little above the Latin numbers
+     because Persian script, being cursive and lower-contrast, thins out
+     faster than Latin at the same weight. */
+  --f-brand:  'wght' 680, 'dots' 2;
+  --f-title:  'wght' 600, 'dots' 2;
+  --f-label:  'wght' 590, 'dots' 2;
+  --f-btn:    'wght' 560, 'dots' 2;
+  --f-value:  'wght' 510, 'dots' 2;
+  --f-num:    'wght' 550, 'dots' 2;
   --f-body:   'wght' 430, 'dots' 2;
   --f-hint:   'wght' 330, 'dots' 2;
-  --f-micro:  'wght' 480, 'dots' 2;
+  --f-micro:  'wght' 470, 'dots' 2;
 
   /* ── motion ──
      Everything the user causes lands inside 200ms; the common case is
-     140ms. Only opacity, transform and colour are animated — never a
+     150ms — the exact figure shadcn's own transition uses, on the same
+     curve. Only opacity, transform and colour are animated — never a
      property that forces layout. */
   --dur-1: 90ms;    /* instant feedback: hover, press */
-  --dur-2: 140ms;   /* the default */
-  --dur-3: 200ms;   /* entrances, state changes worth noticing */
+  --dur-2: 150ms;   /* the default */
+  --dur-3: 220ms;   /* entrances, state changes worth noticing */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);   /* overshoot-free entrances */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1); /* one tasteful overshoot, used once */
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -141,8 +153,10 @@
      tiers and from stepping the background between layers. */
   --shadow-1: none;
   /* Reserved for genuinely floating surfaces. Two stacked shadows: a tight
-     dark one that reads as contact, and a wide soft one that reads as height. */
-  --shadow-2: 0 1px 2px rgba(15, 23, 40, 0.10), 0 12px 32px -8px rgba(15, 23, 40, 0.18);
+     dark one that reads as contact, and a wide soft one that reads as height.
+     Tinted with the warm ink instead of a generic black, so the shadow
+     belongs to this palette instead of looking borrowed. */
+  --shadow-2: 0 1px 2px rgba(22, 21, 17, 0.08), 0 16px 36px -10px rgba(22, 21, 17, 0.16);
   --shadow-float: var(--shadow-2);
   /* On light there is no lit edge to simulate — the border already reads. */
   --inset-hairline: none;
@@ -313,7 +327,13 @@ a:focus-visible,
 /* A press should register before the network does. 90ms, transform only —
    never a property that forces layout. */
 button:not(:disabled):active { transform: scale(0.97); }
-button { transition: transform var(--dur-1) var(--ease); }
+button { transition: transform var(--dur-1) var(--ease); cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+/* Every element that behaves like a control looks like one. A div wired up
+   with a click handler is still a button as far as the pointer is concerned. */
+[role="button"], .clickable, summary { cursor: pointer; }
+[aria-disabled="true"] { cursor: not-allowed; }
 
 /* Thin, self-effacing scrollbars: the content is the subject, not the
    chrome around it. */
@@ -509,27 +529,16 @@ kbd {
 .header-logo,
 .topbar h1 { letter-spacing: -0.02em; }
 
-/* ── Buttons are pills ──
-   Eighty-two elements on that page carry a 9999px radius. It is the most
-   recognisable thing about the design after the palette. Inputs and data
-   surfaces keep the 6px from the system scale, so the shape itself tells you
-   which things you press and which things you read. */
-:root button.btn-primary,
-:root button.btn-add,
-:root button.submit,
-:root .add-check-btn,
-:root .btn-ghost,
-:root .icon-action,
-:root .filter-pill-btn,
-:root .filter-clear-btn,
-:root .ths-report-btn,
-:root .tab-btn,
-:root .cp-item,
-:root .modal-actions button,
-:root .confirm-actions button,
-:root .btn-inline,
+/* ── Pills mean state, not "press me" ──
+   Checked against shadcn/ui's own computed styles: its default button is
+   rounded-md — 8px, not a pill. A full pill is Linear's marketing-site
+   signature, not a cross-industry standard, and stamping it on every
+   button read as a costume rather than a system. Reserved instead for
+   exactly the things a pill conventionally means everywhere — Vuexy,
+   Metronic, GitHub, Linear's own app: status, count, tag. */
 :root .status-btn,
 :root .status-filter-chip,
+:root .filter-pill-btn,
 :root .ths-count,
 :root .badge,
 :root .ms-chip,
@@ -538,6 +547,22 @@ kbd {
 :root .due-alert-count,
 :root .export-opt,
 :root .st-opt { border-radius: var(--rad-pill); }
+
+/* Buttons, tabs and menu items take the control radius instead — the same
+   shape as the inputs they sit beside. */
+:root button.btn-primary,
+:root button.btn-add,
+:root button.submit,
+:root .add-check-btn,
+:root .btn-ghost,
+:root .icon-action,
+:root .filter-clear-btn,
+:root .ths-report-btn,
+:root .tab-btn,
+:root .cp-item,
+:root .modal-actions button,
+:root .confirm-actions button,
+:root .btn-inline { border-radius: var(--rad-ctl); }
 
 /* ── Panels are lit from inside their own edge ──
    A translucent white hairline set inside the border. On the light theme it

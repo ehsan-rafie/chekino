@@ -4,8 +4,8 @@ const TOKEN_KEY = 'chekino_admin_token';
 // ---- Theme: same key and same rules as the dashboard, so an admin who set
 // dark on one side of the product doesn't land in light on the other ----
 const THEME_KEY = 'chekino_theme_v1';
-// Dark by default, same as the dashboard — a saved choice always wins.
-const DEFAULT_THEME = 'dark';
+// Light by default, same as the dashboard — a saved choice always wins.
+const DEFAULT_THEME = 'light';
 function currentSavedTheme() {
   try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
 }
