@@ -2930,17 +2930,6 @@ clearFormBtn.addEventListener('click', async () => {
 // ---- Cheque table ----
 // =========================================================
 const filterBar = document.getElementById('filterBar');
-const filterToggleBtn = document.getElementById('filterToggleBtn');
-const filterPillPanel = document.getElementById('filterPillPanel');
-// The four filter types live behind one funnel icon until asked for —
-// active filters still show as chips below regardless, so nothing active
-// is ever hidden, only the controls for adding more.
-filterToggleBtn.addEventListener('click', () => {
-  const open = filterPillPanel.hidden;
-  filterPillPanel.hidden = !open;
-  filterToggleBtn.setAttribute('aria-expanded', String(open));
-  filterToggleBtn.classList.toggle('active', open);
-});
 const searchInput = document.getElementById('searchInput');
 const searchClearBtn = document.getElementById('searchClearBtn');
 const activeFiltersRow = document.getElementById('activeFiltersRow');

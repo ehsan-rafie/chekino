@@ -533,15 +533,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .search-clear:hover { background: var(--error-bg); color: var(--error); }
 .search-clear svg { width: 13px; height: 13px; }
 
-.filter-by-label {
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-  flex-shrink: 0;
-  /* Search sits at one end of the bar and the filter controls at the other,
-     instead of both bunching up and leaving dead space on the far side. */
-  margin-inline-start: auto;
-}
 .filter-pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
 .filter-pill-btn {
   height: 38px;
@@ -737,9 +728,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   /* Full-width search on its own row, with the label and pills below it —
      capping the width here just stranded the label out on the far edge. */
   .search-box { width: 100%; max-width: none; flex-basis: 100%; }
-  /* Search owns the first row here, so the label starts the second row
-     normally rather than being pushed to the far edge. */
-  .filter-by-label { margin-inline-start: 0; }
 }
 
 /* ===== Cheque table ===== */
@@ -3531,13 +3519,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: var(--s3);
   margin-bottom: var(--s4);
 }
-.board-title {
-  margin: 0;
-  font-size: 28px;
-  color: var(--ink);
-  font-variation-settings: var(--f-title);
-  letter-spacing: -0.02em;
-}
 .board-page-actions { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
 /* The secondary action next to "add" is icon-only, the same square
    shape as a reference app's kebab menu next to its own primary button
@@ -3557,22 +3538,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: var(--s2);
   margin-bottom: var(--s3);
 }
-.board-filter-toggle {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--muted);
-  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
-}
-.board-filter-toggle svg { width: 16px; height: 16px; }
-.board-filter-toggle:hover { color: var(--ink); border-color: var(--border-strong); }
-.board-filter-toggle.active { color: var(--accent-text); border-color: var(--accent); background: var(--accent-wash); }
-
 /* Search: a filled, borderless field — a shape closer to Gridle's own
    than the bordered box this replaces, and it reads as "type here"
    without a focus ring having to do all of that work. */
@@ -3601,29 +3566,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-shrink: 0;
 }
 
-/* The four filter types behind one funnel icon, opened on demand — a
-   collapsed row rather than a permanent fixture, the same way Gridle
-   keeps its own filtering behind a single icon instead of the page. */
-.filter-pill-panel {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  flex-wrap: wrap;
-  padding: var(--s3);
-  margin-bottom: var(--s3);
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
-  background: var(--surface);
-  animation: menuIn var(--dur-2) var(--ease-out) both;
+/* The four filter types sit right in the toolbar now, next to the
+   search box — no funnel icon gating them behind a click. */
+.board-toolbar .filter-pill-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.board-toolbar .filter-pill-btn {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12.5px;
 }
-.filter-pill-panel .filter-by-label { margin-inline-start: 0; }
-.filter-pill-panel .filter-clear-btn { margin-inline-start: auto; }
+.board-toolbar .filter-clear-btn { height: 34px; flex-shrink: 0; }
 
 @media (max-width: 700px) {
   .board-page-head { flex-wrap: wrap; }
   .board-page-actions { width: 100%; }
   .board-page-actions .add-check-btn { flex: 1; justify-content: center; }
-  .board-title { font-size: 22px; }
   .board-toolbar { flex-wrap: wrap; }
   .board-toolbar .search-box { max-width: none; flex-basis: 100%; }
 }
