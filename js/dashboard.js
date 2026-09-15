@@ -2956,15 +2956,10 @@ const filterBenefList = document.getElementById('filterBenefList');
 const statusFilterRow = document.getElementById('statusFilterRow');
 const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
 const filterClearBtn = document.getElementById('filterClearBtn');
-const tableCountBadge = document.getElementById('tableCountBadge');
-const tableAmount = document.getElementById('tableAmount');
-const tableStats = document.getElementById('tableStats');
-const chequeTable = document.getElementById('chequeTable');
-const chequeBody = document.getElementById('chequeBody');
-const chequeCards = document.getElementById('chequeCards');
-const tableWrap = document.getElementById('tableWrap');
+const boardCountBadge = document.getElementById('boardCountBadge');
+const boardColumns = document.getElementById('boardColumns');
+const boardWrap = document.getElementById('boardWrap');
 const tableEmpty = document.getElementById('tableEmpty');
-const tablePager = document.getElementById('tablePager');
 
 const STATUSES = [
   { id: 'pending', name: 'منتظر ثبت',   color: '#2D8CFF', cls: 'st-pending' },
@@ -2972,8 +2967,6 @@ const STATUSES = [
   { id: 'problem', name: 'مشکل در ثبت', color: '#E8833A', cls: 'st-problem' }
 ];
 const STATUSES_IDS = new Set(STATUSES.map(s => s.id));
-const PAGE_SIZE = 50;
-let tablePage = 1;
 let openStatusMenu = null;
 
 function statusById(id) { return STATUSES.find(s => s.id === id) || STATUSES[0]; }
@@ -3058,10 +3051,8 @@ function renderDueAlertBar() {
 
 function jumpToCheck(id) {
   filterClearBtn.click();
-  const all = getFilteredCheques().slice().reverse();
-  const idx = all.findIndex(c => c.id === id);
-  if (idx === -1) return;
-  tablePage = Math.floor(idx / PAGE_SIZE) + 1;
+  const all = getFilteredCheques();
+  if (!all.some(c => c.id === id)) return;
   renderTable();
   requestAnimationFrame(() => {
     const els = document.querySelectorAll(`[data-id="${id}"]`);
@@ -3328,36 +3319,17 @@ function clearOneFilter(key) {
   refreshTable();
 }
 
-function updateTableHeadStrip(list) {
-  tableCountBadge.textContent = `${toFa(list.length)} چک`;
+// The toolbar keeps only the total — Gridle's own page header carries
+// nothing heavier than the count either. Each status's own count and sum
+// now live where they're actually being asked about: in that column's
+// own header and footer, built in renderTable() below.
+function updateBoardCountBadge(list) {
+  boardCountBadge.textContent = `${toFa(list.length)} چک`;
   exportCluster.style.display = list.length === 0 ? 'none' : 'inline-flex';
   if (list.length === 0) closeExportMenu();
-  const archivedCount = showArchivedCheckbox.checked ? 0 : loadCheques().filter(isArchived).length;
-  const archivedStat = archivedCount > 0
-    ? `<span class="ths-stat">بایگانی‌شده (مخفی): <b>${toFa(archivedCount)}</b></span>` : '';
-  if (list.length === 0) {
-    tableAmount.innerHTML = '';
-    tableStats.innerHTML = archivedStat;
-    return;
-  }
-  const total = list.reduce((s, c) => s + (parseInt(c.amount, 10) || 0), 0);
-  const counts = { pending: 0, done: 0, problem: 0 };
-  list.forEach(c => { counts[c.status || 'pending']++; });
-  tableAmount.innerHTML = `<span class="ths-stat">جمع مبلغ: <b>${toFa(groupDigits(String(total)))} ریال</b></span>`;
-  // One chip per STATUSES entry — a count, not an amount, so the colour is
-  // the only thing telling pending from done from problem. A zero count
-  // still renders (dimmed) rather than disappearing, so the three chips
-  // hold their place in the strip instead of the layout jumping around
-  // as a working day empties the pending pile.
-  tableStats.innerHTML = STATUSES.map(s => `
-    <span class="ths-stat ths-stat-${s.id}${counts[s.id] === 0 ? ' is-zero' : ''}">
-      <i class="ths-stat-dot" style="background:${s.color}"></i>${s.name}
-      <b>${toFa(counts[s.id])}</b>
-    </span>`).join('') + archivedStat;
 }
 
 function refreshTable() {
-  tablePage = 1;
   updateFilterUI();
   renderTable();
 }
@@ -3737,73 +3709,85 @@ function exportChecksToExcel() {
   XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
 }
 
-function renderTable() {
-  const all = getFilteredCheques().slice().reverse();      // newest first
-  const pages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
-  if (tablePage > pages) tablePage = pages;
-  const start = (tablePage - 1) * PAGE_SIZE;
-  const rows = all.slice(start, start + PAGE_SIZE);
+// ---- Card builder — one check, one card ----
+// Field choice mirrors what a lead card shows on a sales board: a primary
+// name, a muted subtitle giving the surrounding context, a date, an id,
+// and a handful of tags. طرف حساب (the counterparty) takes the name slot —
+// it's who a person means when they say "the cheque to X" — with صاحب چک
+// and ذینفع folded into the subtitle underneath.
+function checkCardHtml(c) {
+  const st = statusById(c.status || 'pending');
+  const reason = c.status === 'problem' && c.statusReason
+    ? `<div class="chk-reason">${escapeHtml(c.statusReason)}</div>` : '';
+  const tagsHtml = (Array.isArray(c.channels) ? c.channels : []).map(id => {
+    const ch = CHANNELS.find(x => x.id === id);
+    if (!ch) return '';
+    const dot = ch.color === '#FFFFFF' ? 'var(--muted)' : ch.color;
+    return `<span class="chk-tag"><i style="background:${dot}"></i>${escapeHtml(ch.name)}</span>`;
+  }).join('');
+  return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
+    <div class="chk-top">
+      <span class="chk-title">${escapeHtml(c.party)}</span>
+      <span class="chk-amount">${faAmount(c.amount)}</span>
+    </div>
+    <div class="chk-sub">
+      <span>صاحب چک: ${escapeHtml(c.owner)}</span>
+      <span>ذینفع: ${escapeHtml(c.benef)}</span>
+    </div>
+    <div class="chk-meta">
+      <span class="chk-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
+      <span class="chk-serial">#${toFa(c.serial)}</span>
+    </div>
+    ${tagsHtml ? `<div class="chk-tags">${tagsHtml}</div>` : ''}
+    ${reason}
+    <div class="chk-bottom">
+      ${statusButtonHtml(c, st)}
+      <div class="chk-icon-group">${rowActionsHtml(c)}</div>
+    </div>
+  </div>`;
+}
 
-  updateTableHeadStrip(all);
+function boardColumnHtml(st) {
+  return `<div class="board-column" data-status="${st.id}">
+    <div class="board-col-head">
+      <span class="board-col-name"><i class="board-col-dot" style="background:${st.color}"></i>${st.name}</span>
+      <span class="board-col-count" id="boardColCount-${st.id}">۰</span>
+    </div>
+    <div class="board-col-list" id="boardColList-${st.id}"></div>
+    <div class="board-col-foot">جمع: <b id="boardColTotal-${st.id}">—</b></div>
+  </div>`;
+}
+
+// Builds the three columns once; renderTable() below only ever touches
+// their contents afterwards, so a card mid-drag never has its own column
+// wrapper ripped out from under it.
+function ensureBoardColumns() {
+  if (boardColumns.children.length) return;
+  boardColumns.innerHTML = STATUSES.map(boardColumnHtml).join('');
+}
+
+function renderTable() {
+  ensureBoardColumns();
+  const all = getFilteredCheques().slice().reverse();      // newest first
+
+  updateBoardCountBadge(all);
   renderDueAlertBar();
   // First render means the data is in — the loading skeleton can go.
-  tableWrap.classList.remove('is-loading');
+  boardWrap.classList.remove('is-loading');
   tableEmpty.style.display = all.length ? 'none' : 'flex';
-  chequeTable.style.display = all.length ? '' : 'none';
-  chequeCards.style.display = all.length ? '' : 'none';
+  boardColumns.style.display = all.length ? '' : 'none';
 
-  chequeBody.innerHTML = rows.map((c, i) => {
-    const st = statusById(c.status || 'pending');
-    const reason = c.status === 'problem' && c.statusReason
-      ? `<div class="benef-nid" style="margin-top:5px">${escapeHtml(c.statusReason)}</div>` : '';
-    const partyHtml = c.spendDate
-      ? `<span data-tip="تاریخ خرج کردن: ${faDate(c.spendDate)}">${escapeHtml(c.party)}</span>`
-      : escapeHtml(c.party);
-    const statusHtml = c.statusChangedAt
-      ? `<span data-tip="تاریخ تغییر وضعیت: ${faDate(c.statusChangedAt)}">${statusButtonHtml(c, st)}</span>`
-      : statusButtonHtml(c, st);
-    return `<tr class="${st.cls}" data-id="${c.id}">
-      <td data-label="ردیف" class="num">${toFa(start + i + 1)}</td>
-      <td data-label="شماره سریال" class="num"><span data-tip="شناسه صیادی: ${toFa(c.sayad)}">${toFa(c.serial)}</span></td>
-      <td data-label="تاریخ سررسید" class="num">${faDate(c.dueDate)}</td>
-      <td data-label="مبلغ (ریال)" class="amount">${faAmount(c.amount)}</td>
-      <td data-label="صاحب چک" class="owner-name"><span data-tip="تاریخ ارسال: ${faDate(c.sendDate)}">${escapeHtml(c.owner)}</span></td>
-      <td data-label="طرف حساب" class="party-name">${partyHtml}</td>
-      <td data-label="ذینفع">
-        <span class="benef-name">${escapeHtml(c.benef)}</span>
-        <span class="benef-nid">${toFa(c.nid)}</span>
-      </td>
-      <td data-label="وضعیت" class="status-cell">
-        ${statusHtml}${reason}
-      </td>
-      <td data-label="" class="col-eye">${rowActionsHtml(c)}</td>
-    </tr>`;
-  }).join('');
-
-  chequeCards.innerHTML = rows.map((c, i) => {
-    const st = statusById(c.status || 'pending');
-    const reason = c.status === 'problem' && c.statusReason
-      ? `<div class="cq-row"><span class="cq-label">دلیل</span><span class="cq-value">${escapeHtml(c.statusReason)}</span></div>` : '';
-    return `<div class="cq-card ${st.cls}" data-id="${c.id}">
-      <div class="cq-card-top">
-        <div class="cq-serial"><span>سریال</span>${toFa(c.serial)}</div>
-        <div class="cq-amount">${faAmount(c.amount)}<span class="cq-unit"> ریال</span></div>
-      </div>
-      <div class="cq-rows">
-        <div class="cq-row"><span class="cq-label">تاریخ سررسید</span><span class="cq-value num">${faDate(c.dueDate)}</span></div>
-        <div class="cq-row"><span class="cq-label">صاحب چک</span><span class="cq-value">${escapeHtml(c.owner)}</span></div>
-        <div class="cq-row"><span class="cq-label">طرف حساب</span><span class="cq-value">${escapeHtml(c.party)}</span></div>
-        <div class="cq-row"><span class="cq-label">ذینفع</span><span class="cq-value">${escapeHtml(c.benef)} <span class="benef-nid">(${toFa(c.nid)})</span></span></div>
-        ${reason}
-      </div>
-      <div class="cq-bottom">
-        ${statusButtonHtml(c, st)}
-        <div class="cq-icon-group">${rowActionsHtml(c)}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  renderPager(all.length, pages);
+  STATUSES.forEach((st) => {
+    const colChecks = all.filter((c) => (c.status || 'pending') === st.id);
+    const total = colChecks.reduce((s, c) => s + (parseInt(c.amount, 10) || 0), 0);
+    document.getElementById(`boardColCount-${st.id}`).textContent = toFa(colChecks.length);
+    document.getElementById(`boardColTotal-${st.id}`).textContent =
+      colChecks.length ? `${toFa(groupDigits(String(total)))} ریال` : '—';
+    const listEl = document.getElementById(`boardColList-${st.id}`);
+    listEl.innerHTML = colChecks.length
+      ? colChecks.map(checkCardHtml).join('')
+      : `<div class="board-col-empty">چکی در این وضعیت نیست</div>`;
+  });
 
   document.querySelectorAll('[data-status-for]').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -3813,7 +3797,10 @@ function renderTable() {
   });
 
   document.querySelectorAll('[data-view]').forEach(btn => {
-    btn.addEventListener('click', () => openViewEdit(parseInt(btn.dataset.view, 10)));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openViewEdit(parseInt(btn.dataset.view, 10));
+    });
   });
 
   document.querySelectorAll('[data-receipt]').forEach(btn => {
@@ -3823,61 +3810,174 @@ function renderTable() {
     });
   });
 
-  updateTableScrollHeight();
+  updateBoardHeight();
 }
 
-// Sizes the table's own scroll area to the viewport, so once there's more
-// data than comfortably fits, the TABLE scrolls internally — one row short
-// of a full screen, so it's visually obvious there's more below — instead
-// of the whole page growing.
-const tableScroll = document.querySelector('.table-scroll');
-function updateTableScrollHeight() {
-  if (window.innerWidth <= 700 || chequeTable.style.display === 'none') {
-    tableScroll.style.maxHeight = '';
-    tableScroll.style.overflowY = '';
-    return;
-  }
-  const headerRowEl = chequeTable.querySelector('thead tr');
-  const sampleRow = chequeBody.querySelector('tr');
-  if (!headerRowEl || !sampleRow) {
-    tableScroll.style.maxHeight = '';
-    tableScroll.style.overflowY = '';
-    return;
-  }
-  const headerH = headerRowEl.offsetHeight;
-  const rowH = sampleRow.offsetHeight;
-  const top = tableScroll.getBoundingClientRect().top;
-  const available = window.innerHeight - top - 24;   // a little breathing room at the bottom
-  const fitCount = Math.floor((available - headerH) / rowH);
-  const rowCount = chequeBody.querySelectorAll('tr').length;
-  if (fitCount >= rowCount) {
-    // everything already fits — no need to clip a row short
-    tableScroll.style.maxHeight = '';
-    tableScroll.style.overflowY = '';
-    return;
-  }
-  const showCount = Math.max(3, fitCount - 1);
-  tableScroll.style.maxHeight = (headerH + showCount * rowH) + 'px';
-  tableScroll.style.overflowY = 'auto';
-}
-window.addEventListener('resize', updateTableScrollHeight);
-
-function renderPager(total, pages) {
-  if (pages <= 1) { tablePager.innerHTML = ''; return; }
-  let html = `<button class="pg-btn" data-pg="${tablePage - 1}" ${tablePage === 1 ? 'disabled' : ''}>قبلی</button>`;
-  for (let p = 1; p <= pages; p++) {
-    html += `<button class="pg-btn${p === tablePage ? ' active' : ''}" data-pg="${p}">${toFa(p)}</button>`;
-  }
-  html += `<button class="pg-btn" data-pg="${tablePage + 1}" ${tablePage === pages ? 'disabled' : ''}>بعدی</button>`;
-  html += `<span class="pg-info">${toFa(total)} چک</span>`;
-  tablePager.innerHTML = html;
-  tablePager.querySelectorAll('.pg-btn[data-pg]').forEach(b => {
-    b.addEventListener('click', () => {
-      const p = parseInt(b.dataset.pg, 10);
-      if (p >= 1 && p <= pages) { tablePage = p; renderTable(); }
-    });
+// Sizes each column's own scroll area to the viewport, the same idea the
+// table used: one card short of a full screen, so the eye catches that
+// there's more below instead of the whole page growing underneath a
+// hundred-card pending pile.
+function updateBoardHeight() {
+  document.querySelectorAll('.board-col-list').forEach((list) => {
+    if (window.innerWidth <= 860) { list.style.maxHeight = ''; return; }
+    const top = list.getBoundingClientRect().top;
+    const available = window.innerHeight - top - 16;
+    list.style.maxHeight = Math.max(160, available) + 'px';
   });
 }
+window.addEventListener('resize', updateBoardHeight);
+
+// ---- Drag a card between columns to change its status ----
+// Pointer Events rather than the native HTML5 drag API: the native API has
+// no touch support at all, and this has to work the same with a mouse or a
+// finger. A small movement threshold before a drag "starts" is what keeps
+// a plain tap on the card — which does nothing, same as before — from
+// being swallowed as an accidental one-pixel drag.
+(function setupBoardDrag() {
+  const DRAG_THRESHOLD = 6;
+  let pointerId = null;
+  let startX = 0, startY = 0;
+  let sourceCard = null;
+  let ghost = null;
+  let dragging = false;
+  let overColumn = null;
+  let offsetX = 0, offsetY = 0;
+
+  function cardUnderPointer(target) {
+    return target.closest && target.closest('.check-card');
+  }
+  // A drag must start from plain card surface — a button inside the card
+  // (status, eye, receipt) keeps its own click behaviour untouched.
+  function isInteractiveChild(target) {
+    return !!(target.closest && target.closest('button, a, input, textarea, select'));
+  }
+
+  function beginDrag(e) {
+    dragging = true;
+    sourceCard.classList.add('dragging');
+    const r = sourceCard.getBoundingClientRect();
+    offsetX = startX - r.left;
+    offsetY = startY - r.top;
+    ghost = sourceCard.cloneNode(true);
+    ghost.className = 'check-card-ghost';
+    ghost.style.width = r.width + 'px';
+    document.body.appendChild(ghost);
+    positionGhost(e.clientX, e.clientY);
+  }
+
+  function positionGhost(x, y) {
+    ghost.style.left = (x - offsetX) + 'px';
+    ghost.style.top = (y - offsetY) + 'px';
+  }
+
+  function updateOverColumn(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const col = el && el.closest ? el.closest('.board-column') : null;
+    if (col === overColumn) return;
+    if (overColumn) overColumn.classList.remove('drag-over');
+    overColumn = col;
+    if (overColumn) overColumn.classList.add('drag-over');
+  }
+
+  function cleanup() {
+    if (sourceCard) sourceCard.classList.remove('dragging');
+    if (ghost) { ghost.remove(); ghost = null; }
+    if (overColumn) { overColumn.classList.remove('drag-over'); overColumn = null; }
+    sourceCard = null;
+    pointerId = null;
+    dragging = false;
+  }
+
+  boardColumns.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button !== 0) return; // left click / primary touch only
+    const card = cardUnderPointer(e.target);
+    if (!card || isInteractiveChild(e.target)) return;
+    pointerId = e.pointerId;
+    startX = e.clientX; startY = e.clientY;
+    sourceCard = card;
+  });
+
+  boardColumns.addEventListener('pointermove', (e) => {
+    if (pointerId === null || e.pointerId !== pointerId || !sourceCard) return;
+    if (!dragging) {
+      if (Math.abs(e.clientX - startX) < DRAG_THRESHOLD && Math.abs(e.clientY - startY) < DRAG_THRESHOLD) return;
+      sourceCard.setPointerCapture(pointerId);
+      beginDrag(e);
+    }
+    if (dragging) {
+      positionGhost(e.clientX, e.clientY);
+      updateOverColumn(e.clientX, e.clientY);
+    }
+  });
+
+  function onPointerUp(e) {
+    if (pointerId === null || e.pointerId !== pointerId) return;
+    const card = sourceCard, dropColumn = overColumn, wasDragging = dragging;
+    cleanup();
+    if (!wasDragging || !card || !dropColumn) return;
+    const id = parseInt(card.dataset.id, 10);
+    const targetStatus = dropColumn.dataset.status;
+    handleDrop(id, targetStatus, card);
+  }
+  boardColumns.addEventListener('pointerup', onPointerUp);
+  boardColumns.addEventListener('pointercancel', () => cleanup());
+
+  function currentStatusOf(id) {
+    const c = loadCheques().find((x) => x.id === id);
+    return c ? (c.status || 'pending') : 'pending';
+  }
+
+  function handleDrop(id, targetStatus, cardEl) {
+    const current = currentStatusOf(id);
+    if (targetStatus === current) return;   // dropped back where it started
+
+    if (targetStatus === 'problem') {
+      promptDropReason(id, cardEl);
+      return;
+    }
+    if (targetStatus === 'pending' && current !== 'pending') {
+      askConfirm({
+        title: 'بازگشت به «منتظر ثبت»',
+        body: 'این چک قبلاً به وضعیت دیگری تغییر کرده. مطمئنید می‌خواید به «منتظر ثبت» برگرده؟',
+        confirmLabel: 'بله، بازگردد',
+        cancelLabel: 'انصراف',
+      }).then((ok) => { if (ok) applyStatus(id, 'pending', ''); });
+      return;
+    }
+    applyStatus(id, targetStatus, '');
+  }
+
+  // "مشکل در ثبت" always carries a reason, drag or dropdown alike — a small
+  // floating box at the card's own position, built from the same reason-box
+  // markup/styles the status dropdown already uses.
+  function promptDropReason(id, cardEl) {
+    const r = cardEl.getBoundingClientRect();
+    const box = document.createElement('div');
+    box.className = 'status-menu show';
+    box.style.position = 'fixed';
+    box.style.left = Math.min(r.left, window.innerWidth - 240) + 'px';
+    box.style.top = Math.min(r.top, window.innerHeight - 140) + 'px';
+    box.innerHTML = `
+      <div class="status-reason">
+        <textarea id="dropReasonText" placeholder="دلیل مشکل در ثبت را بنویسید"></textarea>
+        <div class="status-reason-actions">
+          <button type="button" class="sr-save">ثبت وضعیت</button>
+          <button type="button" class="sr-cancel">انصراف</button>
+        </div>
+      </div>`;
+    document.body.appendChild(box);
+    box.querySelector('textarea').focus();
+    const remove = () => box.remove();
+    box.querySelector('.sr-save').addEventListener('click', () => {
+      const reason = box.querySelector('textarea').value.trim();
+      remove();
+      applyStatus(id, 'problem', reason);
+    });
+    box.querySelector('.sr-cancel').addEventListener('click', remove);
+    box.addEventListener('click', (e) => e.stopPropagation());
+    setTimeout(() => document.addEventListener('click', remove, { once: true }), 0);
+  }
+})();
 
 function closeStatusMenu() {
   if (openStatusMenu) { openStatusMenu.remove(); openStatusMenu = null; }
@@ -4015,87 +4115,6 @@ toTopBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-
-// ---- Shared tooltip for table cells carrying extra info on hover ----
-(function () {
-  const tip = document.getElementById('cellTooltip');
-  let currentCell = null;
-
-  function positionTip(e) {
-    const pad = 14;
-    let left = e.clientX - tip.offsetWidth - pad;
-    if (left < 8) left = e.clientX + pad;
-    let top = e.clientY - tip.offsetHeight / 2;
-    top = Math.max(8, Math.min(top, window.innerHeight - tip.offsetHeight - 8));
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
-  }
-
-  chequeTable.addEventListener('mouseover', (e) => {
-    const cell = e.target.closest('[data-tip]');
-    if (!cell) { tip.classList.remove('show'); currentCell = null; return; }
-    if (cell !== currentCell) {
-      currentCell = cell;
-      tip.textContent = cell.dataset.tip;
-    }
-    positionTip(e);
-    tip.classList.add('show');
-  });
-  chequeTable.addEventListener('mousemove', (e) => {
-    if (currentCell) positionTip(e);
-  });
-  chequeTable.addEventListener('mouseleave', () => {
-    tip.classList.remove('show');
-    currentCell = null;
-  });
-})();
-
-// ---- A few faint, randomly-placed dots drift inside whichever row is hovered ----
-(function () {
-  const hoverDots = document.getElementById('hoverDots');
-  const dots = hoverDots.querySelectorAll('span');
-
-  let currentRow = null;
-
-  function colorFor(row) {
-    if (row.classList.contains('st-done')) return '#17A85E';
-    if (row.classList.contains('st-problem')) return '#E8833A';
-    return '#2D8CFF';
-  }
-
-  function scatter(row) {
-    const r = row.getBoundingClientRect();
-    hoverDots.style.left = r.left + 'px';
-    hoverDots.style.top = r.top + 'px';
-    hoverDots.style.width = r.width + 'px';
-    hoverDots.style.height = r.height + 'px';
-    hoverDots.style.setProperty('--dot-color', colorFor(row));
-    dots.forEach(dot => {
-      const size = 1.3 + Math.random() * 2.4;
-      dot.style.width = size + 'px';
-      dot.style.height = size + 'px';
-      dot.style.left = (6 + Math.random() * 88) + '%';
-      dot.style.top = (10 + Math.random() * 80) + '%';
-      dot.style.setProperty('--base-op', (0.14 + Math.random() * 0.24).toFixed(2));
-      dot.style.setProperty('--fx', (Math.random() * 20 - 10) + 'px');
-      dot.style.setProperty('--fy', (Math.random() * 14 - 7) + 'px');
-      dot.style.animationDelay = (Math.random() * 4) + 's';
-      dot.style.animationDuration = (3.5 + Math.random() * 3.5) + 's';
-    });
-  }
-
-  chequeTable.addEventListener('mouseover', (e) => {
-    const row = e.target.closest('tbody tr');
-    if (!row || row === currentRow) return;
-    currentRow = row;
-    scatter(row);
-    hoverDots.classList.add('show');
-  });
-  chequeTable.addEventListener('mouseleave', () => {
-    hoverDots.classList.remove('show');
-    currentRow = null;
-  });
-})();
 
 // =========================================================
 // ---- Photo editor: crop + rotate, redesigned flow ----

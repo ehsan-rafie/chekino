@@ -252,7 +252,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 /* ===== Main content ===== */
 .main {
-  max-width: 1200px;
+  max-width: 1600px;   /* wide enough for three card columns side by side */
   margin: 0 auto;
   padding: var(--s6) var(--s5) 96px;
 }
@@ -352,8 +352,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   0%   { background: var(--blue-100); }
   100% { background: transparent; }
 }
-#chequeBody tr.row-flash,
-#chequeCards .cq-card.row-flash { animation: rowFlash 1.6s ease; }
+.check-card.row-flash { animation: rowFlash 1.6s ease; }
 
 .add-check-btn {
   position: relative;
@@ -3301,3 +3300,242 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD VIEW
+   Three columns, one per STATUSES entry — the workflow states are the
+   whole space (every cheque is in exactly one), so unlike a Kanban tool
+   with user-defined stages, these three are fixed: no add/remove/reorder
+   column controls, because there's nothing to configure.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+  flex-wrap: wrap;
+}
+.board-count {
+  font-size: var(--t-cap);
+  color: var(--muted);
+  font-variation-settings: var(--f-value);
+}
+.board-actions { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
+
+.board-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  /* Three columns can't share a phone-width screen, so the board becomes
+     a horizontal, snap-scrolling row instead — swipe sideways between
+     statuses, the same gesture a Kanban board teaches on any device. */
+  .board-columns {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: var(--s2);
+    margin: 0 calc(-1 * var(--s4));
+    padding-inline: var(--s4);
+  }
+  .board-column { flex: 0 0 82%; scroll-snap-align: start; }
+}
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  overflow: hidden;
+  min-height: 140px;
+  transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
+}
+/* The drop target under a dragged card — a wash of the accent, not a
+   border that would nudge every card inside sideways by a pixel. */
+.board-column.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.board-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+.board-col-name {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--t-value);
+  color: var(--ink);
+  font-variation-settings: var(--f-title);
+}
+.board-col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.board-col-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rad-pill);
+  background: var(--surface-sunken);
+  color: var(--muted);
+  font-size: var(--t-cap);
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+}
+
+.board-col-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.board-col-empty {
+  padding: var(--s6) var(--s3);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-cap);
+}
+.board-col-foot {
+  padding: var(--s2) var(--s4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  font-size: var(--t-cap);
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.board-col-foot b { color: var(--ink); font-variation-settings: var(--f-num); font-variant-numeric: tabular-nums; }
+
+/* ---- The card itself ---- */
+.check-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  padding: var(--s3);
+  cursor: grab;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+  touch-action: pan-y;   /* vertical scroll still works; the drag handler owns horizontal/press-hold */
+}
+.check-card:hover { border-color: var(--border-strong); }
+.check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.check-card.st-pending { border-inline-start: 3px solid var(--state-idle-dot); }
+.check-card.st-done { border-inline-start: 3px solid var(--state-ok); }
+.check-card.st-problem { border-inline-start: 3px solid var(--state-warn); position: relative; }
+
+.chk-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
+.chk-title {
+  font-size: var(--t-value);
+  color: var(--ink);
+  font-variation-settings: var(--f-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chk-amount {
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.chk-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: var(--t-cap);
+  color: var(--muted);
+  font-variation-settings: var(--f-hint);
+}
+.chk-sub span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  font-size: var(--t-micro);
+  color: var(--muted);
+}
+.chk-date { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+.chk-date svg { width: 13px; height: 13px; opacity: 0.7; }
+.chk-serial { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; direction: ltr; }
+.chk-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--s2); }
+.chk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--rad-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.chk-tag i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.chk-reason {
+  margin-top: var(--s2);
+  padding: 6px 9px;
+  border-radius: var(--rad-ctl);
+  background: var(--state-warn-bg);
+  color: var(--state-warn);
+  font-size: var(--t-micro);
+}
+.chk-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border-subtle);
+}
+.chk-bottom .status-btn { font-size: 11.5px; padding: 3px 9px 3px 6px; }
+.chk-icon-group { display: flex; align-items: center; gap: 2px; }
+
+/* ---- Dragging ---- */
+/* The card being moved goes semi-transparent in place; the actual visual
+   follows the pointer as a separate fixed-position clone (built in JS),
+   so the card's own layout in the column never fights the drag frame. */
+.check-card.dragging { opacity: 0.35; cursor: grabbing; }
+.check-card-ghost {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  opacity: 0.96;
+  box-shadow: var(--shadow-2);
+  transform: rotate(-1.5deg) scale(1.02);
+  cursor: grabbing;
+}
+
+/* ---- Loading skeleton ---- */
+.board-skeleton { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
+.board-wrap.is-loading .board-skeleton { display: grid; }
+.board-wrap.is-loading .board-columns,
+.board-wrap.is-loading .table-empty { display: none; }
+.board-skeleton-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.board-skeleton-col .sk-row { height: 84px; margin: 0; }
+@media (max-width: 860px) { .board-skeleton { display: none !important; } }
