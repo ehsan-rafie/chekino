@@ -10,6 +10,12 @@ body {
   font-family: 'IRANYekanX', 'Tahoma', sans-serif;
   color: var(--ink);
   padding: 24px 16px;
+  /* Same soft wash as the login page and dashboard particles — a flat
+     background here would read as a different, plainer product. */
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(45,140,255,0.07) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(45,140,255,0.07) 0%, transparent 45%);
+  background-attachment: fixed;
 }
 
 .wrap { max-width: 1100px; margin: 0 auto; }
@@ -21,16 +27,58 @@ body {
   align-items: center;
   justify-content: center;
 }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
 .login-card {
+  animation: cardIn 0.35s ease both;
+  position: relative;
   width: 100%;
   max-width: 380px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card-bg);
   padding: 32px 28px;
+  overflow: hidden;
 }
-.login-card h1 { font-size: 21px; margin: 0 0 4px; text-align: center; }
-.login-card p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 24px; }
+/* stub edge — same cheque-counterfoil nod as the company login card, so
+   the two "front doors" of the app read as one product. */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 var(--rad-card) var(--rad-card) 0;
+}
+
+/* Brand lockup — identical to the company login page's. */
+.brand { text-align: center; margin-bottom: 24px; }
+.brand h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.2px;
+  color: var(--blue-900);
+  font-variation-settings: 'wght' 760, 'dots' 2;
+}
+.brand p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  font-variation-settings: 'wght' 420, 'dots' 2;
+}
+.brand-accent { color: var(--accent-text); font-variation-settings: var(--f-brand); }
+
 .field { margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .field input, .field select {
@@ -49,6 +97,59 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-wash);
 }
+
+/* Floating-label variant, used only on the admin login card — the same
+   pattern the company login uses. The panel's own data-entry forms keep
+   plain labels-above-input: dense multi-field rows read better that way. */
+.field.float-field {
+  position: relative;
+  margin-bottom: 16px;
+}
+.field.float-field input {
+  height: var(--h-lg);
+  padding: 0 16px;
+}
+.field.float-field input::placeholder { color: transparent; }
+.field.float-field input[type="password"]::-ms-reveal,
+.field.float-field input[type="password"]::-ms-clear { display: none; }
+.field.float-field input::-webkit-textfield-decoration-container { display: none; }
+.field.float-field label {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0 4px;
+  font-size: 15px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: all 0.15s ease;
+  background: var(--card-bg);
+}
+.field.float-field input:focus ~ label,
+.field.float-field input:not(:placeholder-shown) ~ label {
+  top: 0;
+  font-size: 12px;
+  color: var(--accent-text);
+  font-variation-settings: 'wght' 550, 'dots' 2;
+}
+.toggle-eye {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.toggle-eye:hover { color: var(--accent-text); background: var(--accent-wash); }
+.toggle-eye svg { width: 18px; height: 18px; }
 button {
   font-family: inherit;
   cursor: pointer;
@@ -142,6 +243,19 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
   margin-bottom: 20px;
 }
 .card h2 { font-size: 15px; margin: 0 0 16px; }
+
+/* A card that's just a table wrapper gets the same header-strip treatment
+   as the dashboard's table section — a light band the title sits in,
+   instead of a title floating loose above a table with no clear top. */
+.card.card-table { padding: 0; overflow: hidden; }
+.card-head-strip {
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.card-head-strip h2 { margin: 0; }
+.card-table .table-wrap { padding: 0 20px 20px; }
+.card-table table { margin-top: 4px; }
 
 .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
 .form-row .field { flex: 1; min-width: 150px; margin-bottom: 0; }

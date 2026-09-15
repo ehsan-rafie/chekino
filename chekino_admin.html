@@ -23,8 +23,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>چکینو | پنل مدیریت</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/css/shared.css">
-<link rel="stylesheet" href="/css/admin.css">
+<link rel="stylesheet" href="/css/shared.css?v=20260915">
+<link rel="stylesheet" href="/css/admin.css?v=20260915">
 </head>
 <body class="chekino-auth-pending">
 
@@ -32,17 +32,25 @@
 
   <div id="loginScreen">
     <div class="login-card">
-      <h1>پنل مدیریت چکینو</h1>
-      <p class="sub">ورود مخصوص ادمین سیستم</p>
+      <div class="brand">
+        <h1>چکینو</h1>
+        <p>پنل مدیریت — ورود مخصوص ادمین سیستم</p>
+      </div>
       <div class="alert" id="loginAlert"></div>
       <form id="loginForm">
-        <div class="field">
+        <div class="field float-field">
+          <input type="text" id="adminUsername" placeholder=" " autocomplete="username" dir="ltr" style="text-align:right">
           <label for="adminUsername">نام کاربری</label>
-          <input type="text" id="adminUsername" autocomplete="username">
         </div>
-        <div class="field">
+        <div class="field float-field">
+          <input type="password" id="adminPassword" placeholder=" " autocomplete="current-password">
           <label for="adminPassword">رمز عبور</label>
-          <input type="password" id="adminPassword" autocomplete="current-password">
+          <span class="toggle-eye" id="adminEyeToggle">
+            <svg id="adminEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </span>
         </div>
         <button type="submit" class="btn-primary" id="loginBtn">ورود</button>
       </form>
@@ -51,7 +59,7 @@
 
   <div id="panel">
     <div class="topbar">
-      <h1>پنل مدیریت چکینو</h1>
+      <h1>پنل مدیریت <span class="brand-accent">چکینو</span></h1>
       <div class="topbar-user">
         <span class="admin-name" id="adminNameLabel"></span>
         <button class="btn-icon" id="themeToggleBtn" title="تغییر تم" aria-label="تغییر تم روشن و تاریک">
@@ -94,8 +102,8 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2>لیست شرکت‌ها</h2>
+      <div class="card card-table">
+        <div class="card-head-strip"><h2>لیست شرکت‌ها</h2></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -147,8 +155,8 @@
         <button class="btn-add" id="addPlanBtn">افزودن پلن</button>
       </div>
 
-      <div class="card">
-        <h2>لیست پلن‌ها</h2>
+      <div class="card card-table">
+        <div class="card-head-strip"><h2>لیست پلن‌ها</h2></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -320,8 +328,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/shared.js"></script>
-<script src="/js/admin.js"></script>
+<script src="/js/shared.js?v=20260915"></script>
+<script src="/js/admin.js?v=20260915"></script>
 <script>document.body.classList.remove('chekino-auth-pending');</script>
 </body>
 </html>
