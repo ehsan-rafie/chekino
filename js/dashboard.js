@@ -160,60 +160,19 @@ function decodeJwtPayload(token) {
   }
 })();
 
-// ---- Analog clock face: build the hour ticks once ----
-// Only the twelve hour positions are drawn. At the size this face is
-// rendered, sixty minute ticks turn into a grey smudge and the numerals
-// are too small to read, so both were dropped rather than kept as noise.
-(function buildClockFace() {
-  const ticksG = document.getElementById('acTicks');
-  if (!ticksG) return;
-  for (let i = 0; i < 60; i += 5) {
-    const angle = i * 6;
-    const major = i % 5 === 0;
-    const r1 = 47, r2 = major ? 41 : 44;
-    const rad = (angle - 90) * Math.PI / 180;
-    const x1 = 50 + r1 * Math.cos(rad), y1 = 50 + r1 * Math.sin(rad);
-    const x2 = 50 + r2 * Math.cos(rad), y2 = 50 + r2 * Math.sin(rad);
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('class', 'ac-tick' + (major ? ' ac-tick-major' : ''));
-    ticksG.appendChild(line);
-  }
-})();
-
+// ---- Header date, Jalali ----
+// Just today's date — a business tool built around due dates earns its
+// header space with the calendar it actually manages checks by, not with
+// a ticking analog clock face nobody here needs second-level precision from.
 function updateClock() {
   const now = new Date();
   const [jy, jm, jd] = gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
   const weekday = weekdayNames[now.getDay()];
   const dateStr = `${weekday}، ${jy}/${pad2(jm)}/${pad2(jd)}`;
   document.getElementById('clockDate').textContent = toFa(dateStr);
-  document.getElementById('clockTooltip').textContent =
-    toFa(`${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`);
-
-  const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds();
-  const hourDeg = h * 30 + m * 0.5;
-  const minDeg = m * 6 + s * 0.1;
-  const secDeg = s * 6;
-  const acHour = document.getElementById('acHour');
-  const acMinute = document.getElementById('acMinute');
-  const acSecond = document.getElementById('acSecond');
-  if (acHour) acHour.setAttribute('transform', `rotate(${hourDeg} 50 50)`);
-  if (acMinute) acMinute.setAttribute('transform', `rotate(${minDeg} 50 50)`);
-  if (acSecond) acSecond.setAttribute('transform', `rotate(${secDeg} 50 50)`);
 }
 updateClock();
-setInterval(updateClock, 1000);
-
-// Tapping the clock on touch devices shows the exact digital time briefly,
-// since there's no hover to reveal the tooltip the way a mouse would.
-let clockTapTimer = null;
-document.getElementById('analogClock').addEventListener('click', () => {
-  const tip = document.getElementById('clockTooltip');
-  tip.classList.add('show');
-  clearTimeout(clockTapTimer);
-  clockTapTimer = setTimeout(() => tip.classList.remove('show'), 2500);
-});
+setInterval(updateClock, 60000);
 
 // ---- Add check button (opens modal) ----
 const modalOverlay = document.getElementById('modalOverlay');
@@ -3610,12 +3569,42 @@ function exportChecksToExcel() {
   XLSX.writeFile(wb, `chekino-checks-${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}.xlsx`);
 }
 
+// Only a still-pending cheque has a due date someone needs to act before —
+// once it's registered or flagged, the date is history, not a deadline.
+const DUE_SOON_DAYS = 3;
+function daysUntilDue(dateStr) {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('/').map(n => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  const target = jalaliToJsDate(y, m, d).setHours(0, 0, 0, 0);
+  const now = new Date().setHours(0, 0, 0, 0);
+  return Math.round((target - now) / 86400000);
+}
+function dueUrgencyClass(c) {
+  if (c.status !== 'pending') return '';
+  const days = daysUntilDue(c.dueDate);
+  if (days === null) return '';
+  if (days < 0) return ' chk-due-overdue';
+  if (days <= DUE_SOON_DAYS) return ' chk-due-soon';
+  return '';
+}
+
+// One small badge per channel the cheque was actually sent through — the
+// same icon set as the send-form's own channel picker, just smaller.
+function channelBadgeHtml(chId) {
+  const ch = CHANNELS.find(x => x.id === chId);
+  if (!ch) return '';
+  const plainCls = ch.mono ? '' : ' chk-platform-plain';
+  const bg = ch.mono ? ch.color : 'transparent';
+  return `<span class="chk-platform-badge${plainCls}" style="background:${bg}" title="${escapeHtml(ch.name)}">${ch.icon}</span>`;
+}
+
 // ---- Card builder — one check, one card ----
-// Field choice mirrors what a lead card shows on a sales board: a primary
-// name, a muted subtitle giving the surrounding context, a date, an id,
-// and a handful of tags. طرف حساب (the counterparty) takes the name slot —
-// it's who a person means when they say "the cheque to X" — with صاحب چک
-// and ذینفع folded into the subtitle underneath.
+// A fixed two-column grid instead of a flowing list of fields: every card
+// carries the same rows in the same spots, so scanning down a column reads
+// like scanning a table — one glance at the top-right tells you the due
+// date, one glance at the bottom-left tells you whether it has a receipt —
+// instead of hunting for where a particular field landed on this card.
 // A small round trigger in the status colour, not the full text pill —
 // which column the card sits in already says the status; this is just the
 // door into the same dropdown (problem still asks for a reason, reverting
@@ -3630,27 +3619,30 @@ function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const reason = c.status === 'problem' && c.statusReason
     ? `<div class="chk-reason">${escapeHtml(c.statusReason)}</div>` : '';
-  const tagsHtml = (Array.isArray(c.channels) ? c.channels : []).map(id => {
-    const ch = CHANNELS.find(x => x.id === id);
-    if (!ch) return '';
-    const dot = ch.color === '#FFFFFF' ? 'var(--muted)' : ch.color;
-    return `<span class="chk-tag"><i style="background:${dot}"></i>${escapeHtml(ch.name)}</span>`;
-  }).join('');
+  const platformHtml = (Array.isArray(c.channels) ? c.channels : []).map(channelBadgeHtml).join('');
+  const urgency = dueUrgencyClass(c);
   return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
-    <div class="chk-eyebrow">چک <b>#${toFa(c.serial)}</b></div>
-    <div class="chk-top">
-      <span class="chk-title">${escapeHtml(c.party)}</span>
+    <div class="chk-row">
+      <span class="chk-due${urgency}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
+      <span class="chk-serial">چک <b>#${toFa(c.serial)}</b></span>
+    </div>
+    <div class="chk-row chk-row-mid">
+      <div class="chk-benef-col">
+        <span class="chk-benef">${escapeHtml(c.benef)}</span>
+        ${c.nid ? `<span class="chk-nid">${toFa(c.nid)}</span>` : ''}
+      </div>
       <span class="chk-amount">${faAmount(c.amount)}</span>
     </div>
-    <div class="chk-sub">صاحب چک: ${escapeHtml(c.owner)} &nbsp;·&nbsp; ذینفع: ${escapeHtml(c.benef)}</div>
-    <div class="chk-meta">
-      <span class="chk-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
-    </div>
-    ${tagsHtml ? `<div class="chk-tags">${tagsHtml}</div>` : ''}
     ${reason}
-    <div class="chk-bottom">
-      ${statusDotTriggerHtml(c, st)}
-      <div class="chk-icon-group">${rowActionsHtml(c)}</div>
+    <div class="chk-row chk-row-bottom">
+      <div class="chk-sent">
+        <span class="chk-sent-date">${faDate(c.sendDate)}</span>
+        ${platformHtml}
+      </div>
+      <div class="chk-icon-group">
+        ${statusDotTriggerHtml(c, st)}
+        ${rowActionsHtml(c)}
+      </div>
     </div>
   </div>`;
 }

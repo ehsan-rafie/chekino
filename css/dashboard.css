@@ -77,20 +77,50 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 100;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
-  height: 68px;
+  justify-content: space-between;
+  gap: var(--s3);
+  height: 60px;
   padding: 0 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
-.header-user {
+/* Brand mark + company context, start side — a corner lockup instead of a
+   marketing-site centrepiece, the way an app header (not a landing page)
+   carries its logo: small, and next to the account it belongs to. */
+.header-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-self: start; /* right side in RTL */
+  min-width: 0;
+}
+.header-logo {
+  font-size: 18px;
+  color: var(--blue-900);
+  font-variation-settings: var(--f-brand);
+  letter-spacing: 0.2px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.header-brand-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+.company-name {
+  font-size: 13px;
+  color: var(--muted);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+@media (max-width: 720px) { .company-name, .header-brand-sep { display: none; } }
+
+.header-utility {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .theme-toggle-btn {
@@ -129,17 +159,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .logout-btn:hover { color: var(--error); background: var(--error-bg); }
 .logout-btn svg { width: 19px; height: 19px; }
 
-.company-name {
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-body);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-}
-@media (max-width: 720px) { .company-name { display: none; } }
-
 .header-support-btn {
   display: none;   /* only shown on mobile — see the media query below */
   align-items: center;
@@ -156,28 +175,24 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .header-support-btn:hover { background: var(--blue-100); }
 .header-support-btn svg { width: 19px; height: 19px; }
 @media (max-width: 720px) { .header-support-btn { display: flex; } }
-.header-logo {
-  justify-self: center;
-  font-size: 24px;
-  color: var(--blue-900);
-  font-variation-settings: var(--f-brand);
-  letter-spacing: 0.5px;
-  user-select: none;
-}
 
-.header-clock {
-  justify-self: end; /* left side in RTL */
+/* A calendar icon and the Jalali date — a business tool that manages due
+   dates by the Iranian calendar is exactly where "today's date" earns its
+   place in the header; the second-precision ticking clock it replaced
+   didn't carry information anyone here acts on. */
+.header-date {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variation-settings: var(--f-num);
+  white-space: nowrap;
 }
-
-.clock-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-}
+.header-date svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.75; }
+@media (max-width: 560px) { .header-date { display: none; } }
 
 /* A small shared tooltip for table cells that carry extra info on hover
    (serial→sayad id, owner→send date, etc.), positioned via JS. */
@@ -198,57 +213,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .cell-tooltip.show { opacity: 1; }
 .cheque-table [data-tip] { cursor: default; }
-
-.clock-face-wrap { position: relative; flex-shrink: 0; }
-.clock-tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-4px);
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  font-variation-settings: var(--f-num);
-  padding: 6px 10px;
-  border-radius: var(--rad-ctl);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 200;
-}
-.analog-clock:hover ~ .clock-tooltip,
-.clock-tooltip.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* Smaller and quieter than it was: the clock is orientation, not the
-   subject of the page, so it no longer competes with the logo beside it. */
-.analog-clock {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  cursor: default;
-}
-.ac-face { fill: var(--surface); stroke: var(--border-strong); stroke-width: 3; }
-.ac-tick { stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; }
-.ac-tick.ac-tick-major { stroke: var(--border-strong); stroke-width: 3; }
-.ac-hand { stroke-linecap: round; }
-.ac-hour { stroke: var(--ink-2); stroke-width: 5.5; }
-.ac-minute { stroke: var(--ink-2); stroke-width: 4; }
-/* the second hand is the one moving part, so it carries the accent —
-   red is reserved for things that are actually wrong */
-.ac-second { stroke: var(--accent); stroke-width: 2; }
-.ac-pin { fill: var(--ink-2); }
-
-.clock-date {
-  display: flex;
-  align-items: center;
-  height: 34px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-  white-space: nowrap;
-}
 
 /* ===== Main content ===== */
 .main {
@@ -2941,10 +2905,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 /* ===== Responsive ===== */
 @media (max-width: 720px) {
-  .header { padding: 0 14px; height: 62px; }
-  .header-user { gap: 6px; }
-  .header-logo { font-size: 21px; }
-  .clock-box { display: none; }
+  .header { padding: 0 14px; height: 56px; }
+  .header-brand { gap: 6px; }
+  .header-logo { font-size: 16px; }
   .main { padding: var(--s5) 14px 96px; }
   .tg-float { bottom: 20px; left: 20px; width: 52px; height: 52px; }
 }
@@ -3034,7 +2997,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ac-list,
 .ms-list,
 .cell-tooltip,
-.clock-tooltip,
 .tg-tooltip,
 .app-toast,
 .lightbox-card,
@@ -3344,28 +3306,67 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .check-card:hover { border-color: var(--border-strong); }
 .check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* A coloured top edge, matched to the column's own badge colour — the one
+   signal that survives even when a card is seen on its own, out of column
+   context (cropped into a screenshot, a shared link). Safe against the
+   card's own rounded corners now that overflow: hidden actually clips it. */
+.check-card.st-pending { border-top: 3px solid var(--state-idle-dot); }
+.check-card.st-done { border-top: 3px solid var(--state-ok); }
+.check-card.st-problem { border-top: 3px solid var(--state-warn); }
 
-/* The serial is the one thing a person actually says out loud to refer to
-   a specific cheque ("چک ۴۸۲۹۱۰") — it gets first billing on the card
-   instead of being buried next to the due date, so identifying which
-   cheque this is doesn't require reading the whole card first. */
-.chk-eyebrow {
+/* A fixed two-column grid: every row pairs one right-aligned field with
+   one left-aligned field, always the same two fields in the same spots,
+   so scanning down a column reads like scanning a table instead of
+   hunting for where a given field landed on this particular card. */
+.chk-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
+.chk-row-mid { margin-top: var(--s2); align-items: flex-start; }
+.chk-row-bottom {
+  margin-top: var(--s3);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.chk-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-micro);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chk-due svg { width: 13px; height: 13px; opacity: 0.7; flex-shrink: 0; }
+/* A cheque still waiting to be registered, with its due date within reach,
+   needs to read as urgent before the text is even parsed — colour first,
+   digits second. Resolved once it leaves "منتظر ثبت", by design. */
+.chk-due-soon { color: var(--state-warn); font-variation-settings: var(--f-label); }
+.chk-due-soon svg { opacity: 1; }
+.chk-due-overdue { color: var(--state-bad); font-variation-settings: var(--f-label); }
+.chk-due-overdue svg { opacity: 1; }
+
+.chk-serial {
   font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
-  margin-bottom: 3px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
-.chk-eyebrow b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
+.chk-serial b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
 
-.chk-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
-.chk-title {
+.chk-benef-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.chk-benef {
   font-size: var(--t-value);
   color: var(--ink);
   font-variation-settings: var(--f-title);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.chk-nid {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-hint);
 }
 .chk-amount {
   font-size: var(--t-cap);
@@ -3375,39 +3376,22 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   white-space: nowrap;
   flex-shrink: 0;
 }
-.chk-sub {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
-  font-size: var(--t-cap);
-  color: var(--muted);
-  font-variation-settings: var(--f-hint);
-}
-.chk-sub span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  margin-top: var(--s2);
-  font-size: var(--t-micro);
-  color: var(--muted);
-}
-.chk-date { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
-.chk-date svg { width: 13px; height: 13px; opacity: 0.7; }
-.chk-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--s2); }
-.chk-tag {
+
+.chk-sent { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-micro); color: var(--muted); }
+.chk-sent-date { font-variant-numeric: tabular-nums; }
+.chk-platform-badge {
+  width: 16px; height: 16px;
+  border-radius: 5px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--rad-pill);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--ink-2);
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
 }
-.chk-tag i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.chk-platform-badge svg { width: 10px; height: 10px; }
+.chk-platform-plain { border: 1px solid var(--border); }
+.chk-platform-plain svg { width: 12px; height: 12px; }
+
 .chk-reason {
   margin-top: var(--s2);
   padding: 6px 9px;
@@ -3416,16 +3400,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--state-warn);
   font-size: var(--t-micro);
 }
-.chk-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s2);
-  margin-top: var(--s3);
-  padding-top: var(--s2);
-  border-top: 1px solid var(--border-subtle);
-}
-.chk-bottom .status-btn { font-size: 11.5px; padding: 3px 9px 3px 6px; }
 .chk-icon-group { display: flex; align-items: center; gap: 2px; }
 
 /* ---- Dragging ---- */
@@ -3490,15 +3464,26 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-toolbar {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  margin-bottom: var(--s3);
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
 }
-/* Search: a filled, borderless field — a shape closer to Gridle's own
-   than the bordered box this replaces, and it reads as "type here"
-   without a focus ring having to do all of that work. */
-.board-toolbar .search-box {
-  flex: 0 1 320px;    /* fixed width, not stretching — keeps every control clustered together */
-  min-width: 200px;
+/* Search, the filter pills and "clear filters" read as one instrument —
+   boxed together so the eye knows where that instrument ends and the
+   report/export action (outside the box) begins. */
+.board-search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.board-search-box .search-box {
+  flex: 0 1 300px;
+  min-width: 190px;
   height: 34px;
   padding: 0 var(--s3);
   border: none;
@@ -3506,13 +3491,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background: var(--surface-2);
   box-shadow: none;
 }
-.board-toolbar .search-box:focus-within { background: var(--surface); box-shadow: 0 0 0 2px var(--accent-line); }
+.board-search-box .search-box:focus-within { background: var(--surface-sunken); box-shadow: 0 0 0 2px var(--accent-line); }
 .search-kbd {
   flex-shrink: 0;
   margin-inline-start: var(--s2);
   opacity: 0.8;
 }
-.board-toolbar .search-box:focus-within .search-kbd { display: none; }
+.board-search-box .search-box:focus-within .search-kbd { display: none; }
 
 .board-toolbar-actions {
   display: flex;
@@ -3521,22 +3506,23 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-shrink: 0;
 }
 
-/* The four filter types sit right in the toolbar now, next to the
-   search box — no funnel icon gating them behind a click. */
-.board-toolbar .filter-pill-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.board-toolbar .filter-pill-btn {
+/* The four filter types sit right in the box now, next to the search
+   box — no funnel icon gating them behind a click. */
+.board-search-box .filter-pill-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.board-search-box .filter-pill-btn {
   height: 34px;
   padding: 0 12px;
   font-size: 12.5px;
 }
-.board-toolbar .filter-clear-btn { height: 34px; flex-shrink: 0; }
+.board-search-box .filter-clear-btn { height: 34px; flex-shrink: 0; }
 
 @media (max-width: 700px) {
   .board-page-head { flex-wrap: wrap; }
   .board-page-actions { width: 100%; }
   .board-page-actions .add-check-btn { flex: 1; justify-content: center; }
   .board-toolbar { flex-wrap: wrap; }
-  .board-toolbar .search-box { max-width: none; flex-basis: 100%; }
+  .board-search-box { width: 100%; flex-wrap: wrap; }
+  .board-search-box .search-box { max-width: none; flex-basis: 100%; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3547,16 +3533,16 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    ═══════════════════════════════════════════════════════════════════ */
 
 .board-column {
-  background: transparent;
-  border: none;
-  border-radius: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
   min-height: 0;
 }
-.board-column.drag-over { background: var(--accent-wash); border-radius: var(--rad-card); }
+.board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
 .board-col-head {
-  padding: 0 0 var(--s3);
-  border-bottom: none;
+  padding: var(--s3) var(--s3) var(--s2);
+  border-bottom: 1px solid var(--border-subtle);
   background: none;
 }
 /* Bold enough to read as three distinct states from across the screen —
@@ -3621,7 +3607,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-column:hover .board-col-add,
 .board-col-add:focus-visible { display: inline-flex; }
 
-.board-col-list { padding: 0; }
+.board-col-list { padding: var(--s3); }
 
 /* ═══════════════════════════════════════════════════════════════════
    CARD — white surface with real depth (this is the one place in the
@@ -3634,23 +3620,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .check-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-inline-start-width: 1px;   /* the coloured accent moves to the status dot now */
   box-shadow: 0 1px 2px rgba(22, 21, 17, 0.04), 0 1px 6px -2px rgba(22, 21, 17, 0.06);
 }
 :root[data-theme="dark"] .check-card { box-shadow: none; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .check-card { box-shadow: none; } }
 .check-card:hover { box-shadow: 0 2px 4px rgba(22, 21, 17, 0.06), 0 4px 14px -4px rgba(22, 21, 17, 0.1); }
 
-.chk-sub {
-  display: block;
-  margin-top: 3px;
-  font-size: var(--t-cap);
-  color: var(--muted);
-  font-variation-settings: var(--f-hint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .status-dot-btn {
   width: 26px; height: 26px;
   display: grid;
