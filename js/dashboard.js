@@ -2930,6 +2930,17 @@ clearFormBtn.addEventListener('click', async () => {
 // ---- Cheque table ----
 // =========================================================
 const filterBar = document.getElementById('filterBar');
+const filterToggleBtn = document.getElementById('filterToggleBtn');
+const filterPillPanel = document.getElementById('filterPillPanel');
+// The four filter types live behind one funnel icon until asked for —
+// active filters still show as chips below regardless, so nothing active
+// is ever hidden, only the controls for adding more.
+filterToggleBtn.addEventListener('click', () => {
+  const open = filterPillPanel.hidden;
+  filterPillPanel.hidden = !open;
+  filterToggleBtn.setAttribute('aria-expanded', String(open));
+  filterToggleBtn.classList.toggle('active', open);
+});
 const searchInput = document.getElementById('searchInput');
 const searchClearBtn = document.getElementById('searchClearBtn');
 const activeFiltersRow = document.getElementById('activeFiltersRow');
@@ -2956,7 +2967,6 @@ const filterBenefList = document.getElementById('filterBenefList');
 const statusFilterRow = document.getElementById('statusFilterRow');
 const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
 const filterClearBtn = document.getElementById('filterClearBtn');
-const boardCountBadge = document.getElementById('boardCountBadge');
 const boardColumns = document.getElementById('boardColumns');
 const boardWrap = document.getElementById('boardWrap');
 const tableEmpty = document.getElementById('tableEmpty');
@@ -3319,12 +3329,11 @@ function clearOneFilter(key) {
   refreshTable();
 }
 
-// The toolbar keeps only the total — Gridle's own page header carries
-// nothing heavier than the count either. Each status's own count and sum
-// now live where they're actually being asked about: in that column's
-// own header and footer, built in renderTable() below.
+// No combined total in the toolbar — the reference page header carries
+// nothing heavier than the title and search either. Each status's own
+// count and sum live where they're actually being asked about: in that
+// column's own badge and footer, built in renderTable() below.
 function updateBoardCountBadge(list) {
-  boardCountBadge.textContent = `${toFa(list.length)} چک`;
   exportCluster.style.display = list.length === 0 ? 'none' : 'inline-flex';
   if (list.length === 0) closeExportMenu();
 }
@@ -3715,6 +3724,16 @@ function exportChecksToExcel() {
 // and a handful of tags. طرف حساب (the counterparty) takes the name slot —
 // it's who a person means when they say "the cheque to X" — with صاحب چک
 // and ذینفع folded into the subtitle underneath.
+// A small round trigger in the status colour, not the full text pill —
+// which column the card sits in already says the status; this is just the
+// door into the same dropdown (problem still asks for a reason, reverting
+// to pending still asks for confirmation — identical to before).
+function statusDotTriggerHtml(c, st) {
+  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" title="تغییر وضعیت" aria-label="تغییر وضعیت">
+    <span class="st-dot" style="background:${st.color}"></span>
+  </button>`;
+}
+
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const reason = c.status === 'problem' && c.statusReason
@@ -3730,10 +3749,7 @@ function checkCardHtml(c) {
       <span class="chk-title">${escapeHtml(c.party)}</span>
       <span class="chk-amount">${faAmount(c.amount)}</span>
     </div>
-    <div class="chk-sub">
-      <span>صاحب چک: ${escapeHtml(c.owner)}</span>
-      <span>ذینفع: ${escapeHtml(c.benef)}</span>
-    </div>
+    <div class="chk-sub">صاحب چک: ${escapeHtml(c.owner)} &nbsp;·&nbsp; ذینفع: ${escapeHtml(c.benef)}</div>
     <div class="chk-meta">
       <span class="chk-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${faDate(c.dueDate)}</span>
       <span class="chk-serial">#${toFa(c.serial)}</span>
@@ -3741,7 +3757,7 @@ function checkCardHtml(c) {
     ${tagsHtml ? `<div class="chk-tags">${tagsHtml}</div>` : ''}
     ${reason}
     <div class="chk-bottom">
-      ${statusButtonHtml(c, st)}
+      ${statusDotTriggerHtml(c, st)}
       <div class="chk-icon-group">${rowActionsHtml(c)}</div>
     </div>
   </div>`;
@@ -3750,8 +3766,13 @@ function checkCardHtml(c) {
 function boardColumnHtml(st) {
   return `<div class="board-column" data-status="${st.id}">
     <div class="board-col-head">
-      <span class="board-col-name"><i class="board-col-dot" style="background:${st.color}"></i>${st.name}</span>
-      <span class="board-col-count" id="boardColCount-${st.id}">۰</span>
+      <span class="board-col-badge board-col-badge-${st.id}">
+        <i class="board-col-dot"></i>${st.name}
+        <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
+      </span>
+      <button type="button" class="board-col-add" data-add-status="${st.id}" title="افزودن چک جدید" aria-label="افزودن چک جدید">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
     <div class="board-col-foot">جمع: <b id="boardColTotal-${st.id}">—</b></div>
@@ -3764,6 +3785,12 @@ function boardColumnHtml(st) {
 function ensureBoardColumns() {
   if (boardColumns.children.length) return;
   boardColumns.innerHTML = STATUSES.map(boardColumnHtml).join('');
+  // A cheque always starts «منتظر ثبت» regardless of which column's "+" was
+  // clicked — that's the real rule, so the button opens the one add form
+  // rather than pretending it can drop a new cheque straight into "ثبت شد".
+  boardColumns.addEventListener('click', (e) => {
+    if (e.target.closest('[data-add-status]')) addCheckBtn.click();
+  });
 }
 
 function renderTable() {

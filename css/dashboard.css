@@ -3539,3 +3539,228 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .board-skeleton-col .sk-row { height: 84px; margin: 0; }
 @media (max-width: 860px) { .board-skeleton { display: none !important; } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD TOOLBAR — matched element-for-element against a reference
+   screenshot: page title + primary action on one row, a bare (no box,
+   no border) search/filter/utility row underneath.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.board-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.board-title {
+  margin: 0;
+  font-size: 28px;
+  color: var(--ink);
+  font-variation-settings: var(--f-title);
+  letter-spacing: -0.02em;
+}
+.board-page-actions { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+.board-filter-toggle {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--muted);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.board-filter-toggle svg { width: 16px; height: 16px; }
+.board-filter-toggle:hover { color: var(--ink); border-color: var(--border-strong); }
+.board-filter-toggle.active { color: var(--accent-text); border-color: var(--accent); background: var(--accent-wash); }
+
+/* Search: a filled, borderless field — a shape closer to Gridle's own
+   than the bordered box this replaces, and it reads as "type here"
+   without a focus ring having to do all of that work. */
+.board-toolbar .search-box {
+  flex: 1 1 auto;
+  max-width: 420px;
+  min-width: 200px;
+  height: 40px;
+  padding: 0 var(--s3);
+  border: none;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+.board-toolbar .search-box:focus-within { background: var(--surface); box-shadow: 0 0 0 2px var(--accent-line); }
+.search-kbd {
+  flex-shrink: 0;
+  margin-inline-start: var(--s2);
+  opacity: 0.8;
+}
+.board-toolbar .search-box:focus-within .search-kbd { display: none; }
+
+.board-count {
+  margin-inline-start: var(--s2);
+  font-size: var(--t-cap);
+  color: var(--muted);
+  font-variation-settings: var(--f-value);
+  white-space: nowrap;
+}
+.board-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+/* The four filter types behind one funnel icon, opened on demand — a
+   collapsed row rather than a permanent fixture, the same way Gridle
+   keeps its own filtering behind a single icon instead of the page. */
+.filter-pill-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  padding: var(--s3);
+  margin-bottom: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  animation: menuIn var(--dur-2) var(--ease-out) both;
+}
+.filter-pill-panel .filter-by-label { margin-inline-start: 0; }
+.filter-pill-panel .filter-clear-btn { margin-inline-start: auto; }
+
+@media (max-width: 700px) {
+  .board-page-head { flex-wrap: wrap; }
+  .board-title { font-size: 22px; }
+  .board-toolbar { flex-wrap: wrap; }
+  .board-toolbar .search-box { max-width: none; order: 1; flex-basis: 100%; }
+  .board-count { order: 2; }
+  .board-toolbar-actions { order: 3; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD COLUMN — a coloured badge (icon slot via the dot + name + a
+   count in its own pill) instead of a plain header bar; no visible
+   column border or background, cards sit directly on the page the way
+   the reference shows — separation comes from the column gap alone.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.board-column {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+.board-column.drag-over { background: var(--accent-wash); border-radius: var(--rad-card); }
+
+.board-col-head {
+  padding: 0 0 var(--s3);
+  border-bottom: none;
+  background: none;
+}
+.board-col-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  border-radius: var(--rad-pill);
+  font-size: 13px;
+  font-variation-settings: var(--f-label);
+}
+.board-col-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.board-col-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rad-pill);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+}
+:root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.28); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.28); } }
+
+.board-col-badge-pending { background: var(--state-idle-bg); color: var(--state-idle); }
+.board-col-badge-done { background: var(--state-ok-bg); color: var(--state-ok); }
+.board-col-badge-problem { background: var(--state-warn-bg); color: var(--state-warn); }
+
+.board-col-add {
+  width: 26px; height: 26px;
+  display: none;              /* revealed on column hover, see below */
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--rad-ctl);
+  background: transparent;
+  color: var(--muted);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.board-col-head { display: flex; align-items: center; justify-content: space-between; }
+.board-col-add svg { width: 15px; height: 15px; }
+.board-col-add:hover { background: var(--surface-2); color: var(--ink); }
+.board-column:hover .board-col-add,
+.board-col-add:focus-visible { display: inline-flex; }
+
+.board-col-list { padding: 0; }
+.board-col-foot {
+  padding: var(--s2) var(--s1);
+  border-top: none;
+  background: none;
+  font-size: var(--t-cap);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARD — white surface with real depth (this is the one place in the
+   app a shadow belongs: cards on a plain background need to read as
+   objects, the way the data layer elsewhere earns its flatness from
+   being bounded by a table or panel instead), a compact bottom row with
+   a coloured status dot instead of the full text pill.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.check-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start-width: 1px;   /* the coloured accent moves to the status dot now */
+  box-shadow: 0 1px 2px rgba(22, 21, 17, 0.04), 0 1px 6px -2px rgba(22, 21, 17, 0.06);
+}
+:root[data-theme="dark"] .check-card { box-shadow: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .check-card { box-shadow: none; } }
+.check-card:hover { box-shadow: 0 2px 4px rgba(22, 21, 17, 0.06), 0 4px 14px -4px rgba(22, 21, 17, 0.1); }
+
+.chk-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--t-cap);
+  color: var(--muted);
+  font-variation-settings: var(--f-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-dot-btn {
+  width: 26px; height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  flex-shrink: 0;
+  transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.status-dot-btn .st-dot { width: 9px; height: 9px; border-radius: 50%; }
+.status-dot-btn:hover { border-color: var(--border-strong); transform: scale(1.08); }
