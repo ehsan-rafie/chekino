@@ -1885,7 +1885,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ve-receipt-btn:hover { background: var(--success-bg); }
 .ve-receipt-btn.copied { background: var(--success-bg); }
 .ve-status-banner.st-pending { background: var(--blue-100); color: var(--blue-900); border-color: var(--blue-100); }
-.ve-status-banner.st-done { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+.ve-status-banner.st-done { background: var(--success-bg); color: var(--state-ok-text); border-color: var(--success-border); }
 .ve-status-banner.st-problem { background: var(--error-bg); color: var(--error); border-color: var(--error-border); }
 
 .ve-history {
@@ -3183,12 +3183,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 190px;
   height: 34px;
   padding: 0 var(--s3);
-  border: none;
+  /* A fill alone stopped reading as a field once the page went white, so
+     the search box carries its own outline like any other input. */
+  border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
-  background: var(--surface-2);
+  background: var(--surface);
   box-shadow: none;
 }
-.board-search-box .search-box:focus-within { background: var(--surface-sunken); box-shadow: 0 0 0 2px var(--accent-line); }
+.board-search-box .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
 .search-kbd {
   flex-shrink: 0;
   margin-inline-start: var(--s2);
@@ -3306,17 +3308,17 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 :root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.3); } }
 
-.board-col-badge-pending { background: rgba(45, 140, 255, 0.16); color: #0A5CE0; }
-.board-col-badge-done    { background: rgba(26, 122, 76, 0.16);  color: #0E6B49; }
-.board-col-badge-problem { background: rgba(232, 131, 58, 0.18); color: #9A5B12; }
+.board-col-badge-pending { background: rgba(18, 58, 154, 0.10); color: #123A9A; }
+.board-col-badge-done    { background: rgba(20, 128, 92, 0.12);  color: #0F6B4C; }
+.board-col-badge-problem { background: rgba(194, 69, 60, 0.12);  color: #A8342B; }
 
 :root[data-theme="dark"] .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
 :root[data-theme="dark"] .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
-:root[data-theme="dark"] .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+:root[data-theme="dark"] .board-col-badge-problem { background: rgba(255, 128, 120, 0.18); color: #FF9E97; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
   :root:not([data-theme="light"]) .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
-  :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+  :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(255, 128, 120, 0.18); color: #FF9E97; }
 }
 
 /* Export-this-column-to-PDF stays out of the way until the column is
@@ -3408,3 +3410,25 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .chk-icon-group { gap: 8px; }
   .row-actions { gap: 4px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   "WHY DIDN'T IT REGISTER?" PROMPT
+   The card has already moved into «مشکل در ثبت» by the time this shows,
+   so the job here is only to make obvious which card is still waiting on
+   an answer — hence the ring on the card and the prompt anchored to it.
+   ═══════════════════════════════════════════════════════════════════ */
+.check-card.awaiting-reason {
+  border-color: var(--state-bad);
+  box-shadow: 0 0 0 3px var(--state-bad-bg), 0 2px 10px -2px rgba(194, 69, 60, 0.35);
+}
+.reason-prompt { z-index: 620; min-width: 260px; }
+.reason-prompt .sr-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--s2);
+  color: var(--state-bad-text);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+}
+.reason-prompt .sr-title svg { width: 15px; height: 15px; flex-shrink: 0; }
