@@ -137,7 +137,12 @@ html, body {
   flex-shrink: 0;
   transition: color 0.15s ease;
 }
-.theme-toggle-btn:hover { color: var(--blue-600); }
+/* Matches the logout button's treatment — both are header utilities, so
+   both get a hover surface rather than one changing colour and the other
+   filling in. --muted was too faint against the white header for an icon
+   with no label to fall back on. */
+.theme-toggle-btn { border-radius: var(--rad-ctl); color: var(--ink-2); }
+.theme-toggle-btn:hover { color: var(--accent-text); background: var(--accent-wash); }
 .theme-toggle-btn svg { width: 19px; height: 19px; }
 .theme-toggle-btn .icon-moon { display: none; }
 html[data-theme="dark"] .theme-toggle-btn .icon-sun { display: none; }
@@ -151,13 +156,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   border: none;
   background: none;
-  color: var(--muted);
+  color: var(--ink-2);
   cursor: pointer;
   flex-shrink: 0;
   border-radius: var(--rad-ctl);
   transition: color 0.15s ease, background 0.15s ease;
 }
-.logout-btn:hover { color: var(--error); background: var(--error-bg); }
+.logout-btn:hover { color: var(--state-bad-text); background: var(--error-bg); }
 .logout-btn svg { width: 19px; height: 19px; }
 
 .header-support-btn {
@@ -2604,15 +2609,22 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    national id, a problem cheque's reason) — positioned off the hovered
    element itself, the same pattern the telegram button's own tooltip
    uses, instead of leaning on the native title attribute. */
+/* Readable first: --ink as a background was near-black and read as a heavy
+   slab, and 12.5px on one forced line pushed the longer tips (a
+   beneficiary plus their national id) off the edge of the screen. A
+   softer dark grey, a size that matches the card text it explains, and a
+   width it is allowed to wrap inside. */
 .app-tooltip {
   position: fixed;
-  background: var(--ink);
-  color: var(--surface);
-  padding: 6px 11px;
+  background: var(--n-11);
+  color: #FCFCFC;
+  padding: 7px 12px;
   border-radius: var(--rad-ctl);
-  font-size: 12.5px;
-  font-variation-settings: var(--f-value);
-  white-space: nowrap;
+  font-size: var(--t-cap);
+  line-height: 1.7;
+  font-variation-settings: var(--f-body);
+  max-width: min(300px, calc(100vw - 24px));
+  text-align: center;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-3px);
@@ -2621,6 +2633,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   box-shadow: var(--shadow-2);
 }
 .app-tooltip.show { opacity: 1; transform: translateY(0); }
+/* On dark the same near-black slab would vanish into the page, so the
+   tooltip lifts off the background instead of inverting to a white one. */
+:root[data-theme="dark"] .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+}
 
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
 @media (max-width: 720px) { .tg-float { display: none; } }   /* moves into the header on mobile instead */
@@ -2940,7 +2958,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s4);
-  align-items: start;
+  /* stretch, not start: the columns carry the dividers between them, and
+     sizing each to its own content left those lines at three different
+     lengths. Equal-height columns give one clean full-height rule. */
+  align-items: stretch;
 }
 @media (max-width: 860px) {
   /* Three columns can't share a phone-width screen, so the board becomes
@@ -3217,12 +3238,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    nothing on the card itself has to carry a status stripe.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* No panel behind the cards: the columns sit directly on the page and are
+   told apart by a single hairline between them, plus the status gradient
+   across the top of each. The cards themselves are the only objects. */
 .board-column {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
+  background: none;
+  border: none;
+  border-radius: 0;
   min-height: 0;
+  padding-inline: var(--s3);
 }
+/* The divider lands between columns only — never outside the first or
+   last one. In RTL the inline-start edge is the right one, so putting it
+   on every column after the first draws exactly the two lines wanted. */
+.board-column + .board-column { border-inline-start: 1px solid var(--border); }
 /* One shared background for all three columns — the status now shows
    through a gradient bar across the top edge instead of tinting the
    whole panel, so the columns read as one consistent set of containers
@@ -3231,8 +3260,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   content: '';
   position: absolute;
   inset-block-start: 0;
-  inset-inline: 0;
+  inset-inline: var(--s3);
   height: 3px;
+  border-radius: 2px;
 }
 .board-column[data-status="pending"]::before { background: linear-gradient(to left, var(--accent), transparent); }
 .board-column[data-status="done"]::before    { background: linear-gradient(to left, var(--state-ok), transparent); }
@@ -3240,8 +3270,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
 .board-col-head {
-  padding: var(--s3) var(--s3) var(--s2);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 0 var(--s3);
+  border-bottom: none;
   background: none;
 }
 /* Bold enough to read as three distinct states from across the screen —
@@ -3308,7 +3338,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-column:hover .board-col-btn,
 .board-col-btn:focus-visible { display: inline-flex; }
 
-.board-col-list { padding: var(--s3); }
+.board-col-list { padding: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════
    CARD — white surface with real depth (this is the one place in the
@@ -3344,3 +3374,37 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-dot-btn svg { width: 14px; height: 14px; }
 .status-dot-btn:hover { transform: scale(1.1); box-shadow: 0 3px 8px -1px rgba(22, 21, 17, 0.3); }
 .status-dot-btn:active { transform: scale(0.96); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOUCH TARGETS
+   34px reads as neat under a mouse and small under a fingertip — an
+   audit at phone width found 39 controls below 40px, the status dot
+   (28px) among them, and that one writes to the record. WCAG 2.5.5 asks
+   for 44px. Desktop sizing is deliberately left alone; this only applies
+   where the input is actually a finger.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  .eye-btn,
+  .receipt-btn,
+  .theme-toggle-btn,
+  .logout-btn,
+  .header-support-btn,
+  .board-col-btn,
+  .board-page-actions .icon-action,
+  .search-clear { width: 44px; height: 44px; }
+
+  .status-dot-btn { width: 40px; height: 40px; }
+  .status-dot-btn svg { width: 19px; height: 19px; }
+
+  .board-search-box .search-box,
+  .board-search-box .filter-pill-btn,
+  .board-search-box .filter-clear-btn,
+  .icon-action,
+  .export-opt,
+  .add-check-btn { height: 44px; }
+  /* the report trigger is icon-only here, so it needs the width too */
+  .icon-action { min-width: 44px; justify-content: center; }
+
+  .chk-icon-group { gap: 8px; }
+  .row-actions { gap: 4px; }
+}

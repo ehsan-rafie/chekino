@@ -2697,7 +2697,10 @@ submitCheckBtn.addEventListener('click', async () => {
         status: 'pending',
       }),
     });
-    await loadChecksFromApi();
+    // The board refresh is not on the path between "saved" and the form
+    // being ready for the next cheque — at this round-trip time waiting
+    // for it added a second and a half of dead time to every save.
+    loadChecksFromApi().then(renderTable).catch(() => {});
 
     clearDraft();
     const savedSerial = toFa(rec.serial);
@@ -2815,6 +2818,7 @@ async function commitSaveEdit() {
 }
 
 let clearConfirmPending = false;
+let deleteInFlight = false;   // one DELETE per confirmation, not one per click
 const saveConfirmSlideBtn = document.getElementById('saveConfirmSlideBtn');
 const deleteCancelSlideBtn = document.getElementById('deleteCancelSlideBtn');
 saveConfirmSlideBtn.addEventListener('click', commitSaveEdit);
@@ -2844,7 +2848,14 @@ clearFormBtn.addEventListener('click', async () => {
       submitCheckBtn.textContent = 'این چک حذف خواهد شد';
       return;
     }
-    // second click — the button now reads "بله، حذف شود"
+    // second click — the button now reads "بله، حذف شود".
+    // Guarded the same way the save button is: the round trip takes long
+    // enough that the armed button stayed clickable through it, and every
+    // extra click fired another DELETE for the same cheque.
+    if (deleteInFlight) return;
+    deleteInFlight = true;
+    clearFormBtn.disabled = true;
+    submitCheckBtn.disabled = true;
     try {
       await apiJson(`/checks/${editingChequeId}`, { method: 'DELETE' });
       await loadChecksFromApi();
@@ -2852,6 +2863,10 @@ clearFormBtn.addEventListener('click', async () => {
       closeModal(true);
     } catch (e) {
       showFormAlert('error', e.message || 'حذف در سرور ناموفق بود');
+    } finally {
+      deleteInFlight = false;
+      clearFormBtn.disabled = false;
+      submitCheckBtn.disabled = false;
     }
     return;
   }
@@ -4035,18 +4050,40 @@ function showReasonBox(menu, id) {
   menu.querySelector('.sr-cancel').addEventListener('click', closeStatusMenu);
 }
 
+// Optimistic: the card moves the instant it is asked to, and the write
+// goes out behind it. At this server's round-trip time the old order —
+// wait for the PUT, then wait for a full re-fetch of every cheque, then
+// render — left a dragged card sitting in its old column for a couple of
+// seconds, which reads as a failed drop. If the write is rejected the
+// card goes back where it was and the error is shown.
 async function applyStatus(id, status, reason) {
+  const rec = loadCheques().find((x) => x.id === id);
+  const before = rec
+    ? { status: rec.status, statusReason: rec.statusReason, statusChangedAt: rec.statusChangedAt }
+    : null;
+
+  if (rec) {
+    const [jy, jm, jd] = todayJalali();
+    rec.status = status;
+    rec.statusReason = reason || '';
+    rec.statusChangedAt = `${jy}/${pad2(jm)}/${pad2(jd)}`;
+  }
+  closeStatusMenu();
+  renderTable();
+
   try {
     await apiJson(`/checks/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ status, status_reason: reason || '' }),
     });
-    await loadChecksFromApi();
+    // Reconcile in the background — the server owns the status history
+    // and the exact timestamp, neither of which the guess above fills in.
+    loadChecksFromApi().then(renderTable).catch(() => {});
   } catch (e) {
+    if (rec && before) Object.assign(rec, before);
+    renderTable();
     showToast(e.message || 'تغییر وضعیت در سرور ناموفق بود');
   }
-  closeStatusMenu();
-  renderTable();
 }
 
 document.addEventListener('click', closeStatusMenu);
