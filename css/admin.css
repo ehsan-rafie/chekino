@@ -44,7 +44,7 @@ body {
   width: 100%;
   max-width: 380px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--card-bg);
   padding: 32px 28px;
   overflow: hidden;
@@ -85,7 +85,7 @@ body {
   width: 100%;
   height: var(--h-md);
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 0 12px;
   font-family: inherit;
   font-size: 14px;
@@ -145,7 +145,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   transition: color 0.15s ease, background 0.15s ease;
 }
 .toggle-eye:hover { color: var(--accent-text); background: var(--accent-wash); }
@@ -160,7 +160,7 @@ button {
   height: var(--h-md);
   background: var(--blue-700);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 14px;
   font-variation-settings: var(--f-btn);
 }
@@ -171,7 +171,7 @@ button {
   border: 1px solid var(--error-border);
   background: var(--error-bg);
   color: var(--error);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 10px 12px;
   font-size: 13px;
   margin-bottom: 16px;
@@ -196,7 +196,7 @@ button {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 8px 16px;
   font-size: 13px;
 }
@@ -237,7 +237,7 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
 
 .card {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--card-bg);
   padding: 20px;
   margin-bottom: 20px;
@@ -264,7 +264,7 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
   padding: 0 20px;
   background: var(--blue-700);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -285,7 +285,7 @@ tbody tr:hover { background: var(--blue-100); }
   align-items: center;
   gap: 4px;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   font-size: 12px;
   border: 1px solid var(--border);
 }
@@ -297,7 +297,7 @@ tbody tr:hover { background: var(--blue-100); }
   border: 1px solid var(--border);
   background: transparent;
   color: var(--ink-2);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   padding: 4px 10px;
   font-size: 12px;
   transition: border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
@@ -305,7 +305,7 @@ tbody tr:hover { background: var(--blue-100); }
 .row-actions button:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-wash); }
 /* A delete button reads as destructive before it is pressed, not only once
    the pointer is already on it. */
-.row-actions button.danger { color: var(--state-bad); }
+.row-actions button.danger { color: var(--state-bad-text); }
 .row-actions button.danger:hover { border-color: var(--state-bad); color: var(--state-bad); background: var(--state-bad-bg); }
 
 /* ---- Modal ---- */
@@ -325,7 +325,7 @@ tbody tr:hover { background: var(--blue-100); }
   max-width: 460px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 24px;
   max-height: 90vh;
   overflow-y: auto;
@@ -340,7 +340,7 @@ tbody tr:hover { background: var(--blue-100); }
   border: 1px solid var(--border);
   background: transparent;
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -376,7 +376,7 @@ tbody tr:hover { background: var(--blue-100); }
   background: var(--ink);
   color: var(--bg);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 13px;
   opacity: 0;
   pointer-events: none;
@@ -384,3 +384,59 @@ tbody tr:hover { background: var(--blue-100); }
   z-index: 100;
 }
 .toast.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   V2 POLISH PASS — same calibration as the dashboard's, applied here so
+   the two panels move together instead of drifting apart over time.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Table: a real header, a real hover, tabular figures ── */
+table { border-spacing: 0; }
+th, td { padding: 11px 12px; transition: background var(--dur-1) var(--ease); }
+th {
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  letter-spacing: 0.03em;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:hover { background: var(--accent-wash); }
+tbody tr:hover td { border-bottom-color: var(--border-strong); }
+td { font-variant-numeric: tabular-nums; }
+
+/* ── Buttons and controls: one motion language ── */
+.btn-primary, .btn-add, .btn-ghost, .btn-inline, .row-actions button,
+.tab-btn, .btn-icon {
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.btn-primary:not(:disabled):active,
+.btn-add:not(:disabled):active { transform: scale(0.97); }
+
+/* ── Overlays: the same blurred, warm-tinted backdrop as the dashboard ── */
+.modal-overlay {
+  background: rgba(22, 21, 17, 0.44);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+:root[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modal-overlay { background: rgba(0, 0, 0, 0.6); }
+}
+.modal-overlay.show .modal-box { animation: adminFloatIn var(--dur-3) var(--ease-out) both; }
+@keyframes adminFloatIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Toast rides the same spring as the dashboard's ── */
+.toast.show { animation: adminToastIn var(--dur-3) var(--ease-spring) both; }
+@keyframes adminToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── Tabs get a smoother underline instead of a hard snap ── */
+.tab-btn { transition: color var(--dur-1) var(--ease), border-color var(--dur-2) var(--ease); }

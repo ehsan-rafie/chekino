@@ -2,126 +2,114 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script>
-(function () {
-  function decodeJwtPayload(token) {
-    try {
-      var base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join('')));
-    } catch (e) { return null; }
-  }
-  var token = localStorage.getItem('chekino_token');
-  var payload = token ? decodeJwtPayload(token) : null;
-  if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
-    window.__chekinoAuthOK = true;
-  } else {
-    localStorage.removeItem('chekino_token');
-    window.location.replace('/login');
-  }
-})();
-</script>
+<script src="/js/boot.js?v=20260916b" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/css/shared.css?v=20260915">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260915">
+<link rel="preload" href="/fonts/IRANYekanXVFaNumVF.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/shared.css?v=20260916b">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260916b">
 </head>
 <body class="chekino-auth-pending">
 
-<canvas id="particleBg"></canvas>
-
 <header class="header">
-  <div class="header-user">
-    <span class="company-name" id="companyNameLabel"></span>
-    <button class="logout-btn" id="logoutBtn" title="خروج از حساب">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
-    </button>
+  <div class="header-brand">
+    <span class="header-logo">چکینو</span>
   </div>
 
-  <div class="header-logo">چکینو</div>
-
-  <div class="header-clock">
+  <div class="header-utility">
+    <span class="company-name" id="companyNameLabel"></span>
+    <span class="header-brand-sep" aria-hidden="true"></span>
     <button class="header-support-btn" id="headerSupportBtn" title="پشتیبانی">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
         <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
       </svg>
     </button>
-    <div class="clock-box">
-      <div class="clock-face-wrap">
-        <svg class="analog-clock" id="analogClock" viewBox="0 0 100 100">
-          <circle class="ac-face" cx="50" cy="50" r="47"/>
-          <g id="acTicks"></g>
-          <line id="acHour" class="ac-hand ac-hour" x1="50" y1="50" x2="50" y2="30"/>
-          <line id="acMinute" class="ac-hand ac-minute" x1="50" y1="50" x2="50" y2="18"/>
-          <line id="acSecond" class="ac-hand ac-second" x1="50" y1="58" x2="50" y2="14"/>
-          <circle class="ac-pin" cx="50" cy="50" r="2.6"/>
-        </svg>
-        <div class="clock-tooltip" id="clockTooltip">—</div>
-      </div>
-      <div class="clock-date" id="clockDate">—</div>
-    </div>
-    <button class="theme-toggle-btn" id="themeToggleBtn">
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="تغییر تم" aria-label="تغییر تم روشن و تاریک">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1.5" x2="12" y2="3.5"/><line x1="12" y1="20.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="3.5" y2="12"/><line x1="20.5" y1="12" x2="22.5" y2="12"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="logout-btn" id="logoutBtn" title="خروج از حساب">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4"/>
+        <polyline points="8 17 3 12 8 7"/>
+        <line x1="3" y1="12" x2="15" y2="12"/>
+      </svg>
     </button>
   </div>
 </header>
 
 <main class="main">
-  <div class="due-alert-bar" id="dueAlertBar" hidden>
-    <svg class="due-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    <div class="due-alert-viewport"><div class="due-alert-track" id="dueAlertTrack"></div></div>
-    <span class="due-alert-count" id="dueAlertCount"></span>
+  <div class="board-page-head">
+    <div class="board-page-actions">
+      <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="ia-label">مدیریت اشخاص</span>
+      </button>
+      <button class="add-check-btn" id="addCheckBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        افزودن چک
+      </button>
+    </div>
   </div>
 
-  <div class="add-check-wrap">
-    <button class="add-check-btn" id="addCheckBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      افزودن چک
-    </button>
-  </div>
-
-  <div class="section-divider plain"></div>
-
-  <div class="filter-bar" id="filterBar">
-    <div class="search-row">
+  <div class="board-toolbar" id="filterBar">
+    <div class="board-search-box">
       <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="searchInput" inputmode="numeric" placeholder="جستجو (سریال / شناسه صیادی)">
+        <kbd class="search-kbd">/</kbd>
         <button type="button" class="search-clear" id="searchClearBtn" title="پاک کردن">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
-      <span class="filter-by-label">فیلتر بر اساس:</span>
-
       <div class="filter-pill-group">
-        <button type="button" class="filter-pill-btn" data-pop="popDate">تاریخ</button>
-        <button type="button" class="filter-pill-btn" data-pop="popAmount">مبلغ</button>
-        <button type="button" class="filter-pill-btn" data-pop="popPeople">اشخاص</button>
-        <button type="button" class="filter-pill-btn" data-pop="popStatus">وضعیت</button>
+        <button type="button" class="filter-pill-btn" data-pop="popDate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          تاریخ
+        </button>
+        <button type="button" class="filter-pill-btn" data-pop="popAmount">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+          مبلغ
+        </button>
+        <button type="button" class="filter-pill-btn" data-pop="popPeople">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          اشخاص
+        </button>
       </div>
-
       <button type="button" class="filter-clear-btn" id="filterClearBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         حذف فیلتر
       </button>
-    </div>
 
-    <div class="active-filters-row" id="activeFiltersRow"></div>
+      <div class="export-cluster" id="exportCluster">
+        <button type="button" class="icon-action" id="reportBtn" title="گزارش‌گیری" aria-label="گزارش‌گیری" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="ia-label">گزارش‌گیری</span>
+        </button>
+        <button type="button" class="export-opt opt-pdf" id="exportPdfBtn" title="گزارش قابل چاپ / PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 17.5v-4h1.4a1.3 1.3 0 0 1 0 2.6H8.5"/><path d="M13.6 17.5v-4h1.1a2 2 0 0 1 0 4z"/></svg>
+          <span>PDF</span>
+        </button>
+        <button type="button" class="export-opt opt-excel" id="exportExcelBtn" title="خروجی اکسل">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+          <span>اکسل</span>
+        </button>
+      </div>
+    </div>
   </div>
+
+  <div class="active-filters-row" id="activeFiltersRow"></div>
 
   <div class="filter-popover" id="popDate">
     <div class="fp-title">بر اساس تاریخ</div>
@@ -138,6 +126,10 @@
       </div>
       <div class="field-msg" id="filterRangeMsg"></div>
     </div>
+    <label class="radio-opt archive-toggle">
+      <input type="checkbox" id="showArchivedCheckbox">
+      <span>نمایش چک‌های بایگانی‌شده</span>
+    </label>
   </div>
 
   <div class="filter-popover" id="popAmount">
@@ -176,71 +168,12 @@
     </div>
   </div>
 
-  <div class="filter-popover" id="popStatus">
-    <div class="fp-title">بر اساس وضعیت چک</div>
-    <div class="status-chip-row" id="statusFilterRow"></div>
-    <label class="radio-opt archive-toggle">
-      <input type="checkbox" id="showArchivedCheckbox">
-      <span>نمایش چک‌های بایگانی‌شده</span>
-    </label>
-  </div>
-
-
-  <div class="table-wrap is-loading" id="tableWrap">
-    <div class="table-head-strip">
-      <div class="ths-info">
-        <span class="ths-title">لیست چک‌ها</span>
-        <span class="ths-count" id="tableCountBadge"></span>
-        <div class="ths-amount" id="tableAmount"></div>
-        <div class="ths-stats" id="tableStats"></div>
-      </div>
-      <div class="ths-actions">
-        <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span class="ia-label">مدیریت اشخاص</span>
-        </button>
-
-        <div class="export-cluster" id="exportCluster">
-          <button type="button" class="icon-action" id="reportBtn" title="گزارش‌گیری" aria-label="گزارش‌گیری" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span class="ia-label">گزارش‌گیری</span>
-          </button>
-          <button type="button" class="export-opt opt-pdf" id="exportPdfBtn" title="گزارش قابل چاپ / PDF">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 17.5v-4h1.4a1.3 1.3 0 0 1 0 2.6H8.5"/><path d="M13.6 17.5v-4h1.1a2 2 0 0 1 0 4z"/></svg>
-            <span>PDF</span>
-          </button>
-          <button type="button" class="export-opt opt-excel" id="exportExcelBtn" title="خروجی اکسل">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-            <span>اکسل</span>
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="table-scroll">
-      <table class="cheque-table" id="chequeTable">
-        <thead>
-          <tr>
-            <th class="col-row">ردیف</th>
-            <th class="col-num">شماره سریال</th>
-            <th class="col-num">تاریخ سررسید</th>
-            <th class="col-num">مبلغ (ریال)</th>
-            <th>صاحب چک</th>
-            <th>طرف حساب</th>
-            <th>ذینفع</th>
-            <th class="col-status">وضعیت</th>
-            <th class="col-eye"></th>
-          </tr>
-        </thead>
-        <tbody id="chequeBody"></tbody>
-      </table>
-    </div>
-    <div class="cheque-cards" id="chequeCards"></div>
-    <div class="table-skeleton" id="tableSkeleton" aria-hidden="true">
-      <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
-      <div class="sk-row"></div><div class="sk-row"></div>
+  <div class="board-wrap is-loading" id="boardWrap">
+    <div class="board-columns" id="boardColumns"></div>
+    <div class="board-skeleton" id="boardSkeleton" aria-hidden="true">
+      <div class="board-skeleton-col"><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div></div>
+      <div class="board-skeleton-col"><div class="sk-row"></div><div class="sk-row"></div></div>
+      <div class="board-skeleton-col"><div class="sk-row"></div></div>
     </div>
     <div class="table-empty" id="tableEmpty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -249,7 +182,6 @@
       <div class="p-title">هنوز چکی ثبت نشده است</div>
       <div class="p-sub">با دکمه «افزودن چک» اولین چک را ثبت کنید</div>
     </div>
-    <div class="table-pager" id="tablePager"></div>
   </div>
 
 </main>
@@ -286,10 +218,10 @@
 
 
   <div class="modal-overlay" id="peopleModalOverlay">
-    <div class="modal-box people-box">
+    <div class="modal-box people-box" role="dialog" aria-modal="true" aria-labelledby="peopleModalTitle">
       <div class="modal-header">
-        <h2>مدیریت اشخاص</h2>
-        <button class="modal-close" id="peopleModalClose">
+        <h2 id="peopleModalTitle">مدیریت اشخاص</h2>
+        <button class="modal-close" id="peopleModalClose" title="بستن" aria-label="بستن پنجره‌ی مدیریت اشخاص">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -333,7 +265,7 @@
   </div>
 
   <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-header">
       <h2 id="modalTitle">افزودن چک جدید</h2>
       <div class="modal-header-actions">
@@ -341,7 +273,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           <span>رسید ثبت</span>
         </button>
-        <button class="modal-close" id="modalClose">
+        <button class="modal-close" id="modalClose" title="بستن" aria-label="بستن پنجره">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -532,10 +464,6 @@
   </div>
 </div>
 
-<div class="cell-tooltip" id="cellTooltip"></div>
-
-<div class="hover-dots" id="hoverDots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-
 <div class="photo-editor-overlay" id="photoEditorOverlay">
   <div class="pe-card">
     <div class="pe-topbar">
@@ -574,7 +502,7 @@
 </div>
 
 <div class="lightbox-overlay" id="lightboxOverlay">
-  <div class="lightbox-card">
+  <div class="lightbox-card" role="dialog" aria-modal="true" aria-label="نمایش تصویر رسید">
     <div class="lightbox-topbar">
       <button class="lightbox-btn" id="lightboxShareBtn" title="اشتراک‌گذاری عکس">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
@@ -584,7 +512,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>دانلود</span>
       </button>
-      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn">
+      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn" title="بستن" aria-label="بستن نمایش تصویر">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -597,7 +525,7 @@
 <button class="totop-float" id="toTopBtn" title="برو به بالا">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
 </button>
-<button class="tg-float" id="tgBtn">
+<button class="tg-float" id="tgBtn" aria-label="پشتیبانی تلگرام">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
@@ -619,11 +547,11 @@
 </div>
 
 <div class="app-toast" id="appToast"></div>
+<div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/shared.js?v=20260915"></script>
-<script src="/js/vendor/xlsx.full.min.js"></script>
-<script src="/js/dashboard.js?v=20260915"></script>
-<script>if (window.__chekinoAuthOK) document.body.classList.remove('chekino-auth-pending');</script>
+<script src="/js/shared.js?v=20260916b"></script>
+<script src="/js/palette.js?v=20260916b"></script>
+<script src="/js/dashboard.js?v=20260916b"></script>
 
 </body>
 </html>

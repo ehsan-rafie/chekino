@@ -1,10 +1,9 @@
 
-function autoThemeByTime() {
-  const h = new Date().getHours();
-  return (h >= 19 || h < 6) ? 'dark' : 'light';
-}
-function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
-applyTheme(autoThemeByTime());
+// The theme is already resolved by the inline script in the page head, which
+// runs before the stylesheet paints. This file used to overwrite it from the
+// clock on load — which also meant a user who chose dark inside the app was
+// handed a light login page every morning, because the saved choice was
+// never read here at all.
 
 // Same fix as the dashboard: focusing a filled field (especially via Tab)
 // lands the cursor at the end instead of selecting everything. A deliberate

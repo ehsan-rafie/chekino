@@ -21,7 +21,7 @@ a:focus-visible,
 .radio-opt:focus-visible {
   outline: 2px solid var(--blue-600);
   outline-offset: 2px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
 }
 
 ::selection { background: var(--blue-600); color: #fff; }
@@ -40,7 +40,7 @@ a:focus-visible,
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -70,14 +70,6 @@ html, body {
    (calendar, dropdowns, autocomplete) out of sync with its anchor field.
    Given that's broken it twice, it's left off for reliability. */
 
-#particleBg {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
 .main { position: relative; }
 
 /* ===== Header ===== */
@@ -85,20 +77,51 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 100;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
-  height: 68px;
+  justify-content: space-between;
+  gap: var(--s3);
+  height: 60px;
   padding: 0 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
-.header-user {
+/* Brand mark + company context, start side — a corner lockup instead of a
+   marketing-site centrepiece, the way an app header (not a landing page)
+   carries its logo: small, and next to the account it belongs to. */
+.header-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-self: start; /* right side in RTL */
+  min-width: 0;
+}
+.header-logo {
+  font-size: 18px;
+  color: var(--blue-900);
+  font-variation-settings: var(--f-brand);
+  letter-spacing: 0.2px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.header-brand-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; margin-inline: 4px; }
+.company-name {
+  font-size: 13px;
+  color: var(--muted);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  padding-inline-end: 4px;
+}
+@media (max-width: 720px) { .company-name, .header-brand-sep { display: none; } }
+
+.header-utility {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .theme-toggle-btn {
@@ -114,7 +137,12 @@ html, body {
   flex-shrink: 0;
   transition: color 0.15s ease;
 }
-.theme-toggle-btn:hover { color: var(--blue-600); }
+/* Matches the logout button's treatment — both are header utilities, so
+   both get a hover surface rather than one changing colour and the other
+   filling in. --muted was too faint against the white header for an icon
+   with no label to fall back on. */
+.theme-toggle-btn { border-radius: var(--rad-ctl); color: var(--ink-2); }
+.theme-toggle-btn:hover { color: var(--accent-text); background: var(--accent-wash); }
 .theme-toggle-btn svg { width: 19px; height: 19px; }
 .theme-toggle-btn .icon-moon { display: none; }
 html[data-theme="dark"] .theme-toggle-btn .icon-sun { display: none; }
@@ -128,25 +156,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   border: none;
   background: none;
-  color: var(--muted);
+  color: var(--ink-2);
   cursor: pointer;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   transition: color 0.15s ease, background 0.15s ease;
 }
-.logout-btn:hover { color: var(--error); background: var(--error-bg); }
+.logout-btn:hover { color: var(--state-bad-text); background: var(--error-bg); }
 .logout-btn svg { width: 19px; height: 19px; }
-
-.company-name {
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-body);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-}
-@media (max-width: 720px) { .company-name { display: none; } }
 
 .header-support-btn {
   display: none;   /* only shown on mobile — see the media query below */
@@ -155,7 +172,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--blue-600);
   cursor: pointer;
@@ -164,28 +181,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .header-support-btn:hover { background: var(--blue-100); }
 .header-support-btn svg { width: 19px; height: 19px; }
 @media (max-width: 720px) { .header-support-btn { display: flex; } }
-.header-logo {
-  justify-self: center;
-  font-size: 24px;
-  color: var(--blue-900);
-  font-variation-settings: var(--f-brand);
-  letter-spacing: 0.5px;
-  user-select: none;
-}
-
-.header-clock {
-  justify-self: end; /* left side in RTL */
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.clock-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
-}
 
 /* A small shared tooltip for table cells that carry extra info on hover
    (serial→sayad id, owner→send date, etc.), positioned via JS. */
@@ -197,70 +192,17 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: 13px;
   font-variation-settings: var(--f-num);
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
   z-index: 250;
 }
-.cell-tooltip.show { opacity: 1; }
-.cheque-table [data-tip] { cursor: default; }
-
-.clock-face-wrap { position: relative; flex-shrink: 0; }
-.clock-tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-4px);
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  font-variation-settings: var(--f-num);
-  padding: 6px 10px;
-  border-radius: 8px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 200;
-}
-.analog-clock:hover ~ .clock-tooltip,
-.clock-tooltip.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* Smaller and quieter than it was: the clock is orientation, not the
-   subject of the page, so it no longer competes with the logo beside it. */
-.analog-clock {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  cursor: default;
-}
-.ac-face { fill: var(--surface); stroke: var(--border-strong); stroke-width: 3; }
-.ac-tick { stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; }
-.ac-tick.ac-tick-major { stroke: var(--border-strong); stroke-width: 3; }
-.ac-hand { stroke-linecap: round; }
-.ac-hour { stroke: var(--ink-2); stroke-width: 5.5; }
-.ac-minute { stroke: var(--ink-2); stroke-width: 4; }
-/* the second hand is the one moving part, so it carries the accent —
-   red is reserved for things that are actually wrong */
-.ac-second { stroke: var(--accent); stroke-width: 2; }
-.ac-pin { fill: var(--ink-2); }
-
-.clock-date {
-  display: flex;
-  align-items: center;
-  height: 34px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-  white-space: nowrap;
-}
 
 /* ===== Main content ===== */
 .main {
-  max-width: 1200px;
+  max-width: 1600px;   /* wide enough for three card columns side by side */
   margin: 0 auto;
   padding: var(--s6) var(--s5) 96px;
 }
@@ -270,112 +212,37 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   margin-bottom: var(--s6);
 }
-
-/* ===== Due-date alert bar ===== */
-.due-alert-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--error);
-  border-radius: 8px;
-  padding: 10px 16px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-1);
-}
-.due-alert-bar[hidden] { display: none; }
-/* The bell nudges every few seconds so an overdue cheque catches the eye
-   without the whole bar flashing. */
-.due-alert-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--error);
-  flex-shrink: 0;
-  transform-origin: 50% 15%;
-  animation: bellNudge 5s var(--ease) infinite;
-}
 @keyframes bellNudge {
   0%, 88%, 100% { transform: rotate(0deg); }
   91% { transform: rotate(9deg); }
   94% { transform: rotate(-7deg); }
   97% { transform: rotate(3deg); }
 }
-.due-alert-viewport { flex: 1; min-width: 0; overflow: hidden; height: 22px; position: relative; }
-.due-alert-track { position: absolute; inset: 0; display: flex; align-items: center; }
-.due-alert-item {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  cursor: pointer;
-}
-.due-alert-item.enter { animation: dueAlertSlideIn 0.4s var(--ease); }
-.due-alert-item:hover .due-alert-text { color: var(--blue-700); }
-.due-alert-item:hover .due-alert-dot { transform: scale(1.35); }
-.due-alert-dot { transition: transform 0.18s var(--ease); }
 @keyframes dueAlertSlideIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-.due-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
-.due-alert-item.due-overdue .due-alert-dot,
-.due-alert-item.due-today .due-alert-dot { background: var(--error); }
-.due-alert-item.due-soon .due-alert-dot { background: var(--state-warn); }
-.due-alert-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--ink);
-  font-variation-settings: var(--f-body);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.due-alert-text b { font-variation-settings: var(--f-label); }
-.due-alert-when {
-  font-size: 12px;
-  color: var(--muted);
-  flex-shrink: 0;
-  font-variation-settings: var(--f-micro);
-  white-space: nowrap;
-}
-.due-alert-item.due-overdue .due-alert-when,
-.due-alert-item.due-today .due-alert-when { color: var(--error); }
-.due-alert-item.due-soon .due-alert-when { color: var(--state-warn); }
-.due-alert-count {
-  font-size: 12px;
-  color: var(--muted);
-  flex-shrink: 0;
-  font-variation-settings: var(--f-micro);
-}
-@media (max-width: 600px) {
-  .due-alert-bar { padding: 8px 12px; gap: 8px; }
-  /* the count is the droppable part on a narrow screen — never the urgency */
-  .due-alert-count { display: none; }
 }
 
 @keyframes rowFlash {
   0%   { background: var(--blue-100); }
   100% { background: transparent; }
 }
-#chequeBody tr.row-flash,
-#chequeCards .cq-card.row-flash { animation: rowFlash 1.6s ease; }
+.check-card.row-flash { animation: rowFlash 1.6s ease; }
 
 .add-check-btn {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  height: 34px;
+  gap: 6px;
   background: var(--blue-700);
   color: var(--white);
   border: none;
-  border-radius: 8px;
-  padding: 16px 32px;
+  border-radius: var(--rad-ctl);
+  padding: 0 14px;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 13.5px;
   font-variation-settings: var(--f-btn);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
@@ -418,7 +285,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .add-check-btn:active { transform: scale(0.98); }
 .add-check-btn.just-saved { animation: pulseOnce 0.6s ease; }
-.add-check-btn svg { width: 22px; height: 22px; }
+.add-check-btn svg { width: 15px; height: 15px; }
 
 .section-divider {
   display: flex;
@@ -446,7 +313,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   gap: 10px;
   border: 1.5px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--surface);
   padding: 72px var(--s5);
   color: var(--muted);
@@ -493,7 +360,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-bar {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 10px 12px;
   margin-bottom: 14px;
   position: sticky;
@@ -512,7 +379,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 38px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -531,7 +398,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .search-box input::placeholder { color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); text-align: right; }
 .search-clear {
   width: 24px; height: 24px;
-  border: none; border-radius: 6px;
+  border: none; border-radius: var(--rad-ctl);
   background: none; color: var(--muted);
   display: none; align-items: center; justify-content: center;
   cursor: pointer; flex-shrink: 0;
@@ -541,21 +408,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .search-clear:hover { background: var(--error-bg); color: var(--error); }
 .search-clear svg { width: 13px; height: 13px; }
 
-.filter-by-label {
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-  flex-shrink: 0;
-  /* Search sits at one end of the bar and the filter controls at the other,
-     instead of both bunching up and leaving dead space on the far side. */
-  margin-inline-start: auto;
-}
 .filter-pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
 .filter-pill-btn {
   height: 38px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
@@ -587,7 +445,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 34px;
   padding: 0 12px;
   border: 1.5px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--muted);
   font-family: inherit;
@@ -617,7 +475,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 6px;
   padding: 4px 6px 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--blue-100);
   border: 1px solid var(--accent-line);
   color: var(--accent-text);
@@ -646,7 +504,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 92vw;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 16px;
   z-index: 500;
   max-height: 70vh;
@@ -680,7 +538,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 42px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 13px;
@@ -699,7 +557,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .af-preset {
   padding: 6px 10px;
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -716,38 +574,19 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-people-row .form-field { margin-bottom: 0; }
 .filter-people-row .ac-input { height: 42px; font-size: 13px; padding: 0 12px; }
 
-.status-chip-row { display: flex; flex-direction: column; gap: 8px; }
+/* Archiving is a function of how long a cheque has sat, so the toggle for
+   it lives with the date filter now that the status filter is gone. */
 .archive-toggle {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
-.status-filter-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 13px;
-  font-variation-settings: var(--f-body);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.status-filter-chip .st-dot { width: 9px; height: 9px; border-radius: 50%; }
-.status-filter-chip.active { border-color: var(--blue-600); background: var(--blue-100); }
 
 @media (max-width: 600px) {
   .filter-bar { position: static; top: auto; }
   /* Full-width search on its own row, with the label and pills below it —
      capping the width here just stranded the label out on the far edge. */
   .search-box { width: 100%; max-width: none; flex-basis: 100%; }
-  /* Search owns the first row here, so the label starts the second row
-     normally rather than being pushed to the far edge. */
-  .filter-by-label { margin-inline-start: 0; }
 }
 
 /* ===== Cheque table ===== */
@@ -762,50 +601,16 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-wrap: wrap;
   row-gap: 8px;
 }
-.ths-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  row-gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-.ths-title {
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-title);
-}
-.ths-count {
-  padding: 2px 10px;
-  border-radius: 12px;
-  background: var(--blue-100);
-  color: var(--blue-900);
-  font-size: 12px;
-  font-variation-settings: var(--f-num);
-}
-.ths-amount {
-  margin-right: auto;
-  display: flex;
-  min-width: 0;
-}
-.ths-stats {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-.ths-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Icon-first action buttons: a square icon at rest, and the label unrolls
    beside it on hover/focus so the strip stays quiet until you reach for it. */
 .icon-action {
   display: inline-flex;
   align-items: center;
-  height: 36px;
+  height: 34px;
   padding: 0 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -853,12 +658,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .export-opt {
   display: inline-flex;
   align-items: center;
-  height: 36px;
+  height: 34px;
   max-width: 0;
   padding: 0;
   opacity: 0;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-btn);
@@ -885,30 +690,32 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .opt-pdf:hover, .opt-pdf:focus-visible { background: var(--error); color: #fff; border-color: var(--error); }
 .opt-excel { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
 .opt-excel:hover, .opt-excel:focus-visible { background: var(--success); color: #fff; border-color: var(--success); }
+/* Status chips: a dot in the status colour, the label, the count. The
+   total-amount stat above stays plain text — it isn't a status, so it
+   doesn't get a chip. A zero-count chip dims instead of vanishing, so the
+   three don't reflow as the day's pending pile empties out. */
 .ths-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-micro);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--rad-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-variation-settings: var(--f-value);
   min-width: 0;
-}
-.ths-stat b {
-  color: var(--ink);
-  font-size: 13px;
-  font-variation-settings: var(--f-num);
-  word-break: break-word;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 @media (max-width: 700px) {
   .table-head-strip { padding: 14px 16px; }
-  .ths-stats { width: 100%; order: 3; }
 }
 
 .table-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
   box-shadow: var(--shadow-1);
 }
@@ -916,47 +723,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   overflow-x: auto;
   overflow-y: hidden;
 }
-.cheque-table {
-  width: 100%;
-  min-width: 760px;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-.cheque-table thead th {
-  text-align: center;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-  letter-spacing: 0.2px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-.cheque-table td {
-  padding: 10px 16px;
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-body);
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-  text-align: center;
-  transition: background 0.15s ease;
-}
-.cheque-table tbody tr:last-child td { border-bottom: none; }
-.cheque-table tbody tr { animation: riseIn 0.28s ease both; }
-.cheque-table tbody tr:nth-child(1) { animation-delay: 0.02s; }
-.cheque-table tbody tr:nth-child(2) { animation-delay: 0.04s; }
-.cheque-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
-.cheque-table tbody tr:nth-child(4) { animation-delay: 0.08s; }
-.cheque-table tbody tr:nth-child(5) { animation-delay: 0.10s; }
-.cheque-table tbody tr:nth-child(even) td { background: var(--surface-2); }
-.cheque-table td { cursor: default; }
-.cheque-table tbody tr:hover td { background: var(--surface-2); }
-.cheque-table td .status-btn, .cheque-table td .eye-btn { cursor: pointer; }
 
 /* Option 1 — a thin colored outline eases in around the whole row on hover.
    Kept here, commented out, so it's a one-line swap back if wanted.
@@ -965,10 +731,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   outline-offset: -2px;
   transition: outline-width 0.2s ease;
 }
-.cheque-table tbody tr:hover { outline-width: 2px; }
-.cheque-table tbody tr.st-pending:hover { outline-color: var(--state-idle-dot); }
-.cheque-table tbody tr.st-done:hover { outline-color: var(--state-ok); }
-.cheque-table tbody tr.st-problem:hover { outline-color: var(--state-warn); }
 */
 
 /* Option 2 — a few faint dots drift with no fixed pattern inside whichever
@@ -982,51 +744,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   opacity: 0;
   transition: opacity 0.18s ease;
 }
-.hover-dots.show { opacity: 1; }
-.hover-dots span {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--dot-color, var(--blue-600));
-  opacity: var(--base-op, 0.2);
-  animation: dotFloat 5s ease-in-out infinite;
-}
 @keyframes dotFloat {
   0%   { transform: translate(0, 0) scale(0.8); opacity: calc(var(--base-op, 0.2) * 0.55); }
   50%  { transform: translate(var(--fx), var(--fy)) scale(1.15); opacity: var(--base-op, 0.2); }
   100% { transform: translate(0, 0) scale(0.8); opacity: calc(var(--base-op, 0.2) * 0.55); }
 }
-
-.cheque-table .col-row { width: 56px; color: var(--muted); }
-.cheque-table th.col-row,
-.cheque-table th.col-num,
-.cheque-table th.col-status,
-.cheque-table th.col-eye,
-.cheque-table td.num,
-.cheque-table td.amount,
-.cheque-table td.status-cell,
-.cheque-table td.col-eye { text-align: center; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
-.cheque-table .col-eye { width: 84px; }
-.cheque-table .col-status { width: 148px; }
-.cheque-table .num { font-variation-settings: var(--f-num); white-space: nowrap; }
-.cheque-table .amount { font-variation-settings: var(--f-num); font-size: 15px; color: var(--ink); white-space: nowrap; }
-.cheque-table .owner-name,
-.cheque-table .party-name,
-.cheque-table .benef-name { font-variation-settings: var(--f-value); }
-.cheque-table .benef-name { display: block; text-align: center; }
-.cheque-table .benef-nid {
-  display: block;
-  text-align: center;
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-}
 /* A hairline of status colour down the row edge — enough to scan a long
    table by, quiet enough not to fight the chip in the status column. */
 .cheque-table tbody tr td:first-child { border-right: 3px solid transparent; position: relative; }
-.cheque-table tr.st-pending td:first-child { border-right-color: var(--state-idle-dot); }
-.cheque-table tr.st-done td:first-child { border-right-color: var(--state-ok); }
-.cheque-table tr.st-problem td:first-child { border-right-color: var(--state-warn); }
 /* a faint echo of the status colour on the far edge too, so the row reads as
    one accented unit rather than just a coloured stripe down one side */
 
@@ -1038,7 +763,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 6px 12px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-micro);
@@ -1099,7 +824,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 190px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 6px;
   z-index: 500;
   display: none;
@@ -1110,7 +835,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 8px;
   padding: 10px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 13px;
   font-variation-settings: var(--f-body);
@@ -1134,7 +859,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -1159,7 +884,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-height: 62px;
   padding: 8px 10px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-body);
@@ -1175,7 +900,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex: 1;
   padding: 8px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-label);
@@ -1184,16 +909,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .sr-save { background: var(--blue-hover); color: #fff; }
 .sr-cancel { background: var(--bg); color: var(--muted); }
 
-/* Both row actions sit in fixed-width slots, and the receipt slot is still
-   reserved (just empty) on rows that have no receipt yet — otherwise the eye
-   button would shift sideways from row to row as statuses change. */
 .row-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
 }
-.row-actions-slot { width: 34px; height: 34px; flex-shrink: 0; }
 
 .eye-btn,
 .receipt-btn {
@@ -1201,7 +922,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 34px;
   flex-shrink: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -1228,14 +949,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    Without this the empty state ("no cheques yet") flashes up for as long as
    the request takes, telling the user something that isn't true yet. */
 .table-skeleton { display: none; padding: 14px 16px 16px; }
-.table-wrap.is-loading .table-skeleton { display: block; }
 .table-wrap.is-loading .table-scroll,
 .table-wrap.is-loading .cheque-cards,
 .table-wrap.is-loading .table-empty,
 .table-wrap.is-loading .table-pager { display: none !important; }
 .sk-row {
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   margin-bottom: 8px;
   background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-sheen) 37%, var(--skeleton-base) 63%);
   background-size: 400% 100%;
@@ -1252,22 +972,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .table-empty svg { width: 34px; height: 34px; opacity: 0.45; margin-bottom: 4px; }
 .table-empty .p-title { font-size: 15px; color: var(--ink); font-variation-settings: var(--f-value); }
 .table-empty .p-sub { font-size: 13px; font-variation-settings: var(--f-hint); }
-
-.table-pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 14px;
-  border-top: 1px solid var(--border);
-}
-.table-pager:empty { display: none; }
 .pg-btn {
   min-width: 34px;
   height: 34px;
   padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: inherit;
@@ -1286,12 +996,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cheque-cards { display: none; }
 @media (max-width: 760px) {
   .table-wrap { border: none; box-shadow: none; background: transparent; border-radius: 0; }
-  .cheque-table { display: none; }
-  .cheque-cards { display: block; }
   .table-head-strip {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--rad-card);
     margin-bottom: 12px;
     /* Two buttons plus the info cluster no longer read well trying to
        share one wrapping row on a narrow screen — a clean stack instead:
@@ -1299,9 +1007,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
     flex-direction: column;
     align-items: stretch;
   }
-  .ths-info { justify-content: space-between; }
-  .ths-amount { margin-right: 0; }
-  .ths-actions { justify-content: stretch; }
   /* There's no hover on a phone, so the labels that unroll on desktop are
      simply always out here — and the buttons share the row evenly. */
   .table-head-strip .icon-action { flex: 1; justify-content: center; }
@@ -1310,43 +1015,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .table-head-strip .export-cluster #reportBtn { width: 100%; }
   .table-head-strip .export-cluster.open .export-opt { flex: 1; justify-content: center; }
 }
-
-.cq-card {
-  animation: riseIn 0.3s ease both;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-right: 3px solid var(--state-idle-dot);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  cursor: default;
-}
-.cq-card .status-btn, .cq-card .eye-btn { cursor: pointer; }
-.cq-card.st-pending { border-right-color: var(--state-idle-dot); }
-.cq-card.st-done { border-right-color: var(--state-ok); }
-.cq-card.st-problem { border-right-color: var(--state-warn); }
-.cq-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--bg);
-}
-.cq-serial {
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-value);
-}
-.cq-serial span { color: var(--muted); font-variation-settings: var(--f-micro); font-size: 12px; margin-left: 6px; }
-.cq-amount { font-size: 15px; color: var(--blue-900); font-variation-settings: var(--f-num); }
-.cq-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.cq-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13px; }
-.cq-row .cq-label { color: var(--muted); font-variation-settings: var(--f-micro); flex-shrink: 0; }
-.cq-row .cq-value { color: var(--ink); font-variation-settings: var(--f-body); text-align: left; }
-.cq-row .cq-value .benef-nid { font-size: 12px; display: inline-block; margin-top: 2px; }
-.cq-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.cq-icon-group { display: flex; align-items: center; gap: 2px; }
 
 /* ===== Add Check Modal ===== */
 .modal-overlay {
@@ -1367,7 +1035,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 88vh;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1402,7 +1070,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-close {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: none;
   background: var(--bg);
   color: var(--muted);
@@ -1447,7 +1115,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
@@ -1468,7 +1136,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
@@ -1539,7 +1207,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   direction: ltr;
   text-align: left;
@@ -1566,7 +1234,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 46px;
   padding: 0 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   transition: border-color 0.15s ease;
 }
@@ -1632,7 +1300,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   max-height: 210px;
   overflow-y: auto;
   z-index: 550;
@@ -1646,7 +1314,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 15px;
   font-variation-settings: var(--f-body);
@@ -1694,7 +1362,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-height: 46px;
   padding: 10px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 15px;
@@ -1728,7 +1396,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 8px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   cursor: pointer;
   font-family: inherit;
@@ -1749,7 +1417,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 6px;
   padding: 4px 8px 4px 6px;
-  border-radius: 999px;
+  border-radius: var(--rad-pill);
   background: var(--blue-100);
   color: var(--blue-900);
   font-size: 13px;
@@ -1767,7 +1435,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: fixed;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 6px;
   z-index: 500;
   display: none;
@@ -1781,7 +1449,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 8px;
   padding: 10px 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   font-size: 15px;
   font-variation-settings: var(--f-body);
@@ -1792,7 +1460,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 20px;
   height: 20px;
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1806,7 +1474,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ms-option .ms-icon {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1819,7 +1487,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 .file-box {
   border: 1.5px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   padding: 12px;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -1835,7 +1503,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   position: relative;
   width: 58px;
   height: 58px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   overflow: visible;
   flex-shrink: 0;
 }
@@ -1844,7 +1512,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 58px;
   height: 58px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: 1px solid var(--border);
   display: block;
   cursor: pointer;
@@ -1852,7 +1520,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .file-chip .file-view-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(15,27,51,0.45);
   display: flex;
   align-items: center;
@@ -1867,7 +1535,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .file-chip .file-doc {
   width: 58px;
   height: 58px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-100);
   color: var(--blue-700);
   display: flex;
@@ -1916,7 +1584,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 85vh;
   background: #14181f;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
 }
 .pe-topbar {
@@ -1935,7 +1603,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.1);
   color: #fff;
   cursor: pointer;
@@ -2012,7 +1680,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 4px;
   padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.85);
   font-family: inherit;
@@ -2034,7 +1702,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 100%;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2074,7 +1742,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-height: 78vh;
   background: #14181f;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   overflow: hidden;
 }
 .lightbox-topbar {
@@ -2091,7 +1759,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 8px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: rgba(255,255,255,0.12);
   color: #fff;
   font-family: inherit;
@@ -2122,7 +1790,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
      actual quality changes. */
   max-height: 62vh;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
 }
 @media (max-width: 600px) {
   .lightbox-overlay { padding: 0; background: rgba(10,15,25,0.94); }
@@ -2145,7 +1813,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   margin-top: 0;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: none;
   color: var(--blue-700);
   font-family: inherit;
@@ -2169,7 +1837,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   gap: 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 14px 16px;
   font-size: 14px;
   font-variation-settings: var(--f-body);
@@ -2186,7 +1854,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 10px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   padding: 14px 16px;
   font-size: 13px;
   line-height: 1.9;
@@ -2203,7 +1871,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 6px;
   padding: 6px 12px;
   border: 1.5px solid var(--success-border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--success);
   font-family: inherit;
@@ -2303,7 +1971,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: 42px;
   padding: 0 12px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 14px;
   background: var(--surface);
@@ -2314,7 +1982,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-add-row button {
   padding: 0 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2330,7 +1998,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
 }
 .people-item-edit {
@@ -2343,7 +2011,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -2359,7 +2027,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
@@ -2375,7 +2043,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
@@ -2406,7 +2074,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-item-edit-fields input {
   flex: 1;
   border: 1.5px solid var(--blue-600);
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
   font-size: 13px;
@@ -2429,7 +2097,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--rad-ctl);
   flex-shrink: 0;
 }
 .people-item-delete:hover { background: var(--error-bg); color: var(--error); }
@@ -2442,7 +2110,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   height: var(--h-md);
   padding: 0 10px;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   background: var(--surface);
@@ -2521,7 +2189,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 90vw;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 16px;
   z-index: 601;
   display: none;
@@ -2566,7 +2234,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: 13px;
   font-variation-settings: var(--f-label);
   padding: 8px 14px 8px 24px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   cursor: pointer;
   text-align: center;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -2576,7 +2244,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-nav-btn {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: none;
   background: var(--bg);
   color: var(--muted);
@@ -2613,7 +2281,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 15px;
   font-family: inherit;
   font-variation-settings: var(--f-num);
@@ -2641,15 +2309,15 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-day.range-start, .cal-day.range-end { background: var(--blue-hover); color: var(--white); }
 .cal-day.range-start.holiday, .cal-day.range-end.holiday { color: var(--white); }
 .cal-day.range-start { border-radius: 0 9px 9px 0; }
-.cal-day.range-end { border-radius: 9px 0 0 9px; }
-.cal-day.range-start.range-end { border-radius: 8px; }
+.cal-day.range-end { border-radius: var(--rad-ctl) 0 0 var(--rad-ctl); }
+.cal-day.range-start.range-end { border-radius: var(--rad-ctl); }
 
 .cal-today-btn {
   width: 100%;
   margin-top: 10px;
   padding: 8px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--bg);
   color: var(--blue-700);
   font-family: inherit;
@@ -2666,7 +2334,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: #fff;
   font-family: inherit;
@@ -2680,7 +2348,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 44px;
   flex-shrink: 0;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   display: flex;
@@ -2721,7 +2389,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 0;
   height: 46px;
   border: 1.5px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--blue-700);
   color: var(--white);
   font-family: inherit;
@@ -2759,7 +2427,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   width: 46px;
   height: 46px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   border: 1.5px solid var(--border);
   background: var(--surface);
   color: var(--muted);
@@ -2801,7 +2469,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--success);
   color: #fff;
   display: flex;
@@ -2824,7 +2492,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 0;
   margin-right: 0;
   border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   background: var(--surface);
   color: var(--muted);
   font-family: inherit;
@@ -2854,7 +2522,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .btn-clear.confirming-delete { width: 100px; padding: 0 8px; font-size: 12px; }
   .delete-cancel-slide.show { width: 60px; font-size: 12px; padding: 0; }
 }
-
 
 /* ===== Back-to-top button ===== */
 .totop-float {
@@ -2909,7 +2576,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   font-size: 13px;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -2927,7 +2594,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--surface);
   border: 1px solid rgba(255,255,255,0.15);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--rad-ctl);
   font-size: 13px;
   font-variation-settings: var(--f-value);
   opacity: 0;
@@ -2938,19 +2605,50 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* A real floating tooltip for the card's hover-only detail (beneficiary's
+   national id, a problem cheque's reason) — positioned off the hovered
+   element itself, the same pattern the telegram button's own tooltip
+   uses, instead of leaning on the native title attribute. */
+/* Readable first: --ink as a background was near-black and read as a heavy
+   slab, and 12.5px on one forced line pushed the longer tips (a
+   beneficiary plus their national id) off the edge of the screen. A
+   softer dark grey, a size that matches the card text it explains, and a
+   width it is allowed to wrap inside. */
+.app-tooltip {
+  position: fixed;
+  background: var(--n-11);
+  color: #FCFCFC;
+  padding: 7px 12px;
+  border-radius: var(--rad-ctl);
+  font-size: var(--t-cap);
+  line-height: 1.7;
+  font-variation-settings: var(--f-body);
+  max-width: min(300px, calc(100vw - 24px));
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 600;
+  box-shadow: var(--shadow-2);
+}
+.app-tooltip.show { opacity: 1; transform: translateY(0); }
+/* On dark the same near-black slab would vanish into the page, so the
+   tooltip lifts off the background instead of inverting to a white one. */
+:root[data-theme="dark"] .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+}
+
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
 @media (max-width: 720px) { .tg-float { display: none; } }   /* moves into the header on mobile instead */
 
-
-
 /* ===== Responsive ===== */
 @media (max-width: 720px) {
-  .header { padding: 0 14px; height: 62px; }
-  .header-user { gap: 6px; }
-  .header-logo { font-size: 21px; }
-  .clock-box { display: none; }
+  .header { padding: 0 14px; height: 56px; }
+  .header-brand { gap: 6px; }
+  .header-logo { font-size: 16px; }
   .main { padding: var(--s5) 14px 96px; }
-.add-check-btn { width: 100%; justify-content: center; padding: 16px 24px; font-size: 15px; }
   .tg-float { bottom: 20px; left: 20px; width: 52px; height: 52px; }
 }
 
@@ -2972,7 +2670,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   max-width: 380px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--rad-card);
   padding: 24px;
   box-shadow: var(--shadow-2);
   animation: modalIn 0.18s var(--ease);
@@ -3017,3 +2715,696 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--state-bad);
 }
 .confirm-actions .confirm-ok:hover { border-color: var(--state-bad); background: var(--state-bad-bg); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LINEAR PASS
+   Calibrates this page to the rules set out at the top of shared.css.
+   It lives at the end of the file, as overrides, rather than rewritten
+   in place: the sections above are organised by feature, and unpicking
+   them by hand would have risked the behaviour they carry. Everything
+   here is presentation only.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Depth belongs to floating surfaces only ──
+   These are the six things in the app that genuinely sit above the page.
+   They get the larger radius, which is what makes them read as lifted
+   even before the shadow registers. Everything else stays flat. */
+.modal-box,
+.confirm-box,
+.filter-popover,
+.cal-popup,
+.status-menu,
+.ac-list,
+.ms-list,
+.cell-tooltip,
+.tg-tooltip,
+.app-toast,
+.lightbox-card,
+.pe-card {
+  border-radius: var(--rad-float);
+}
+
+/* ── 2 · The cheque table ──
+   Zebra striping went out. It was doing the job a divider does, and it
+   was actively harmful here: the stripe colour and the hover colour were
+   the same token, so hovering an even row changed nothing at all. One
+   subtle divider per row plus a real hover state reads cleaner and makes
+   the pointer position unambiguous. */
+.cheque-table tbody tr:nth-child(even) td { background: transparent; }
+
+/* Rows no longer fly in one after another. The stagger was decorative —
+   it animated something the user didn't do, and it put 100ms of theatre
+   between the data arriving and the data being readable. */
+.cheque-table tbody tr { animation: none; }
+
+/* Serial numbers, sayad ids and national ids are machine values. Tabular
+   figures plus a little tracking is what tells the eye "this is data" and
+   makes a transposed digit findable. */
+.cheque-table .num,
+.cheque-table .benef-nid,
+.cq-serial,
+.sayad-static {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ── 3 · Structure through border tiers ──
+   Outer edges of a panel take the strong tier so the panel reads as one
+   object; internal dividers take the subtle tier so they separate without
+   competing. */
+.table-wrap,
+.filter-bar,
+.due-alert-bar { border-color: var(--border); }
+.table-head-strip { border-bottom-color: var(--border); }
+
+/* ── 4 · Motion, normalised ──
+   Hover and press land at 90ms; anything that enters the screen lands at
+   200ms on the expo curve. Nothing animates a layout property. */
+.status-btn,
+.eye-btn,
+.filter-pill-btn,
+.icon-action,
+.add-check-btn,
+.ths-report-btn,
+.file-chip,
+.st-opt {
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.modal-overlay.show .modal-box,
+.confirm-overlay.show .confirm-box {
+  animation: floatIn var(--dur-3) var(--ease-out) both;
+}
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 5 · Empty state ──
+   A centred mark, a plain sentence, and the one action that resolves it.
+   "Nothing found" on its own tells the user a fact and leaves them there. */
+.table-empty { padding: 64px var(--s5); gap: var(--s2); }
+.table-empty svg { width: 30px; height: 30px; opacity: 0.35; }
+
+/* ── 6 · Scanning: one consistent edge ──
+   Every cell used to be centre-aligned, which reads tidy on a mockup and
+   badly in use: with nothing sharing an edge, the eye re-finds the start of
+   each value on every row. Text now starts at the row's start edge (the
+   right, in RTL) so a column becomes a single line to scan down. The
+   utility columns — row number, status, the eye — stay centred, because
+   they are marks rather than values. */
+.cheque-table thead th,
+.cheque-table td { text-align: start; }
+
+/* ── 7 · Row height ──
+   The beneficiary cell carries a name over its national id, and that pair
+   was setting the height of every row in the table. Tightening the two
+   leadings gets the row back near the 44px rhythm without dropping the id,
+   which is the field people actually check a cheque against. */
+.cheque-table td { padding: 8px 16px; line-height: 1.35; }
+
+/* ── 8 · The primary action belongs in the toolbar ──
+   It used to sit alone in a centred band above the filters, spending a
+   whole horizontal stripe of the page on one button. In the table's own
+   header it is still the most prominent control on screen, and the table
+   starts most of a screenful higher. */
+.ths-actions .add-check-btn {
+  height: var(--h-sm);
+  padding: 0 var(--s3);
+  gap: var(--s2);
+  font-size: var(--t-cap);
+  border-radius: var(--rad-ctl);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   V2 POLISH PASS
+   A second calibration pass — same method as the one above, wider net.
+   Every field, control, overlay and motion value audited against the
+   tokens in shared.css and against what shadcn/ui, Linear and Vuexy
+   actually ship, not against how those look from a screenshot.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 9 · Fields get a real focus state ──
+   The search box already had a focus ring; the cheque form's own fields
+   only changed border colour, which is the one focus signal least visible
+   to anyone scanning quickly rather than reading closely. Every text field
+   in the app now gets the same ring, at the same strength. */
+.form-field input,
+.sayad-static,
+.date-mask-input,
+.amount-input,
+.notes-input,
+.ac-input {
+  height: var(--h-lg);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.form-field input:focus,
+.date-mask-input:focus,
+.amount-box:focus-within,
+.notes-input:focus,
+.ac-field:focus-within .ac-input {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+.form-field.error input:focus { box-shadow: 0 0 0 3px var(--state-bad-bg); }
+
+/* ── 10 · Overlays match the command palette's own treatment ──
+   The palette blurs the page behind it; the cheque form and the confirm
+   dialog used to just darken it. Same backdrop everywhere a surface takes
+   over the screen, and the tint now comes from the system's own ink
+   instead of a leftover blue that predates the warm palette. */
+.modal-overlay,
+.confirm-overlay,
+.photo-editor-overlay,
+.lightbox-overlay {
+  background: rgba(22, 21, 17, 0.44);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+:root[data-theme="dark"] .modal-overlay,
+:root[data-theme="dark"] .confirm-overlay,
+:root[data-theme="dark"] .photo-editor-overlay,
+:root[data-theme="dark"] .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modal-overlay,
+  :root:not([data-theme="light"]) .confirm-overlay,
+  :root:not([data-theme="light"]) .photo-editor-overlay,
+  :root:not([data-theme="light"]) .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
+}
+
+/* ── 11 · A problem row asks for attention once, not forever ──
+   A slow, three-beat pulse on the status dot — not the whole row, not
+   endless — draws the eye on arrival without turning into a distraction
+   during the minutes someone spends working near it. */
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 131, 58, 0.35); }
+  50%      { box-shadow: 0 0 0 5px rgba(232, 131, 58, 0); }
+}
+
+/* ── 12 · Toast rides the spring curve ──
+   Everything else in the app enters on the expo-out curve; the toast is
+   the one notification that arrives uninvited, so it gets the single
+   deliberate overshoot in the system — enough to feel noticed, not enough
+   to feel bouncy. */
+.app-toast.show { animation: toastIn var(--dur-3) var(--ease-spring) both; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── 13 · Icon buttons, unified ──
+   The eye button, the receipt button and the filter-pill buttons each had
+   their own hover treatment, arrived at separately over three features.
+   One wash-and-scale response for all of them now. */
+.eye-btn, .receipt-btn {
+  transition:
+    background var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.eye-btn:hover, .receipt-btn:hover { background: var(--accent-wash); color: var(--accent-text); }
+
+/* ── 14 · Skeleton shimmer, retimed ──
+   1.3s read as sluggish next to a 150ms interface; the sweep now matches
+   the pace of everything else that moves on this page. */
+.sk-row { animation-duration: 1s; }
+
+/* ── 15 · Dropdowns and menus enter, they don't just appear ──
+   The autocomplete list, the status menu and the filter popovers used
+   display:block with no transition. A menu that snaps into existence
+   reads as a bug the first time you see it and gets ignored after —
+   neither is the goal. */
+.ac-list.show, .ms-list.show, .status-menu.show, .filter-popover.show {
+  animation: menuIn var(--dur-2) var(--ease-out) both;
+}
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD VIEW
+   Three columns, one per STATUSES entry — the workflow states are the
+   whole space (every cheque is in exactly one), so unlike a Kanban tool
+   with user-defined stages, these three are fixed: no add/remove/reorder
+   column controls, because there's nothing to configure.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.board-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+  /* stretch, not start: the columns carry the dividers between them, and
+     sizing each to its own content left those lines at three different
+     lengths. Equal-height columns give one clean full-height rule. */
+  align-items: stretch;
+}
+@media (max-width: 860px) {
+  /* Three columns can't share a phone-width screen, so the board becomes
+     a horizontal, snap-scrolling row instead — swipe sideways between
+     statuses, the same gesture a Kanban board teaches on any device. */
+  .board-columns {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: var(--s2);
+    margin: 0 calc(-1 * var(--s4));
+    padding-inline: var(--s4);
+  }
+  .board-column { flex: 0 0 82%; scroll-snap-align: start; }
+}
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
+}
+
+.board-col-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.board-col-empty {
+  padding: var(--s6) var(--s3);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--t-cap);
+}
+/* ---- The card itself ---- */
+.check-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  overflow: hidden;
+  padding: var(--s3);
+  /* Never compress. The column list is a flex column with a capped
+     height, and a flex item shrinks by default — which squashed every
+     card in a full column until its content was clipped. Cards keep
+     their size; the column scrolls instead. */
+  flex-shrink: 0;
+  cursor: grab;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+  touch-action: pan-y;   /* vertical scroll still works; the drag handler owns horizontal/press-hold */
+}
+.check-card:hover { border-color: var(--border-strong); }
+.check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Three rows, always the same two fields in the same spots — but not the
+   same weight. Row 1 is bookkeeping (serial, due date): small and muted,
+   read only when it's specifically what's being looked for. Row 2 is the
+   card's actual subject — the beneficiary is who a person means when they
+   say "the cheque to X" — so it alone gets full ink and the card's
+   largest type; the amount stays legible but secondary next to it. That
+   single deliberate jump in weight is the anchor the eye lands on first,
+   the way a name does on the reference board's own lead card. */
+.chk-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-width: 0; }
+.chk-row-mid { margin-top: 9px; }
+.chk-row-bottom {
+  margin-top: 11px;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.chk-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--t-micro);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.chk-due svg { width: 13px; height: 13px; opacity: 0.55; flex-shrink: 0; }
+/* A cheque still waiting to be registered, with its due date within reach,
+   needs to read as urgent before the text is even parsed — colour first,
+   digits second. Resolved once it leaves "منتظر ثبت", by design. */
+.chk-due-soon { color: var(--state-warn); font-variation-settings: var(--f-label); }
+.chk-due-soon svg { opacity: 1; }
+.chk-due-overdue { color: var(--state-bad); font-variation-settings: var(--f-label); }
+.chk-due-overdue svg { opacity: 1; }
+
+/* The serial is the card's one bold line now — it's what a person actually
+   says out loud to mean this specific cheque, so it gets the strongest
+   weight and the largest size on the card. Everything else is context. */
+.chk-serial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.chk-serial svg { width: 15px; height: 15px; opacity: 0.5; flex-shrink: 0; }
+.chk-serial b {
+  font-size: var(--t-sub);
+  color: var(--ink);
+  font-variation-settings: var(--f-title);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.chk-benef {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variation-settings: var(--f-body);
+  min-width: 0;
+  overflow: hidden;
+}
+.chk-benef svg { width: 13px; height: 13px; opacity: 0.5; flex-shrink: 0; }
+.chk-benef span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chk-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.chk-amount svg { width: 13px; height: 13px; opacity: 0.5; flex-shrink: 0; }
+
+.chk-icon-group { display: flex; align-items: center; gap: 6px; }
+
+/* ---- Dragging ---- */
+/* The card being moved goes semi-transparent in place; the actual visual
+   follows the pointer as a separate fixed-position clone (built in JS),
+   so the card's own layout in the column never fights the drag frame. */
+.check-card.dragging { opacity: 0.35; cursor: grabbing; }
+.check-card-ghost {
+  position: fixed;
+  z-index: 500;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.96;
+  box-shadow: var(--shadow-2);
+  cursor: grabbing;
+  will-change: transform;   /* GPU layer up front — no promotion hitch on the first move */
+}
+
+/* ---- Loading skeleton ---- */
+.board-skeleton { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
+.board-wrap.is-loading .board-skeleton { display: grid; }
+.board-wrap.is-loading .board-columns,
+.board-wrap.is-loading .table-empty { display: none; }
+.board-skeleton-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  padding: var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.board-skeleton-col .sk-row { height: 84px; margin: 0; }
+@media (max-width: 860px) { .board-skeleton { display: none !important; } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD TOOLBAR — matched element-for-element against a reference
+   screenshot: page title + primary action on one row, a bare (no box,
+   no border) search/filter/utility row underneath.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.board-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.board-page-actions { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
+/* The secondary action next to "add" is icon-only, the same square
+   shape as a reference app's kebab menu next to its own primary button
+   — no label to reveal, so the hover-expand behaviour that suits the
+   toolbar's wider icon-actions is switched off here. */
+.board-page-actions .icon-action {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+}
+.board-page-actions .icon-action .ia-label { display: none; }
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+/* One bar across the full width of the board below it: search, the filter
+   pills and "clear filters" grouped at the start, the report/export
+   cluster pinned to the far end inside the same frame — so the bar spans
+   the same span the three columns do, with nothing floating outside it. */
+.board-search-box {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-card);
+  background: var(--surface);
+}
+.board-search-box .search-box {
+  flex: 0 1 320px;
+  min-width: 190px;
+  height: 34px;
+  padding: 0 var(--s3);
+  border: none;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+.board-search-box .search-box:focus-within { background: var(--surface-sunken); box-shadow: 0 0 0 2px var(--accent-line); }
+.search-kbd {
+  flex-shrink: 0;
+  margin-inline-start: var(--s2);
+  opacity: 0.8;
+}
+.board-search-box .search-box:focus-within .search-kbd { display: none; }
+/* The one auto margin in the bar, and it's inside a single bordered
+   frame — so the space it opens reads as the bar's own span, not as two
+   disconnected clusters with a dead gap between them. */
+.board-search-box .export-cluster { margin-inline-start: auto; }
+
+/* Date / amount / people — filtering by status went with the board,
+   since the three columns already are that filter. */
+.board-search-box .filter-pill-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.board-search-box .filter-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+.board-search-box .filter-pill-btn svg { width: 14px; height: 14px; opacity: 0.75; flex-shrink: 0; }
+.board-search-box .filter-pill-btn.active svg,
+.board-search-box .filter-pill-btn.open svg { opacity: 1; }
+.board-search-box .filter-clear-btn { height: 34px; flex-shrink: 0; }
+
+@media (max-width: 860px) {
+  .board-search-box .filter-pill-btn span,
+  .board-search-box .filter-pill-btn { font-size: 12px; }
+}
+@media (max-width: 700px) {
+  .board-page-head { flex-wrap: wrap; }
+  .board-page-actions { width: 100%; }
+  .board-page-actions .add-check-btn { flex: 1; justify-content: center; }
+  .board-toolbar { flex-wrap: wrap; }
+  .board-search-box { flex-wrap: wrap; }
+  .board-search-box .search-box { max-width: none; flex-basis: 100%; }
+  .board-search-box .export-cluster { margin-inline-start: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD COLUMN — a coloured badge (icon + name + a count in its own
+   pill) heading a boxed panel, and a wash of that same status colour
+   fading down the top of the panel. The wash is what tells the three
+   columns apart at a glance; the cards inside stay plain white, so
+   nothing on the card itself has to carry a status stripe.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* No panel behind the cards: the columns sit directly on the page and are
+   told apart by a single hairline between them, plus the status gradient
+   across the top of each. The cards themselves are the only objects. */
+.board-column {
+  background: none;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  padding-inline: var(--s3);
+}
+/* The divider lands between columns only — never outside the first or
+   last one. In RTL the inline-start edge is the right one, so putting it
+   on every column after the first draws exactly the two lines wanted. */
+.board-column + .board-column { border-inline-start: 1px solid var(--border); }
+/* One shared background for all three columns — the status now shows
+   through a gradient bar across the top edge instead of tinting the
+   whole panel, so the columns read as one consistent set of containers
+   with just an accent, not three different-coloured rooms. */
+.board-column::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: var(--s3);
+  height: 3px;
+  border-radius: 2px;
+}
+.board-column[data-status="pending"]::before { background: linear-gradient(to left, var(--accent), transparent); }
+.board-column[data-status="done"]::before    { background: linear-gradient(to left, var(--state-ok), transparent); }
+.board-column[data-status="problem"]::before { background: linear-gradient(to left, var(--state-bad), transparent); }
+.board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
+
+.board-col-head {
+  padding: 0 0 var(--s3);
+  border-bottom: none;
+  background: none;
+}
+/* Bold enough to read as three distinct states from across the screen —
+   the pale versions of these tokens used for a status pill inside a card
+   are correct there (near text, need to stay quiet); a column header is
+   the one place in the app whose entire job is to be told apart at a
+   glance, so it earns the more saturated tint. */
+.board-col-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--rad-pill);
+  font-size: 13.5px;
+  font-variation-settings: var(--f-label);
+}
+.board-col-icon { width: 15px; height: 15px; flex-shrink: 0; }
+.board-col-count {
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rad-pill);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: var(--f-num);
+}
+:root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.3); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.3); } }
+
+.board-col-badge-pending { background: rgba(45, 140, 255, 0.16); color: #0A5CE0; }
+.board-col-badge-done    { background: rgba(26, 122, 76, 0.16);  color: #0E6B49; }
+.board-col-badge-problem { background: rgba(232, 131, 58, 0.18); color: #9A5B12; }
+
+:root[data-theme="dark"] .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
+:root[data-theme="dark"] .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
+:root[data-theme="dark"] .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
+  :root:not([data-theme="light"]) .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
+  :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
+}
+
+/* Export-this-column-to-PDF stays out of the way until the column is
+   hovered, then sits at the head's far end. */
+.board-col-btn {
+  width: 26px; height: 26px;
+  display: none;              /* revealed on column hover, see below */
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--rad-ctl);
+  background: transparent;
+  color: var(--muted);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.board-col-head { display: flex; align-items: center; justify-content: space-between; }
+.board-col-btn svg { width: 15px; height: 15px; }
+.board-col-btn:hover { background: var(--surface); color: var(--ink); }
+.board-column:hover .board-col-btn,
+.board-col-btn:focus-visible { display: inline-flex; }
+
+.board-col-list { padding: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARD — white surface with real depth (this is the one place in the
+   app a shadow belongs: cards on a plain background need to read as
+   objects, the way the data layer elsewhere earns its flatness from
+   being bounded by a table or panel instead), a compact bottom row with
+   a coloured status dot instead of the full text pill.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.check-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(22, 21, 17, 0.04), 0 1px 6px -2px rgba(22, 21, 17, 0.06);
+}
+:root[data-theme="dark"] .check-card { box-shadow: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .check-card { box-shadow: none; } }
+.check-card:hover { box-shadow: 0 2px 4px rgba(22, 21, 17, 0.06), 0 4px 14px -4px rgba(22, 21, 17, 0.1); }
+
+/* A small solid badge in the status colour, carrying the same icon as the
+   column's own header badge, instead of a bordered ring around a plain
+   dot — it reads as an object in its own right, not a bare toggle. */
+.status-dot-btn {
+  width: 28px; height: 28px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(22, 21, 17, 0.12);
+  transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.status-dot-btn svg { width: 14px; height: 14px; }
+.status-dot-btn:hover { transform: scale(1.1); box-shadow: 0 3px 8px -1px rgba(22, 21, 17, 0.3); }
+.status-dot-btn:active { transform: scale(0.96); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOUCH TARGETS
+   34px reads as neat under a mouse and small under a fingertip — an
+   audit at phone width found 39 controls below 40px, the status dot
+   (28px) among them, and that one writes to the record. WCAG 2.5.5 asks
+   for 44px. Desktop sizing is deliberately left alone; this only applies
+   where the input is actually a finger.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  .eye-btn,
+  .receipt-btn,
+  .theme-toggle-btn,
+  .logout-btn,
+  .header-support-btn,
+  .board-col-btn,
+  .board-page-actions .icon-action,
+  .search-clear { width: 44px; height: 44px; }
+
+  .status-dot-btn { width: 40px; height: 40px; }
+  .status-dot-btn svg { width: 19px; height: 19px; }
+
+  .board-search-box .search-box,
+  .board-search-box .filter-pill-btn,
+  .board-search-box .filter-clear-btn,
+  .icon-action,
+  .export-opt,
+  .add-check-btn { height: 44px; }
+  /* the report trigger is icon-only here, so it needs the width too */
+  .icon-action { min-width: 44px; justify-content: center; }
+
+  .chk-icon-group { gap: 8px; }
+  .row-actions { gap: 4px; }
+}

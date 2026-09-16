@@ -1,5 +1,8 @@
 .env
 .env.*
+!.env.example
+backend/.env
+backend/node_modules/
 credentials.md
 node_modules/
 .claude/

@@ -2,29 +2,14 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script>
-(function () {
-  function decodeJwtPayload(token) {
-    try {
-      var base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join('')));
-    } catch (e) { return null; }
-  }
-  var token = localStorage.getItem('chekino_admin_token');
-  var payload = token ? decodeJwtPayload(token) : null;
-  if (!(payload && payload.exp && payload.exp * 1000 > Date.now())) {
-    localStorage.removeItem('chekino_admin_token');
-  }
-})();
-</script>
+<script src="/js/boot.js?v=20260916b" data-mode="admin"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>چکینو | پنل مدیریت</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/css/shared.css?v=20260915">
-<link rel="stylesheet" href="/css/admin.css?v=20260915">
+<link rel="preload" href="/fonts/IRANYekanXVFaNumVF.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/shared.css?v=20260916b">
+<link rel="stylesheet" href="/css/admin.css?v=20260916b">
 </head>
 <body class="chekino-auth-pending">
 
@@ -83,19 +68,19 @@
         <div class="alert" id="newCompanyAlert"></div>
         <div class="form-row">
           <div class="field">
-            <label>نام شرکت</label>
+            <label for="newCompanyName">نام شرکت</label>
             <input type="text" id="newCompanyName">
           </div>
           <div class="field">
-            <label>نام کاربری</label>
+            <label for="newCompanyUsername">نام کاربری</label>
             <input type="text" id="newCompanyUsername" dir="ltr">
           </div>
           <div class="field">
-            <label>رمز عبور</label>
+            <label for="newCompanyPassword">رمز عبور</label>
             <input type="text" id="newCompanyPassword" dir="ltr">
           </div>
           <div class="field">
-            <label>پلن</label>
+            <label for="newCompanyPlan">پلن</label>
             <select id="newCompanyPlan"></select>
           </div>
           <button class="btn-add" id="addCompanyBtn">افزودن شرکت</button>
@@ -131,19 +116,19 @@
         <div class="alert" id="newPlanAlert"></div>
         <div class="form-row" style="margin-bottom:14px">
           <div class="field">
-            <label>نام پلن</label>
+            <label for="newPlanName">نام پلن</label>
             <input type="text" id="newPlanName">
           </div>
           <div class="field">
-            <label>حداکثر اشخاص (خالی = نامحدود)</label>
+            <label for="newPlanMaxPeople">حداکثر اشخاص (خالی = نامحدود)</label>
             <input type="number" id="newPlanMaxPeople" min="0">
           </div>
           <div class="field">
-            <label>حداکثر چک (خالی = نامحدود)</label>
+            <label for="newPlanMaxChecks">حداکثر چک (خالی = نامحدود)</label>
             <input type="number" id="newPlanMaxChecks" min="0">
           </div>
           <div class="field">
-            <label>قیمت (تومان)</label>
+            <label for="newPlanPrice">قیمت (تومان)</label>
             <input type="number" id="newPlanPrice" min="0">
           </div>
         </div>
@@ -181,15 +166,15 @@
         <h2>تغییر یوزرنیم / رمز عبور</h2>
         <div class="alert" id="accountAlert"></div>
         <div class="field">
-          <label>رمز عبور فعلی (برای تأیید هویت)</label>
+          <label for="accountCurrentPassword">رمز عبور فعلی (برای تأیید هویت)</label>
           <input type="password" id="accountCurrentPassword" dir="ltr">
         </div>
         <div class="field">
-          <label>نام کاربری جدید (اختیاری)</label>
+          <label for="accountNewUsername">نام کاربری جدید (اختیاری)</label>
           <input type="text" id="accountNewUsername" dir="ltr">
         </div>
         <div class="field">
-          <label>رمز عبور جدید (اختیاری)</label>
+          <label for="accountNewPassword">رمز عبور جدید (اختیاری)</label>
           <input type="text" id="accountNewPassword" dir="ltr">
         </div>
         <button class="btn-add" id="accountSaveBtn" style="width:100%">ذخیره تغییرات</button>
@@ -204,15 +189,15 @@
     <h2>ویرایش شرکت</h2>
     <div class="alert" id="editCompanyAlert"></div>
     <div class="field">
-      <label>نام شرکت</label>
+      <label for="editCompanyName">نام شرکت</label>
       <input type="text" id="editCompanyName">
     </div>
     <div class="field">
-      <label>پلن</label>
+      <label for="editCompanyPlan">پلن</label>
       <select id="editCompanyPlan"></select>
     </div>
     <div class="field">
-      <label>override دسترسی «خروجی گرفتن»</label>
+      <label for="editPermExport">override دسترسی «خروجی گرفتن»</label>
       <select id="editPermExport">
         <option value="inherit">پیش‌فرض پلن</option>
         <option value="true">فعال (اجباری)</option>
@@ -220,7 +205,7 @@
       </select>
     </div>
     <div class="field">
-      <label>override دسترسی «گزارش‌گیری»</label>
+      <label for="editPermReports">override دسترسی «گزارش‌گیری»</label>
       <select id="editPermReports">
         <option value="inherit">پیش‌فرض پلن</option>
         <option value="true">فعال (اجباری)</option>
@@ -228,7 +213,7 @@
       </select>
     </div>
     <div class="field">
-      <label>override دسترسی «چند کاربره»</label>
+      <label for="editPermMultiUser">override دسترسی «چند کاربره»</label>
       <select id="editPermMultiUser">
         <option value="inherit">پیش‌فرض پلن</option>
         <option value="true">فعال (اجباری)</option>
@@ -251,7 +236,7 @@
 
     <div id="changePasswordForm">
       <div class="field">
-        <label>رمز عبور جدید</label>
+        <label for="newPasswordInput">رمز عبور جدید</label>
         <div class="input-with-btn">
           <input type="text" id="newPasswordInput" dir="ltr">
           <button type="button" class="btn-inline" id="generateRandomPasswordBtn">تولید تصادفی</button>
@@ -266,7 +251,7 @@
     <div id="changePasswordResult" style="display:none">
       <div class="alert success show">رمز عبور تغییر کرد. این مقدار فقط همین یک‌بار نمایش داده می‌شود — همین الان کپی کنید.</div>
       <div class="field">
-        <label>رمز عبور جدید</label>
+        <label for="revealedPassword">رمز عبور جدید</label>
         <div class="input-with-btn">
           <input type="text" id="revealedPassword" dir="ltr" readonly>
           <button type="button" class="btn-inline" id="copyPasswordBtn">کپی</button>
@@ -285,19 +270,19 @@
     <h2>ویرایش پلن</h2>
     <div class="alert" id="editPlanAlert"></div>
     <div class="field">
-      <label>نام پلن</label>
+      <label for="editPlanName">نام پلن</label>
       <input type="text" id="editPlanName">
     </div>
     <div class="field">
-      <label>حداکثر اشخاص (خالی = نامحدود)</label>
+      <label for="editPlanMaxPeople">حداکثر اشخاص (خالی = نامحدود)</label>
       <input type="number" id="editPlanMaxPeople" min="0">
     </div>
     <div class="field">
-      <label>حداکثر چک (خالی = نامحدود)</label>
+      <label for="editPlanMaxChecks">حداکثر چک (خالی = نامحدود)</label>
       <input type="number" id="editPlanMaxChecks" min="0">
     </div>
     <div class="field">
-      <label>قیمت (تومان)</label>
+      <label for="editPlanPrice">قیمت (تومان)</label>
       <input type="number" id="editPlanPrice" min="0">
     </div>
     <div class="checkbox-row">
@@ -328,8 +313,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/shared.js?v=20260915"></script>
-<script src="/js/admin.js?v=20260915"></script>
-<script>document.body.classList.remove('chekino-auth-pending');</script>
+<script src="/js/shared.js?v=20260916b"></script>
+<script src="/js/palette.js?v=20260916b"></script>
+<script src="/js/admin.js?v=20260916b"></script>
 </body>
 </html>
