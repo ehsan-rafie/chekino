@@ -1111,16 +1111,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .sr-save { background: var(--blue-hover); color: #fff; }
 .sr-cancel { background: var(--bg); color: var(--muted); }
 
-/* Both row actions sit in fixed-width slots, and the receipt slot is still
-   reserved (just empty) on rows that have no receipt yet — otherwise the eye
-   button would shift sideways from row to row as statuses change. */
 .row-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
 }
-.row-actions-slot { width: 34px; height: 34px; flex-shrink: 0; }
 
 .eye-btn,
 .receipt-btn {
@@ -3279,19 +3275,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .check-card:hover { border-color: var(--border-strong); }
 .check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* A fixed two-column grid: every row pairs one right-aligned field with
-   one left-aligned field, always the same two fields in the same spots,
-   so scanning down a column reads like scanning a table instead of
-   hunting for where a given field landed on this particular card. Every
-   row is always present — the reason line included, empty or not — which
-   is what keeps every card in every column exactly the same height. */
+/* Three rows, always the same two fields in the same spots — but not the
+   same weight. Row 1 is bookkeeping (serial, due date): small and muted,
+   read only when it's specifically what's being looked for. Row 2 is the
+   card's actual subject — the beneficiary is who a person means when they
+   say "the cheque to X" — so it alone gets full ink and the card's
+   largest type; the amount stays legible but secondary next to it. That
+   single deliberate jump in weight is the anchor the eye lands on first,
+   the way a name does on the reference board's own lead card. */
 .chk-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-width: 0; }
-.chk-row-mid { margin-top: 10px; align-items: flex-start; }
+.chk-row-mid { margin-top: 9px; }
 .chk-row-bottom {
-  margin-top: 10px;
+  margin-top: 11px;
   padding-top: var(--s2);
   border-top: 1px solid var(--border-subtle);
-  align-items: center;
 }
 
 .chk-due {
@@ -3299,7 +3296,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 5px;
   font-size: var(--t-micro);
-  color: var(--ink-2);
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -3313,7 +3310,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .chk-due-overdue svg { opacity: 1; }
 
 .chk-serial {
-  font-size: 11px;
+  font-size: var(--t-micro);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -3322,68 +3319,30 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .chk-serial b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
 
-.chk-benef-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* The card's one bold line. National id rides along as a title tooltip
+   instead of a permanent second line — real, but not worth a whole row
+   on every card just in case someone needs it. */
 .chk-benef {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: var(--t-value);
+  gap: 6px;
+  font-size: var(--t-sub);
   color: var(--ink);
   font-variation-settings: var(--f-title);
   min-width: 0;
+  overflow: hidden;
 }
-.chk-benef svg { width: 14px; height: 14px; opacity: 0.45; flex-shrink: 0; }
+.chk-benef svg { width: 15px; height: 15px; opacity: 0.4; flex-shrink: 0; }
 .chk-benef span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-nid {
-  font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  font-variation-settings: var(--f-hint);
-  letter-spacing: 0.02em;
-  padding-inline-start: 19px;   /* lines up under the name, clear of the person icon */
-}
 .chk-amount {
   font-size: var(--t-cap);
-  color: var(--ink);
+  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.chk-sent { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-micro); color: var(--muted); min-width: 0; }
-.chk-sent > svg { width: 13px; height: 13px; opacity: 0.55; flex-shrink: 0; }
-.chk-sent-date { font-variant-numeric: tabular-nums; }
-.chk-platform-badge {
-  width: 16px; height: 16px;
-  border-radius: 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-.chk-platform-badge svg { width: 10px; height: 10px; }
-.chk-platform-plain { border: 1px solid var(--border); }
-.chk-platform-plain svg { width: 12px; height: 12px; }
-
-/* Rendered on every card, filled only on a problem one. Keeping the slot
-   in the layout either way is what makes all three columns' cards line
-   up at the same height instead of stepping up and down the board. */
-.chk-reason {
-  margin-top: 10px;
-  padding: 5px 9px;
-  border-radius: var(--rad-ctl);
-  background: var(--state-bad-bg);
-  color: var(--state-bad);
-  font-size: var(--t-micro);
-  line-height: 1.5;
-  height: 27px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.chk-reason-empty { visibility: hidden; }
 .chk-icon-group { display: flex; align-items: center; gap: 2px; }
 
 /* ---- Dragging ---- */

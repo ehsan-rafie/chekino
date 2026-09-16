@@ -2951,11 +2951,12 @@ function receiptButtonHtml(c) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
 }
-// Receipt first, eye last: the eye is on every row, so putting it at the outer
-// end keeps that edge straight, and the slot a receipt-less row leaves behind
-// falls inboard where it reads as spacing rather than a ragged column.
+// Eye first, receipt second: this cluster sits at the row's outer right
+// edge now (the status-change button moved alone to the left), so the eye
+// — present on every card — is the one flush with that edge, with receipt
+// filling in beside it only on a registered cheque.
 function rowActionsHtml(c) {
-  return `<span class="row-actions">${receiptButtonHtml(c)}${eyeButtonHtml(c)}</span>`;
+  return `<span class="row-actions">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</span>`;
 }
 function showToast(message) {
   const el = document.getElementById('appToast');
@@ -3546,15 +3547,6 @@ function dueUrgencyClass(c) {
   return '';
 }
 
-// One small badge per channel the cheque was actually sent through — the
-// same icon set as the send-form's own channel picker, just smaller.
-function channelBadgeHtml(chId) {
-  const ch = CHANNELS.find(x => x.id === chId);
-  if (!ch) return '';
-  const plainCls = ch.mono ? '' : ' chk-platform-plain';
-  const bg = ch.mono ? ch.color : 'transparent';
-  return `<span class="chk-platform-badge${plainCls}" style="background:${bg}" title="${escapeHtml(ch.name)}">${ch.icon}</span>`;
-}
 
 // ---- Card builder — one check, one card ----
 // A fixed two-column grid instead of a flowing list of fields: every card
@@ -3567,47 +3559,39 @@ function channelBadgeHtml(chId) {
 // door into the same dropdown (problem still asks for a reason, reverting
 // to pending still asks for confirmation — identical to before).
 function statusDotTriggerHtml(c, st) {
-  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" title="تغییر وضعیت" aria-label="تغییر وضعیت">
+  const reasonText = c.status === 'problem' && c.statusReason ? c.statusReason : '';
+  const title = reasonText ? `مشکل: ${reasonText}` : 'تغییر وضعیت';
+  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
     <span class="st-dot" style="background:${st.color}"></span>
   </button>`;
 }
 
-// Two dates sit on this card, so neither is left to be guessed at: the due
-// date carries a calendar, the send date carries a send arrow followed by
-// the platform it went out on. The beneficiary gets the person icon the
-// reference board uses for the same kind of field.
 const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
 const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-const ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
 
+// The beneficiary is the one thing a person actually means when they say
+// "the cheque to X" — it carries the card's strongest weight and colour
+// even though it isn't the first line, the way the reference board's own
+// lead card puts a muted id/date row above its bold name. The national id
+// rides along as a title tooltip instead of a permanent line: real, but
+// not something worth a whole row on every card just in case it's needed.
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
-  const reasonText = c.status === 'problem' && c.statusReason ? c.statusReason : '';
-  const platformHtml = (Array.isArray(c.channels) ? c.channels : []).map(channelBadgeHtml).join('');
   const urgency = dueUrgencyClass(c);
-  // The reason line is always in the DOM, empty or not, so every card in
-  // every column comes out exactly the same height.
-  const reason = `<div class="chk-reason${reasonText ? '' : ' chk-reason-empty'}" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</div>`;
+  const nidTitle = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
   return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
     <div class="chk-row">
       <span class="chk-due${urgency}" title="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
       <span class="chk-serial" title="شماره سریال چک">چک <b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
-      <div class="chk-benef-col">
-        <span class="chk-benef" title="ذینفع: ${escapeHtml(c.benef)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
-        <span class="chk-nid" title="کد ملی ذینفع">${c.nid ? toFa(c.nid) : '—'}</span>
-      </div>
+      <span class="chk-benef" title="${escapeHtml(nidTitle)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
       <span class="chk-amount" title="مبلغ چک">${faAmountRial(c.amount)}</span>
     </div>
-    ${reason}
     <div class="chk-row chk-row-bottom">
-      <span class="chk-sent" title="تاریخ و بستر ارسال">
-        ${ICON_SEND}<span class="chk-sent-date">${faDate(c.sendDate)}</span>${platformHtml}
-      </span>
+      ${rowActionsHtml(c)}
       <div class="chk-icon-group">
         ${statusDotTriggerHtml(c, st)}
-        ${rowActionsHtml(c)}
       </div>
     </div>
   </div>`;
