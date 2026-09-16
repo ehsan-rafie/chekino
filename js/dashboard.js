@@ -2950,7 +2950,7 @@ function statusButtonHtml(c, st) {
 }
 function eyeButtonHtml(c) {
   return `<button type="button" class="eye-btn" data-view="${c.id}" data-tip="مشاهده‌ی جزئیات چک" aria-label="مشاهده‌ی جزئیات چک ${toFa(c.serial)}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    ${icon('eye')}
   </button>`;
 }
 
@@ -2968,7 +2968,7 @@ ${faDate(c.statusChangedAt)}`;
 function receiptButtonHtml(c) {
   if (c.status !== 'done') return '';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" data-tip="کپی پیام رسید ثبت" aria-label="کپی پیام رسید ثبت چک ${toFa(c.serial)}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    ${icon('receipt')}
   </button>`;
 }
 function showToast(message) {
@@ -3620,10 +3620,10 @@ function statusDotTriggerHtml(c, st) {
 // Every field on the card gets its own icon, and the icon set leans on
 // rounded corners and joins throughout — rx on the rectangles, round caps
 // on every line — to sit comfortably next to the rest of the system.
-const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-const ICON_SERIAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7z"/><path d="M14 3v4h4"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>';
-const ICON_AMOUNT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><circle cx="12" cy="12" r="2.5"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>';
+const ICON_CALENDAR = icon('calendar');
+const ICON_PERSON = icon('user');
+const ICON_SERIAL = icon('serial');
+const ICON_AMOUNT = icon('amount');
 
 // The serial is what a person actually says out loud to mean this specific
 // cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight now;
@@ -3651,8 +3651,8 @@ function checkCardHtml(c) {
     <div class="chk-row chk-row-bottom">
       <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">
-        ${statusDotTriggerHtml(c, st)}
         ${receiptButtonHtml(c)}
+        ${statusDotTriggerHtml(c, st)}
       </div>
     </div>
   </div>`;
@@ -3662,9 +3662,9 @@ function checkCardHtml(c) {
 // decoration: waiting, done, needs attention — so the badge reads before
 // the label text even registers.
 const BOARD_COL_ICON = {
-  pending: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
-  done: '<path d="M20 6 9 17l-5-5"/>',
-  problem: '<path d="M12 9v4"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><circle cx="12" cy="16.3" r="0.1" fill="currentColor" stroke-width="2.4"/>',
+  pending: ICON_PATH.clock,
+  done: ICON_PATH.check,
+  problem: ICON_PATH.alert,
 };
 
 function boardColumnHtml(st) {
@@ -3676,7 +3676,7 @@ function boardColumnHtml(st) {
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
       <button type="button" class="board-col-btn" data-report-status="${st.id}" title="گزارش PDF «${st.name}»" aria-label="گزارش PDF «${st.name}»">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 17.5v-4h1.4a1.3 1.3 0 0 1 0 2.6H8.5"/><path d="M13.6 17.5v-4h1.1a2 2 0 0 1 0 4z"/></svg>
+        ${icon('filePdf')}
       </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
@@ -3908,7 +3908,7 @@ window.addEventListener('resize', updateBoardHeight);
     if (targetStatus === current) return;   // dropped back where it started
 
     if (targetStatus === 'problem') {
-      promptDropReason(id, cardEl);
+      promptDropReason(id, current);
       return;
     }
     if (targetStatus === 'pending' && current !== 'pending') {
@@ -3926,15 +3926,34 @@ window.addEventListener('resize', updateBoardHeight);
   // "مشکل در ثبت" always carries a reason, drag or dropdown alike — a small
   // floating box at the card's own position, built from the same reason-box
   // markup/styles the status dropdown already uses.
-  function promptDropReason(id, cardEl) {
-    const r = cardEl.getBoundingClientRect();
+  // Dropping onto «مشکل در ثبت» used to leave the card sitting in its old
+  // column while a small box appeared over where it had been — you watched
+  // the card you dragged never arrive, looked away, and only later found it
+  // still there waiting on a reason. Worse, any stray click dismissed the
+  // box and threw away what had been typed, changing nothing.
+  //
+  // Now the card lands where it was dropped straight away, like every other
+  // drop, and the reason is asked for on the card in its new home: it is
+  // marked as waiting, scrolled into view, and the prompt is anchored to it.
+  // Cancelling (or Escape) puts the card back where it came from; nothing
+  // but Save or Cancel closes the prompt.
+  function promptDropReason(id, prevStatus) {
+    const rec = loadCheques().find((x) => x.id === id);
+    const before = rec ? { status: rec.status, statusReason: rec.statusReason } : null;
+    if (rec) { rec.status = 'problem'; rec.statusReason = ''; }
+    closeStatusMenu();
+    renderTable();
+
+    const cardEl = boardColumns.querySelector(`.check-card[data-id="${id}"]`);
+    if (!cardEl) { if (rec && before) Object.assign(rec, before); renderTable(); return; }
+    cardEl.classList.add('awaiting-reason');
+    cardEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
     const box = document.createElement('div');
-    box.className = 'status-menu show';
-    box.style.position = 'fixed';
-    box.style.left = Math.min(r.left, window.innerWidth - 240) + 'px';
-    box.style.top = Math.min(r.top, window.innerHeight - 140) + 'px';
+    box.className = 'status-menu show reason-prompt';
     box.innerHTML = `
       <div class="status-reason">
+        <div class="sr-title">${icon('alert')}<span>چرا ثبت نشد؟</span></div>
         <textarea id="dropReasonText" placeholder="دلیل مشکل در ثبت را بنویسید"></textarea>
         <div class="status-reason-actions">
           <button type="button" class="sr-save">ثبت وضعیت</button>
@@ -3942,16 +3961,54 @@ window.addEventListener('resize', updateBoardHeight);
         </div>
       </div>`;
     document.body.appendChild(box);
-    box.querySelector('textarea').focus();
-    const remove = () => box.remove();
-    box.querySelector('.sr-save').addEventListener('click', () => {
-      const reason = box.querySelector('textarea').value.trim();
-      remove();
+
+    const place = () => {
+      const r = cardEl.getBoundingClientRect();
+      const w = box.offsetWidth || 260;
+      const h = box.offsetHeight || 170;
+      let left = r.left + r.width / 2 - w / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+      let top = r.bottom + 8;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+    };
+    box.style.position = 'fixed';
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+
+    const ta = box.querySelector('textarea');
+    ta.focus();
+
+    function cleanup() {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      document.removeEventListener('keydown', onKey, true);
+      cardEl.classList.remove('awaiting-reason');
+      box.remove();
+    }
+    function cancel() {
+      cleanup();
+      if (rec && before) Object.assign(rec, before);
+      renderTable();
+      showToast('چک به وضعیت قبلی برگشت');
+    }
+    function save() {
+      const reason = ta.value.trim();
+      cleanup();
       applyStatus(id, 'problem', reason);
-    });
-    box.querySelector('.sr-cancel').addEventListener('click', remove);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); }
+      // Ctrl/⌘+Enter saves, the usual shortcut for a textarea whose Enter
+      // has to stay available for line breaks.
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
+    }
+    box.querySelector('.sr-save').addEventListener('click', save);
+    box.querySelector('.sr-cancel').addEventListener('click', cancel);
     box.addEventListener('click', (e) => e.stopPropagation());
-    setTimeout(() => document.addEventListener('click', remove, { once: true }), 0);
+    document.addEventListener('keydown', onKey, true);
   }
 })();
 
