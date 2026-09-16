@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<script>
+(function () {
+  function decodeJwtPayload(token) {
+    try {
+      var base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')));
+    } catch (e) { return null; }
+  }
+  var token = localStorage.getItem('chekino_token');
+  var payload = token ? decodeJwtPayload(token) : null;
+  if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
+    window.__chekinoAuthOK = true;
+  } else {
+    localStorage.removeItem('chekino_token');
+    window.location.replace('/login');
+  }
+})();
+</script>
+<style>body.chekino-auth-pending { display: none; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
+<title>چکینو | داشبورد</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/css/shared.css?v=20260915">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260915">
+</head>
+<body class="chekino-auth-pending">
+
+<canvas id="particleBg"></canvas>
+
+<header class="header">
+  <div class="header-user">
+    <span class="company-name" id="companyNameLabel"></span>
+    <button class="logout-btn" id="logoutBtn" title="خروج از حساب">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="header-logo">چکینو</div>
+
+  <div class="header-clock">
+    <button class="header-support-btn" id="headerSupportBtn" title="پشتیبانی">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+      </svg>
+    </button>
+    <div class="clock-box">
+      <div class="clock-face-wrap">
+        <svg class="analog-clock" id="analogClock" viewBox="0 0 100 100">
+          <circle class="ac-face" cx="50" cy="50" r="47"/>
+          <g id="acTicks"></g>
+          <line id="acHour" class="ac-hand ac-hour" x1="50" y1="50" x2="50" y2="30"/>
+          <line id="acMinute" class="ac-hand ac-minute" x1="50" y1="50" x2="50" y2="18"/>
+          <line id="acSecond" class="ac-hand ac-second" x1="50" y1="58" x2="50" y2="14"/>
+          <circle class="ac-pin" cx="50" cy="50" r="2.6"/>
+        </svg>
+        <div class="clock-tooltip" id="clockTooltip">—</div>
+      </div>
+      <div class="clock-date" id="clockDate">—</div>
+    </div>
+    <button class="theme-toggle-btn" id="themeToggleBtn">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <div class="due-alert-bar" id="dueAlertBar" hidden>
+    <svg class="due-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <div class="due-alert-viewport"><div class="due-alert-track" id="dueAlertTrack"></div></div>
+    <span class="due-alert-count" id="dueAlertCount"></span>
+  </div>
+
+  <div class="add-check-wrap">
+    <button class="add-check-btn" id="addCheckBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      افزودن چک
+    </button>
+  </div>
+
+  <div class="section-divider plain"></div>
+
+  <div class="filter-bar" id="filterBar">
+    <div class="search-row">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" inputmode="numeric" placeholder="جستجو (سریال / شناسه صیادی)">
+        <button type="button" class="search-clear" id="searchClearBtn" title="پاک کردن">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <span class="filter-by-label">فیلتر بر اساس:</span>
+
+      <div class="filter-pill-group">
+        <button type="button" class="filter-pill-btn" data-pop="popDate">تاریخ</button>
+        <button type="button" class="filter-pill-btn" data-pop="popAmount">مبلغ</button>
+        <button type="button" class="filter-pill-btn" data-pop="popPeople">اشخاص</button>
+        <button type="button" class="filter-pill-btn" data-pop="popStatus">وضعیت</button>
+      </div>
+
+      <button type="button" class="filter-clear-btn" id="filterClearBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        حذف فیلتر
+      </button>
+    </div>
+
+    <div class="active-filters-row" id="activeFiltersRow"></div>
+  </div>
+
+  <div class="filter-popover" id="popDate">
+    <div class="fp-title">بر اساس تاریخ</div>
+    <div class="radio-row">
+      <label class="radio-opt"><input type="radio" name="dateBasis" value="dueDate" checked><span>تاریخ سررسید</span></label>
+      <label class="radio-opt"><input type="radio" name="dateBasis" value="createdAt"><span>تاریخ ثبت در سیستم</span></label>
+    </div>
+    <div class="form-field date-field" id="filterRangeField">
+      <div class="date-input-wrap" id="filterRangeWrap">
+        <input type="text" id="filterRangeInput" class="date-mask-input" readonly placeholder="از تاریخ ... تا تاریخ">
+        <button type="button" class="date-cal-btn" id="filterRangeCalBtn" tabindex="-1" title="انتخاب بازه از تقویم">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </button>
+      </div>
+      <div class="field-msg" id="filterRangeMsg"></div>
+    </div>
+  </div>
+
+  <div class="filter-popover" id="popAmount">
+    <div class="fp-title">بر اساس مبلغ (ریال)</div>
+    <div class="amount-filter-row">
+      <div class="amount-filter-box">
+        <input type="text" id="filterAmountMin" inputmode="numeric" placeholder="۰">
+      </div>
+      <span class="af-sep">تا</span>
+      <div class="amount-filter-box">
+        <input type="text" id="filterAmountMax" inputmode="numeric" placeholder="۱۰۰,۰۰۰,۰۰۰,۰۰۰">
+      </div>
+    </div>
+    <div class="amount-presets">
+      <button type="button" class="af-preset" data-min="0" data-max="10000000">تا ۱۰ میلیون</button>
+      <button type="button" class="af-preset" data-min="10000000" data-max="1000000000">۱۰ میلیون تا ۱ میلیارد</button>
+      <button type="button" class="af-preset" data-min="1000000000" data-max="100000000000">۱ میلیارد تا ۱۰۰ میلیارد</button>
+    </div>
+  </div>
+
+  <div class="filter-popover" id="popPeople">
+    <div class="fp-title">بر اساس اشخاص</div>
+    <div class="filter-people-row">
+      <div class="form-field ac-field" id="filterOwnerField">
+        <input type="text" id="filterOwnerInput" class="ac-input" autocomplete="off" placeholder="صاحب چک">
+        <div class="ac-list" id="filterOwnerList"></div>
+      </div>
+      <div class="form-field ac-field" id="filterPartyField">
+        <input type="text" id="filterPartyInput" class="ac-input" autocomplete="off" placeholder="طرف حساب">
+        <div class="ac-list" id="filterPartyList"></div>
+      </div>
+      <div class="form-field ac-field" id="filterBenefField">
+        <input type="text" id="filterBenefInput" class="ac-input" autocomplete="off" placeholder="نام یا کد ملی ذینفع">
+        <div class="ac-list" id="filterBenefList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-popover" id="popStatus">
+    <div class="fp-title">بر اساس وضعیت چک</div>
+    <div class="status-chip-row" id="statusFilterRow"></div>
+    <label class="radio-opt archive-toggle">
+      <input type="checkbox" id="showArchivedCheckbox">
+      <span>نمایش چک‌های بایگانی‌شده</span>
+    </label>
+  </div>
+
+
+  <div class="table-wrap is-loading" id="tableWrap">
+    <div class="table-head-strip">
+      <div class="ths-info">
+        <span class="ths-title">لیست چک‌ها</span>
+        <span class="ths-count" id="tableCountBadge"></span>
+        <div class="ths-amount" id="tableAmount"></div>
+        <div class="ths-stats" id="tableStats"></div>
+      </div>
+      <div class="ths-actions">
+        <button type="button" class="icon-action" id="peopleMgmtBtn" title="مدیریت اشخاص" aria-label="مدیریت اشخاص">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="ia-label">مدیریت اشخاص</span>
+        </button>
+
+        <div class="export-cluster" id="exportCluster">
+          <button type="button" class="icon-action" id="reportBtn" title="گزارش‌گیری" aria-label="گزارش‌گیری" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="ia-label">گزارش‌گیری</span>
+          </button>
+          <button type="button" class="export-opt opt-pdf" id="exportPdfBtn" title="گزارش قابل چاپ / PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 17.5v-4h1.4a1.3 1.3 0 0 1 0 2.6H8.5"/><path d="M13.6 17.5v-4h1.1a2 2 0 0 1 0 4z"/></svg>
+            <span>PDF</span>
+          </button>
+          <button type="button" class="export-opt opt-excel" id="exportExcelBtn" title="خروجی اکسل">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            <span>اکسل</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="cheque-table" id="chequeTable">
+        <thead>
+          <tr>
+            <th class="col-row">ردیف</th>
+            <th class="col-num">شماره سریال</th>
+            <th class="col-num">تاریخ سررسید</th>
+            <th class="col-num">مبلغ (ریال)</th>
+            <th>صاحب چک</th>
+            <th>طرف حساب</th>
+            <th>ذینفع</th>
+            <th class="col-status">وضعیت</th>
+            <th class="col-eye"></th>
+          </tr>
+        </thead>
+        <tbody id="chequeBody"></tbody>
+      </table>
+    </div>
+    <div class="cheque-cards" id="chequeCards"></div>
+    <div class="table-skeleton" id="tableSkeleton" aria-hidden="true">
+      <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+      <div class="sk-row"></div><div class="sk-row"></div>
+    </div>
+    <div class="table-empty" id="tableEmpty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="16" y2="15"/>
+      </svg>
+      <div class="p-title">هنوز چکی ثبت نشده است</div>
+      <div class="p-sub">با دکمه «افزودن چک» اولین چک را ثبت کنید</div>
+    </div>
+    <div class="table-pager" id="tablePager"></div>
+  </div>
+
+</main>
+
+
+        <div class="cal-backdrop" id="calBackdrop"></div>
+        <div class="cal-popup" id="dueDateCal">
+          <div class="cal-header">
+            <button type="button" class="cal-nav-btn" id="calPrevBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="cal-title-group">
+              <span class="cal-select-wrap"><select class="cal-select" id="calMonthSelect"></select></span>
+              <span class="cal-select-wrap"><select class="cal-select" id="calYearSelect"></select></span>
+            </div>
+            <button type="button" class="cal-nav-btn" id="calNextBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+          </div>
+          <div class="cal-weekdays">
+            <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-footer" id="calFooterSingle">
+            <button type="button" class="cal-today-btn" id="calTodayBtn">امروز</button>
+          </div>
+          <div class="cal-footer" id="calFooterRange">
+            <button type="button" class="cal-clear-btn" id="calClearRangeBtn" title="پاک کردن بازه">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+            <button type="button" class="cal-confirm-btn" id="calConfirmRangeBtn">ثبت</button>
+          </div>
+        </div>
+
+
+  <div class="modal-overlay" id="peopleModalOverlay">
+    <div class="modal-box people-box">
+      <div class="modal-header">
+        <h2>مدیریت اشخاص</h2>
+        <button class="modal-close" id="peopleModalClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="people-tabs">
+        <button type="button" class="people-tab active" data-people-tab="owners">صاحبان چک</button>
+        <button type="button" class="people-tab" data-people-tab="parties">طرف‌های حساب</button>
+        <button type="button" class="people-tab" data-people-tab="benef">ذینفعان</button>
+      </div>
+      <div class="modal-body people-modal-body">
+        <div class="people-panel" id="peoplePanelOwners">
+          <div class="people-add-row">
+            <input type="text" id="newOwnerInput" placeholder="نام صاحب چک جدید">
+            <button type="button" id="addOwnerBtn">افزودن</button>
+          </div>
+          <div class="people-list" id="ownersListBox"></div>
+        </div>
+        <div class="people-panel" id="peoplePanelParties" style="display:none">
+          <div class="people-add-row">
+            <input type="text" id="newPartyInput" placeholder="نام طرف حساب جدید">
+            <button type="button" id="addPartyBtn">افزودن</button>
+          </div>
+          <div class="people-list" id="partiesListBox"></div>
+        </div>
+        <div class="people-panel" id="peoplePanelBenef" style="display:none">
+          <div class="people-benef-party-select">
+            <label for="benefPartySelect">طرف حساب:</label>
+            <select id="benefPartySelect"></select>
+          </div>
+          <div class="people-add-row">
+            <input type="text" id="newBenefNameInput" placeholder="نام ذینفع">
+            <input type="text" id="newBenefNidInput" placeholder="کد ملی" inputmode="numeric" maxlength="11" style="max-width:130px">
+            <button type="button" id="addBenefBtn">افزودن</button>
+          </div>
+          <div class="people-list" id="benefListBox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">افزودن چک جدید</h2>
+      <div class="modal-header-actions">
+        <button class="ve-receipt-btn" id="veReceiptBtn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>رسید ثبت</span>
+        </button>
+        <button class="modal-close" id="modalClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-body" id="modalBody">
+      <div class="form-alert" id="formAlert">
+        <svg id="formAlertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/></svg>
+        <span id="formAlertText"></span>
+      </div>
+      <div class="ve-status-banner" id="veStatusBanner"></div>
+      <div class="ve-history" id="veHistory">
+        <div class="ve-history-label">تاریخچه‌ی وضعیت</div>
+        <div class="ve-history-list" id="veHistoryList"></div>
+      </div>
+      <div class="ve-fields-wrap" id="veFieldsWrapA">
+      <div class="form-section"><div class="line"></div><span>مشخصات چک</span><div class="line"></div></div>
+
+      <div class="form-field" id="serialField">
+        <input type="text" id="serialInput" inputmode="numeric" placeholder="شماره سریال ۶ رقمی چک را وارد کنید" maxlength="6" autocomplete="off">
+        <label for="serialInput">شماره سریال چک <span class="req">*</span></label>
+        <div class="field-msg" id="serialMsg">شماره سریال باید ۶ رقم باشد</div>
+      </div>
+      </div>
+
+      <div class="form-field" id="sayadField">
+        <input type="text" id="sayadInput" inputmode="numeric" placeholder="شناسه صیادی ۱۶ رقمی چک را وارد کنید" maxlength="16" autocomplete="off">
+        <div class="sayad-static" id="sayadStatic"></div>
+        <label for="sayadInput">شناسه صیادی <span class="req">*</span></label>
+        <div class="field-msg" id="sayadMsg">شناسه صیادی باید ۱۶ رقم باشد</div>
+      </div>
+
+      <div class="ve-fields-wrap" id="veFieldsWrapB">
+      <div class="form-field date-field" id="dueDateField">
+        <label for="dueDateInput">تاریخ سررسید <span class="req">*</span></label>
+        <div class="date-input-wrap" id="dueDateRow">
+          <input type="text" id="dueDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال">
+          <button type="button" class="date-cal-btn" id="dueDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </button>
+        </div>
+        <div class="field-msg" id="dueDateMsg">تاریخ وارد شده معتبر نیست</div>
+
+      </div>
+
+      <div class="form-field amount-field" id="amountField">
+        <div class="amount-box" id="amountBox">
+          <input type="text" id="amountInput" class="amount-input" inputmode="numeric" autocomplete="off" placeholder="مبلغ چک را وارد کنید">
+          <span class="amount-unit">ریال</span>
+        </div>
+        <label for="amountInput">مبلغ <span class="req">*</span></label>
+        <div class="amount-words" id="amountWords"></div>
+        <div class="field-msg" id="amountMsg">مبلغ را وارد کنید</div>
+      </div>
+
+      <div class="form-section"><div class="line"></div><span>مشخصات اشخاص</span><div class="line"></div></div>
+
+      <div class="form-field ac-field" id="ownerField">
+        <input type="text" id="ownerInput" class="ac-input" autocomplete="off" placeholder="نام صاحب چک">
+        <label for="ownerInput">صاحب چک <span class="req">*</span></label>
+        <div class="ac-list" id="ownerList"></div>
+        <div class="field-msg" id="ownerMsg">نام صاحب چک را وارد کنید</div>
+      </div>
+
+      <div class="form-field ac-field" id="partyField">
+        <input type="text" id="partyInput" class="ac-input" autocomplete="off" placeholder="نام طرف حساب">
+        <label for="partyInput">طرف حساب <span class="req">*</span></label>
+        <div class="ac-list" id="partyList"></div>
+        <div class="field-msg" id="partyMsg">نام طرف حساب را وارد کنید</div>
+      </div>
+
+      <div class="form-field ac-field" id="benefField">
+        <input type="text" id="benefInput" class="ac-input" autocomplete="off" placeholder="نام شخص حقیقی یا حقوقی">
+        <label for="benefInput">نام ذینفع (دریافت‌کننده) <span class="req">*</span></label>
+        <div class="ac-list" id="benefList"></div>
+        <div class="field-msg" id="benefMsg">نام ذینفع را وارد کنید</div>
+      </div>
+
+      <div class="form-field ac-field" id="nidField">
+        <input type="text" id="nidInput" class="ac-input" inputmode="numeric" autocomplete="off" placeholder="شخص حقیقی (۱۰ رقم) / شرکت حقوقی (۱۱ رقم)">
+        <label for="nidInput">کد / شناسه ملی <span class="req">*</span></label>
+        <div class="ac-list" id="nidList"></div>
+        <div class="nid-kind" id="nidKind"></div>
+        <div class="field-msg" id="nidMsg">کد ملی باید ۱۰ رقم و شناسه ملی ۱۱ رقم باشد</div>
+      </div>
+
+      <div class="form-field date-field" id="spendDateField">
+        <label for="spendDateInput">تاریخ خرج کردن چک <span class="opt">(اختیاری)</span></label>
+        <div class="date-input-wrap">
+          <input type="text" id="spendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال">
+          <button type="button" class="date-cal-btn" id="spendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </button>
+        </div>
+        <div class="field-msg" id="spendDateMsg">تاریخ وارد شده معتبر نیست</div>
+      </div>
+
+      <div class="form-field date-field" id="sendDateField">
+        <label for="sendDateInput">تاریخ ارسال <span class="req">*</span></label>
+        <div class="date-input-wrap">
+          <input type="text" id="sendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال">
+          <button type="button" class="date-cal-btn" id="sendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </button>
+        </div>
+        <div class="field-msg" id="sendDateMsg">تاریخ وارد شده معتبر نیست</div>
+      </div>
+
+      <div class="form-field ms-field" id="channelField">
+        <label>ارسال شده در <span class="req">*</span></label>
+        <button type="button" class="ms-box" id="channelBox" tabindex="0">
+          <span class="ms-chips" id="channelChips"></span>
+          <span class="ms-placeholder" id="channelPlaceholder">روش‌های ارسال را انتخاب کنید</span>
+          <span class="ms-caret">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+        <div class="ms-list" id="channelList"></div>
+        <div class="field-msg" id="channelMsg">حداقل یک روش ارسال را انتخاب کنید</div>
+      </div>
+
+      <div class="form-field notes-field" id="notesField">
+        <textarea id="notesInput" class="notes-input" rows="1" maxlength="500" placeholder="توضیحات دلخواه درباره این چک" enterkeyhint="next"></textarea>
+        <label for="notesInput">توضیحات <span class="opt">(اختیاری)</span></label>
+        <div class="notes-count" id="notesCount"></div>
+      </div>
+
+      </div>
+
+      <div class="form-field file-field field-full" id="fileField">
+        <label>عکس چک <span class="opt">(اختیاری)</span></label>
+        <div class="file-box" id="fileBox">
+          <div class="file-chips" id="fileChips"></div>
+          <button type="button" class="file-add" id="fileAddBtn" tabindex="0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>افزودن عکس</span>
+          </button>
+          <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
+        </div>
+        <div class="field-msg" id="fileMsg"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer" id="modalFooter">
+      <div class="save-confirm-wrap">
+        <button class="btn-submit" id="submitCheckBtn">ثبت چک</button>
+        <button type="button" class="save-confirm-slide" id="saveConfirmSlideBtn" title="تأیید و ذخیره">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+      <div class="delete-confirm-wrap">
+        <button class="btn-clear" id="clearFormBtn" title="پاک کردن فرم">
+          <svg class="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <svg class="icon-cancel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          <span class="btn-clear-text">بله، حذف شود</span>
+        </button>
+        <button type="button" class="delete-cancel-slide" id="deleteCancelSlideBtn">انصراف</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cell-tooltip" id="cellTooltip"></div>
+
+<div class="hover-dots" id="hoverDots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+<div class="photo-editor-overlay" id="photoEditorOverlay">
+  <div class="pe-card">
+    <div class="pe-topbar">
+      <button class="pe-icon-btn pe-close" id="peCancelBtn" title="انصراف">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="pe-title">ویرایش عکس</span>
+      <span class="pe-topbar-spacer"></span>
+    </div>
+    <div class="pe-body">
+      <div class="pe-stage" id="peStage">
+        <img id="peImg" src="" alt="" draggable="false">
+        <div class="pe-shade pe-shade-t"></div>
+        <div class="pe-shade pe-shade-b"></div>
+        <div class="pe-shade pe-shade-l"></div>
+        <div class="pe-shade pe-shade-r"></div>
+        <div class="pe-crop-box" id="peCropBox">
+          <div class="pe-grid"><span></span><span></span><span></span><span></span></div>
+          <div class="pe-handle pe-h-tl" data-h="tl"></div>
+          <div class="pe-handle pe-h-tr" data-h="tr"></div>
+          <div class="pe-handle pe-h-bl" data-h="bl"></div>
+          <div class="pe-handle pe-h-br" data-h="br"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pe-controls">
+      <button class="pe-ctrl-btn" id="peRotateBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.4 13.4A9 9 0 1 1 18 5.5L21.5 8"/></svg>
+        <span>چرخش</span>
+      </button>
+    </div>
+    <div class="pe-footer">
+      <button class="pe-send-btn" id="peSendBtn">ارسال</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <div class="lightbox-card">
+    <div class="lightbox-topbar">
+      <button class="lightbox-btn" id="lightboxShareBtn" title="اشتراک‌گذاری عکس">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+        <span>اشتراک‌گذاری</span>
+      </button>
+      <button class="lightbox-btn" id="lightboxDownloadBtn" title="دانلود عکس">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>دانلود</span>
+      </button>
+      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="lightbox-body">
+      <img id="lightboxImg" src="" alt="عکس چک">
+    </div>
+  </div>
+</div>
+
+<button class="totop-float" id="toTopBtn" title="برو به بالا">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+<button class="tg-float" id="tgBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+  </svg>
+</button>
+<div class="tg-tooltip" id="tgTooltip">پشتیبانی تلگرام</div>
+<!-- Discard-changes confirmation. Replaces the browser's own confirm() box,
+     which arrived in the OS language with OS buttons in the middle of an
+     otherwise Persian, RTL app. -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+    <h2 id="confirmTitle"></h2>
+    <p class="confirm-body" id="confirmBody"></p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-cancel" id="confirmCancel">برگشت به فرم</button>
+      <button type="button" class="confirm-ok" id="confirmOk"></button>
+    </div>
+  </div>
+</div>
+
+<div class="app-toast" id="appToast"></div>
+
+<script src="/js/shared.js?v=20260915"></script>
+<script src="/js/vendor/xlsx.full.min.js"></script>
+<script src="/js/dashboard.js?v=20260915"></script>
+<script>if (window.__chekinoAuthOK) document.body.classList.remove('chekino-auth-pending');</script>
+
+</body>
+</html>

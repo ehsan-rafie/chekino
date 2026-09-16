@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<script>
+(function () {
+  function decodeJwtPayload(token) {
+    try {
+      var base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')));
+    } catch (e) { return null; }
+  }
+  var token = localStorage.getItem('chekino_admin_token');
+  var payload = token ? decodeJwtPayload(token) : null;
+  if (!(payload && payload.exp && payload.exp * 1000 > Date.now())) {
+    localStorage.removeItem('chekino_admin_token');
+  }
+})();
+</script>
+<style>body.chekino-auth-pending { display: none; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>چکینو | پنل مدیریت</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/css/shared.css?v=20260915">
+<link rel="stylesheet" href="/css/admin.css?v=20260915">
+</head>
+<body class="chekino-auth-pending">
+
+<div class="wrap">
+
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="brand">
+        <h1>چکینو</h1>
+        <p>پنل مدیریت — ورود مخصوص ادمین سیستم</p>
+      </div>
+      <div class="alert" id="loginAlert"></div>
+      <form id="loginForm">
+        <div class="field float-field">
+          <input type="text" id="adminUsername" placeholder=" " autocomplete="username" dir="ltr" style="text-align:right">
+          <label for="adminUsername">نام کاربری</label>
+        </div>
+        <div class="field float-field">
+          <input type="password" id="adminPassword" placeholder=" " autocomplete="current-password">
+          <label for="adminPassword">رمز عبور</label>
+          <span class="toggle-eye" id="adminEyeToggle">
+            <svg id="adminEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </span>
+        </div>
+        <button type="submit" class="btn-primary" id="loginBtn">ورود</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div class="topbar">
+      <h1>پنل مدیریت <span class="brand-accent">چکینو</span></h1>
+      <div class="topbar-user">
+        <span class="admin-name" id="adminNameLabel"></span>
+        <button class="btn-icon" id="themeToggleBtn" title="تغییر تم" aria-label="تغییر تم روشن و تاریک">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="btn-ghost" id="logoutBtn">خروج</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="companies">شرکت‌ها</button>
+      <button class="tab-btn" data-tab="plans">پلن‌ها</button>
+      <button class="tab-btn" data-tab="account">تنظیمات حساب من</button>
+    </div>
+
+    <!-- ==================== COMPANIES TAB ==================== -->
+    <div class="tab-panel active" id="tabCompanies">
+      <div class="card">
+        <h2>شرکت جدید</h2>
+        <div class="alert" id="newCompanyAlert"></div>
+        <div class="form-row">
+          <div class="field">
+            <label>نام شرکت</label>
+            <input type="text" id="newCompanyName">
+          </div>
+          <div class="field">
+            <label>نام کاربری</label>
+            <input type="text" id="newCompanyUsername" dir="ltr">
+          </div>
+          <div class="field">
+            <label>رمز عبور</label>
+            <input type="text" id="newCompanyPassword" dir="ltr">
+          </div>
+          <div class="field">
+            <label>پلن</label>
+            <select id="newCompanyPlan"></select>
+          </div>
+          <button class="btn-add" id="addCompanyBtn">افزودن شرکت</button>
+        </div>
+      </div>
+
+      <div class="card card-table">
+        <div class="card-head-strip"><h2>لیست شرکت‌ها</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>نام کاربری</th>
+                <th>پلن</th>
+                <th>اشخاص</th>
+                <th>چک‌ها</th>
+                <th>وضعیت</th>
+                <th>تاریخ ثبت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="companiesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PLANS TAB ==================== -->
+    <div class="tab-panel" id="tabPlans">
+      <div class="card">
+        <h2>پلن جدید</h2>
+        <div class="alert" id="newPlanAlert"></div>
+        <div class="form-row" style="margin-bottom:14px">
+          <div class="field">
+            <label>نام پلن</label>
+            <input type="text" id="newPlanName">
+          </div>
+          <div class="field">
+            <label>حداکثر اشخاص (خالی = نامحدود)</label>
+            <input type="number" id="newPlanMaxPeople" min="0">
+          </div>
+          <div class="field">
+            <label>حداکثر چک (خالی = نامحدود)</label>
+            <input type="number" id="newPlanMaxChecks" min="0">
+          </div>
+          <div class="field">
+            <label>قیمت (تومان)</label>
+            <input type="number" id="newPlanPrice" min="0">
+          </div>
+        </div>
+        <div class="checkbox-row" style="margin-bottom:14px">
+          <label><input type="checkbox" id="newPlanExport"> دسترسی خروجی گرفتن (export)</label>
+          <label><input type="checkbox" id="newPlanReports"> دسترسی گزارش‌گیری (reports)</label>
+          <label><input type="checkbox" id="newPlanMultiUser"> چند کاربره (multi_user)</label>
+        </div>
+        <button class="btn-add" id="addPlanBtn">افزودن پلن</button>
+      </div>
+
+      <div class="card card-table">
+        <div class="card-head-strip"><h2>لیست پلن‌ها</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>نام</th>
+                <th>حداکثر اشخاص</th>
+                <th>حداکثر چک</th>
+                <th>قیمت</th>
+                <th>دسترسی‌ها</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="plansBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ACCOUNT SETTINGS TAB ==================== -->
+    <div class="tab-panel" id="tabAccount">
+      <div class="card" style="max-width:420px">
+        <h2>تغییر یوزرنیم / رمز عبور</h2>
+        <div class="alert" id="accountAlert"></div>
+        <div class="field">
+          <label>رمز عبور فعلی (برای تأیید هویت)</label>
+          <input type="password" id="accountCurrentPassword" dir="ltr">
+        </div>
+        <div class="field">
+          <label>نام کاربری جدید (اختیاری)</label>
+          <input type="text" id="accountNewUsername" dir="ltr">
+        </div>
+        <div class="field">
+          <label>رمز عبور جدید (اختیاری)</label>
+          <input type="text" id="accountNewPassword" dir="ltr">
+        </div>
+        <button class="btn-add" id="accountSaveBtn" style="width:100%">ذخیره تغییرات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EDIT COMPANY MODAL ==================== -->
+<div class="modal-overlay" id="editCompanyOverlay">
+  <div class="modal-box">
+    <h2>ویرایش شرکت</h2>
+    <div class="alert" id="editCompanyAlert"></div>
+    <div class="field">
+      <label>نام شرکت</label>
+      <input type="text" id="editCompanyName">
+    </div>
+    <div class="field">
+      <label>پلن</label>
+      <select id="editCompanyPlan"></select>
+    </div>
+    <div class="field">
+      <label>override دسترسی «خروجی گرفتن»</label>
+      <select id="editPermExport">
+        <option value="inherit">پیش‌فرض پلن</option>
+        <option value="true">فعال (اجباری)</option>
+        <option value="false">غیرفعال (اجباری)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>override دسترسی «گزارش‌گیری»</label>
+      <select id="editPermReports">
+        <option value="inherit">پیش‌فرض پلن</option>
+        <option value="true">فعال (اجباری)</option>
+        <option value="false">غیرفعال (اجباری)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>override دسترسی «چند کاربره»</label>
+      <select id="editPermMultiUser">
+        <option value="inherit">پیش‌فرض پلن</option>
+        <option value="true">فعال (اجباری)</option>
+        <option value="false">غیرفعال (اجباری)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="editCompanyCancel">انصراف</button>
+      <button class="btn-primary" id="editCompanySave" style="flex:1">ذخیره</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHANGE PASSWORD MODAL ==================== -->
+<div class="modal-overlay" id="changePasswordOverlay">
+  <div class="modal-box">
+    <h2>تغییر رمز عبور</h2>
+    <p class="modal-sub" id="changePasswordCompanyLabel"></p>
+    <div class="alert" id="changePasswordAlert"></div>
+
+    <div id="changePasswordForm">
+      <div class="field">
+        <label>رمز عبور جدید</label>
+        <div class="input-with-btn">
+          <input type="text" id="newPasswordInput" dir="ltr">
+          <button type="button" class="btn-inline" id="generateRandomPasswordBtn">تولید تصادفی</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="changePasswordCancel">انصراف</button>
+        <button class="btn-primary" id="changePasswordSave" style="flex:1">ذخیره</button>
+      </div>
+    </div>
+
+    <div id="changePasswordResult" style="display:none">
+      <div class="alert success show">رمز عبور تغییر کرد. این مقدار فقط همین یک‌بار نمایش داده می‌شود — همین الان کپی کنید.</div>
+      <div class="field">
+        <label>رمز عبور جدید</label>
+        <div class="input-with-btn">
+          <input type="text" id="revealedPassword" dir="ltr" readonly>
+          <button type="button" class="btn-inline" id="copyPasswordBtn">کپی</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="changePasswordDone" style="flex:1">متوجه شدم</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EDIT PLAN MODAL ==================== -->
+<div class="modal-overlay" id="editPlanOverlay">
+  <div class="modal-box">
+    <h2>ویرایش پلن</h2>
+    <div class="alert" id="editPlanAlert"></div>
+    <div class="field">
+      <label>نام پلن</label>
+      <input type="text" id="editPlanName">
+    </div>
+    <div class="field">
+      <label>حداکثر اشخاص (خالی = نامحدود)</label>
+      <input type="number" id="editPlanMaxPeople" min="0">
+    </div>
+    <div class="field">
+      <label>حداکثر چک (خالی = نامحدود)</label>
+      <input type="number" id="editPlanMaxChecks" min="0">
+    </div>
+    <div class="field">
+      <label>قیمت (تومان)</label>
+      <input type="number" id="editPlanPrice" min="0">
+    </div>
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="editPlanExport"> export</label>
+      <label><input type="checkbox" id="editPlanReports"> reports</label>
+      <label><input type="checkbox" id="editPlanMultiUser"> multi_user</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="editPlanCancel">انصراف</button>
+      <button class="btn-primary" id="editPlanSave" style="flex:1">ذخیره</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shared confirmation dialog. Replaces the browser's own confirm(), which
+     can't be styled, can't be themed, and on a phone drops a system sheet in
+     front of the panel. -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-box confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle"></h2>
+    <p class="confirm-body" id="confirmBody"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="confirmCancel">انصراف</button>
+      <button type="button" class="btn-primary" id="confirmOk"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/shared.js?v=20260915"></script>
+<script src="/js/admin.js?v=20260915"></script>
+<script>document.body.classList.remove('chekino-auth-pending');</script>
+</body>
+</html>
