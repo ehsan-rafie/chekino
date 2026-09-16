@@ -2538,8 +2538,13 @@ function apiCheckToRec(c) {
     status: c.status,
     history: hist.map(h => ({ to: h.to, reason: h.reason || '', at: isoToJalaliStr(h.at) })),
     statusChangedAt: last ? isoToJalaliStr(last.at) : '',
+    // Raw ISO, kept alongside the Jalali display strings above — those only
+    // carry a date, not a time, so two changes on the same day would sort as
+    // ties. These are what the board actually sorts columns by.
+    statusChangedAtIso: last ? last.at : null,
     statusReason: last ? (last.reason || '') : '',
     createdAt: isoToJalaliStr(c.created_at),
+    createdAtIso: c.created_at || null,
     spendDate: c.spend_date ? isoToJalaliStr(c.spend_date) : '',
     sendDate: isoToJalaliStr(c.send_date),
     channels: Array.isArray(c.channels) ? c.channels : [],
@@ -3721,9 +3726,29 @@ function wireCardTooltips() {
   boardColumns.addEventListener('scroll', () => appTooltip.classList.remove('show'), true);
 }
 
+// Ascending string compare — ISO timestamps sort correctly as plain text,
+// so this is all three column orders need underneath.
+function cmpStr(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+
+// Each column answers a different question, so each sorts by a different
+// clock. Pending is a queue: the cheque that has been waiting longest sits
+// on top, oldest registration first. Done and problem are activity, not a
+// queue — what just happened is what the user is here to check, so the most
+// recent status change sits on top; a cheque flagged five minutes ago
+// shouldn't be buried under nine that were flagged weeks ago.
+function sortColumnChecks(list, statusId) {
+  const out = list.slice();
+  if (statusId === 'pending') {
+    out.sort((a, b) => cmpStr(a.createdAtIso || '', b.createdAtIso || '') || (a.id - b.id));
+  } else {
+    out.sort((a, b) => cmpStr(b.statusChangedAtIso || '', a.statusChangedAtIso || '') || (b.id - a.id));
+  }
+  return out;
+}
+
 function renderTable() {
   ensureBoardColumns();
-  const all = getFilteredCheques().slice().reverse();      // newest first
+  const all = getFilteredCheques();
 
   updateBoardCountBadge(all);
   // First render means the data is in — the loading skeleton can go.
@@ -3732,7 +3757,7 @@ function renderTable() {
   boardColumns.style.display = all.length ? '' : 'none';
 
   STATUSES.forEach((st) => {
-    const colChecks = all.filter((c) => (c.status || 'pending') === st.id);
+    const colChecks = sortColumnChecks(all.filter((c) => (c.status || 'pending') === st.id), st.id);
     document.getElementById(`boardColCount-${st.id}`).textContent = toFa(colChecks.length);
     const listEl = document.getElementById(`boardColList-${st.id}`);
     listEl.innerHTML = colChecks.length
@@ -3768,11 +3793,20 @@ function renderTable() {
 // table used: one card short of a full screen, so the eye catches that
 // there's more below instead of the whole page growing underneath a
 // hundred-card pending pile.
+//
+// This has to account for .main's own bottom padding too, not just the
+// 16px gap below the column itself — that padding sits below the whole
+// board in the page's flow, so leaving it out of "available" let a long
+// column stop exactly at the viewport's edge while .main's padding then
+// pushed the actual page another ~80px past the fold, leaving a sliver of
+// outer scroll on a page that otherwise looked like it should fit.
 function updateBoardHeight() {
+  const mainEl = document.querySelector('.main');
+  const mainPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
   document.querySelectorAll('.board-col-list').forEach((list) => {
     if (window.innerWidth <= 860) { list.style.maxHeight = ''; return; }
     const top = list.getBoundingClientRect().top;
-    const available = window.innerHeight - top - 16;
+    const available = window.innerHeight - top - mainPad - 16;
     list.style.maxHeight = Math.max(160, available) + 'px';
   });
 }
@@ -3955,8 +3989,12 @@ window.addEventListener('resize', updateBoardHeight);
   function promptDropReason(id, prevStatus) {
     dismissReasonPrompt();
     const rec = loadCheques().find((x) => x.id === id);
-    const before = rec ? { status: rec.status, statusReason: rec.statusReason } : null;
-    if (rec) { rec.status = 'problem'; rec.statusReason = ''; }
+    const before = rec ? { status: rec.status, statusReason: rec.statusReason, statusChangedAtIso: rec.statusChangedAtIso } : null;
+    // Landing in "problem" straight away is the whole point of this flow —
+    // set the sort clock right along with the status, or the card would
+    // land in the column without rising to the top of it until the reason
+    // is saved and applyStatus finally sets a real one.
+    if (rec) { rec.status = 'problem'; rec.statusReason = ''; rec.statusChangedAtIso = new Date().toISOString(); }
     closeStatusMenu();
     renderTable();
 
@@ -4134,14 +4172,20 @@ function showReasonBox(menu, id) {
 async function applyStatus(id, status, reason) {
   const rec = loadCheques().find((x) => x.id === id);
   const before = rec
-    ? { status: rec.status, statusReason: rec.statusReason, statusChangedAt: rec.statusChangedAt }
+    ? { status: rec.status, statusReason: rec.statusReason, statusChangedAt: rec.statusChangedAt, statusChangedAtIso: rec.statusChangedAtIso }
     : null;
 
   if (rec) {
+    const now = new Date();
     const [jy, jm, jd] = todayJalali();
     rec.status = status;
     rec.statusReason = reason || '';
     rec.statusChangedAt = `${jy}/${pad2(jm)}/${pad2(jd)}`;
+    // The done/problem columns sort by this — without it the optimistic
+    // render (the one the user actually sees; the reconciled one lands a
+    // beat later) would place a cheque that just changed status wherever
+    // its old timestamp happened to fall, instead of at the top.
+    rec.statusChangedAtIso = now.toISOString();
   }
   closeStatusMenu();
   renderTable();
