@@ -194,8 +194,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   transition: opacity 0.12s ease;
   z-index: 250;
 }
-.cell-tooltip.show { opacity: 1; }
-.cheque-table [data-tip] { cursor: default; }
 
 /* ===== Main content ===== */
 .main {
@@ -209,90 +207,15 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   margin-bottom: var(--s6);
 }
-
-/* ===== Due-date alert bar ===== */
-.due-alert-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--error);
-  border-radius: var(--rad-ctl);
-  padding: 10px 16px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-1);
-}
-.due-alert-bar[hidden] { display: none; }
-/* The bell nudges every few seconds so an overdue cheque catches the eye
-   without the whole bar flashing. */
-.due-alert-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--error);
-  flex-shrink: 0;
-  transform-origin: 50% 15%;
-  animation: bellNudge 5s var(--ease) infinite;
-}
 @keyframes bellNudge {
   0%, 88%, 100% { transform: rotate(0deg); }
   91% { transform: rotate(9deg); }
   94% { transform: rotate(-7deg); }
   97% { transform: rotate(3deg); }
 }
-.due-alert-viewport { flex: 1; min-width: 0; overflow: hidden; height: 22px; position: relative; }
-.due-alert-track { position: absolute; inset: 0; display: flex; align-items: center; }
-.due-alert-item {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  cursor: pointer;
-}
-.due-alert-item.enter { animation: dueAlertSlideIn 0.4s var(--ease); }
-.due-alert-item:hover .due-alert-text { color: var(--blue-700); }
-.due-alert-item:hover .due-alert-dot { transform: scale(1.35); }
-.due-alert-dot { transition: transform 0.18s var(--ease); }
 @keyframes dueAlertSlideIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-.due-alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
-.due-alert-item.due-overdue .due-alert-dot,
-.due-alert-item.due-today .due-alert-dot { background: var(--error); }
-.due-alert-item.due-soon .due-alert-dot { background: var(--state-warn); }
-.due-alert-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--ink);
-  font-variation-settings: var(--f-body);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.due-alert-text b { font-variation-settings: var(--f-label); }
-.due-alert-when {
-  font-size: 12px;
-  color: var(--muted);
-  flex-shrink: 0;
-  font-variation-settings: var(--f-micro);
-  white-space: nowrap;
-}
-.due-alert-item.due-overdue .due-alert-when,
-.due-alert-item.due-today .due-alert-when { color: var(--error); }
-.due-alert-item.due-soon .due-alert-when { color: var(--state-warn); }
-.due-alert-count {
-  font-size: 12px;
-  color: var(--muted);
-  flex-shrink: 0;
-  font-variation-settings: var(--f-micro);
-}
-@media (max-width: 600px) {
-  .due-alert-bar { padding: 8px 12px; gap: 8px; }
-  /* the count is the droppable part on a narrow screen — never the urgency */
-  .due-alert-count { display: none; }
 }
 
 @keyframes rowFlash {
@@ -673,40 +596,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   flex-wrap: wrap;
   row-gap: 8px;
 }
-.ths-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  row-gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-.ths-title {
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-title);
-}
-.ths-count {
-  padding: 2px 10px;
-  border-radius: var(--rad-pill);
-  background: var(--accent-wash);
-  color: var(--accent-text);
-  font-size: 12px;
-  font-variation-settings: var(--f-num);
-}
-.ths-amount {
-  margin-right: auto;
-  display: flex;
-  min-width: 0;
-}
-.ths-stats {
-  display: flex;
-  gap: var(--s2);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-.ths-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Icon-first action buttons: a square icon at rest, and the label unrolls
    beside it on hover/focus so the strip stays quiet until you reach for it. */
@@ -814,22 +703,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   min-width: 0;
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.ths-amount .ths-stat { background: none; border: none; padding: 0; }
-.ths-stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.ths-stat b {
-  color: var(--ink);
-  font-size: 12.5px;
-  font-variation-settings: var(--f-num);
-  font-variant-numeric: tabular-nums;
-  word-break: break-word;
-}
-.ths-stat.is-zero { opacity: 0.5; }
-.ths-stat-pending { border-color: color-mix(in srgb, var(--state-idle-dot) 35%, var(--border)); }
-.ths-stat-done { border-color: color-mix(in srgb, var(--state-ok) 30%, var(--border)); }
-.ths-stat-problem:not(.is-zero) { border-color: color-mix(in srgb, var(--state-warn) 35%, var(--border)); background: var(--state-warn-bg); }
 @media (max-width: 700px) {
   .table-head-strip { padding: 14px 16px; }
-  .ths-stats { width: 100%; order: 3; }
 }
 
 .table-wrap {
@@ -843,47 +718,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   overflow-x: auto;
   overflow-y: hidden;
 }
-.cheque-table {
-  width: 100%;
-  min-width: 760px;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-.cheque-table thead th {
-  text-align: center;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-  letter-spacing: 0.2px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}
-.cheque-table td {
-  padding: 10px 16px;
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-body);
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-  text-align: center;
-  transition: background 0.15s ease;
-}
-.cheque-table tbody tr:last-child td { border-bottom: none; }
-.cheque-table tbody tr { animation: riseIn 0.28s ease both; }
-.cheque-table tbody tr:nth-child(1) { animation-delay: 0.02s; }
-.cheque-table tbody tr:nth-child(2) { animation-delay: 0.04s; }
-.cheque-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
-.cheque-table tbody tr:nth-child(4) { animation-delay: 0.08s; }
-.cheque-table tbody tr:nth-child(5) { animation-delay: 0.10s; }
-.cheque-table tbody tr:nth-child(even) td { background: var(--surface-2); }
-.cheque-table td { cursor: default; }
-.cheque-table tbody tr:hover td { background: var(--surface-2); }
-.cheque-table td .status-btn, .cheque-table td .eye-btn { cursor: pointer; }
 
 /* Option 1 — a thin colored outline eases in around the whole row on hover.
    Kept here, commented out, so it's a one-line swap back if wanted.
@@ -892,10 +726,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   outline-offset: -2px;
   transition: outline-width 0.2s ease;
 }
-.cheque-table tbody tr:hover { outline-width: 2px; }
-.cheque-table tbody tr.st-pending:hover { outline-color: var(--state-idle-dot); }
-.cheque-table tbody tr.st-done:hover { outline-color: var(--state-ok); }
-.cheque-table tbody tr.st-problem:hover { outline-color: var(--state-warn); }
 */
 
 /* Option 2 — a few faint dots drift with no fixed pattern inside whichever
@@ -909,51 +739,14 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   opacity: 0;
   transition: opacity 0.18s ease;
 }
-.hover-dots.show { opacity: 1; }
-.hover-dots span {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--dot-color, var(--blue-600));
-  opacity: var(--base-op, 0.2);
-  animation: dotFloat 5s ease-in-out infinite;
-}
 @keyframes dotFloat {
   0%   { transform: translate(0, 0) scale(0.8); opacity: calc(var(--base-op, 0.2) * 0.55); }
   50%  { transform: translate(var(--fx), var(--fy)) scale(1.15); opacity: var(--base-op, 0.2); }
   100% { transform: translate(0, 0) scale(0.8); opacity: calc(var(--base-op, 0.2) * 0.55); }
 }
-
-.cheque-table .col-row { width: 56px; color: var(--muted); }
-.cheque-table th.col-row,
-.cheque-table th.col-num,
-.cheque-table th.col-status,
-.cheque-table th.col-eye,
-.cheque-table td.num,
-.cheque-table td.amount,
-.cheque-table td.status-cell,
-.cheque-table td.col-eye { text-align: center; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
-.cheque-table .col-eye { width: 84px; }
-.cheque-table .col-status { width: 148px; }
-.cheque-table .num { font-variation-settings: var(--f-num); white-space: nowrap; }
-.cheque-table .amount { font-variation-settings: var(--f-num); font-size: 15px; color: var(--ink); white-space: nowrap; }
-.cheque-table .owner-name,
-.cheque-table .party-name,
-.cheque-table .benef-name { font-variation-settings: var(--f-value); }
-.cheque-table .benef-name { display: block; text-align: center; }
-.cheque-table .benef-nid {
-  display: block;
-  text-align: center;
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-}
 /* A hairline of status colour down the row edge — enough to scan a long
    table by, quiet enough not to fight the chip in the status column. */
 .cheque-table tbody tr td:first-child { border-right: 3px solid transparent; position: relative; }
-.cheque-table tr.st-pending td:first-child { border-right-color: var(--state-idle-dot); }
-.cheque-table tr.st-done td:first-child { border-right-color: var(--state-ok); }
-.cheque-table tr.st-problem td:first-child { border-right-color: var(--state-warn); }
 /* a faint echo of the status colour on the far edge too, so the row reads as
    one accented unit rather than just a coloured stripe down one side */
 
@@ -1151,7 +944,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    Without this the empty state ("no cheques yet") flashes up for as long as
    the request takes, telling the user something that isn't true yet. */
 .table-skeleton { display: none; padding: 14px 16px 16px; }
-.table-wrap.is-loading .table-skeleton { display: block; }
 .table-wrap.is-loading .table-scroll,
 .table-wrap.is-loading .cheque-cards,
 .table-wrap.is-loading .table-empty,
@@ -1175,16 +967,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .table-empty svg { width: 34px; height: 34px; opacity: 0.45; margin-bottom: 4px; }
 .table-empty .p-title { font-size: 15px; color: var(--ink); font-variation-settings: var(--f-value); }
 .table-empty .p-sub { font-size: 13px; font-variation-settings: var(--f-hint); }
-
-.table-pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 14px;
-  border-top: 1px solid var(--border);
-}
-.table-pager:empty { display: none; }
 .pg-btn {
   min-width: 34px;
   height: 34px;
@@ -1209,8 +991,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cheque-cards { display: none; }
 @media (max-width: 760px) {
   .table-wrap { border: none; box-shadow: none; background: transparent; border-radius: 0; }
-  .cheque-table { display: none; }
-  .cheque-cards { display: block; }
   .table-head-strip {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -1222,9 +1002,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
     flex-direction: column;
     align-items: stretch;
   }
-  .ths-info { justify-content: space-between; }
-  .ths-amount { margin-right: 0; }
-  .ths-actions { justify-content: stretch; }
   /* There's no hover on a phone, so the labels that unroll on desktop are
      simply always out here — and the buttons share the row evenly. */
   .table-head-strip .icon-action { flex: 1; justify-content: center; }
@@ -1233,43 +1010,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .table-head-strip .export-cluster #reportBtn { width: 100%; }
   .table-head-strip .export-cluster.open .export-opt { flex: 1; justify-content: center; }
 }
-
-.cq-card {
-  animation: riseIn 0.3s ease both;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-right: 3px solid var(--state-idle-dot);
-  border-radius: var(--rad-ctl);
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  cursor: default;
-}
-.cq-card .status-btn, .cq-card .eye-btn { cursor: pointer; }
-.cq-card.st-pending { border-right-color: var(--state-idle-dot); }
-.cq-card.st-done { border-right-color: var(--state-ok); }
-.cq-card.st-problem { border-right-color: var(--state-warn); }
-.cq-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--bg);
-}
-.cq-serial {
-  font-size: 15px;
-  color: var(--ink);
-  font-variation-settings: var(--f-value);
-}
-.cq-serial span { color: var(--muted); font-variation-settings: var(--f-micro); font-size: 12px; margin-left: 6px; }
-.cq-amount { font-size: 15px; color: var(--blue-900); font-variation-settings: var(--f-num); }
-.cq-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.cq-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13px; }
-.cq-row .cq-label { color: var(--muted); font-variation-settings: var(--f-micro); flex-shrink: 0; }
-.cq-row .cq-value { color: var(--ink); font-variation-settings: var(--f-body); text-align: left; }
-.cq-row .cq-value .benef-nid { font-size: 12px; display: inline-block; margin-top: 2px; }
-.cq-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.cq-icon-group { display: flex; align-items: center; gap: 2px; }
 
 /* ===== Add Check Modal ===== */
 .modal-overlay {
@@ -2778,7 +2518,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .delete-cancel-slide.show { width: 60px; font-size: 12px; padding: 0; }
 }
 
-
 /* ===== Back-to-top button ===== */
 .totop-float {
   position: fixed;
@@ -2885,8 +2624,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
 @media (max-width: 720px) { .tg-float { display: none; } }   /* moves into the header on mobile instead */
-
-
 
 /* ===== Responsive ===== */
 @media (max-width: 720px) {
@@ -2997,18 +2734,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    the pointer position unambiguous. */
 .cheque-table tbody tr:nth-child(even) td { background: transparent; }
 
-.cheque-table td {
-  padding: 11px 16px;          /* → 44px row rhythm at 14px text */
-  font-size: var(--t-body);
-  border-bottom: 1px solid var(--border-subtle);
-  transition: background var(--dur-1) var(--ease);
-}
-.cheque-table thead th {
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.cheque-table tbody tr:hover td { background: var(--accent-wash); }
-
 /* Rows no longer fly in one after another. The stagger was decorative —
    it animated something the user didn't do, and it put 100ms of theatre
    between the data arriving and the data being readable. */
@@ -3024,7 +2749,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
-.cheque-table .amount { font-size: var(--t-value); }
 
 /* ── 3 · Structure through border tiers ──
    Outer edges of a panel take the strong tier so the panel reads as one
@@ -3034,7 +2758,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-bar,
 .due-alert-bar { border-color: var(--border); }
 .table-head-strip { border-bottom-color: var(--border); }
-.table-pager { border-top-color: var(--border-subtle); }
 
 /* ── 4 · Motion, normalised ──
    Hover and press land at 90ms; anything that enters the screen lands at
@@ -3077,10 +2800,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    they are marks rather than values. */
 .cheque-table thead th,
 .cheque-table td { text-align: start; }
-.cheque-table th.col-row,  .cheque-table td.col-row,
-.cheque-table th.col-status, .cheque-table td.status-cell,
-.cheque-table th.col-eye,  .cheque-table td.col-eye { text-align: center; }
-.cheque-table .benef-name { text-align: start; }
 
 /* ── 7 · Row height ──
    The beneficiary cell carries a name over its national id, and that pair
@@ -3088,8 +2807,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    leadings gets the row back near the 44px rhythm without dropping the id,
    which is the field people actually check a cheque against. */
 .cheque-table td { padding: 8px 16px; line-height: 1.35; }
-.cheque-table .benef-name { display: block; line-height: 1.35; }
-.cheque-table .benef-nid { display: block; font-size: var(--t-micro); line-height: 1.25; color: var(--muted); }
 
 /* ── 8 · The primary action belongs in the toolbar ──
    It used to sit alone in a centred band above the filters, spending a
@@ -3103,11 +2820,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: var(--t-cap);
   border-radius: var(--rad-ctl);
   white-space: nowrap;
-}
-.ths-actions .add-check-btn svg { width: 15px; height: 15px; }
-.ths-actions .add-check-btn:hover { background: var(--accent-hover); }
-@media (max-width: 720px) {
-  .ths-actions .add-check-btn { height: var(--h-md); font-size: var(--t-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3174,18 +2886,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   0%, 100% { box-shadow: 0 0 0 0 rgba(232, 131, 58, 0.35); }
   50%      { box-shadow: 0 0 0 5px rgba(232, 131, 58, 0); }
 }
-.cheque-table tr.st-problem td:first-child::after,
-.cq-card.st-problem::after {
-  content: '';
-  position: absolute;
-  top: 50%; right: -1.5px;
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--state-warn);
-  transform: translateY(-50%);
-  animation: statusPulse 2.4s var(--ease) 3;
-}
-.cq-card.st-problem { position: relative; }
 
 /* ── 12 · Toast rides the spring curve ──
    Everything else in the app enters on the expo-out curve; the toast is
