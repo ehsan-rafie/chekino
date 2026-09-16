@@ -27,6 +27,7 @@
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/IRANYekanXVFaNumVF.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/shared.css?v=20260915">
 <link rel="stylesheet" href="/css/dashboard.css?v=20260915">
 </head>
@@ -46,7 +47,7 @@
         <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
       </svg>
     </button>
-    <button class="theme-toggle-btn" id="themeToggleBtn">
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="تغییر تم" aria-label="تغییر تم روشن و تاریک">
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
       <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
@@ -236,10 +237,10 @@
 
 
   <div class="modal-overlay" id="peopleModalOverlay">
-    <div class="modal-box people-box">
+    <div class="modal-box people-box" role="dialog" aria-modal="true" aria-labelledby="peopleModalTitle">
       <div class="modal-header">
-        <h2>مدیریت اشخاص</h2>
-        <button class="modal-close" id="peopleModalClose">
+        <h2 id="peopleModalTitle">مدیریت اشخاص</h2>
+        <button class="modal-close" id="peopleModalClose" title="بستن" aria-label="بستن پنجره‌ی مدیریت اشخاص">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -283,7 +284,7 @@
   </div>
 
   <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-header">
       <h2 id="modalTitle">افزودن چک جدید</h2>
       <div class="modal-header-actions">
@@ -291,7 +292,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           <span>رسید ثبت</span>
         </button>
-        <button class="modal-close" id="modalClose">
+        <button class="modal-close" id="modalClose" title="بستن" aria-label="بستن پنجره">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -520,7 +521,7 @@
 </div>
 
 <div class="lightbox-overlay" id="lightboxOverlay">
-  <div class="lightbox-card">
+  <div class="lightbox-card" role="dialog" aria-modal="true" aria-label="نمایش تصویر رسید">
     <div class="lightbox-topbar">
       <button class="lightbox-btn" id="lightboxShareBtn" title="اشتراک‌گذاری عکس">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
@@ -530,7 +531,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>دانلود</span>
       </button>
-      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn">
+      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn" title="بستن" aria-label="بستن نمایش تصویر">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -543,7 +544,7 @@
 <button class="totop-float" id="toTopBtn" title="برو به بالا">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
 </button>
-<button class="tg-float" id="tgBtn">
+<button class="tg-float" id="tgBtn" aria-label="پشتیبانی تلگرام">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
@@ -568,7 +569,6 @@
 <div class="app-tooltip" id="appTooltip"></div>
 
 <script src="/js/shared.js?v=20260915"></script>
-<script src="/js/vendor/xlsx.full.min.js"></script>
 <script src="/js/palette.js?v=20260915"></script>
 <script src="/js/dashboard.js?v=20260915"></script>
 <script>if (window.__chekinoAuthOK) document.body.classList.remove('chekino-auth-pending');</script>

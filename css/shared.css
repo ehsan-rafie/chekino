@@ -55,6 +55,12 @@
   --green-wash: #E3F6ED;  --green-base: #14805C;
   --amber-wash: #FDF1E3;  --amber-base: #B26A08;
   --red-wash:   #FCEBEA;  --red-base:   #C2453C;  --red-line: #F0C6C2;
+  /* --red-base is sized for fills (a status dot, a column's top bar, a
+     pill under white text) where contrast is never in question. As small
+     text it only clears WCAG AA on pure white — on any tinted row it
+     lands at 4.4:1. This is the same red, darkened just enough to pass
+     on the tinted surfaces too (4.85:1 on --blue-wash, 5.49:1 on white). */
+  --red-text:   #B93F36;
 
   /* ── spacing: 4pt grid, seven steps, nothing off-scale ── */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
@@ -148,6 +154,7 @@
   --state-ok: var(--green-base);   --state-ok-bg: var(--green-wash);
   --state-warn: var(--amber-base); --state-warn-bg: var(--amber-wash);
   --state-bad: var(--red-base);    --state-bad-bg: var(--red-wash);
+  --state-bad-text: var(--red-text);   /* small red text — see --red-text */
 
   /* The data layer is flat: every panel, table and bar in the app asks for
      --shadow-1, and it resolves to nothing. Structure comes from the border
@@ -215,6 +222,8 @@
     --state-ok: #4CC38A;     --state-ok-bg: rgba(76, 195, 138, 0.13);
     --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.13);
     --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.13);
+  --state-bad-text: #FF8078;   /* already light-on-dark; no darkening needed */
+    --state-bad-text: #FF8078;   /* already light-on-dark; no darkening needed */
 
     --shadow-1: none;
     /* Four stacked shadows that tighten as they darken, the way the site does

@@ -305,7 +305,7 @@ tbody tr:hover { background: var(--blue-100); }
 .row-actions button:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-wash); }
 /* A delete button reads as destructive before it is pressed, not only once
    the pointer is already on it. */
-.row-actions button.danger { color: var(--state-bad); }
+.row-actions button.danger { color: var(--state-bad-text); }
 .row-actions button.danger:hover { border-color: var(--state-bad); color: var(--state-bad); background: var(--state-bad-bg); }
 
 /* ---- Modal ---- */
