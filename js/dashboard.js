@@ -3440,7 +3440,7 @@ function generateReport(statusId) {
     <div class="print-meta">تاریخ تهیه‌ی گزارش: ${toFa(jy)}/${toFa(pad2(jm))}/${toFa(pad2(jd))}</div>
   </div>
   <div class="report-actions">
-    <button class="report-print-btn" onclick="window.print()">
+    <button class="report-print-btn" id="reportPrintBtn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       دانلود / چاپ گزارش
     </button>
@@ -3467,6 +3467,11 @@ function generateReport(statusId) {
   if (!reportWin) { alert('اجازه‌ی باز شدن پنجره‌ی جدید داده نشد. لطفاً پاپ‌آپ‌بلاکر مرورگر رو برای این صفحه غیرفعال کنید.'); return; }
   reportWin.document.write(html);
   reportWin.document.close();
+  // Wired from here rather than an inline onclick= in the generated
+  // markup: the report inherits this page's Content-Security-Policy, and
+  // an inline handler is exactly what script-src 'self' blocks.
+  const printBtn = reportWin.document.getElementById('reportPrintBtn');
+  if (printBtn) printBtn.addEventListener('click', () => reportWin.print());
 }
 // ---- Export cluster: the report button opens into a PDF / Excel pair
 // rather than crowding the strip with three buttons at rest. ----

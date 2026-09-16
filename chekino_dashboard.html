@@ -2,26 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script>
-(function () {
-  function decodeJwtPayload(token) {
-    try {
-      var base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join('')));
-    } catch (e) { return null; }
-  }
-  var token = localStorage.getItem('chekino_token');
-  var payload = token ? decodeJwtPayload(token) : null;
-  if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
-    window.__chekinoAuthOK = true;
-  } else {
-    localStorage.removeItem('chekino_token');
-    window.location.replace('/login');
-  }
-})();
-</script>
+<script src="/js/boot.js?v=20260916" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
@@ -571,7 +552,6 @@
 <script src="/js/shared.js?v=20260915"></script>
 <script src="/js/palette.js?v=20260915"></script>
 <script src="/js/dashboard.js?v=20260915"></script>
-<script>if (window.__chekinoAuthOK) document.body.classList.remove('chekino-auth-pending');</script>
 
 </body>
 </html>
