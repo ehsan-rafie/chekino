@@ -764,7 +764,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .export-opt {
   display: inline-flex;
   align-items: center;
-  height: 36px;
+  height: 34px;
   max-width: 0;
   padding: 0;
   opacity: 0;
@@ -2861,6 +2861,28 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* A real floating tooltip for the card's hover-only detail (beneficiary's
+   national id, a problem cheque's reason) — positioned off the hovered
+   element itself, the same pattern the telegram button's own tooltip
+   uses, instead of leaning on the native title attribute. */
+.app-tooltip {
+  position: fixed;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 6px 11px;
+  border-radius: var(--rad-ctl);
+  font-size: 12.5px;
+  font-variation-settings: var(--f-value);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 600;
+  box-shadow: var(--shadow-2);
+}
+.app-tooltip.show { opacity: 1; transform: translateY(0); }
+
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
 @media (max-width: 720px) { .tg-float { display: none; } }   /* moves into the header on mobile instead */
 
@@ -3238,6 +3260,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-column {
   display: flex;
   flex-direction: column;
+  position: relative;
   overflow: hidden;
   transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
 }
@@ -3300,7 +3323,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
-.chk-due svg { width: 13px; height: 13px; opacity: 0.6; flex-shrink: 0; }
+.chk-due svg { width: 13px; height: 13px; opacity: 0.55; flex-shrink: 0; }
 /* A cheque still waiting to be registered, with its due date within reach,
    needs to read as urgent before the text is even parsed — colour first,
    digits second. Resolved once it leaves "منتظر ثبت", by design. */
@@ -3309,32 +3332,41 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .chk-due-overdue { color: var(--state-bad); font-variation-settings: var(--f-label); }
 .chk-due-overdue svg { opacity: 1; }
 
+/* The serial is the card's one bold line now — it's what a person actually
+   says out loud to mean this specific cheque, so it gets the strongest
+   weight and the largest size on the card. Everything else is context. */
 .chk-serial {
-  font-size: var(--t-micro);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-.chk-serial b { color: var(--ink-2); font-variation-settings: var(--f-num); direction: ltr; unicode-bidi: isolate; }
-
-/* The card's one bold line. National id rides along as a title tooltip
-   instead of a permanent second line — real, but not worth a whole row
-   on every card just in case someone needs it. */
-.chk-benef {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+}
+.chk-serial svg { width: 15px; height: 15px; opacity: 0.5; flex-shrink: 0; }
+.chk-serial b {
   font-size: var(--t-sub);
   color: var(--ink);
   font-variation-settings: var(--f-title);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.chk-benef {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variation-settings: var(--f-body);
   min-width: 0;
   overflow: hidden;
 }
-.chk-benef svg { width: 15px; height: 15px; opacity: 0.4; flex-shrink: 0; }
+.chk-benef svg { width: 13px; height: 13px; opacity: 0.5; flex-shrink: 0; }
 .chk-benef span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chk-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--t-cap);
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
@@ -3342,8 +3374,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   white-space: nowrap;
   flex-shrink: 0;
 }
+.chk-amount svg { width: 13px; height: 13px; opacity: 0.5; flex-shrink: 0; }
 
-.chk-icon-group { display: flex; align-items: center; gap: 2px; }
+.chk-icon-group { display: flex; align-items: center; gap: 6px; }
 
 /* ---- Dragging ---- */
 /* The card being moved goes semi-transparent in place; the actual visual
@@ -3490,17 +3523,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border-radius: var(--rad-card);
   min-height: 0;
 }
-.board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(18, 58, 154, 0.09), rgba(18, 58, 154, 0) 180px), var(--surface-2); }
-.board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(20, 128, 92, 0.10), rgba(20, 128, 92, 0) 180px), var(--surface-2); }
-.board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(194, 69, 60, 0.09), rgba(194, 69, 60, 0) 180px), var(--surface-2); }
-:root[data-theme="dark"] .board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(92, 135, 232, 0.12), rgba(92, 135, 232, 0) 180px), var(--surface-2); }
-:root[data-theme="dark"] .board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(76, 195, 138, 0.12), rgba(76, 195, 138, 0) 180px), var(--surface-2); }
-:root[data-theme="dark"] .board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(255, 128, 120, 0.12), rgba(255, 128, 120, 0) 180px), var(--surface-2); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .board-column[data-status="pending"] { background: linear-gradient(180deg, rgba(92, 135, 232, 0.12), rgba(92, 135, 232, 0) 180px), var(--surface-2); }
-  :root:not([data-theme="light"]) .board-column[data-status="done"]    { background: linear-gradient(180deg, rgba(76, 195, 138, 0.12), rgba(76, 195, 138, 0) 180px), var(--surface-2); }
-  :root:not([data-theme="light"]) .board-column[data-status="problem"] { background: linear-gradient(180deg, rgba(255, 128, 120, 0.12), rgba(255, 128, 120, 0) 180px), var(--surface-2); }
+/* One shared background for all three columns — the status now shows
+   through a gradient bar across the top edge instead of tinting the
+   whole panel, so the columns read as one consistent set of containers
+   with just an accent, not three different-coloured rooms. */
+.board-column::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
 }
+.board-column[data-status="pending"]::before { background: linear-gradient(to left, var(--accent), transparent); }
+.board-column[data-status="done"]::before    { background: linear-gradient(to left, var(--state-ok), transparent); }
+.board-column[data-status="problem"]::before { background: linear-gradient(to left, var(--state-bad), transparent); }
 .board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
 .board-col-head {
@@ -3517,7 +3553,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 32px;
+  height: 34px;
   padding: 0 8px 0 12px;
   border-radius: var(--rad-pill);
   font-size: 13.5px;
@@ -3553,9 +3589,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(232, 166, 63, 0.2); color: #F5C877; }
 }
 
-/* Add-a-cheque and export-this-column: both stay out of the way until
-   the column is hovered, then sit together at the head's far end. */
-.board-col-tools { display: flex; align-items: center; gap: 2px; }
+/* Export-this-column-to-PDF stays out of the way until the column is
+   hovered, then sits at the head's far end. */
 .board-col-btn {
   width: 26px; height: 26px;
   display: none;              /* revealed on column hover, see below */
@@ -3592,15 +3627,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .check-card { box-shadow: none; } }
 .check-card:hover { box-shadow: 0 2px 4px rgba(22, 21, 17, 0.06), 0 4px 14px -4px rgba(22, 21, 17, 0.1); }
 
+/* A small solid badge in the status colour, carrying the same icon as the
+   column's own header badge, instead of a bordered ring around a plain
+   dot — it reads as an object in its own right, not a bare toggle. */
 .status-dot-btn {
-  width: 26px; height: 26px;
+  width: 28px; height: 28px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 50%;
-  background: var(--surface);
+  color: #fff;
   flex-shrink: 0;
-  transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  box-shadow: 0 1px 2px rgba(22, 21, 17, 0.12);
+  transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
-.status-dot-btn .st-dot { width: 9px; height: 9px; border-radius: 50%; }
-.status-dot-btn:hover { border-color: var(--border-strong); transform: scale(1.08); }
+.status-dot-btn svg { width: 14px; height: 14px; }
+.status-dot-btn:hover { transform: scale(1.1); box-shadow: 0 3px 8px -1px rgba(22, 21, 17, 0.3); }
+.status-dot-btn:active { transform: scale(0.96); }

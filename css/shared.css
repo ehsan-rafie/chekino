@@ -545,7 +545,6 @@ kbd {
 :root .file-chip,
 :root .ac-tag,
 :root .due-alert-count,
-:root .export-opt,
 :root .st-opt { border-radius: var(--rad-pill); }
 
 /* Buttons, tabs and menu items take the control radius instead — the same
@@ -556,6 +555,7 @@ kbd {
 :root .add-check-btn,
 :root .btn-ghost,
 :root .icon-action,
+:root .export-opt,
 :root .filter-pill-btn,
 :root .filter-clear-btn,
 :root .ths-report-btn,

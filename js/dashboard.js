@@ -2941,22 +2941,15 @@ function buildReceiptMessage(c) {
   return `چک به شماره سریال ${toFa(c.serial)}، به شناسه صیادی ${toFa(c.sayad)}، به مبلغ ${amountFa} ریال و تاریخ سررسید ${faDate(c.dueDate)} در وجه ${c.benef} با کد ملی ${toFa(c.nid)} در سامانه صیاد ثبت گردید.
 ${faDate(c.statusChangedAt)}`;
 }
-// Only a registered cheque has a receipt message to copy. Nothing is
-// rendered in its place: the eye is the last child either way, so it stays
-// flush with the card's edge, and the status dot simply sits closer — no
-// invisible 34px placeholder opening a gap in the middle of the group.
+// Only a registered cheque has a receipt message to copy. It sits next to
+// the status-change button on the card's left — both mutate or act on the
+// record — while the eye, present on every card, stands alone on the
+// right as the one pure "view" action.
 function receiptButtonHtml(c) {
   if (c.status !== 'done') return '';
   return `<button type="button" class="receipt-btn" data-receipt="${c.id}" title="کپی پیام رسید ثبت">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   </button>`;
-}
-// Eye first, receipt second: this cluster sits at the row's outer right
-// edge now (the status-change button moved alone to the left), so the eye
-// — present on every card — is the one flush with that edge, with receipt
-// filling in beside it only on a registered cheque.
-function rowActionsHtml(c) {
-  return `<span class="row-actions">${eyeButtonHtml(c)}${receiptButtonHtml(c)}</span>`;
 }
 function showToast(message) {
   const el = document.getElementById('appToast');
@@ -3345,8 +3338,13 @@ filterClearBtn.addEventListener('click', () => {
 // then hands off to the browser's own print dialog — "Save as PDF" there
 // is what actually produces the file, with no extra library needed.
 const reportBtn = document.getElementById('reportBtn');
-function generateReport() {
-  const all = getFilteredCheques().slice().reverse();
+// statusId narrows the report to one board column — used by each column's
+// own PDF button; the toolbar's own button calls this with nothing, which
+// reports the whole filtered set exactly as before.
+function generateReport(statusId) {
+  let all = getFilteredCheques().slice().reverse();
+  if (statusId) all = all.filter(c => (c.status || 'pending') === statusId);
+  if (!all.length) { showToast('چکی برای گزارش‌گیری نیست'); return; }
   const [jy, jm, jd] = todayJalali();
   const totalAmount = all.reduce((sum, c) => sum + (parseInt(c.amount, 10) || 0), 0);
   const counts = { pending: 0, done: 0, problem: 0 };
@@ -3377,7 +3375,7 @@ function generateReport() {
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>گزارش چک‌ها — چکینو</title>
+<title>گزارش چک‌های ${statusId ? statusById(statusId).name : 'همه'} — چکینو</title>
 <style>
   @font-face {
     font-family: 'IRANYekanX';
@@ -3432,7 +3430,7 @@ function generateReport() {
 <body>
   <div class="report-brand">چکینو</div>
   <div class="report-titlebar">
-    <h1>گزارش چک‌ها</h1>
+    <h1>گزارش چک‌های ${statusId ? statusById(statusId).name : 'همه'}</h1>
     <div class="print-meta">تاریخ تهیه‌ی گزارش: ${toFa(jy)}/${toFa(pad2(jm))}/${toFa(pad2(jd))}</div>
   </div>
   <div class="report-actions">
@@ -3444,9 +3442,10 @@ function generateReport() {
   <div class="print-summary">
     <div class="ps-item"><b>${toFa(all.length)}</b>تعداد کل چک‌ها</div>
     <div class="ps-item"><b>${toFa(groupDigits(String(totalAmount)))} ریال</b>جمع مبلغ</div>
+    ${statusId ? '' : `
     <div class="ps-item"><b>${toFa(counts.pending)}</b>منتظر ثبت</div>
     <div class="ps-item ps-done"><b>${toFa(counts.done)}</b>ثبت شد</div>
-    <div class="ps-item ps-problem"><b>${toFa(counts.problem)}</b>مشکل در ثبت</div>
+    <div class="ps-item ps-problem"><b>${toFa(counts.problem)}</b>مشکل در ثبت</div>`}
   </div>
   <table>
     <thead><tr>
@@ -3551,47 +3550,53 @@ function dueUrgencyClass(c) {
 // ---- Card builder — one check, one card ----
 // A fixed two-column grid instead of a flowing list of fields: every card
 // carries the same rows in the same spots, so scanning down a column reads
-// like scanning a table — one glance at the top-right tells you the due
-// date, one glance at the bottom-left tells you whether it has a receipt —
-// instead of hunting for where a particular field landed on this card.
-// A small round trigger in the status colour, not the full text pill —
-// which column the card sits in already says the status; this is just the
-// door into the same dropdown (problem still asks for a reason, reverting
-// to pending still asks for confirmation — identical to before).
+// like scanning a table instead of hunting for where a given field landed
+// on this particular card.
+// The status trigger carries the same icon as its column badge, filled in
+// the status colour — a small solid badge rather than a bordered circle
+// around a dot, so it reads as its own object instead of a plain toggle.
+// Hovering it still explains a problem cheque's reason; the door it opens
+// is unchanged (still asks for a reason on "مشکل", still confirms a
+// revert to "منتظر ثبت").
 function statusDotTriggerHtml(c, st) {
   const reasonText = c.status === 'problem' && c.statusReason ? c.statusReason : '';
-  const title = reasonText ? `مشکل: ${reasonText}` : 'تغییر وضعیت';
-  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
-    <span class="st-dot" style="background:${st.color}"></span>
+  const tip = reasonText ? `مشکل: ${reasonText}` : 'تغییر وضعیت';
+  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" style="background:${st.color}" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BOARD_COL_ICON[c.status || 'pending'] || ''}</svg>
   </button>`;
 }
 
-const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+// Every field on the card gets its own icon, and the icon set leans on
+// rounded corners and joins throughout — rx on the rectangles, round caps
+// on every line — to sit comfortably next to the rest of the system.
+const ICON_CALENDAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
 const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+const ICON_SERIAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7z"/><path d="M14 3v4h4"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>';
+const ICON_AMOUNT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><circle cx="12" cy="12" r="2.5"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>';
 
-// The beneficiary is the one thing a person actually means when they say
-// "the cheque to X" — it carries the card's strongest weight and colour
-// even though it isn't the first line, the way the reference board's own
-// lead card puts a muted id/date row above its bold name. The national id
-// rides along as a title tooltip instead of a permanent line: real, but
-// not something worth a whole row on every card just in case it's needed.
+// The serial is what a person actually says out loud to mean this specific
+// cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight now;
+// the beneficiary rides along underneath as context, not the headline.
+// The national id rides along as a tooltip on the beneficiary instead of
+// a permanent line — real, but not worth a whole row just in case.
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const urgency = dueUrgencyClass(c);
-  const nidTitle = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
+  const nidTip = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
   return `<div class="check-card ${st.cls}" data-id="${c.id}" tabindex="0" role="button" aria-roledescription="چک قابل جابه‌جایی">
     <div class="chk-row">
-      <span class="chk-due${urgency}" title="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
-      <span class="chk-serial" title="شماره سریال چک">چک <b>${toFa(c.serial)}</b></span>
+      <span class="chk-due${urgency}" data-tip="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
+      <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
-      <span class="chk-benef" title="${escapeHtml(nidTitle)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
-      <span class="chk-amount" title="مبلغ چک">${faAmountRial(c.amount)}</span>
+      <span class="chk-benef" data-tip="${escapeHtml(nidTip)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
+      <span class="chk-amount">${ICON_AMOUNT}${faAmountRial(c.amount)}</span>
     </div>
     <div class="chk-row chk-row-bottom">
-      ${rowActionsHtml(c)}
+      <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">
         ${statusDotTriggerHtml(c, st)}
+        ${receiptButtonHtml(c)}
       </div>
     </div>
   </div>`;
@@ -3614,14 +3619,9 @@ function boardColumnHtml(st) {
         ${st.name}
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
-      <span class="board-col-tools">
-        <button type="button" class="board-col-btn" data-export-status="${st.id}" title="خروجی اکسل «${st.name}»" aria-label="خروجی اکسل «${st.name}»">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <button type="button" class="board-col-btn" data-add-status="${st.id}" title="افزودن چک جدید" aria-label="افزودن چک جدید">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-      </span>
+      <button type="button" class="board-col-btn" data-report-status="${st.id}" title="گزارش PDF «${st.name}»" aria-label="گزارش PDF «${st.name}»">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 17.5v-4h1.4a1.3 1.3 0 0 1 0 2.6H8.5"/><path d="M13.6 17.5v-4h1.1a2 2 0 0 1 0 4z"/></svg>
+      </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
   </div>`;
@@ -3633,14 +3633,36 @@ function boardColumnHtml(st) {
 function ensureBoardColumns() {
   if (boardColumns.children.length) return;
   boardColumns.innerHTML = STATUSES.map(boardColumnHtml).join('');
-  // A cheque always starts «منتظر ثبت» regardless of which column's "+" was
-  // clicked — that's the real rule, so the button opens the one add form
-  // rather than pretending it can drop a new cheque straight into "ثبت شد".
   boardColumns.addEventListener('click', (e) => {
-    if (e.target.closest('[data-add-status]')) { addCheckBtn.click(); return; }
-    const exportBtn = e.target.closest('[data-export-status]');
-    if (exportBtn) exportChecksToExcel(exportBtn.dataset.exportStatus);
+    const reportBtnEl = e.target.closest('[data-report-status]');
+    if (reportBtnEl) generateReport(reportBtnEl.dataset.reportStatus);
   });
+  wireCardTooltips();
+}
+
+// A real floating tooltip — positioned off the hovered element's own
+// rect, the same way the telegram button's does — instead of the native
+// title attribute, which every card was leaning on for the beneficiary's
+// national id and the status dot's problem reason.
+const appTooltip = document.getElementById('appTooltip');
+function wireCardTooltips() {
+  boardColumns.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('[data-tip]');
+    if (!el || el.dataset.tip === '') return;
+    appTooltip.textContent = el.dataset.tip;
+    appTooltip.classList.add('show');
+    const r = el.getBoundingClientRect();
+    const w = appTooltip.offsetWidth;
+    let left = r.left + r.width / 2 - w / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+    appTooltip.style.left = left + 'px';
+    appTooltip.style.top = (r.bottom + 8) + 'px';
+  });
+  boardColumns.addEventListener('mouseout', (e) => {
+    const el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) appTooltip.classList.remove('show');
+  });
+  boardColumns.addEventListener('scroll', () => appTooltip.classList.remove('show'), true);
 }
 
 function renderTable() {
