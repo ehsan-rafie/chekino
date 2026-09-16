@@ -3670,13 +3670,13 @@ const BOARD_COL_ICON = {
 function boardColumnHtml(st) {
   return `<div class="board-column" data-status="${st.id}">
     <div class="board-col-head">
-      <span class="board-col-badge board-col-badge-${st.id}">
+      <span class="board-col-badge">
         <svg class="board-col-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${BOARD_COL_ICON[st.id] || ''}</svg>
         ${st.name}
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
       <button type="button" class="board-col-btn" data-report-status="${st.id}" title="گزارش PDF «${st.name}»" aria-label="گزارش PDF «${st.name}»">
-        ${icon('filePdf')}
+        ${icon('fileDown')}
       </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
@@ -3786,6 +3786,7 @@ window.addEventListener('resize', updateBoardHeight);
 // being swallowed as an accidental one-pixel drag.
 (function setupBoardDrag() {
   const DRAG_THRESHOLD = 6;
+  let activeReasonPrompt = null;
   let pointerId = null;
   let startX = 0, startY = 0;
   let sourceCard = null;
@@ -3870,6 +3871,11 @@ window.addEventListener('resize', updateBoardHeight);
     if (e.button !== undefined && e.button !== 0) return; // left click / primary touch only
     const card = cardUnderPointer(e.target);
     if (!card || isInteractiveChild(e.target)) return;
+    // A prompt is waiting on an answer: this press abandons it (the card
+    // returns to where it came from) and does not also begin a drag —
+    // cancelling re-renders the board, so the element under the pointer is
+    // gone by the time a drag would start. Press again to drag.
+    if (activeReasonPrompt) { dismissReasonPrompt(); return; }
     pointerId = e.pointerId;
     startX = e.clientX; startY = e.clientY;
     sourceCard = card;
@@ -3903,7 +3909,16 @@ window.addEventListener('resize', updateBoardHeight);
     return c ? (c.status || 'pending') : 'pending';
   }
 
+  // Only one reason prompt can be open, and it must not outlive the card it
+  // belongs to. Starting another drag or another drop abandons it — the card
+  // goes back where it came from first, so the board never shows a prompt
+  // pointing at a card that has since moved somewhere else.
+  function dismissReasonPrompt() {
+    if (activeReasonPrompt) activeReasonPrompt.cancel();
+  }
+
   function handleDrop(id, targetStatus, cardEl) {
+    dismissReasonPrompt();
     const current = currentStatusOf(id);
     if (targetStatus === current) return;   // dropped back where it started
 
@@ -3938,6 +3953,7 @@ window.addEventListener('resize', updateBoardHeight);
   // Cancelling (or Escape) puts the card back where it came from; nothing
   // but Save or Cancel closes the prompt.
   function promptDropReason(id, prevStatus) {
+    dismissReasonPrompt();
     const rec = loadCheques().find((x) => x.id === id);
     const before = rec ? { status: rec.status, statusReason: rec.statusReason } : null;
     if (rec) { rec.status = 'problem'; rec.statusReason = ''; }
@@ -3982,6 +3998,7 @@ window.addEventListener('resize', updateBoardHeight);
     ta.focus();
 
     function cleanup() {
+      activeReasonPrompt = null;
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', place, true);
       document.removeEventListener('keydown', onKey, true);
@@ -4005,6 +4022,7 @@ window.addEventListener('resize', updateBoardHeight);
       // has to stay available for line breaks.
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
     }
+    activeReasonPrompt = { cancel };
     box.querySelector('.sr-save').addEventListener('click', save);
     box.querySelector('.sr-cancel').addEventListener('click', cancel);
     box.addEventListener('click', (e) => e.stopPropagation());

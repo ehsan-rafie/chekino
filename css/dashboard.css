@@ -87,9 +87,11 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
-/* Brand mark + company context, start side — a corner lockup instead of a
-   marketing-site centrepiece, the way an app header (not a landing page)
-   carries its logo: small, and next to the account it belongs to. */
+/* Brand mark alone on the start side — a corner lockup, not a
+   marketing-site centrepiece. The company name used to sit here, a whole
+   header away from the button that signs it out; it now travels with the
+   logout button at the other end, so "who am I / get me out" reads as one
+   pair instead of two unrelated ends of the bar. */
 .header-brand {
   display: flex;
   align-items: center;
@@ -113,7 +115,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 220px;
-  padding-inline-end: 4px;
+  padding-inline: 2px;
 }
 @media (max-width: 720px) { .company-name, .header-brand-sep { display: none; } }
 
@@ -201,10 +203,18 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 
 /* ===== Main content ===== */
+/* One value for the page's side gutter. The board's mobile scroller bleeds
+   out to the screen edges by cancelling this exact padding, so the two have
+   to agree — when they were written as separate numbers (24/14 here, a flat
+   16 there) the scroller overshot by 2px a side and the whole page picked up
+   a horizontal scrollbar on a phone. */
+:root { --page-gutter: var(--s5); }
+@media (max-width: 720px) { :root { --page-gutter: 14px; } }
+
 .main {
   max-width: 1600px;   /* wide enough for three card columns side by side */
   margin: 0 auto;
-  padding: var(--s6) var(--s5) 96px;
+  padding: var(--s6) var(--page-gutter) 96px;
 }
 
 .add-check-wrap {
@@ -2609,35 +2619,36 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    national id, a problem cheque's reason) — positioned off the hovered
    element itself, the same pattern the telegram button's own tooltip
    uses, instead of leaning on the native title attribute. */
-/* Readable first: --ink as a background was near-black and read as a heavy
-   slab, and 12.5px on one forced line pushed the longer tips (a
-   beneficiary plus their national id) off the edge of the screen. A
-   softer dark grey, a size that matches the card text it explains, and a
-   width it is allowed to wrap inside. */
+/* A light chip, not a dark slab. On a white page an inverted near-black
+   box is the loudest thing on screen, which is backwards for a hint you
+   did not ask for — and it was also the odd one out, since the cell and
+   support tooltips have always been light. Small, quiet, bordered: the
+   same object the other two are. */
 .app-tooltip {
   position: fixed;
-  background: var(--n-11);
-  color: #FCFCFC;
-  padding: 7px 12px;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 5px 9px;
   border-radius: var(--rad-ctl);
-  font-size: var(--t-cap);
-  line-height: 1.7;
+  font-size: var(--t-micro);
+  line-height: 1.6;
   font-variation-settings: var(--f-body);
-  max-width: min(300px, calc(100vw - 24px));
+  max-width: min(260px, calc(100vw - 24px));
   text-align: center;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-3px);
   transition: opacity 0.12s ease, transform 0.12s ease;
   z-index: 600;
-  box-shadow: var(--shadow-2);
+  box-shadow: 0 2px 10px rgba(22, 21, 17, 0.09);
 }
 .app-tooltip.show { opacity: 1; transform: translateY(0); }
-/* On dark the same near-black slab would vanish into the page, so the
-   tooltip lifts off the background instead of inverting to a white one. */
-:root[data-theme="dark"] .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+/* On dark, --surface sits a whisker above the page and the shadow does
+   nothing, so the chip lifts on a step of tone and a stronger hairline. */
+:root[data-theme="dark"] .app-tooltip { background: var(--surface-2); border-color: var(--border-strong); box-shadow: none; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .app-tooltip { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border-strong); }
+  :root:not([data-theme="light"]) .app-tooltip { background: var(--surface-2); border-color: var(--border-strong); box-shadow: none; }
 }
 
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
@@ -2648,7 +2659,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .header { padding: 0 14px; height: 56px; }
   .header-brand { gap: 6px; }
   .header-logo { font-size: 16px; }
-  .main { padding: var(--s5) 14px 96px; }
+  .main { padding-block: var(--s5) 96px; }
   .tg-float { bottom: 20px; left: 20px; width: 52px; height: 52px; }
 }
 
@@ -2736,13 +2747,16 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-menu,
 .ac-list,
 .ms-list,
-.cell-tooltip,
-.tg-tooltip,
 .app-toast,
 .lightbox-card,
 .pe-card {
   border-radius: var(--rad-float);
 }
+/* Tooltips are chips, not floating panels: a 12px radius on a box barely
+   taller than its one line of text reads as a lozenge. All three take the
+   control radius so they match each other and the buttons they explain. */
+.cell-tooltip,
+.tg-tooltip { border-radius: var(--rad-ctl); }
 
 /* ── 2 · The cheque table ──
    Zebra striping went out. It was doing the job a divider does, and it
@@ -2972,8 +2986,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
     overflow-x: auto;
     scroll-snap-type: x proximity;
     padding-bottom: var(--s2);
-    margin: 0 calc(-1 * var(--s4));
-    padding-inline: var(--s4);
+    margin-inline: calc(-1 * var(--page-gutter));
+    padding-inline: var(--page-gutter);
   }
   .board-column { flex: 0 0 82%; scroll-snap-align: start; }
 }
@@ -3254,27 +3268,42 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    last one. In RTL the inline-start edge is the right one, so putting it
    on every column after the first draws exactly the two lines wanted. */
 .board-column + .board-column { border-inline-start: 1px solid var(--border); }
-/* One shared background for all three columns — the status now shows
-   through a gradient bar across the top edge instead of tinting the
-   whole panel, so the columns read as one consistent set of containers
-   with just an accent, not three different-coloured rooms. */
-.board-column::before {
-  content: '';
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: var(--s3);
-  height: 3px;
-  border-radius: 2px;
+/* Each column carries its status in one custom property, so the title
+   chip, its count and the rule beneath them are literally the same colour
+   rather than three hand-matched hex values that drift apart on the next
+   edit. Only these two lines change per theme. */
+.board-column[data-status="pending"] { --col-accent: #123A9A; --col-wash: rgba(18, 58, 154, 0.10); }
+.board-column[data-status="done"]    { --col-accent: #0F6B4C; --col-wash: rgba(20, 128, 92, 0.12); }
+.board-column[data-status="problem"] { --col-accent: #A8342B; --col-wash: rgba(194, 69, 60, 0.12); }
+
+:root[data-theme="dark"] .board-column[data-status="pending"] { --col-accent: #9CC2FF; --col-wash: rgba(76, 141, 255, 0.22); }
+:root[data-theme="dark"] .board-column[data-status="done"]    { --col-accent: #8EE6BC; --col-wash: rgba(76, 195, 138, 0.20); }
+:root[data-theme="dark"] .board-column[data-status="problem"] { --col-accent: #FF9E97; --col-wash: rgba(255, 128, 120, 0.18); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board-column[data-status="pending"] { --col-accent: #9CC2FF; --col-wash: rgba(76, 141, 255, 0.22); }
+  :root:not([data-theme="light"]) .board-column[data-status="done"]    { --col-accent: #8EE6BC; --col-wash: rgba(76, 195, 138, 0.20); }
+  :root:not([data-theme="light"]) .board-column[data-status="problem"] { --col-accent: #FF9E97; --col-wash: rgba(255, 128, 120, 0.18); }
 }
-.board-column[data-status="pending"]::before { background: linear-gradient(to left, var(--accent), transparent); }
-.board-column[data-status="done"]::before    { background: linear-gradient(to left, var(--state-ok), transparent); }
-.board-column[data-status="problem"]::before { background: linear-gradient(to left, var(--state-bad), transparent); }
+
 .board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
+/* The status rule runs under the column's title rather than across the top
+   of the whole column, and the title chip sits down on it: top corners the
+   same radius as every other surface in the app, bottom corners square so
+   chip and rule meet with no seam. Together they read as one labelled tab,
+   not a chip floating loose beneath a stripe.
+
+   A real gradient border, not a positioned ::after: the pseudo-element
+   version drew the same 3px line, but any contrast checker pointed at the
+   title inside it gives up with "background could not be determined due to
+   a pseudo element", which silently excused the three badges from the
+   audit. A border is checkable. */
 .board-col-head {
-  padding: 0 0 var(--s3);
-  border-bottom: none;
+  margin-bottom: var(--s3);
   background: none;
+  border-style: solid;
+  border-width: 0 0 3px;
+  border-image: linear-gradient(to left, var(--col-accent), transparent) 1;
 }
 /* Bold enough to read as three distinct states from across the screen —
    the pale versions of these tokens used for a status pill inside a card
@@ -3285,40 +3314,37 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 34px;
-  padding: 0 8px 0 12px;
-  border-radius: var(--rad-pill);
+  height: 32px;
+  padding-inline: 12px 8px;
+  border-radius: var(--rad-card) var(--rad-card) 0 0;
+  background: var(--col-wash);
+  color: var(--col-accent);
   font-size: 13.5px;
   font-variation-settings: var(--f-label);
 }
 .board-col-icon { width: 15px; height: 15px; flex-shrink: 0; }
+/* The count was a white circle floating in the chip — a third shape in a
+   header that has only two. It now borrows the chip's own radius and
+   colour, so it reads as part of the title rather than a separate badge.
+   The 3px top padding is why the digit finally sits in the middle:
+   IRANYekanX reserves 5px of descender below the baseline at this size,
+   but Persian digits have no descender at all, so centring the font's box
+   parks the ink 1.5px high. Padding pushes the baseline back down. */
 .board-col-count {
-  min-width: 21px;
-  height: 21px;
-  padding: 0 6px;
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 5px;
+  padding-block: 3px 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--rad-pill);
-  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--col-accent);
   font-size: 11.5px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
-}
-:root[data-theme="dark"] .board-col-count { background: rgba(0, 0, 0, 0.3); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-col-count { background: rgba(0, 0, 0, 0.3); } }
-
-.board-col-badge-pending { background: rgba(18, 58, 154, 0.10); color: #123A9A; }
-.board-col-badge-done    { background: rgba(20, 128, 92, 0.12);  color: #0F6B4C; }
-.board-col-badge-problem { background: rgba(194, 69, 60, 0.12);  color: #A8342B; }
-
-:root[data-theme="dark"] .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
-:root[data-theme="dark"] .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
-:root[data-theme="dark"] .board-col-badge-problem { background: rgba(255, 128, 120, 0.18); color: #FF9E97; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .board-col-badge-pending { background: rgba(76, 141, 255, 0.22); color: #9CC2FF; }
-  :root:not([data-theme="light"]) .board-col-badge-done { background: rgba(76, 195, 138, 0.2); color: #8EE6BC; }
-  :root:not([data-theme="light"]) .board-col-badge-problem { background: rgba(255, 128, 120, 0.18); color: #FF9E97; }
 }
 
 /* Export-this-column-to-PDF stays out of the way until the column is
@@ -3334,7 +3360,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--muted);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.board-col-head { display: flex; align-items: center; justify-content: space-between; }
+/* flex-end, not center: the title chip and the export button both stand on
+   the rule, so their bottom edges are what should line up. */
+.board-col-head { display: flex; align-items: flex-end; justify-content: space-between; }
 .board-col-btn svg { width: 15px; height: 15px; }
 .board-col-btn:hover { background: var(--surface); color: var(--ink); }
 .board-column:hover .board-col-btn,
