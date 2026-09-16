@@ -3258,21 +3258,34 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    through a gradient bar across the top edge instead of tinting the
    whole panel, so the columns read as one consistent set of containers
    with just an accent, not three different-coloured rooms. */
-.board-column::before {
+/* The gradient runs under the title rather than across the top of the
+   column, and the title sits on it as a tab: rounded on top like every
+   other surface in the system, square along the bottom so the two read
+   as one piece. Both take the same per-status colour. */
+.board-col-head::after {
   content: '';
   position: absolute;
-  inset-block-start: 0;
-  inset-inline: var(--s3);
+  inset-inline: 0;
+  inset-block-end: 0;
   height: 3px;
-  border-radius: 2px;
 }
-.board-column[data-status="pending"]::before { background: linear-gradient(to left, var(--accent), transparent); }
-.board-column[data-status="done"]::before    { background: linear-gradient(to left, var(--state-ok), transparent); }
-.board-column[data-status="problem"]::before { background: linear-gradient(to left, var(--state-bad), transparent); }
+.board-column[data-status="pending"] .board-col-head::after { background: linear-gradient(to left, #123A9A, transparent); }
+.board-column[data-status="done"] .board-col-head::after    { background: linear-gradient(to left, #0F6B4C, transparent); }
+.board-column[data-status="problem"] .board-col-head::after { background: linear-gradient(to left, #A8342B, transparent); }
+:root[data-theme="dark"] .board-column[data-status="pending"] .board-col-head::after { background: linear-gradient(to left, #9CC2FF, transparent); }
+:root[data-theme="dark"] .board-column[data-status="done"] .board-col-head::after    { background: linear-gradient(to left, #8EE6BC, transparent); }
+:root[data-theme="dark"] .board-column[data-status="problem"] .board-col-head::after { background: linear-gradient(to left, #FF9E97, transparent); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board-column[data-status="pending"] .board-col-head::after { background: linear-gradient(to left, #9CC2FF, transparent); }
+  :root:not([data-theme="light"]) .board-column[data-status="done"] .board-col-head::after    { background: linear-gradient(to left, #8EE6BC, transparent); }
+  :root:not([data-theme="light"]) .board-column[data-status="problem"] .board-col-head::after { background: linear-gradient(to left, #FF9E97, transparent); }
+}
 .board-column.drag-over { background: var(--accent-wash); border-color: var(--accent); }
 
 .board-col-head {
-  padding: 0 0 var(--s3);
+  position: relative;
+  padding: 0 0 3px;      /* the 3px is the gradient line itself */
+  margin-bottom: var(--s3);
   border-bottom: none;
   background: none;
 }
@@ -3286,8 +3299,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   align-items: center;
   gap: 7px;
   height: 34px;
-  padding: 0 8px 0 12px;
-  border-radius: var(--rad-pill);
+  padding: 0 10px 0 14px;
+  /* rounded on top to match every other surface, square underneath so it
+     sits flush on the gradient line */
+  border-radius: var(--rad-card) var(--rad-card) 0 0;
   font-size: 13.5px;
   font-variation-settings: var(--f-label);
 }
@@ -3334,7 +3349,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--muted);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.board-col-head { display: flex; align-items: center; justify-content: space-between; }
+.board-col-head { display: flex; align-items: flex-end; justify-content: space-between; }
 .board-col-btn svg { width: 15px; height: 15px; }
 .board-col-btn:hover { background: var(--surface); color: var(--ink); }
 .board-column:hover .board-col-btn,
