@@ -320,6 +320,11 @@ function lockFormFields(locked) {
 function openModalForView(id) {
   const c = loadCheques().find(x => x.id === id);
   if (!c) return;
+  // The eye button's click handler stops the click from bubbling to
+  // document, so the document-level "click outside closes it" listener
+  // that the status menu relies on never runs — without this, opening the
+  // detail modal left an already-open status menu rendered underneath it.
+  closeStatusMenu();
   pushBackGuard();
   modalMode = 'view';
   editingChequeId = id;
@@ -2962,6 +2967,7 @@ function showToast(message) {
 function copyReceiptMessage(id, btn) {
   const c = loadCheques().find(x => x.id === id);
   if (!c) return;
+  closeStatusMenu();   // same stopPropagation gap as the eye button — see openModalForView
   const text = buildReceiptMessage(c);
   const showCopied = () => {
     showToast('پیام رسید ثبت کپی شد');
