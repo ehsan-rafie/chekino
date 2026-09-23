@@ -10,22 +10,30 @@ router.use(authenticate);
 
 const idParamValidation = [param('id').isInt().withMessage('شناسه نامعتبر است')];
 
+// Which tab of the people panel a person was filed under. Only a fallback for
+// someone no cheque references yet — the roles a person actually plays are
+// read off the cheques themselves. See migration_005_people_role.sql.
+const ROLES = ['owner', 'party', 'benef'];
+const roleOrNull = (role) => (ROLES.includes(role) ? role : null);
+
 const personBodyValidation = [
   body('full_name').trim().notEmpty().withMessage('full_name الزامی است').isLength({ max: 200 }),
   body('national_id').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('national_id نامعتبر است'),
   body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
+  body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
 const personBodyValidationOptional = [
   body('full_name').optional({ values: 'falsy' }).trim().isLength({ max: 200 }),
   body('national_id').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('national_id نامعتبر است'),
   body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
+  body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, full_name, national_id, phone, created_at FROM people WHERE company_id = $1 ORDER BY id DESC',
+      'SELECT id, full_name, national_id, phone, role, created_at FROM people WHERE company_id = $1 ORDER BY id DESC',
       [req.companyId]
     );
     res.json(result.rows);
@@ -37,7 +45,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', personBodyValidation, validate, async (req, res) => {
   try {
-    const { full_name, national_id, phone } = req.body;
+    const { full_name, national_id, phone, role } = req.body;
 
     const planCheck = await pool.query(
       `SELECT p.max_people, (SELECT COUNT(*) FROM people WHERE company_id = $1) AS current_count
@@ -53,8 +61,8 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
     }
 
     const result = await pool.query(
-      'INSERT INTO people (company_id, full_name, national_id, phone) VALUES ($1, $2, $3, $4) RETURNING id, full_name, national_id, phone, created_at',
-      [req.companyId, full_name, national_id || null, phone || null]
+      'INSERT INTO people (company_id, full_name, national_id, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, national_id, phone, role, created_at',
+      [req.companyId, full_name, national_id || null, phone || null, roleOrNull(role)]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -66,7 +74,7 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
 router.put('/:id', idParamValidation, personBodyValidationOptional, validate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, national_id, phone } = req.body;
+    const { full_name, national_id, phone, role } = req.body;
 
     const existing = await pool.query(
       'SELECT id FROM people WHERE id = $1 AND company_id = $2',
@@ -78,8 +86,8 @@ router.put('/:id', idParamValidation, personBodyValidationOptional, validate, as
     }
 
     const result = await pool.query(
-      'UPDATE people SET full_name = COALESCE($1, full_name), national_id = COALESCE($2, national_id), phone = COALESCE($3, phone) WHERE id = $4 AND company_id = $5 RETURNING id, full_name, national_id, phone, created_at',
-      [full_name || null, national_id || null, phone || null, id, req.companyId]
+      'UPDATE people SET full_name = COALESCE($1, full_name), national_id = COALESCE($2, national_id), phone = COALESCE($3, phone), role = COALESCE($4, role) WHERE id = $5 AND company_id = $6 RETURNING id, full_name, national_id, phone, role, created_at',
+      [full_name || null, national_id || null, phone || null, roleOrNull(role), id, req.companyId]
     );
     res.json(result.rows[0]);
   } catch (err) {

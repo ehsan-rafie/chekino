@@ -99,14 +99,14 @@
      because Persian script, being cursive and lower-contrast, thins out
      faster than Latin at the same weight. */
   --f-brand:  'wght' 680, 'dots' 2;
-  --f-title:  'wght' 600, 'dots' 2;
-  --f-label:  'wght' 590, 'dots' 2;
-  --f-btn:    'wght' 560, 'dots' 2;
-  --f-value:  'wght' 510, 'dots' 2;
-  --f-num:    'wght' 550, 'dots' 2;
-  --f-body:   'wght' 430, 'dots' 2;
-  --f-hint:   'wght' 330, 'dots' 2;
-  --f-micro:  'wght' 470, 'dots' 2;
+  --f-title:  'wght' 600, 'dots' 1;
+  --f-label:  'wght' 590, 'dots' 1;
+  --f-btn:    'wght' 560, 'dots' 1;
+  --f-value:  'wght' 510, 'dots' 1;
+  --f-num:    'wght' 550, 'dots' 1;
+  --f-body:   'wght' 430, 'dots' 1;
+  --f-hint:   'wght' 330, 'dots' 1;
+  --f-micro:  'wght' 470, 'dots' 1;
 
   /* ── motion ──
      Everything the user causes lands inside 200ms; the common case is

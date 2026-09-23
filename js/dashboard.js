@@ -139,6 +139,30 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = '/login';
 });
 
+// The account button reveals who is signed in and the way out. Logout sits
+// behind one deliberate tap rather than bare in the header, where it was a
+// single mis-tap away from ending the session mid-entry.
+(function wireAccountMenu() {
+  const accountBtn = document.getElementById('accountBtn');
+  const accountMenu = document.getElementById('accountMenu');
+  const setOpen = (open) => {
+    accountMenu.classList.toggle('show', open);
+    accountBtn.setAttribute('aria-expanded', String(open));
+  };
+  accountBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!accountMenu.classList.contains('show'));
+  });
+  accountMenu.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => setOpen(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && accountMenu.classList.contains('show')) {
+      setOpen(false);
+      accountBtn.focus();
+    }
+  });
+})();
+
 // Reads the company name straight off the JWT payload (put there at login) —
 // no extra request needed just to show who's signed in.
 function decodeJwtPayload(token) {
@@ -305,10 +329,11 @@ function buildStatusSentence(c) {
 }
 
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
+const veFieldsWrapA2 = document.getElementById('veFieldsWrapA2');
 const veFieldsWrapB = document.getElementById('veFieldsWrapB');
 function lockFormFields(locked) {
   modalBody.classList.toggle('ve-locked', locked);
-  [veFieldsWrapA, veFieldsWrapB].forEach(w => {
+  [veFieldsWrapA, veFieldsWrapA2, veFieldsWrapB].forEach(w => {
     if (locked) w.setAttribute('inert', ''); else w.removeAttribute('inert');
   });
   // The sayad field sits outside the inert wrapper so its text can still
@@ -1006,7 +1031,24 @@ function createDateField(cfg) {
     saveDraft();
   });
 
-  api.input.addEventListener('paste', (e) => e.preventDefault());
+  // Pasting used to just be swallowed outright — the field is a segmented
+  // mask, so raw text genuinely can't be dropped in character-by-character,
+  // but silently discarding the paste (rather than reading it) meant
+  // copying a date from anywhere and pasting it here simply did nothing.
+  // Now it reads the clipboard itself, pulls out 8 digits (Persian or
+  // English) in the field's own YYYY MM DD order, and fills the slots —
+  // so the paste is honored, just not as a literal text insertion.
+  api.input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const raw = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = toEnDigits(raw).replace(/[^0-9]/g, '');
+    if (digits.length !== 8) return;   // not a recognizable date — leave the field alone rather than guess wrong
+    const y = parseInt(digits.slice(0, 4), 10);
+    const m = parseInt(digits.slice(4, 6), 10);
+    const d = parseInt(digits.slice(6, 8), 10);
+    api.setDate(y, m, d);
+    saveDraft();
+  });
 
   api.validate = () => {
     const untouched = api.slots.every(x => x === null);
@@ -1071,7 +1113,12 @@ const spendDate = createDateField({
 });
 const sendDate = createDateField({
   input: sendDateInput, field: sendDateField, msg: sendDateMsg,
-  calBtn: sendDateCalBtn, required: true, prefillToday: true, nextEl: channelBox
+  calBtn: sendDateCalBtn, required: true, prefillToday: true
+  // nextEl used to jump straight to channelBox here — a leftover from
+  // before the two-column layout, when sendDate really was the field
+  // right before channel. Now party/spendDate/benef/nid sit between them,
+  // so that jump was skipping four required fields on Tab. Natural tab
+  // order (into partyInput next) is correct again without it.
 });
 
 // =========================================================
@@ -1273,8 +1320,10 @@ function findPersonById(id) {
 
 // Creates the person if the name is new, or updates their national ID if a
 // different one was typed for an existing match. Returns the person's id
-// (or null if the name was blank / the request failed).
-async function ensurePerson(name, nid) {
+// (or null if the name was blank / the request failed). `role` only files a
+// brand-new person under a tab of the people panel until a cheque gives them
+// a real one — see personInRole below.
+async function ensurePerson(name, nid, role) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) return null;
   const cleanNid = nid ? toEnDigits(nid).replace(/[^0-9]/g, '') : null;
@@ -1283,23 +1332,53 @@ async function ensurePerson(name, nid) {
     if (cleanNid && existing.national_id !== cleanNid) {
       try {
         await apiJson(`/people/${existing.id}`, { method: 'PUT', body: JSON.stringify({ national_id: cleanNid }) });
-        await fetchPeopleCache();
+        // Patch the one row we just changed instead of re-downloading every
+        // person: this sits on the path between the user pressing save and the
+        // cheque actually being written.
+        existing.national_id = cleanNid;
       } catch (e) {}
-      const updated = findPersonByName(trimmedName);
-      return updated ? updated.id : existing.id;
+      return existing.id;
     }
     return existing.id;
   }
   try {
     const created = await apiJson('/people', {
       method: 'POST',
-      body: JSON.stringify({ full_name: trimmedName, national_id: cleanNid }),
+      body: JSON.stringify({ full_name: trimmedName, national_id: cleanNid, role: role || null }),
     });
-    await fetchPeopleCache();
+    peopleCache.push(created);
     return created.id;
   } catch (e) {
     return null;
   }
+}
+
+// Owner, party and beneficiary are independent of one another, so resolving
+// them one await at a time cost three round-trips of dead time on every save
+// that introduced new names. They go together now — except when two of the
+// fields name the same *new* person, where firing parallel creates would race
+// and insert them twice; those share one call and reuse its id.
+async function ensurePeople(rec) {
+  const slots = [
+    { name: rec.owner, nid: null, role: 'owner' },
+    { name: rec.party, nid: null, role: 'party' },
+    { name: rec.benef, nid: rec.nid, role: 'benef' },
+  ];
+  const byName = new Map();
+  slots.forEach((s) => {
+    const key = normalizeName((s.name || '').trim());
+    if (!key) return;
+    // A slot carrying a national id wins the shared call, so the id is not lost.
+    if (!byName.has(key) || s.nid) byName.set(key, s);
+  });
+  const resolved = new Map();
+  await Promise.all([...byName.entries()].map(async ([key, s]) => {
+    resolved.set(key, await ensurePerson(s.name, s.nid, s.role));
+  }));
+  return slots.map((s) => {
+    const key = normalizeName((s.name || '').trim());
+    return key ? (resolved.get(key) ?? null) : null;
+  });
 }
 
 // Arabic/Persian look-alikes and stray spacing differ between typists; fold them
@@ -1325,12 +1404,24 @@ function writeStore(key, val) {
   catch (e) { return false; }
 }
 
-// Owners, parties and beneficiaries are no longer three separate lists —
-// they're the same shared /api/people table (see fetchPeopleCache above).
-// Which "role" a person plays is decided per-cheque (who was picked into
-// which field), not something fixed on the person record itself.
-function allOwners() { return peopleCache.map(p => p.full_name); }
-function allParties() { return peopleCache.map(p => p.full_name); }
+// Owners, parties and beneficiaries share one /api/people table (see
+// fetchPeopleCache above), but each form field only offers the people who
+// have actually played that role. Offering the whole table made every field
+// suggest every name, which is how a طرف حساب ended up proposed as a صاحب چک.
+// GET /api/people deliberately stays unfiltered: the pairing lives in the
+// cheques, both lists are already in memory, and scoping here costs one pass
+// over an array instead of another round-trip on a 480ms link.
+function peopleInRole(role) {
+  const roleIdx = buildRoleIndex();
+  return peopleCache.filter(p => personInRole(p, role, roleIdx));
+}
+function allOwners() { return peopleInRole('owner').map(p => p.full_name); }
+function allParties() { return peopleInRole('party').map(p => p.full_name); }
+// Every beneficiary, ignoring which party they belong to — for the filter bar,
+// where there is no party to scope against.
+function allBeneficiaries() {
+  return peopleInRole('benef').map(p => ({ name: p.full_name, nid: toFa(p.national_id || '') }));
+}
 
 // A national ID has to belong to exactly one person across the whole shared
 // list — this returns who currently holds it, if anyone (other than
@@ -1345,10 +1436,31 @@ function findNidOwner(nid, excludeName) {
   );
   return hit ? { name: hit.full_name, party: null } : null;
 }
-// Beneficiary suggestions used to be scoped to the selected party; the
-// shared list drops that scoping and offers every known person.
+// A cheque records the pair (party, beneficiary), so the beneficiary field is
+// scoped to the طرف حساب currently typed into the form: only the people this
+// party has actually paid. With no party chosen yet — or one that has no
+// cheques — the list is empty and the field falls back to "new person".
+// Reads the party field live rather than taking an argument, so the suggestion
+// list re-scopes itself the moment the party changes.
 function beneficiariesForParty() {
-  return peopleCache.map(p => ({ name: p.full_name, nid: p.national_id || '' }));
+  const party = normalizeName(partyInput.value.trim());
+  if (!party) return [];
+  const seen = new Map();
+  loadCheques().forEach(c => {
+    if (normalizeName(c.party || '') !== party) return;
+    const name = (c.benef || '').trim();
+    if (!name) return;
+    const key = normalizeName(name);
+    if (seen.has(key)) return;
+    // Prefer the person record: the cheque carries the name and nid as they
+    // were at write time, the record carries them as they are now.
+    const person = findPersonById(c.benefId) || findPersonByName(name);
+    seen.set(key, {
+      name: person ? person.full_name : name,
+      nid: toFa((person && person.national_id) || c.nid || ''),
+    });
+  });
+  return [...seen.values()];
 }
 
 // =========================================================
@@ -1375,10 +1487,45 @@ const newBenefNidInput = document.getElementById('newBenefNidInput');
 const benefPartySelectWrap = document.querySelector('.people-benef-party-select');
 if (benefPartySelectWrap) benefPartySelectWrap.style.display = 'none';
 
-// How many cheques currently use this person in a given role — shown next
-// to each entry so deleting one isn't a total guess.
-function countChequesUsing(idField, personId) {
-  return loadCheques().filter(c => c[idField] === personId).length;
+// A role belongs to the *cheque* — who was picked into which field — not to
+// the person, so a person's categories are counted off the cheques that
+// reference them. The same company really can be a طرف حساب on one cheque and
+// a ذینفع on another, and it belongs in both tabs.
+// personId -> { owner, party, benef } cheque counts. The suggestion lists ask
+// for this on every keystroke, so it is memoised against the cheque array
+// itself — checksCache is only ever replaced wholesale (never mutated in
+// place), which makes identity a sound staleness check.
+let roleIndexCache = null;
+let roleIndexSource = null;
+function buildRoleIndex() {
+  const cheques = loadCheques();
+  if (roleIndexCache && roleIndexSource === cheques) return roleIndexCache;
+  const idx = new Map();
+  const bump = (personId, role) => {
+    if (!personId) return;
+    let entry = idx.get(personId);
+    if (!entry) { entry = { owner: 0, party: 0, benef: 0 }; idx.set(personId, entry); }
+    entry[role]++;
+  };
+  cheques.forEach(c => {
+    bump(c.ownerId, 'owner');
+    bump(c.partyId, 'party');
+    bump(c.benefId, 'benef');
+  });
+  roleIndexSource = cheques;
+  roleIndexCache = idx;
+  return idx;
+}
+
+// Cheques decide the tab whenever there are any. With none, the person was
+// added by hand from the panel and falls back to the tab they were filed
+// under. A leftover from before roles existed has neither, so it shows in
+// every tab rather than disappearing from all three and becoming impossible
+// to rename or delete while still haunting the suggestion lists.
+function personInRole(person, role, roleIdx) {
+  const used = roleIdx.get(person.id);
+  if (used) return used[role] > 0;
+  return !person.role || person.role === role;
 }
 
 // A single row: shows plain (non-editable) text by default, with an edit
@@ -1416,29 +1563,32 @@ function peopleItemHtml(person, count, showNid) {
   </div>`;
 }
 
+// The count shown on a row is the count for *that* tab, so the delete button
+// only appears where the person really has no cheque holding them.
+function renderRoleList(box, role, showNid, rerender, emptyText) {
+  const roleIdx = buildRoleIndex();
+  const rows = peopleCache.filter(p => personInRole(p, role, roleIdx));
+  box.innerHTML = rows.length
+    ? rows.map(p => peopleItemHtml(p, (roleIdx.get(p.id) || {})[role] || 0, showNid)).join('')
+    : `<div class="people-empty">${emptyText}</div>`;
+  box.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender }));
+}
+
 function renderOwnersList() {
-  ownersListBox.innerHTML = peopleCache.length
-    ? peopleCache.map(p => peopleItemHtml(p, countChequesUsing('ownerId', p.id), false)).join('')
-    : '<div class="people-empty">هنوز هیچ شخصی ثبت نشده</div>';
-  ownersListBox.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender: renderOwnersList }));
+  renderRoleList(ownersListBox, 'owner', false, renderOwnersList, 'هنوز صاحب چکی ثبت نشده');
 }
 
 function renderPartiesList() {
-  partiesListBox.innerHTML = peopleCache.length
-    ? peopleCache.map(p => peopleItemHtml(p, countChequesUsing('partyId', p.id), false)).join('')
-    : '<div class="people-empty">هنوز هیچ شخصی ثبت نشده</div>';
-  partiesListBox.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender: renderPartiesList }));
+  renderRoleList(partiesListBox, 'party', false, renderPartiesList, 'هنوز طرف حسابی ثبت نشده');
 }
 
 function renderBenefList() {
-  benefListBox.innerHTML = peopleCache.length
-    ? peopleCache.map(p => peopleItemHtml(p, countChequesUsing('benefId', p.id), true)).join('')
-    : '<div class="people-empty">هنوز هیچ شخصی ثبت نشده</div>';
-  benefListBox.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender: renderBenefList }));
+  renderRoleList(benefListBox, 'benef', true, renderBenefList, 'هنوز ذینفعی ثبت نشده');
 }
 
-// Every tab renders the same shared list, so any add/edit/delete refreshes
-// all three at once (plus the cheque table, since names may be shown there).
+// The three tabs are three views of one shared people table, so any
+// add/edit/delete refreshes all of them at once (plus the cheque table, since
+// names may be shown there).
 function renderAllPeopleLists() {
   renderOwnersList();
   renderPartiesList();
@@ -1528,17 +1678,41 @@ function wirePeopleItem(item, cfg) {
   }
 }
 
+// Adding from a tab files the person under that tab. A name that already
+// exists is never inserted twice: if no cheque has given them a role yet they
+// simply move here, and if one has, they stay where their cheques put them and
+// the user is told why — the click used to just clear the box and look broken.
+async function addPersonToRole(role, name, nid) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return;
+  const existed = findPersonByName(trimmed);
+  const id = await ensurePerson(trimmed, nid, role);
+  if (id === null) { showToast('ثبت ناموفق بود'); return; }
+  if (!existed) return;                                   // brand new — already filed here
+  if (buildRoleIndex().has(id)) {
+    showToast(`«${existed.full_name}» ثبت شده و دسته‌اش از روی چک‌هایش تعیین می‌شود`);
+    return;
+  }
+  if (existed.role === role) { showToast(`«${existed.full_name}» از قبل در این دسته است`); return; }
+  try {
+    await apiJson(`/people/${id}`, { method: 'PUT', body: JSON.stringify({ role }) });
+    existed.role = role;
+  } catch (e) {
+    showToast(e.message || 'ذخیره ناموفق بود');
+  }
+}
+
 document.getElementById('addOwnerBtn').addEventListener('click', async () => {
   const name = newOwnerInput.value.trim();
   if (!name) return;
-  await ensurePerson(name);
+  await addPersonToRole('owner', name);
   newOwnerInput.value = '';
   renderAllPeopleLists();
 });
 document.getElementById('addPartyBtn').addEventListener('click', async () => {
   const name = newPartyInput.value.trim();
   if (!name) return;
-  await ensurePerson(name);
+  await addPersonToRole('party', name);
   newPartyInput.value = '';
   renderAllPeopleLists();
 });
@@ -1550,7 +1724,7 @@ document.getElementById('addBenefBtn').addEventListener('click', async () => {
     const conflict = findNidOwner(nid, name);
     if (conflict) { showToast(`این کد ملی قبلاً برای «${conflict.name}» ثبت شده`); return; }
   }
-  await ensurePerson(name, nid);
+  await addPersonToRole('benef', name, nid);
   newBenefNameInput.value = '';
   newBenefNidInput.value = '';
   renderAllPeopleLists();
@@ -1558,8 +1732,12 @@ document.getElementById('addBenefBtn').addEventListener('click', async () => {
 
 document.querySelectorAll('.people-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.people-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.people-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
     tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
     document.getElementById('peoplePanelOwners').style.display = tab.dataset.peopleTab === 'owners' ? 'block' : 'none';
     document.getElementById('peoplePanelParties').style.display = tab.dataset.peopleTab === 'parties' ? 'block' : 'none';
     document.getElementById('peoplePanelBenef').style.display = tab.dataset.peopleTab === 'benef' ? 'block' : 'none';
@@ -1607,6 +1785,16 @@ function positionDropdown(listEl, anchorEl) {
   left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
   let top = r.bottom + 6;
   if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  // These are viewport coordinates, which only work while the list has no
+  // ancestor carrying a transform, filter, backdrop-filter or perspective:
+  // any one of those quietly becomes the containing block for a fixed
+  // descendant and re-bases left/top onto its own padding box. That is how
+  // the person lists ended up hundreds of pixels from their field once the
+  // modal grew an open animation (transform, fill-mode both) and a blurred
+  // overlay. So every list this positions lives directly under <body> —
+  // keep it that way when adding new ones. Measuring the element back and
+  // correcting the delta does not work as a safety net here: menuIn scales
+  // the box while it opens, so the reading is wrong exactly when it is taken.
   listEl.style.left = left + 'px';
   listEl.style.top = top + 'px';
   listEl.style.width = w + 'px';
@@ -1640,7 +1828,11 @@ function createAutocomplete(cfg) {
       html += `<div class="ac-item" data-idx="${i}">${main}${sub}</div>`;
     });
     if (cfg.allowNew && !cfg.hasExact(query)) {
-      html += `<div class="ac-item ac-new" data-new="1"><span class="ac-main">${escapeHtml(query.trim())}</span><span class="ac-tag">${cfg.newLabel || 'مورد جدید'}</span></div>`;
+      // The label can depend on the query: a name that is new to *this* field
+      // may still be someone already on file under another role, and calling
+      // them "new" would suggest a second record is about to be created.
+      const newLabel = typeof cfg.newLabel === 'function' ? cfg.newLabel(query) : (cfg.newLabel || 'مورد جدید');
+      html += `<div class="ac-item ac-new" data-new="1"><span class="ac-main">${escapeHtml(query.trim())}</span><span class="ac-tag">${escapeHtml(newLabel)}</span></div>`;
     }
     if (html === '') {
       if (cfg.hideWhenEmpty) { close(); return; }   // nothing to offer — stay out of the way
@@ -1709,20 +1901,37 @@ function createAutocomplete(cfg) {
   return { close, render };
 }
 
+// A name typed by hand is folded onto the person already on file whenever one
+// matches, so ی/ک variants and stray spacing resolve to that record instead of
+// looking like someone new. The lookup is deliberately across the whole table,
+// not the role-scoped list: the *suggestions* are scoped, but a person is a
+// person, and a second row for the same human is never the right outcome.
+function foldOntoKnownPerson(input) {
+  const typed = input.value.trim();
+  if (!typed) return null;
+  const person = findPersonByName(typed);
+  if (person) input.value = person.full_name;
+  return person;
+}
+
+// Tag for the "create" row: honest about whether this really is a new person.
+const newPersonLabel = q => (findPersonByName(q) ? 'شخص موجود' : 'شخص جدید');
+
 // ---- صاحب چک ----
 const ownerAC = createAutocomplete({
   input: ownerInput, list: ownerList, field: ownerField,
   search: q => allOwners().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
-  allowNew: true, newLabel: 'شخص جدید',
+  allowNew: true, newLabel: newPersonLabel,
   hasExact: q => allOwners().some(x => normalizeName(x) === normalizeName(q)),
   pick: x => { ownerInput.value = x; },
+  // Leaving it empty isn't an error yet — a stray click-in-click-out with
+  // nothing typed shouldn't scold the user. That "required" check only
+  // matters at submit time (see the checks array there); blur here only
+  // catches something actually typed.
   onBlur: () => {
-    const typed = ownerInput.value.trim();
-    if (!typed) return;
-    const hit = allOwners().find(x => normalizeName(x) === normalizeName(typed));
-    if (hit) ownerInput.value = hit;           // fold onto the spelling already saved
-    validateOwner();
+    foldOntoKnownPerson(ownerInput);
+    if (ownerInput.value.trim()) validateOwner(); else ownerField.classList.remove('error');
   }
 });
 
@@ -1731,16 +1940,13 @@ const partyAC = createAutocomplete({
   input: partyInput, list: partyList, field: partyField,
   search: q => allParties().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
-  allowNew: true, newLabel: 'طرف حساب جدید',
+  allowNew: true, newLabel: q => (findPersonByName(q) ? 'طرف حساب موجود' : 'طرف حساب جدید'),
   hasExact: q => allParties().some(x => normalizeName(x) === normalizeName(q)),
-  pick: x => { partyInput.value = x; clearBeneficiaryPair(); },
+  pick: x => { partyInput.value = x; clearBeneficiaryPair(); benefAC.close(); nidAC.close(); },
   onType: () => clearBeneficiaryPair(),        // beneficiaries belong to a party
   onBlur: () => {
-    const typed = partyInput.value.trim();
-    if (!typed) return;
-    const hit = allParties().find(x => normalizeName(x) === normalizeName(typed));
-    if (hit) partyInput.value = hit;
-    validateParty();
+    foldOntoKnownPerson(partyInput);
+    if (partyInput.value.trim()) validateParty(); else partyField.classList.remove('error');
   }
 });
 
@@ -1753,22 +1959,42 @@ function clearBeneficiaryPair() {
 }
 
 // ---- ذینفع: name and national id are two views of the same record ----
+// Picking either one fills the other, in both directions, so the pair can
+// never end up describing two different people.
+function selectBeneficiary(p) {
+  benefInput.value = p.name;
+  nidInput.value = p.nid;
+  benefField.classList.remove('error');
+  nidField.classList.remove('error');
+  updateNidKind();
+}
+
 const benefAC = createAutocomplete({
   input: benefInput, list: benefList, field: benefField,
   search: q => beneficiariesForParty().filter(p => normalizeName(p.name).includes(normalizeName(q))),
   primary: p => p.name,
   secondary: p => p.nid,
-  allowNew: true, newLabel: 'شخص جدید',
+  allowNew: true, newLabel: newPersonLabel,
   hasExact: q => beneficiariesForParty().some(p => normalizeName(p.name) === normalizeName(q)),
   emptyText: 'برای این طرف حساب شخصی ثبت نشده',
-  pick: p => { benefInput.value = p.name; nidInput.value = p.nid; nidField.classList.remove('error'); updateNidKind(); },
+  pick: selectBeneficiary,
   onBlur: () => {
     const typed = benefInput.value.trim();
-    if (!typed) return;
+    if (!typed) { benefField.classList.remove('error'); return; }
     const hit = beneficiariesForParty().find(p => normalizeName(p.name) === normalizeName(typed));
-    if (hit) {                                  // already known under this party — reuse it
+    if (hit) {
+      // Already a beneficiary of this party — same record, so take its
+      // spelling and its national id rather than treating it as a new person.
       benefInput.value = hit.name;
       if (!nidInput.value.trim()) { nidInput.value = hit.nid; updateNidKind(); }
+    } else {
+      // Not one of this party's beneficiaries, but possibly someone already on
+      // file under another role. Fold onto that record so the save reuses it.
+      const person = foldOntoKnownPerson(benefInput);
+      if (person && person.national_id && !nidInput.value.trim()) {
+        nidInput.value = toFa(person.national_id);
+        updateNidKind();
+      }
     }
     validateBenef();
   }
@@ -1778,16 +2004,16 @@ const nidAC = createAutocomplete({
   input: nidInput, list: nidList, field: nidField,
   sanitize: v => toFa(toEnDigits(v).replace(/[^0-9]/g, '').slice(0, 11)),
   onType: () => updateNidKind(),
-  search: q => beneficiariesForParty().filter(p => toEnDigits(p.nid).includes(toEnDigits(q))),
+  search: q => beneficiariesForParty().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
   primary: p => p.nid,
   secondary: p => p.name,
   allowNew: false,
   hasExact: q => beneficiariesForParty().some(p => toEnDigits(p.nid) === toEnDigits(q)),
   hideWhenEmpty: true,
-  pick: p => { nidInput.value = p.nid; benefInput.value = p.name; benefField.classList.remove('error'); updateNidKind(); },
+  pick: selectBeneficiary,
   onBlur: () => {
     const typed = toEnDigits(nidInput.value).trim();
-    if (!typed) return;
+    if (!typed) { nidField.classList.remove('error'); return; }
     const hit = beneficiariesForParty().find(p => toEnDigits(p.nid) === typed);
     if (hit && !benefInput.value.trim()) benefInput.value = hit.name;
     validateNid();
@@ -1829,8 +2055,8 @@ function validateBenef() {
 }
 function updateNidKind() {
   const n = toEnDigits(nidInput.value).replace(/[^0-9]/g, '').length;
-  if (n === 10) nidKind.textContent = 'شخص حقیقی';
-  else if (n === 11) nidKind.textContent = 'شرکت حقوقی';
+  if (n === 10) nidKind.textContent = 'حقیقی';
+  else if (n === 11) nidKind.textContent = 'حقوقی';
   else nidKind.textContent = '';
 }
 
@@ -1936,7 +2162,7 @@ let channelActiveIdx = -1;
 
 function renderChannelOptions() {
   channelList.innerHTML = CHANNELS.map(c => `
-    <div class="ms-option${selectedChannels.includes(c.id) ? ' checked' : ''}" data-id="${c.id}">
+    <div class="ms-option${selectedChannels.includes(c.id) ? ' checked' : ''}" data-id="${c.id}" role="option" aria-selected="${selectedChannels.includes(c.id)}">
       <span class="ms-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
       <span class="ms-icon${c.mono ? '' : ' ms-icon-plain'}" style="background:${c.color}">${c.icon}</span>
       <span>${c.name}</span>
@@ -2025,6 +2251,7 @@ function openChannelList() {
   renderChannelOptions();
   channelList.classList.add('show');
   channelField.classList.add('open');
+  channelBox.setAttribute('aria-expanded', 'true');
   positionChannelList();
   window.addEventListener('scroll', positionChannelList, true);
   window.addEventListener('resize', positionChannelList);
@@ -2032,6 +2259,7 @@ function openChannelList() {
 function closeChannelList() {
   channelList.classList.remove('show');
   channelField.classList.remove('open');
+  channelBox.setAttribute('aria-expanded', 'false');
   channelActiveIdx = -1;
   window.removeEventListener('scroll', positionChannelList, true);
   window.removeEventListener('resize', positionChannelList);
@@ -2289,7 +2517,11 @@ function positionCalendar() {
 function openCalendarFor(target) {
   calendarMode = 'single';
   activeDateField = target;
-  calendarAnchorEl = target.input;
+  // Anchor to the whole bordered box, not the bare <input> — the calendar
+  // button now lives inside that same box, so the input's own rect is inset
+  // from the box's real right edge and anchoring to it landed the popup
+  // slightly off the field instead of flush against it.
+  calendarAnchorEl = target.input.closest('.date-input-wrap') || target.input;
   calFooterRange.classList.remove('show');
   calFooterSingle.classList.add('show');
   const m = parseInt(target.monthStr(), 10);
@@ -2550,7 +2782,7 @@ function apiCheckToRec(c) {
     channels: Array.isArray(c.channels) ? c.channels : [],
     notes: c.notes || '',
     receiptImage: c.receipt_image || '',
-    files: c.receipt_image ? [{ name: 'رسید', type: 'image/jpeg', dataUrl: c.receipt_image }] : [],
+    files: c.receipt_image ? [{ name: 'رسید.jpg', type: 'image/jpeg', dataUrl: c.receipt_image }] : [],
   };
 }
 
@@ -2679,10 +2911,9 @@ submitCheckBtn.addEventListener('click', async () => {
   }
 
   submitCheckBtn.disabled = true;
+  submitCheckBtn.textContent = 'در حال ثبت…';
   try {
-    const ownerId = await ensurePerson(rec.owner);
-    const partyId = await ensurePerson(rec.party);
-    const benefId = await ensurePerson(rec.benef, rec.nid);
+    const [ownerId, partyId, benefId] = await ensurePeople(rec);
 
     await apiJson('/checks', {
       method: 'POST',
@@ -2722,6 +2953,7 @@ submitCheckBtn.addEventListener('click', async () => {
     showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
   } finally {
     submitCheckBtn.disabled = false;
+    submitCheckBtn.textContent = 'ثبت چک';   // this path only ever runs while adding, so the label is always this one
   }
 });
 
@@ -2792,10 +3024,15 @@ async function commitSaveEdit() {
   const stored = loadCheques().find(x => x.id === editingChequeId);
   if (!stored) { closeModal(true); return; }
 
+  // The checkmark hides the instant it's clicked, but nothing here used to
+  // stop a second Enter/click from firing a second PUT while the first was
+  // still in flight, and the button gave no sign anything was happening in
+  // between — same gap the create path already had (see submitCheckBtn.disabled
+  // just below in that function).
+  submitCheckBtn.disabled = true;
+  submitCheckBtn.textContent = 'در حال ذخیره…';
   try {
-    const ownerId = await ensurePerson(rec.owner);
-    const partyId = await ensurePerson(rec.party);
-    const benefId = await ensurePerson(rec.benef, rec.nid);
+    const [ownerId, partyId, benefId] = await ensurePeople(rec);
 
     await apiJson(`/checks/${editingChequeId}`, {
       method: 'PUT',
@@ -2814,11 +3051,18 @@ async function commitSaveEdit() {
         channels: rec.channels,
       }),
     });
-    await loadChecksFromApi();
-    renderTable();
+    // Same rule the create path already follows: the board refresh is not on
+    // the path between "saved" and the modal being done with. Awaiting a full
+    // re-download of every cheque here is what made saving an edit feel slow.
+    loadChecksFromApi().then(renderTable).catch(() => {});
     closeModal(true);
   } catch (e) {
     showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
+    // Failed — put the confirm step back so the user can just try again
+    // instead of having to re-trigger "ذخیره تغییرات" from scratch.
+    submitCheckBtn.disabled = false;
+    submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
+    saveConfirmSlideBtn.classList.add('show');
   }
 }
 
@@ -2863,8 +3107,12 @@ clearFormBtn.addEventListener('click', async () => {
     submitCheckBtn.disabled = true;
     try {
       await apiJson(`/checks/${editingChequeId}`, { method: 'DELETE' });
-      await loadChecksFromApi();
+      // Drop it locally and repaint now, then reconcile with the server in the
+      // background — waiting for a full re-download left the just-deleted card
+      // sitting on the board.
+      checksCache = checksCache.filter((c) => c.id !== editingChequeId);
       renderTable();
+      loadChecksFromApi().then(renderTable).catch(() => {});
       closeModal(true);
     } catch (e) {
       showFormAlert('error', e.message || 'حذف در سرور ناموفق بود');
@@ -2928,6 +3176,7 @@ const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
 const filterClearBtn = document.getElementById('filterClearBtn');
 const boardColumns = document.getElementById('boardColumns');
 const boardWrap = document.getElementById('boardWrap');
+const boardStatusTabs = document.getElementById('boardStatusTabs');
 const tableEmpty = document.getElementById('tableEmpty');
 
 const STATUSES = [
@@ -3220,7 +3469,10 @@ function positionPopover(pop, btn) {
 function closePopover() {
   if (!activePopover) return;
   activePopover.classList.remove('show');
-  if (activePopoverBtn) activePopoverBtn.classList.remove('open');
+  if (activePopoverBtn) {
+    activePopoverBtn.classList.remove('open');
+    activePopoverBtn.setAttribute('aria-expanded', 'false');
+  }
   window.removeEventListener('scroll', repositionActivePopover, true);
   window.removeEventListener('resize', repositionActivePopover);
   activePopover = null;
@@ -3238,6 +3490,7 @@ document.querySelectorAll('.filter-pill-btn[data-pop]').forEach(btn => {
     closePopover();
     pop.classList.add('show');
     btn.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
     activePopover = pop;
     activePopoverBtn = btn;
     positionPopover(pop, btn);
@@ -3301,10 +3554,10 @@ let filterOwnerSelected = '';
 let filterPartySelected = '';
 let filterBenefSelected = '';
 function wireFilterAutocomplete(input, list, source, onSelect) {
-  input.addEventListener('input', () => {
-    const q = normalizeName(input.value);
-    if (!q) { list.classList.remove('show'); onSelect(''); refreshTable(); return; }
-    const matches = source().filter(x => normalizeName(typeof x === 'string' ? x : x.name).includes(q)).slice(0, 6);
+  // Renders and opens the dropdown for a given match set — shared by
+  // "focus, before anything is typed" (browse everyone) and "input"
+  // (narrow as you type), so both actually open the same list.
+  function showMatches(matches) {
     if (matches.length === 0) { list.classList.remove('show'); return; }
     list.innerHTML = matches.map(x => {
       const name = typeof x === 'string' ? x : x.name;
@@ -3324,14 +3577,28 @@ function wireFilterAutocomplete(input, list, source, onSelect) {
     });
     list.classList.add('show');
     positionDropdown(list, input);
+  }
+  input.addEventListener('input', () => {
+    const q = normalizeName(input.value);
+    if (!q) { onSelect(''); refreshTable(); showMatches(source().slice(0, 20)); return; }
+    showMatches(source().filter(x => normalizeName(typeof x === 'string' ? x : x.name).includes(q)).slice(0, 6));
     // no refreshTable() here — typing a partial name only updates the
     // suggestion list, it doesn't filter the table until one is picked
+  });
+  // The field's whole point is choosing from the people who already exist —
+  // opening on focus, with the field still empty, is what makes it browsable
+  // instead of a search box that only works if you already know the name.
+  input.addEventListener('focus', () => {
+    if (normalizeName(input.value)) return;   // typing already re-opens it
+    showMatches(source().slice(0, 20));
   });
   input.addEventListener('blur', () => setTimeout(() => list.classList.remove('show'), 120));
 }
 wireFilterAutocomplete(filterOwnerInput, filterOwnerList, allOwners, (name) => { filterOwnerSelected = name; });
 wireFilterAutocomplete(filterPartyInput, filterPartyList, allParties, (name) => { filterPartySelected = name; });
-wireFilterAutocomplete(filterBenefInput, filterBenefList, beneficiariesForParty, (name) => { filterBenefSelected = name; });
+// The filter bar has no party field to scope against, so it offers every
+// beneficiary rather than beneficiariesForParty()'s party-scoped subset.
+wireFilterAutocomplete(filterBenefInput, filterBenefList, allBeneficiaries, (name) => { filterBenefSelected = name; });
 
 // Filtering by status went away with the board: the three columns already
 // are that filter, and each one exports its own set from its header.
@@ -3367,9 +3634,8 @@ const reportBtn = document.getElementById('reportBtn');
 // statusId narrows the report to one board column — used by each column's
 // own PDF button; the toolbar's own button calls this with nothing, which
 // reports the whole filtered set exactly as before.
-function generateReport(statusId) {
-  let all = getFilteredCheques().slice().reverse();
-  if (statusId) all = all.filter(c => (c.status || 'pending') === statusId);
+function generateReport() {
+  const all = getFilteredCheques().slice().reverse();
   if (!all.length) { showToast('چکی برای گزارش‌گیری نیست'); return; }
   const [jy, jm, jd] = todayJalali();
   const totalAmount = all.reduce((sum, c) => sum + (parseInt(c.amount, 10) || 0), 0);
@@ -3635,16 +3901,20 @@ const ICON_AMOUNT = icon('amount');
 // the beneficiary rides along underneath as context, not the headline.
 // The national id rides along as a tooltip on the beneficiary instead of
 // a permanent line — real, but not worth a whole row just in case.
+// Set for exactly one renderTable() call, by applyStatus — see there.
+let justChangedId = null;
+
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const urgency = dueUrgencyClass(c);
   const nidTip = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
+  const justChanged = c.id === justChangedId ? ' just-changed' : '';
   // No role="button"/tabindex here: the card has no click or key handler —
   // it announced as a control that does nothing, and wrapping the real
   // buttons inside a role="button" hid them from assistive tech
   // (axe: nested-interactive). Dragging is a pointer enhancement; the
   // keyboard path to the same change is the status button inside.
-  return `<div class="check-card ${st.cls}" data-id="${c.id}">
+  return `<div class="check-card ${st.cls}${justChanged}" data-id="${c.id}">
     <div class="chk-row">
       <span class="chk-due${urgency}" data-tip="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
@@ -3680,12 +3950,54 @@ function boardColumnHtml(st) {
         ${st.name}
         <b class="board-col-count" id="boardColCount-${st.id}">۰</b>
       </span>
-      <button type="button" class="board-col-btn" data-report-status="${st.id}" title="گزارش PDF «${st.name}»" aria-label="گزارش PDF «${st.name}»">
-        ${icon('fileDown')}
-      </button>
     </div>
     <div class="board-col-list" id="boardColList-${st.id}"></div>
   </div>`;
+}
+
+// Below 860px only one column is on screen at a time and these tabs are what
+// switches between them, so the board scrolls vertically like the rest of the
+// page instead of trapping a sideways swipe inside the main content.
+let mobileBoardStatus = STATUSES[0].id;
+
+// Matches the 860px breakpoint the stylesheet switches the board at. Read live
+// rather than cached so a desktop window dragged narrow behaves correctly.
+const singleColumnBoardQuery = window.matchMedia('(max-width: 860px)');
+function isSingleColumnBoard() { return singleColumnBoardQuery.matches; }
+// Touch screens synthesise a mouseover on tap, which left the card tooltips
+// stuck on screen after a finger press with no pointer to move away.
+const hoverPointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+function boardStatusTabHtml(st) {
+  return `<button type="button" class="board-status-tab" data-status-tab="${st.id}" title="${st.name}"
+    role="tab" aria-selected="${st.id === mobileBoardStatus}" aria-controls="boardColList-${st.id}">
+    <span class="bst-dot" style="background:${st.color}"></span>
+    <span class="bst-name">${st.name}</span>
+    <b class="bst-count" id="boardTabCount-${st.id}">۰</b>
+  </button>`;
+}
+
+function applyMobileBoardStatus() {
+  document.querySelectorAll('.board-column').forEach((col) => {
+    col.classList.toggle('is-mobile-active', col.dataset.status === mobileBoardStatus);
+  });
+  document.querySelectorAll('.board-status-tab').forEach((tab) => {
+    const on = tab.dataset.statusTab === mobileBoardStatus;
+    tab.classList.toggle('active', on);
+    tab.setAttribute('aria-selected', String(on));
+  });
+}
+
+function ensureBoardStatusTabs() {
+  if (boardStatusTabs.children.length) return;
+  boardStatusTabs.innerHTML = STATUSES.map(boardStatusTabHtml).join('');
+  boardStatusTabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-status-tab]');
+    if (!tab) return;
+    mobileBoardStatus = tab.dataset.statusTab;
+    applyMobileBoardStatus();
+    updateBoardHeight();
+  });
 }
 
 // Builds the three columns once; renderTable() below only ever touches
@@ -3694,10 +4006,8 @@ function boardColumnHtml(st) {
 function ensureBoardColumns() {
   if (boardColumns.children.length) return;
   boardColumns.innerHTML = STATUSES.map(boardColumnHtml).join('');
-  boardColumns.addEventListener('click', (e) => {
-    const reportBtnEl = e.target.closest('[data-report-status]');
-    if (reportBtnEl) generateReport(reportBtnEl.dataset.reportStatus);
-  });
+  ensureBoardStatusTabs();
+  applyMobileBoardStatus();
   wireCardTooltips();
 }
 
@@ -3707,6 +4017,7 @@ function ensureBoardColumns() {
 // national id and the status dot's problem reason.
 const appTooltip = document.getElementById('appTooltip');
 function wireCardTooltips() {
+  if (!hoverPointerQuery.matches) return;
   boardColumns.addEventListener('mouseover', (e) => {
     const el = e.target.closest('[data-tip]');
     if (!el || el.dataset.tip === '') return;
@@ -3749,16 +4060,27 @@ function sortColumnChecks(list, statusId) {
 function renderTable() {
   ensureBoardColumns();
   const all = getFilteredCheques();
+  // "No checks at all" and "no checks match this filter" are different
+  // situations and need different screens. The big centered "ثبت اولین
+  // چک" empty state is only true when the company has never registered
+  // anything — checking that against the unfiltered cache, not the
+  // filtered list, is what stops a search/date/amount/people filter that
+  // simply has no matches from taking the whole board down with it. A
+  // filter emptying a column is exactly what each column's own "چکی در
+  // این وضعیت نیست" already says.
+  const nothingRegistered = loadCheques().length === 0;
 
   updateBoardCountBadge(all);
   // First render means the data is in — the loading skeleton can go.
   boardWrap.classList.remove('is-loading');
-  tableEmpty.style.display = all.length ? 'none' : 'flex';
-  boardColumns.style.display = all.length ? '' : 'none';
+  tableEmpty.style.display = nothingRegistered ? 'flex' : 'none';
+  boardColumns.style.display = nothingRegistered ? 'none' : '';
 
   STATUSES.forEach((st) => {
     const colChecks = sortColumnChecks(all.filter((c) => (c.status || 'pending') === st.id), st.id);
     document.getElementById(`boardColCount-${st.id}`).textContent = toFa(colChecks.length);
+    const tabCountEl = document.getElementById(`boardTabCount-${st.id}`);
+    if (tabCountEl) tabCountEl.textContent = toFa(colChecks.length);
     const listEl = document.getElementById(`boardColList-${st.id}`);
     listEl.innerHTML = colChecks.length
       ? colChecks.map(checkCardHtml).join('')
@@ -3903,6 +4225,10 @@ window.addEventListener('resize', updateBoardHeight);
 
   boardColumns.addEventListener('pointerdown', (e) => {
     if (e.button !== undefined && e.button !== 0) return; // left click / primary touch only
+    // Below 860px the board shows one status at a time, so there is no second
+    // column to drop onto — dragging there only fought the page scroll. The
+    // status button on the card is the way to move a cheque on a phone.
+    if (isSingleColumnBoard()) return;
     const card = cardUnderPointer(e.target);
     if (!card || isInteractiveChild(e.target)) return;
     // A prompt is waiting on an answer: this press abandons it (the card
@@ -4188,7 +4514,13 @@ async function applyStatus(id, status, reason) {
     rec.statusChangedAtIso = now.toISOString();
   }
   closeStatusMenu();
+  // One-shot: only the card that actually just moved plays the settle-in
+  // animation on this render, and only on this one — checkCardHtml reads it
+  // once and it's cleared immediately after, so neither the background
+  // reconcile fetch nor a later, unrelated re-render can replay it.
+  justChangedId = id;
   renderTable();
+  justChangedId = null;
 
   try {
     await apiJson(`/checks/${id}`, {
@@ -4441,26 +4773,68 @@ peSendBtn.addEventListener('click', () => {
 // ---- Image lightbox wiring ----
 lightboxCloseBtn.addEventListener('click', closeLightbox);
 lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
+function mimeOfDataUrl(dataUrl) {
+  const m = /^data:([^;,]+)/.exec(dataUrl || '');
+  return (m && m[1]) || 'image/jpeg';
+}
+// Some Android share targets (and at least one WebView build seen in the
+// wild) pick the share-sheet's file type from the *name*'s extension rather
+// than trusting the File's real MIME type, so a name with no extension can
+// make canShare()/share() itself fail there even though the type is correct
+// — which looks from the outside exactly like "share silently does nothing
+// and falls back to download". Every file handed to share() or download()
+// goes through this so that class of failure can't happen regardless of what
+// name a caller passes in.
+function extensionForMime(mime) {
+  if (mime === 'image/png') return 'png';
+  if (mime === 'image/webp') return 'webp';
+  return 'jpg';   // every receipt is saved via canvas.toDataURL('image/jpeg', …)
+}
+function withExtension(name, mime) {
+  const base = (name || 'cheque-photo').trim();
+  return /\.[a-z0-9]{2,4}$/i.test(base) ? base : `${base}.${extensionForMime(mime)}`;
+}
+
+// data: URL -> Blob, decoded synchronously (atob, no fetch/await). The image
+// is already sitting fully-decoded in lightboxImg.src, so this costs nothing
+// async — which matters, because navigator.share() only counts as triggered
+// by the tap if nothing awaited runs between the click and the call. The
+// previous version did `await fetch(...)` then `await res.blob()` first, so
+// on a real phone the click's "user activation" had already expired by the
+// time share() ran; every browser throws for that, the catch block quietly
+// ran lightboxDownloadBtn.click(), and the share button downloaded instead —
+// exactly the bug reported.
+function dataUrlToBlobSync(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  const binary = atob(dataUrl.slice(comma + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mimeOfDataUrl(dataUrl) });
+}
+
 lightboxDownloadBtn.addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = lightboxImg.src;
-  a.download = lightboxImg.dataset.filename || 'cheque-photo.jpg';
+  a.download = withExtension(lightboxImg.dataset.filename, mimeOfDataUrl(lightboxImg.src));
   document.body.appendChild(a);
   a.click();
   a.remove();
 });
 lightboxShareBtn.addEventListener('click', async () => {
+  if (!navigator.share) { lightboxDownloadBtn.click(); return; }   // no share sheet at all (typical on desktop)
   try {
-    const res = await fetch(lightboxImg.src);
-    const blob = await res.blob();
-    const file = new File([blob], lightboxImg.dataset.filename || 'cheque-photo.jpg', { type: blob.type });
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file] });
-    } else {
-      // no share sheet available (typical on desktop) — fall back to downloading it
+    const blob = dataUrlToBlobSync(lightboxImg.src);
+    const file = new File([blob], withExtension(lightboxImg.dataset.filename, blob.type), { type: blob.type });
+    if (navigator.canShare && !navigator.canShare({ files: [file] })) {
       lightboxDownloadBtn.click();
+      return;
     }
+    await navigator.share({ files: [file] });
   } catch (e) {
+    // The user backing out of the OS share sheet also rejects this promise
+    // (AbortError) — that is a deliberate "never mind", not a failure, and
+    // must not silently start a download on the way out.
+    if (e && e.name === 'AbortError') return;
     lightboxDownloadBtn.click();
   }
 });

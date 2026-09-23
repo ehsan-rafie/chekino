@@ -46,6 +46,8 @@ eyeToggle.addEventListener('click', () => {
   const isPassword = password.type === 'password';
   password.type = isPassword ? 'text' : 'password';
   eyeIcon.innerHTML = isPassword ? eyeClosed : eyeOpen;
+  eyeToggle.setAttribute('aria-pressed', String(isPassword));
+  eyeToggle.setAttribute('aria-label', isPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور');
 });
 
 const iconWarning = `<circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/>`;
@@ -86,7 +88,11 @@ loginForm.addEventListener('submit', async (e) => {
   }
 
   const submitBtn = loginForm.querySelector('button.submit');
+  const submitLabel = submitBtn.textContent;
+  let navigatingAway = false;
   submitBtn.disabled = true;
+  submitBtn.setAttribute('aria-busy', 'true');
+  submitBtn.textContent = 'در حال ورود…';
 
   try {
     const res = await fetch(`${API_BASE_URL}/login`, {
@@ -106,11 +112,18 @@ loginForm.addEventListener('submit', async (e) => {
 
     localStorage.setItem('chekino_token', data.token);
     showSuccess('ورود موفق');
+    navigatingAway = true;
     setTimeout(() => { window.location.href = '/'; }, 500);
   } catch (err) {
     showError('خطا در اتصال به سرور. اتصال اینترنت خود را بررسی کنید');
   } finally {
-    submitBtn.disabled = false;
+    // On success the page is already navigating away; restoring the idle label
+    // would flash "ورود به سیستم" over a form the user has finished with.
+    if (!navigatingAway) {
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-busy');
+      submitBtn.textContent = submitLabel;
+    }
   }
 });
 

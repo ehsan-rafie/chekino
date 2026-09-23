@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS people (
     full_name TEXT NOT NULL,
     national_id TEXT,
     phone TEXT,
+    -- Which tab of the people panel this person was filed under. Only a
+    -- fallback: once a cheque references them, their real roles are read off
+    -- the cheque. See migration_005_people_role.sql.
+    role TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

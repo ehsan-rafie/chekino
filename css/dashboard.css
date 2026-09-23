@@ -105,11 +105,35 @@ html, body {
   letter-spacing: 0.2px;
   user-select: none;
   flex-shrink: 0;
+  margin: 0;
+  font-weight: inherit;
 }
 .header-brand-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; margin-inline: 4px; }
+/* The company name used to sit bare in the header and was hidden outright
+   below 720px, so on a phone there was no way to tell which company you were
+   signed in as. It lives behind the account button now and reads the same at
+   every width. */
+.account-wrap { position: relative; display: flex; align-items: center; }
+.account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* Opens inward. The utility cluster sits at the inline-start edge of the
+     header, so anchoring the menu's start edge sent it off-screen on a phone. */
+  inset-inline-end: 0;
+  display: none;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-float);
+  box-shadow: 0 8px 24px -6px rgba(22, 21, 17, 0.18);
+  z-index: 250;
+}
+.account-menu.show { display: flex; animation: slideDown 0.16s ease; }
 .company-name {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--ink);
   font-variation-settings: var(--f-body);
   white-space: nowrap;
   overflow: hidden;
@@ -117,7 +141,7 @@ html, body {
   max-width: 220px;
   padding-inline: 2px;
 }
-@media (max-width: 720px) { .company-name, .header-brand-sep { display: none; } }
+@media (max-width: 720px) { .header-brand-sep { display: none; } }
 
 .header-utility {
   display: flex;
@@ -166,6 +190,26 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .logout-btn:hover { color: var(--state-bad-text); background: var(--error-bg); }
 .logout-btn svg { width: 19px; height: 19px; }
+.logout-btn:focus-visible,
+.account-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.account-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--rad-ctl);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.account-btn:hover,
+.account-btn[aria-expanded="true"] { color: var(--blue-600); background: var(--blue-100); }
+.account-btn svg { width: 19px; height: 19px; }
 
 .header-support-btn {
   display: none;   /* only shown on mobile — see the media query below */
@@ -469,24 +513,29 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .filter-clear-btn:hover { background: var(--error-bg); color: var(--error); }
 .filter-clear-btn svg { width: 13px; height: 13px; }
 
-/* summary strip: which filters are engaged and what they're set to */
+/* Summary strip: which filters are engaged and what they're set to, as the
+   second line of the same bordered bar the filter buttons live in — not a
+   block floating on its own further down the page. Empty and gone rather
+   than collapsed-and-animated: .board-toolbar's own gap only reserves space
+   for boxes that are actually there, so a plain :empty rule is enough,
+   nothing appears or shifts until a filter actually has something to say. */
 .active-filters-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: margin-top 0.15s ease;
 }
-.active-filters-row:not(:empty) { margin-top: 10px; max-height: none; overflow: visible; }
+.active-filters-row:empty { display: none; }
 .active-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px 4px 10px;
-  border-radius: var(--rad-card);
-  background: var(--blue-100);
+  height: 26px;
+  padding: 0 6px 0 12px;
+  /* Fully rounded — a tag reporting a value, not a control you press, the
+     same distinction the rest of the board draws between a pill and a
+     button. */
+  border-radius: var(--rad-pill);
+  background: var(--accent-wash);
   border: 1px solid var(--accent-line);
   color: var(--accent-text);
   font-size: 12px;
@@ -494,17 +543,17 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   white-space: nowrap;
 }
 .active-chip button {
-  width: 20px; height: 20px;
+  width: 18px; height: 18px;
   border: none; border-radius: 50%;
-  background: rgba(10,78,214,0.12);
-  color: var(--blue-900);
+  background: var(--surface);
+  color: var(--accent-text);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; flex-shrink: 0;
   transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .active-chip button:hover,
 .active-chip button:active { background: var(--error); color: #fff; transform: scale(1.1); }
-.active-chip button svg { width: 11px; height: 11px; }
+.active-chip button svg { width: 10px; height: 10px; }
 
 /* ---- Popovers: fixed, float above the table, never push it down ---- */
 .filter-popover {
@@ -831,7 +880,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
 .status-menu {
   position: fixed;
-  min-width: 190px;
+  /* 190px could not seat "ثبت وضعیت" and "انصراف" side by side once the
+     reason prompt opens inside this same menu. */
+  min-width: 210px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
@@ -908,13 +959,16 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .status-reason-actions { display: flex; gap: 6px; margin-top: 6px; }
 .status-reason-actions button {
   flex: 1;
-  padding: 8px;
+  padding: 8px 6px;
   border: none;
   border-radius: var(--rad-ctl);
   font-family: inherit;
   font-size: 13px;
   font-variation-settings: var(--f-label);
   cursor: pointer;
+  /* "ثبت وضعیت" broke onto two lines in the menu's width, leaving a 50px-tall
+     button beside a one-line one. */
+  white-space: nowrap;
 }
 .sr-save { background: var(--blue-hover); color: #fff; }
 .sr-cancel { background: var(--bg); color: var(--muted); }
@@ -1053,7 +1107,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   box-shadow: var(--shadow-2);
 }
 @media (min-width: 601px) {
-  .modal-box { max-width: 700px; max-height: 82vh; }
+  /* Wider than before (700px) on purpose: each column now puts two fields
+     side by side per row instead of one, so the same 700px that used to
+     hold one field's worth of width per column now has to hold two —
+     narrower than intended, to the point the تاریخ سررسید box couldn't
+     fit its own placeholder text. Widening the frame is the actual fix;
+     shrinking the placeholder further would just be papering over it. */
+  .modal-box { max-width: 900px; max-height: 82vh; }
 }
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
@@ -1096,16 +1156,60 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-body {
   padding: 14px 16px;
   overflow-y: auto;
+  /* A quiet cue that there's more to scroll to — fades in only near an
+     actual edge, not a fixed decoration, so it disappears once you're at
+     the top/bottom rather than nagging the whole time. */
+  background:
+    linear-gradient(var(--surface) 40%, rgba(255,255,255,0)),
+    linear-gradient(rgba(255,255,255,0), var(--surface) 60%) 0 100%,
+    radial-gradient(farthest-side at 50% 0, rgba(0,0,0,0.12), rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,0.12), rgba(0,0,0,0)) 0 100%;
+  background-repeat: no-repeat;
+  background-color: var(--surface);
+  background-size: 100% 36px, 100% 36px, 100% 10px, 100% 10px;
+  background-attachment: local, local, scroll, scroll;
 }
+/* A real two-column GRID, not two independent flex stacks. Independent
+   stacks drift apart the moment one row is taller than its counterpart
+   (the amount field's amount-words line under row 2 made every row after
+   it in this column sit lower than the matching row in the other column —
+   notes ended up next to nid/benef instead of across from it). A shared
+   grid's row tracks are the same height for both columns by definition,
+   so row N always lines up across N regardless of content height.
+   .ve-col-cheque/.ve-col-people stay in the markup (for the JS lock logic
+   and the section header each owns) but go display:contents so their
+   children become direct grid items placed by explicit column/row below. */
+.ve-columns { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 14px; align-items: start; }
+.ve-col-cheque, .ve-col-people { display: contents; }
+.ve-col-row { display: flex; gap: 12px; }
+.ve-col-row .form-field { min-width: 0; }
 @media (min-width: 601px) {
-  .modal-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px 16px;
-    align-items: start;
-    padding: 16px 20px;
-  }
-  .form-field.field-full { grid-column: 1 / -1; }
+  /* Grid column tracks number left-to-right regardless of the page's RTL
+     direction (unlike flex, which reverses with it) — column 1 is the
+     LEFT track here, so "چک" (meant to read on the right) is the one
+     that has to ask for column 2. */
+  #sectionCheque   { grid-column: 2; grid-row: 1; }
+  #sectionPeople   { grid-column: 1; grid-row: 1; }
+  #rowSerialSayad  { grid-column: 2; grid-row: 2; }
+  #rowOwnerSend    { grid-column: 1; grid-row: 2; }
+  #rowDueAmount    { grid-column: 2; grid-row: 3; }
+  #rowPartySpend   { grid-column: 1; grid-row: 3; }
+  #notesField      { grid-column: 2; grid-row: 4; }
+  #rowBenefNid     { grid-column: 1; grid-row: 4; }
+  #fileField       { grid-column: 2; grid-row: 5; }
+  #channelField    { grid-column: 1; grid-row: 5; }
+}
+@media (max-width: 600px) {
+  /* Below the modal's own mobile breakpoint everything already goes
+     single-column full-width (.modal-box itself goes full-screen here —
+     see the max-width:601px rule elsewhere), so a field-pair row would
+     just be two half-width boxes on an already-narrow phone. Stack them
+     instead: the flex-basis ratios above only mean anything once a row
+     actually has two fields side by side. The explicit grid-row/column
+     placement above is desktop-only, so mobile just falls back to plain
+     DOM order in a single column. */
+  .ve-columns { grid-template-columns: 1fr; }
+  .ve-col-row { flex-direction: column; }
 }
 
 .form-field {
@@ -1113,20 +1217,23 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   margin-bottom: 14px;
 }
 .form-field:last-child { margin-bottom: 0; }
-/* serialField ends up as the only child of its own wrapper (split off so
-   sayadField could sit outside the view-mode inert boundary — see
-   #sayadField/.sayad-static), which makes the :last-child rule above
-   strip its bottom margin even though sayadField visually follows right
-   after it. Restoring it explicitly keeps the two fields from touching. */
-#serialField { margin-bottom: 14px; }
+/* Every field that lives inside the cheque form's two-column grid
+   (.ve-columns) gets its vertical spacing from the grid's own row-gap now,
+   not from its own margin — a field keeping its 14px margin ON TOP of the
+   grid gap is exactly how row N drifted out of alignment with the other
+   column's row N (see .ve-columns above). This used to be patched one ID
+   at a time (#amountField, #nidField, then .ve-col-row .form-field) each
+   time a new field hit the same trap; zeroing every .form-field under
+   .ve-columns in one rule is what actually closes it off for good. */
+.ve-columns .form-field { margin-bottom: 0; }
 
 .form-field input {
   width: 100%;
-  height: 46px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
   color: var(--ink);
@@ -1143,11 +1250,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: none;
   align-items: center;
   width: 100%;
-  height: 46px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
   font-variation-settings: var(--f-value);
   color: var(--ink);
@@ -1166,19 +1273,20 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   text-align: right;
 }
 
+/* A plain label sitting above its field, in normal flow — not the notched-
+   border overlay this used to be. That style packed a second line of text
+   (the placeholder, inside the field) right underneath an already-small
+   label sitting ON the border, which is exactly the crowding this was
+   asked to fix. The label is simply the field's first child now — see the
+   HTML — so no absolute positioning is needed to put it "above" anything. */
 .form-field label {
-  position: absolute;
-  z-index: 2;
-  right: 14px;
-  top: -8px;
-  padding: 0 4px;
-  font-size: 12px;
-  color: var(--muted);
-  background: var(--surface);
-  font-variation-settings: var(--f-label);
   display: flex;
   align-items: center;
   gap: 2px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  font-variation-settings: var(--f-label);
 }
 .form-field label .req { color: var(--error); }
 .form-field label .opt { color: var(--muted); font-variation-settings: var(--f-hint); }
@@ -1186,7 +1294,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .form-field input:focus {
   border-color: var(--blue-600);
 }
-.form-field input:focus ~ label { color: var(--blue-600); }
+/* The label stays the same muted color whether the field is focused or
+   not — the input's own border+ring already carries the focus signal, so
+   turning the label blue too was a second, redundant emphasis on top of
+   it rather than a real signal of its own. */
 
 .form-field.error input {
   border-color: var(--error);
@@ -1209,40 +1320,52 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .date-input-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
-  position: relative;
-}
-.date-mask-input {
-  flex: 1;
-  height: 46px;
-  padding: 0 14px;
+  gap: 4px;
+  height: 40px;
+  padding: 0 12px 0 4px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
+  position: relative;
+  transition: border-color 0.15s ease;
+}
+.date-input-wrap:focus-within {
+  border-color: var(--blue-600);
+}
+.form-field .date-mask-input,
+.form-field .date-mask-input:focus {
+  flex: 1;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
   direction: ltr;
-  text-align: left;
+  text-align: center;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 15px;
   font-variation-settings: var(--f-num);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   color: var(--ink);
   caret-color: var(--blue-600);
   outline: none;
   min-width: 0;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.date-mask-input:focus {
-  border-color: var(--blue-600);
-}
-.date-mask-input::placeholder { color: var(--muted); letter-spacing: 0; font-variation-settings: var(--f-hint); text-align: right; }
-.date-field.error .date-mask-input { border-color: var(--error); }
-.date-field.error .date-mask-input:focus { border-color: var(--error); }
+/* Same alignment as the value itself — the placeholder used to sit
+   right-aligned while typed digits were left-aligned, so the moment you
+   clicked in, the text visibly jumped from one side of the box to the
+   other. Centering both means nothing moves at the handoff. */
+.date-mask-input::placeholder { color: var(--muted); letter-spacing: 0; font-variation-settings: var(--f-hint); text-align: center; }
+.date-field.error .date-input-wrap { border-color: var(--error); }
+.date-field.error .date-input-wrap:focus-within { border-color: var(--error); }
 
 .amount-box {
   display: flex;
   align-items: center;
-  height: 46px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
@@ -1283,9 +1406,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .amount-unit {
   flex-shrink: 0;
-  margin-right: 10px;
+  margin-right: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2, rgba(0,0,0,0.045));
   color: var(--muted);
-  font-size: 15px;
+  font-size: 12px;
   font-variation-settings: var(--f-micro);
 }
 .amount-words {
@@ -1302,6 +1428,30 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   direction: rtl;
   text-align: right;
 }
+/* A corner badge on the INPUT itself, not an inline suffix like "ریال" on
+   the amount field (tried first — it moved with the digits and ate into
+   their own room as the label text changed length) and not anchored to
+   the whole #nidField either — #nidField's own position:relative context
+   starts at the <label> above the input, so top:-8px from there would sit
+   over the label, not over the input's border. .nid-box is a bare,
+   invisible wrapper around just the input for exactly this: it has no
+   border/background of its own, it exists purely so the badge has the
+   right box to anchor to. */
+.nid-box { position: relative; }
+.nid-kind {
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  z-index: 1;
+  background: var(--surface);
+  padding: 0 4px;
+  color: var(--blue-600);
+  font-size: 11px;
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.nid-kind:empty { display: none; }
 .form-field #nidInput {
   direction: ltr;
   text-align: left;
@@ -1350,13 +1500,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variation-settings: var(--f-micro);
 }
 .ac-new .ac-tag { color: var(--success); }
-.nid-kind {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--success);
-  font-variation-settings: var(--f-micro);
-  min-height: 18px;
-}
 .ac-empty {
   padding: 12px;
   font-size: 13px;
@@ -1369,13 +1512,13 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .form-field .notes-input {
   width: 100%;
   height: auto;
-  min-height: 46px;
-  padding: 10px 14px;
+  min-height: 40px;
+  padding: 9px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-variation-settings: var(--f-body);
   color: var(--ink);
   direction: rtl;
@@ -1400,11 +1543,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .ms-field { position: relative; }
 .ms-box {
   width: 100%;
-  min-height: 46px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border: 1.5px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
@@ -1447,7 +1590,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
   padding: 6px;
-  z-index: 500;
+  /* Above the modal overlay (300), below the calendar (601) — it lives outside
+     the modal so this number is actually comparable against them. */
+  z-index: 600;
   display: none;
   max-height: 260px;
   overflow-y: auto;
@@ -2150,14 +2295,26 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 4px 0 14px;
+  /* No margin of its own — it's a grid row now (see .ve-columns), and the
+     grid's own row-gap already spaces it from the row below. A margin here
+     on top of that gap would double the space, which is exactly the kind
+     of drift that threw rows out of sync between the two columns before. */
+  margin: 0;
 }
-.form-section:first-child { margin-top: 0; }
 .form-section span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
+  font-weight: 600;
   color: var(--blue-700);
   font-variation-settings: var(--f-label);
   white-space: nowrap;
+}
+.form-section span svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 .form-section .line {
   flex: 1;
@@ -2166,9 +2323,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 
 .date-cal-btn {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border: none;
+  border-radius: var(--rad-sm, 6px);
   background: none;
   color: var(--muted);
   display: flex;
@@ -2176,10 +2334,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
-.date-cal-btn:hover { color: var(--blue-600); }
-.date-cal-btn svg { width: 19px; height: 19px; }
+.date-cal-btn:hover { color: var(--blue-600); background: var(--surface-2, rgba(0,0,0,0.04)); }
+.date-cal-btn svg { width: 17px; height: 17px; }
 
 /* ---- Calendar popup: centered on mobile, anchored dropdown on desktop ---- */
 .cal-backdrop {
@@ -2409,6 +2567,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .btn-submit:hover { background: var(--blue-hover); }
+/* The only visible sign a save was in flight used to be the button quietly
+   refusing clicks — no dimming, no cursor change, nothing distinguishing "the
+   request is running" from "the button is just broken." */
+.btn-submit:disabled { opacity: 0.65; cursor: progress; pointer-events: none; }
+.save-confirm-slide:disabled { opacity: 0.5; cursor: progress; pointer-events: none; }
 .btn-submit.pending-confirm {
   background: var(--surface);
   color: var(--blue-700);
@@ -2869,22 +3032,29 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    in the app now gets the same ring, at the same strength. */
 .form-field input,
 .sayad-static,
-.date-mask-input,
 .amount-input,
 .notes-input,
 .ac-input {
-  height: var(--h-lg);
+  /* --h-lg (48px) — a later, equal-specificity rule than the .form-field
+     input etc. declarations above, so THIS one was the one actually
+     winning by source order regardless of what those said. Down to
+     --h-md (40px): the same token the rest of the dashboard's own
+     controls use, which is the "narrower, matching the dashboard's own
+     buttons" ask — not a new hardcoded number. */
+  height: var(--h-md);
   transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
+.date-input-wrap { height: var(--h-md); transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
 .form-field input:focus,
-.date-mask-input:focus,
 .amount-box:focus-within,
+.date-input-wrap:focus-within,
 .notes-input:focus,
 .ac-field:focus-within .ac-input {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px var(--accent-wash);
 }
-.form-field.error input:focus { box-shadow: 0 0 0 3px var(--state-bad-bg); }
+.form-field.error input:focus,
+.date-field.error .date-input-wrap:focus-within { box-shadow: 0 0 0 3px var(--state-bad-bg); }
 
 /* ── 10 · Overlays match the command palette's own treatment ──
    The palette blurs the page behind it; the cheque form and the confirm
@@ -2977,19 +3147,77 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
      lengths. Equal-height columns give one clean full-height rule. */
   align-items: stretch;
 }
+/* The status tabs only exist below 860px, where the board shows one column
+   at a time. Above that all three columns are side by side and the tabs
+   would have nothing to switch. */
+.board-status-tabs { display: none; }
+
 @media (max-width: 860px) {
-  /* Three columns can't share a phone-width screen, so the board becomes
-     a horizontal, snap-scrolling row instead — swipe sideways between
-     statuses, the same gesture a Kanban board teaches on any device. */
-  .board-columns {
+  /* Three columns can't share a phone-width screen. An earlier pass made the
+     board swipe sideways; that put a horizontal gesture on the page's main
+     content, where it fought the vertical page scroll and hid two thirds of
+     the board behind an edge with no affordance. Now the tabs above pick the
+     column and the board scrolls vertically like everything else. */
+  .board-status-tabs {
     display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    padding-bottom: var(--s2);
-    margin-inline: calc(-1 * var(--page-gutter));
-    padding-inline: var(--page-gutter);
+    gap: var(--s2);
+    margin-bottom: var(--s3);
   }
-  .board-column { flex: 0 0 82%; scroll-snap-align: start; }
+  .board-status-tab {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--rad-ctl);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: var(--t-cap);
+    font-variation-settings: var(--f-label);
+    cursor: pointer;
+    transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
+  }
+  .board-status-tab .bst-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .board-status-tab .bst-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .board-status-tab .bst-count {
+    flex-shrink: 0;
+    font-variation-settings: var(--f-value);
+  }
+  .board-status-tab.active {
+    color: var(--ink);
+    border-color: var(--blue-600);
+    background: var(--blue-100);
+  }
+  .board-status-tab:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Child selectors on purpose: the base `.board-column { display: flex }`
+     is declared further down this file, and a media query adds no
+     specificity of its own, so a bare `.board-column` here would lose to it. */
+  .board-columns { display: block; }
+  .board-columns > .board-column { display: none; }
+  .board-columns > .board-column.is-mobile-active { display: flex; }
+  /* The gradient rule stays — it is what ties the list below to the status
+     colour. Only the title chip goes, since the tab above already says the
+     same name and count. */
+  .board-columns > .board-column.is-mobile-active .board-col-badge { display: none; }
+  .board-columns > .board-column.is-mobile-active .board-col-head { min-height: 0; }
 }
 
 .board-column {
@@ -3016,6 +3244,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 /* ---- The card itself ---- */
 .check-card {
+  position: relative;   /* anchors ::before below — without this the dotted line would
+                            position itself against whichever ancestor happens to be
+                            positioned instead of the card, the exact containing-block
+                            mistake that already caused real bugs elsewhere this session */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--rad-card);
@@ -3031,7 +3263,61 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   touch-action: pan-y;   /* vertical scroll still works; the drag handler owns horizontal/press-hold */
 }
 .check-card:hover { border-color: var(--border-strong); }
+/* A real Sayad cheque book has a perforated tear line between the cheque
+   and its stub. This is the one visual detail on the card that has nothing
+   to do with any generic dashboard template — it only makes sense because
+   the thing being represented is literally a cheque. Sits inside the
+   card's own top padding, so it costs no extra height and can't push any
+   row of content down. Purely decorative: aria-hidden, no pointer events. */
+.check-card::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: var(--s3);
+  right: var(--s3);
+  height: 3px;
+  background-image: radial-gradient(circle, var(--border-strong) 1.3px, transparent 1.5px);
+  background-size: 7px 3px;
+  background-repeat: repeat-x;
+  background-position: top center;
+  opacity: 0.55;
+  pointer-events: none;
+}
 .check-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* A cheque landing in its new column after a status change used to just
+   snap into place with the rest of the board re-render — same board, same
+   cards, nothing telling you which one just moved or that anything actually
+   happened. renderTable() rebuilds every card from scratch on every change,
+   so this can't be a transition on "the same element" the way a hover state
+   is; the moved cheque's fresh card is marked with .just-changed for exactly
+   one render (see applyStatus in dashboard.js) and plays a small settle-in
+   bounce with a ring in that column's own status color, then the class and
+   the animation are both gone for good — never replays on an unrelated
+   re-render (a background refetch, another cheque's own status change). */
+.check-card.just-changed { animation: cardSettleIn 0.55s var(--ease-out) both; }
+.check-card.just-changed.st-done    { animation-name: cardSettleInDone; }
+.check-card.just-changed.st-problem { animation-name: cardSettleInProblem; }
+@keyframes cardSettleIn {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(18, 58, 154, 0.35); }
+  45%  { transform: scale(1.012); }
+  100% { transform: scale(1); box-shadow: 0 0 0 11px rgba(18, 58, 154, 0); }
+}
+@keyframes cardSettleInDone {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(20, 128, 92, 0.4); }
+  45%  { transform: scale(1.012); }
+  100% { transform: scale(1); box-shadow: 0 0 0 11px rgba(20, 128, 92, 0); }
+}
+@keyframes cardSettleInProblem {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(194, 69, 60, 0.4); }
+  45%  { transform: scale(1.012); }
+  100% { transform: scale(1); box-shadow: 0 0 0 11px rgba(194, 69, 60, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check-card.just-changed,
+  .check-card.just-changed.st-done,
+  .check-card.just-changed.st-problem { animation: none; }
+}
 
 /* Three rows, always the same two fields in the same spots — but not the
    same weight. Row 1 is bookkeeping (serial, due date): small and muted,
@@ -3172,25 +3458,29 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 }
 .board-page-actions .icon-action .ia-label { display: none; }
 
+/* Column, not row: .board-search-box is the one-line bar, and the active-
+   filter chips (when there are any) stack directly under it as a second
+   line in the same frame — stretch so both children span the bar's full
+   width instead of shrinking to their own content and centering. */
 .board-toolbar {
   display: flex;
-  align-items: center;
-  gap: var(--s3);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   margin-bottom: var(--s4);
 }
-/* One bar across the full width of the board below it: search, the filter
-   pills and "clear filters" grouped at the start, the report/export
-   cluster pinned to the far end inside the same frame — so the bar spans
-   the same span the three columns do, with nothing floating outside it. */
+/* No enclosing card — the search box, each filter pill and the clear button
+   already carry their own border (see below), so a frame around all of them
+   together was double-framing, not adding information. Splitting the report
+   cluster onto a row of its own (tried once) fixed the mobile wrap this was
+   chasing, but on desktop — where there was never a width problem — it just
+   left an idle second line under a bar with plenty of room. Back to one row;
+   see the 700px query below for how the mobile case is actually handled. */
 .board-search-box {
   display: flex;
   align-items: center;
   gap: var(--s2);
   width: 100%;
-  padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
-  background: var(--surface);
 }
 .board-search-box .search-box {
   flex: 0 1 320px;
@@ -3211,9 +3501,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   opacity: 0.8;
 }
 .board-search-box .search-box:focus-within .search-kbd { display: none; }
-/* The one auto margin in the bar, and it's inside a single bordered
-   frame — so the space it opens reads as the bar's own span, not as two
-   disconnected clusters with a dead gap between them. */
+/* The one auto margin in the bar pins the report cluster to the far end
+   (the left edge, in this RTL layout) without it needing a row of its own. */
 .board-search-box .export-cluster { margin-inline-start: auto; }
 
 /* Date / amount / people — filtering by status went with the board,
@@ -3231,6 +3520,12 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-search-box .filter-pill-btn.active svg,
 .board-search-box .filter-pill-btn.open svg { opacity: 1; }
 .board-search-box .filter-clear-btn { height: 34px; flex-shrink: 0; }
+/* .icon-action's own border is 1px everywhere else it's used; next to the
+   pills' 1.5px it read as a mismatched, thinner outline on the one button
+   that's actually part of this same row. Matching it here is scoped to this
+   row on purpose — the 1px weight is correct wherever else .icon-action
+   appears on its own. */
+.board-search-box .icon-action { border-width: 1.5px; }
 
 @media (max-width: 860px) {
   .board-search-box .filter-pill-btn span,
@@ -3240,10 +3535,16 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .board-page-head { flex-wrap: wrap; }
   .board-page-actions { width: 100%; }
   .board-page-actions .add-check-btn { flex: 1; justify-content: center; }
-  .board-toolbar { flex-wrap: wrap; }
   .board-search-box { flex-wrap: wrap; }
   .board-search-box .search-box { max-width: none; flex-basis: 100%; }
-  .board-search-box .export-cluster { margin-inline-start: 0; }
+  /* No reset here for .export-cluster's margin-inline-start:auto — this
+     used to zero it out on the theory that it looked odd once the search
+     box wrapped onto its own line. What it actually did was leave the
+     report cluster stranded with a plain item-gap after the pills instead
+     of being pushed the rest of the way to the true end of the line, so a
+     wide stretch of the row past it sat empty while it looked "not quite at
+     the edge." Left alone, the auto margin does what it always does: push
+     the cluster flush against the far end of whichever line it's on. */
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3347,26 +3648,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variation-settings: var(--f-num);
 }
 
-/* Export-this-column-to-PDF stays out of the way until the column is
-   hovered, then sits at the head's far end. */
-.board-col-btn {
-  width: 26px; height: 26px;
-  display: none;              /* revealed on column hover, see below */
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--rad-ctl);
-  background: transparent;
-  color: var(--muted);
-  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
-}
-/* flex-end, not center: the title chip and the export button both stand on
-   the rule, so their bottom edges are what should line up. */
+/* flex-end, not center: the title chip stands on the rule, so its bottom
+   edge is what should line up with it. */
 .board-col-head { display: flex; align-items: flex-end; justify-content: space-between; }
-.board-col-btn svg { width: 15px; height: 15px; }
-.board-col-btn:hover { background: var(--surface); color: var(--ink); }
-.board-column:hover .board-col-btn,
-.board-col-btn:focus-visible { display: inline-flex; }
 
 .board-col-list { padding: 0; }
 
@@ -3419,12 +3703,31 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .theme-toggle-btn,
   .logout-btn,
   .header-support-btn,
-  .board-col-btn,
   .board-page-actions .icon-action,
   .search-clear { width: 44px; height: 44px; }
 
-  .status-dot-btn { width: 40px; height: 40px; }
-  .status-dot-btn svg { width: 19px; height: 19px; }
+  /* The card's action strip is the one place where 44px boxes stacked up into
+     a band thicker than the data above it. The glyphs shrink back to
+     desktop-ish size and an invisible pseudo-element carries the 44px tap
+     area instead, so the strip reads thin without shrinking the target. */
+  .check-card .eye-btn,
+  .check-card .receipt-btn { width: 32px; height: 32px; position: relative; }
+  .status-dot-btn { width: 30px; height: 30px; position: relative; }
+  .status-dot-btn svg { width: 15px; height: 15px; }
+  .check-card .eye-btn::after,
+  .check-card .receipt-btn::after,
+  .status-dot-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  .chk-row-bottom { margin-top: 7px; padding-top: 5px; }
+  /* Dragging is off at this width, so the card must not advertise it. */
+  .check-card { cursor: default; }
 
   .board-search-box .search-box,
   .board-search-box .filter-pill-btn,
@@ -3437,6 +3740,62 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 
   .chk-icon-group { gap: 8px; }
   .row-actions { gap: 4px; }
+
+  /* min-width above stops the label pushing the box wider, but the label
+     itself was still there underneath — a tap has no real hover to leave,
+     so on some phones the tap left it stuck in :hover/:focus-visible and the
+     "گزارش‌گیری" drawer that's supposed to be a mouse-only reveal stayed
+     open. Removing the label outright removes the animation with it,
+     instead of trying to tame a hover state touch was never going to have
+     cleanly. The two export-opt buttons drop their text the same way, so
+     opening the report menu turns two icons on instead of unrolling a wide
+     labelled banner that pushes onto a row of its own. */
+  .icon-action .ia-label { display: none; }
+  .export-opt span { display: none; }
+  /* Same icon-only treatment for "حذف فیلتر": with a filter active this
+     button sits on the same line as the pills and the report cluster, and
+     its own text was the last thing standing between that line fitting and
+     wrapping. aria-label carries the name now that the visible text is gone. */
+  .filter-clear-btn .fcb-label { display: none; }
+  .filter-clear-btn { width: 44px; min-width: 44px; padding: 0; justify-content: center; }
+  /* .icon-action's own min-width:44px above wins over this max-width:0 —
+     min-width always wins a conflict with max-width — so #reportBtn was
+     never actually collapsing away here, just sitting invisible at its full
+     44px plus the gap after it. That phantom width was exactly what pushed
+     the two icons past the room left on the pill row and onto one of their
+     own. */
+  .export-cluster.open #reportBtn { min-width: 0; }
+  /* Scoped to .open, not bare .export-opt — the closed state's own max-width:0
+     is what keeps these two invisible and out of the flow before a tap; an
+     unscoped override here would win on source order and hold them open at
+     36px even while "closed", which is worse than what this is fixing. */
+  .export-cluster.open .export-opt {
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    padding: 0;
+    justify-content: center;
+    position: relative;    /* carries the 44px tap target below without widening the box */
+  }
+  .export-cluster.open .export-opt::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  /* The one line the search box, the pills, the clear button and the report
+     cluster all still share (kept as one line on purpose — a second row here
+     read as messier than a tight one). Opening the report menu is what was
+     tipping this over: at 12px a side the three pills alone were already
+     using almost the whole line, so a filter's clear button plus two open
+     report icons had nowhere left to go and wrapped onto a row of their own.
+     8px keeps every pill readable while giving that combination the ~25px
+     more room it actually needs, measured empirically at 390px width with a
+     filter active and the report menu open — not a guess. */
+  .board-search-box .filter-pill-btn { padding: 0 8px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
