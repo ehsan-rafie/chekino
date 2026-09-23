@@ -10,3 +10,7 @@ doprax_vm.html
 *.log
 .DS_Store
 Thumbs.db
+
+# AI agent tooling (not part of the site)
+skills-lock.json
+.gstack/
