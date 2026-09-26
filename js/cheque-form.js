@@ -154,9 +154,98 @@
     return null;
   }
 
+  // ---- attachments (dashboard.js keeps them in the global `attachedFiles`) --
+  function files() {
+    try { return Array.isArray(attachedFiles) ? attachedFiles : []; } catch (e) { return []; }
+  }
+  let thumbsKey = '';
+  function renderThumbs() {
+    const box = $('cqfFiles');
+    const row = $('cqfFilesRow');
+    if (!box || !row) return;
+    const list = files();
+    const key = list.map((f) => f.name + ':' + (f.dataUrl || '').length).join('|');
+    row.hidden = !list.length;
+    if (key === thumbsKey) return;
+    thumbsKey = key;
+    box.innerHTML = '';
+    list.forEach((f) => {
+      const isImage = (f.type || '').startsWith('image/');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cq-thumb';
+      b.title = f.name || '';
+      if (isImage) {
+        const img = document.createElement('img');
+        img.src = f.dataUrl;
+        img.alt = f.name || 'عکس چک';
+        b.appendChild(img);
+        b.addEventListener('click', () => {
+          if (typeof openLightbox === 'function') openLightbox(f.dataUrl, f.name);
+        });
+      } else {
+        b.textContent = f.name || 'فایل';
+        b.classList.add('is-doc');
+      }
+      box.appendChild(b);
+    });
+  }
+
+  // ---- "N required fields left" chip in the modal header ---------------------
+  const remaining = $('cqRemaining');
+  if (remaining) {
+    remaining.addEventListener('click', () => {
+      const field = remaining.dataset.target && $(remaining.dataset.target);
+      if (!field) return;
+      const target = field.querySelector('input:not([type="file"]), textarea, .ms-box');
+      field.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (target) setTimeout(() => target.focus({ preventScroll: true }), 250);
+    });
+  }
+
+  // ---- optional details stay folded unless they hold something ---------------
+  const more = $('cqMore');
+  function hasOptional() {
+    return !!(val('spendDateInput') || val('notesInput') || files().length);
+  }
+  function syncMore() {
+    if (more) more.open = hasOptional();
+  }
+
+  // ---- copy the sayad id (view mode) -------------------------------------------
+  const copyBtn = $('cqfCopySayad');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const text = digits(val('sayadInput'));
+      if (!text) return;
+      const done = () => {
+        copyBtn.textContent = 'کپی شد';
+        setTimeout(() => { copyBtn.textContent = 'کپی'; }, 1400);
+        if (typeof showToast === 'function') showToast('شناسه صیادی کپی شد');
+      };
+      const legacy = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        ta.remove();
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(legacy);
+      } else {
+        legacy();
+      }
+    });
+  }
+
   // ---- render ---------------------------------------------------------------
   let last = '';
+  let wasLocked = null;
   function render() {
+    const locked = body.classList.contains('ve-locked');
     const serial = digits(val('serialInput'));
     const sayad = digits(val('sayadInput'));
     const amount = digits(val('amountInput')).replace(/^0+/, '');
@@ -165,12 +254,23 @@
     const benef = val('benefInput');
     const nid = digits(val('nidInput'));
     const snapshot = [
-      serial, sayad, amount, due && due.raw, owner, val('partyInput'), benef, nid,
-      val('sendDateInput'), channelNames().join(','), ($('veStatusBanner') || {}).className,
+      locked, serial, sayad, amount, due && due.raw, owner, val('partyInput'), benef, nid,
+      val('sendDateInput'), val('spendDateInput'), val('notesInput'), files().length,
+      channelNames().join(','), ($('veStatusBanner') || {}).className,
       CHECKS.map(([, f]) => (isErr(f) ? 1 : 0)).join(''),
+      isErr('spendDateField') || isErr('fileField'),
     ].join('|');
     if (snapshot === last) return;
     last = snapshot;
+
+    // Leaving view mode for the form: fold or unfold the optional details
+    // to match what this cheque actually has.
+    if (wasLocked === true && !locked) syncMore();
+    wasLocked = locked;
+    if (more && (isErr('spendDateField') || isErr('fileField'))) more.open = true;
+
+    // The cheque is the view — readable by assistive tech only when shown.
+    cheque.setAttribute('aria-hidden', locked ? 'false' : 'true');
 
     // Head: sayad id in four printed groups, serial beside it
     const sayadEl = $('cqcSayad');
@@ -201,7 +301,7 @@
     setFill('cqcAmount', amount && `${toFa(group(amount))}`, '—');
     const amountBox = cheque.querySelector('.cqc-amount-box');
     if (amountBox) amountBox.classList.toggle('is-filled', !!amount);
-    updateSignature(owner);
+    if (locked) updateSignature(owner);
 
     // Stub
     setFill('cqcStubSerial', serial && toFa(serial), '—');
@@ -216,26 +316,32 @@
       if (micr.textContent !== text) micr.textContent = text;
     }
 
-    // Stamp (view mode only)
+    // Stamp for the status
     const stamp = statusStamp();
     const stampEl = $('cqcStamp');
     if (stampEl) stampEl.textContent = stamp ? stamp.label : '';
     cheque.dataset.status = stamp ? stamp.cls : '';
 
-    // Side facts
+    // Key values repeated in readable type (shown only on narrow screens)
+    setFill('cqfAmount', amount && `${toFa(group(amount))} ریال`, '—');
+    setFill('cqfDue', due && toFa(`${due.y}/${String(due.m).padStart(2, '0')}/${String(due.d).padStart(2, '0')}`), '—');
+    setFill('cqfBenef', benef && (nid ? `${benef} (${toFa(nid)})` : benef), '—');
+    setFill('cqfOwner', owner, '—');
+    setFill('cqfSerial', serial && toFa(serial), '—');
     setFill('cqfParty', val('partyInput'), '—');
     const send = jalaliParts(val('sendDateInput'));
     setFill('cqfSend', send && toFa(val('sendDateInput')), '—');
     setFill('cqfChannels', channelNames().join('، '), '—');
+    const spend = jalaliParts(val('spendDateInput'));
+    setFill('cqfSpend', spend && toFa(val('spendDateInput')), '—');
+    setFill('cqfSayad', sayad && toFa(sayad.replace(/(\d{4})(?=\d)/g, '$1 ')), '—');
+    const notes = val('notesInput');
+    setFill('cqfNotes', notes, '');
+    const notesRow = $('cqfNotesRow');
+    if (notesRow) notesRow.hidden = !notes;
+    renderThumbs();
 
-    // Progress + step badges
-    const done = CHECKS.filter(isOk).length;
-    const pct = Math.round((done / CHECKS.length) * 100);
-    setFill('cqProgressText', `${toFa(done)} از ${toFa(CHECKS.length)}`, '');
-    const fill = $('cqProgressFill');
-    if (fill) fill.style.inlineSize = pct + '%';
-    const bar = fill && fill.parentElement;
-    if (bar) bar.classList.toggle('is-full', pct === 100);
+    // Section badges + the header chip
     [1, 2, 3].forEach((n) => {
       const step = $('cqStep' + n);
       if (!step) return;
@@ -243,31 +349,16 @@
       step.classList.toggle('is-done', need.every(isOk));
       step.classList.toggle('has-error', need.some(([, f]) => isErr(f)));
     });
+    if (remaining) {
+      const missing = CHECKS.filter((c) => !isOk(c));
+      remaining.hidden = locked;
+      remaining.classList.toggle('is-ready', missing.length === 0);
+      remaining.textContent = missing.length ? `${toFa(missing.length)} مورد ضروری مانده` : 'آماده‌ی ثبت';
+      remaining.dataset.target = missing.length ? missing[0][1] : '';
+      remaining.disabled = missing.length === 0;
+      remaining.title = missing.length ? 'رفتن به اولین مورد خالی' : '';
+    }
   }
-
-  // ---- "where does this go on the cheque?" ----------------------------------
-  // Focusing a field lights up the blank it fills on the cheque.
-  const FOCUS_MAP = {
-    serialInput: ['.cqc-serial', '#cqcStubSerial'],
-    sayadInput: ['.cqc-sayad'],
-    amountInput: ['.cqc-amount-box', '#cqcWords'],
-    dueDateInput: ['.cqc-datebox', '#cqcDueWords'],
-    ownerInput: ['.cqc-owner', '.cqc-sign'],
-    benefInput: ['#cqcBenef', '#cqcStubBenef'],
-    nidInput: ['#cqcNid'],
-  };
-  body.addEventListener('focusin', (e) => {
-    cheque.querySelectorAll('.is-focus').forEach((el) => el.classList.remove('is-focus'));
-    const sel = FOCUS_MAP[e.target.id];
-    if (sel) sel.forEach((s) => cheque.querySelectorAll(s).forEach((el) => el.classList.add('is-focus')));
-  });
-  body.addEventListener('focusout', () => {
-    setTimeout(() => {
-      if (!body.contains(document.activeElement) || !FOCUS_MAP[document.activeElement.id]) {
-        cheque.querySelectorAll('.is-focus').forEach((el) => el.classList.remove('is-focus'));
-      }
-    }, 0);
-  });
 
   // ---- wiring ---------------------------------------------------------------
   let raf = 0;
@@ -287,11 +378,16 @@
       last = '';
       signedFor = null;
       signPending = null;
+      thumbsKey = '';
       render();
+      syncMore();
+      // dashboard.js may fill a restored draft a moment after opening
+      setTimeout(syncMore, 200);
       timer = setInterval(render, 300);
     } else if (!open && timer) {
       clearInterval(timer);
       timer = 0;
+      wasLocked = null;
     }
   };
   new MutationObserver(watchOpen).observe(overlay, { attributes: true, attributeFilter: ['class'] });

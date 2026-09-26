@@ -408,6 +408,7 @@ function openViewEdit(id) { openModalForView(id); }
 function enterEditMode() {
   modalMode = 'editing';
   veHasEdited = true;
+  modalTitle.textContent = 'ویرایش چک';
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
   submitCheckBtn.textContent = 'ذخیره تغییرات';

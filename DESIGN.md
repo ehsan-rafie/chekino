@@ -89,23 +89,28 @@ due date beside it (saffron / red text with a dot when due soon / overdue),
 payee and amount in the middle, actions under a hairline. Hover: stronger
 border + lift shadow. Empty columns just say so in muted text.
 
-**Cheque form** (`css/cheque-form.css`). Three numbered sections separated by
-space and a hairline — no boxes. A section's number turns into a green check
-when its required fields are filled, red when one has an error. The amount is
-the single large field. A sticky side panel on `--surface-2` holds the live
-cheque, a thin progress bar and three facts. The inert wrappers
-`#veFieldsWrapA/A2/B/C` are what `lockFormFields()` makes inert in view mode;
-`#sayadField` stays outside them so its digits remain selectable.
+**Cheque window** (, ). One window, two
+faces, switched by the  class dashboard.js puts on :
 
-**The cheque** (`css/cheque.css`, `js/print.js`). Laid out like the printed
-leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id box,
-the date boxed and written out in words, the payment sentence with blanks,
-the amount in rial words, owner and a signature that draws itself once typing
-settles, and the MICR line. Its paper and faint guilloche are its own colours
-(dimmed in dark mode). Focusing a form field tints its blank on the cheque.
-In view mode a clean outlined stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت») sits
-over the stub. Sized in `em` off a container-query font size, so the leaf
-scales as one object.
+- *Add / edit — a plain form.* Three sections in the order the work
+  happens: «اطلاعات روی چک», «اشخاص», «ارسال برای ثبت». Each has one
+  sentence saying what it is for, and every field that is easy to mix up
+  (serial vs sayad id; owner vs party vs beneficiary; national id length)
+  carries a one-line  that steps aside when the field shows an
+  error. Optional fields (spend date, notes, photo) are folded into a
+  «جزئیات بیشتر» , opened automatically when they hold a value or
+  an error. The header chip  says how many required fields are
+  left («۳ مورد ضروری مانده» → «آماده‌ی ثبت») and jumps to the first empty
+  one. A section's number turns into a green check when it is complete.
+- *View — the cheque itself.* The status sentence, the drawn cheque with
+  its stamp, and below it only what the cheque doesn't carry (party, send
+  date, channels, spend date, notes, photos, sayad id with a copy button)
+  and the status history. On narrow screens the cheque's key values are
+  repeated in readable type. «ویرایش» switches to the form; saving returns
+  to the board.
+
+The inert wrappers  are what  makes
+inert in view mode;  stays outside them.
 
 **Floating surfaces.** 1px subtle border, radius 12–16, `--shadow-2`, a
 280ms rise. Overlays: `--scrim` with a light blur. Dropdowns and popovers
