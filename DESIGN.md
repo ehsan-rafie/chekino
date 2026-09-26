@@ -1,116 +1,127 @@
 ---
-version: minimal-1
-name: Chekino design system — minimal, one accent (Lajvard)
+version: heroui-1
+name: Chekino design system — HeroUI-style, one blue accent
 description: >
   An RTL Persian tool for registering Sayad cheques and tracking whether the
-  payee registered them. Minimal on purpose: a plain white field, hairlines
-  instead of shadows, one flat accent (lapis), and type and space doing the
-  structural work. The one illustrative element is a realistic drawing of
-  the Sayad cheque. Every value below is read out of css/shared.css.
+  payee registered them. The look follows HeroUI v3: a light grey canvas,
+  white cards that lift off it with a soft shadow instead of a border,
+  filled grey fields inside cards, pill-shaped buttons, chips and tabs, and
+  one blue accent. The one illustrative element is a realistic drawing of
+  the Sayad cheque, used to view a cheque. Every value below is read out of
+  css/shared.css.
 
 colors:
-  bg: "#FFFFFF"            # --bg, --surface
-  surface-2: "#F8F9FB"     # quiet fills: search field, side panel, hover
-  surface-sunken: "#F3F4F7"
-  border-subtle: "#EEEFF3"
-  border: "#E3E5EB"
-  border-strong: "#C9CDD6"
-  ink: "#0F1120"
-  ink-2: "#474B5C"
-  muted: "#6B7082"         # 4.9:1 on white
-  accent: "#2C3FC4"        # lapis, flat — the only interactive colour
-  accent-hover: "#2332A1"
-  accent-wash: "#EEF0FC"
-  accent-2: "#14A594"      # turquoise — only inside the cheque drawing
-  pending: "#2C3FC4"
-  done: "#17875B"
-  problem: "#C93B33"
-  due-soon: "#D08E0C"      # text step #8F5F00
+  canvas: "#F4F4F5"        # --bg (page and modal body)
+  surface: "#FFFFFF"       # --surface: cards, bars, floating surfaces
+  field: "#F1F1F3"         # --field-bg: fields inside a white card
+  field-hover: "#EAEAED"   # --field-bg-hover; also tab tracks on the canvas
+  border-subtle: "#EFEFF1" # dividers inside cards
+  border: "#E4E4E7"
+  border-strong: "#D0D0D6"
+  ink: "#18181B"
+  ink-2: "#3F3F46"
+  muted: "#6B6B74"         # 5.1:1 on white
+  accent: "#0B66E4"        # the only interactive colour
+  accent-hover: "#0953BD"
+  accent-wash: "#EBF2FE"   # selected / active backgrounds
+  pending: accent
+  done: "#16A34A"
+  problem: "#DC2626"
+  due-soon: "#E09B12"      # text step #92400E
 
 colors-dark:
-  bg: "#0D0E14"
-  surface: "#13151C"
-  surface-2: "#181A22"
-  ink: "#ECEDF3"
-  muted: "#858A9C"
-  accent: "#7A8BF6"
+  canvas: "#0C0C0E"
+  surface: "#18181B"
+  surface-2: "#1F1F23"
+  field: "rgba(255,255,255,0.07)"
+  accent: "#2F7CF6"
   border: "rgba(255,255,255,0.09)"
+
+shadows:
+  shadow-1: "0 0 1px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04)"  # cards
+  shadow-lift: "card under the pointer"
+  shadow-2: "floating: menus, popovers, calendar, modals"
+  ring: "0 0 0 3px rgba(11,102,228,.22)"  # focus
 
 typography:
   family: "IRANYekanX (variable: wght 100–1000, dots 1–2)"
-  scale: [12, 13, 14, 15, 17, 22, 28/30]
-  weights: { brand: 820, title: 660–720, label: 580, button: 620, value: 520, body: 420 }
+  scale: [12, 13, 14, 15, 17, 22, 28, 32]
 
-radius: { control: 10px, card: 12px, float: 16px, pill: 999px }
-heights: { control: 40–42px, primary-submit: 48px }
-motion: { press: 100ms, default: 180ms, enter: 280ms, ease-out: "cubic-bezier(0.16, 1, 0.3, 1)" }
+radius: { control: 12px, menu-item: 10px, card: 20px, float: 20px, modal: 24px, pill: 999px }
+heights: { field: 38px, button: 36–40px, chip: 24–30px }
+motion: { press: 100ms, default: 180ms, enter: 280ms }
 ---
 
 ## Principles
 
-1. **White field, hairlines.** Surfaces are separated by a 1px line and by
-   space. `--shadow-1` is `none`. A shadow appears in only two cases: a card
-   under the pointer (`--shadow-lift`) and things that float — menus,
-   popovers, modals (`--shadow-2`).
-2. **One accent, flat.** Lapis (`--accent`) marks what can be pressed or is
-   active: primary buttons, focus rings, the selected filter. No gradients, no
-   coloured shadows. Everything else is ink on white.
-3. **Type and space carry hierarchy.** One family (IRANYekanX). Titles use
-   size and weight; secondary text uses `--muted`. **Never letter-space
-   Persian text** — it breaks the joins. Latin digits and machine values
-   (serial, sayad id) are set LTR, tabular, lightly tracked.
-4. **Status is a dot and a word.** Pending lapis, registered green, problem
-   red, due-soon saffron — always a small dot plus the Persian label.
-5. **Motion only answers the user.** No idle or looping animation. Presses
-   100ms, changes 180ms, entrances 280ms. `prefers-reduced-motion` is
-   honoured globally.
+1. **Grey canvas, white cards, no borders.** The page is `--bg` (light
+   grey). Content sits on white cards (`--surface`, radius 20) separated
+   from the canvas by `--shadow-1`, not by lines. Hairlines appear only
+   *inside* a card, between rows.
+2. **Fields follow their background.** Inside a white card a field is
+   filled grey (`--field-bg`) with no border. Directly on the grey canvas
+   (the search box, the note under the cheque form, login fields) a field
+   is white with `--shadow-1`. Focus is the same everywhere: white fill,
+   accent border, `--ring`. An error turns the fill red (`--state-bad-bg`).
+3. **Pills for everything you press.** Buttons, filter chips, tab tracks,
+   status chips and the date chip on a card are `--rad-pill`. Primary is
+   solid accent; secondary is white with `--shadow-1`; quiet actions are
+   grey circles.
+4. **One accent.** Blue marks what can be pressed or is active: primary
+   buttons, focus rings, the selected filter, today and the selection in
+   the calendar. No gradients.
+5. **Status is a dot and a word.** Pending blue, registered green, problem
+   red, due-soon amber — always a small dot plus the Persian label.
+6. **Type and space carry hierarchy.** One family (IRANYekanX). **Never
+   letter-space Persian text** — it breaks the joins. Machine values (serial,
+   sayad id, national id) are set LTR, tabular.
+7. **Motion only answers the user.** No idle or looping animation.
+   `prefers-reduced-motion` is honoured globally.
 
 ## Components
 
-**Buttons.** Primary: solid `--accent`, white text, radius 10, hover
-`--accent-hover`, press scale 0.98. Secondary: white with a 1px `--border`,
-hover `--surface-2`. Filter chips are pills; the active one is
-`--accent-wash` with `--accent-text`.
+**Header.** Frosted canvas, no separator. Brand mark + wordmark; in the
+middle a white command button that opens the Ctrl+K palette; on the other
+side white round icon buttons (support, theme, account).
 
-**Fields.** 42px, 1px `--border`, radius 10, no shadow. Hover
-`--border-strong`; focus `--accent` border + `--ring` (3px wash); error red
-border + `--ring-bad`, message below, one small nudge. The search field is a
-`--surface-2` fill until focused.
+**Board.** Page title (28px) with a one-line summary of what needs doing
+(`#boardSummary`). A toolbar with the search box and filter pills. Three
+transparent columns; each head is a white pill chip (coloured dot, status
+name, count) with the column's total at the other end. Cards: white,
+radius 20, `--shadow-1`, lift on hover; serial on top with the due date as
+a chip (amber / red with a dot when due soon / overdue), payee and amount
+in the middle, grey round actions and a tinted status button below. Empty
+columns are a dashed box. On narrow screens the columns become pill tabs
+on a grey track.
 
-**Header.** 60px, translucent white with blur, hairline below. Brand mark +
-wordmark, a quiet command button (opens the Ctrl+K palette), icon buttons
-without borders.
+**Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
+two faces, switched by the `.ve-locked` class dashboard.js puts on
+`#modalBody`:
 
-**Board.** Page title (30px) with a one-line summary of what needs doing
-(`#boardSummary`). Three columns separated by space only; each head is a
-coloured dot, the status name, a muted count, and the column's total amount,
-over a hairline. Cards: white, 1px border, radius 12; serial on top with the
-due date beside it (saffron / red text with a dot when due soon / overdue),
-payee and amount in the middle, actions under a hairline. Hover: stronger
-border + lift shadow. Empty columns just say so in muted text.
-
-**Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window, two
-faces, switched by the `.ve-locked` class dashboard.js puts on `#modalBody`:
-
-- *Add / edit — a quiet settings-style form* (modelled on Tailwind's
-  Catalyst settings page, with HeroUI-style fields). Rows (`.cq-row`): a
-  short title and one muted line on the start side (180px), the fields on
-  the other, rows split by a hairline — «شناسه‌ی چک», «مبلغ و سررسید»,
-  «صاحب چک و طرف حساب», «ذینفع», «ارسال برای ثبت», «جزئیات بیشتر». Fields
-  are 36px, filled (`--field-bg`), no border until focus (then white with a
-  lapis border and 3px wash ring); errors turn the fill red. Field labels
-  are 12px. Optional fields (spend date, notes, photo) hide behind a
-  «+ افزودن …» link and open by themselves when they hold a value or an
-  error. The save button is compact and sits at the end of the footer.
+- *Add / edit — two cards on the grey body.* «مشخصات چک»: serial, sayad id,
+  amount (with the amount in words), due date, spend date (optional),
+  photo (optional). «مشخصات اشخاص»: owner, party, beneficiary and their
+  national id, then — under a divider — send date and the channels it was
+  sent through. A free note (optional) sits under the cards as a white
+  field. Labels are short; there are no hints or side descriptions. Each
+  card title has a small icon in an accent-wash tile. The save button is
+  compact and sits at the end of the footer; saving an edit asks for a
+  one-tap confirmation in place.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
-  its stamp, and below it only what the cheque doesn't carry (party, send
-  date, channels, spend date, notes, photos, sayad id with a copy button)
-  and the status history. On narrow screens the cheque's key values are
-  repeated in readable type. «ویرایش» switches to the form; saving returns
-  to the board.
+  its stamp, then a white card with only what the cheque doesn't carry
+  (party, send date, channels, spend date, notes, photos, sayad id with a
+  copy button) and the status history. On narrow screens the cheque's key
+  values are repeated in readable type. «ویرایش» switches to the form.
 
-The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()` makes
-inert in view mode; `#sayadField` stays outside them.
+The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
+makes inert in view mode; `#sayadField` stays outside them. The wrappers
+are `display: contents`, so they never affect the grid.
+
+**Calendar.** A white floating card (radius 20). Month and year are ghost
+selects; the arrows are round accent buttons. Day cells are circles; today
+has an accent ring; the selected day is accent-wash with accent text; in a
+range the ends are solid accent and the middle a wash. «امروز» is a grey
+pill.
 
 **The cheque** (`css/cheque.css`, `js/print.js`). Laid out like the printed
 leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id box,
@@ -118,32 +129,37 @@ the date boxed and written out in words, the payment sentence with blanks,
 the amount in rial words, owner and a signature that draws itself, and the
 MICR line. Its paper and faint guilloche are its own colours (dimmed in dark
 mode). A clean outlined stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت») sits over
-the stub. Sized in `em` off a container-query font size, so the leaf scales
-as one object. Used in the view face above and on the login page.
+the stub. Sized off a container-query font size, so the leaf scales as one
+object. Used in the view face and on the login page.
 
-**Floating surfaces.** 1px subtle border, radius 12–16, `--shadow-2`, a
-280ms rise. Overlays: `--scrim` with a light blur. Dropdowns and popovers
-live on `<body>`, `position: fixed`, positioned from the trigger's rect —
-never nested inside a transformed ancestor.
+**Floating surfaces.** No border, `--shadow-2`, radius 16–24, a 280ms
+rise. Menu items are radius 10 with a grey hover. Overlays use `--scrim`
+with a light blur. Dropdowns and popovers live on `<body>`,
+`position: fixed`, positioned from the trigger's rect — never nested inside
+a transformed ancestor.
 
-**Login.** Two panes: the form on white; a `--surface-2` panel with the
-sample cheque (slightly rotated) and one line of copy. Below 960px the panel
-becomes a band above the form.
+**Modals.** Radius 24, no header or footer borders, a grey round close
+button. The people window uses segmented pill tabs and grey rows.
 
-**Admin.** Same system: translucent top bar, a plain side navigation (the
-active item on `--surface-2`), bordered cards, tables with a tinted header,
-status badges with a dot.
+**Login.** Two panes on the canvas: the form with white floating-label
+fields and a pill submit, and a white panel with the sample cheque and one
+line of copy. Below 960px the panel becomes a band above the form.
+
+**Admin.** Same system: brand bar, a side navigation whose active item is a
+white pill, white cards without borders, filled fields, pill buttons,
+status chips with a dot. On narrow screens the navigation becomes pill tabs
+on a grey track.
 
 ## Files
 
 | File | Role |
 |---|---|
 | `css/shared.css` | tokens (both themes), baseline, command palette |
-| `css/dashboard.css` | dashboard; the **VISUAL LAYER** section at the end decides the look |
+| `css/dashboard.css` | dashboard; the **VISUAL LAYER — HeroUI-style** section at the end decides the look |
 | `css/cheque.css` | the cheque leaf |
 | `css/cheque-form.css` | the add / view / edit modal |
-| `css/login.css`, `css/admin.css` | the two other pages |
+| `css/login.css`, `css/admin.css` | the two other pages (each ends with a "HeroUI finish" section) |
 | `js/print.js` | guilloche + signature generators |
-| `js/cheque-form.js` | view face (the cheque + facts), section checks, required-left chip (read-only) |
+| `js/cheque-form.js` | view face: the cheque and the facts card (read-only) |
 | `js/shell.js` | header command button, board summary, column totals (read-only) |
 | `js/login-art.js` | the login page's sample cheque |

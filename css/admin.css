@@ -464,3 +464,58 @@ tbody tr:last-child td { border-bottom: none; }
 @media (prefers-reduced-motion: reduce) {
   .login-card, .tab-panel.active, .modal-overlay.show .modal-box, .toast.show, .alert.show { animation: none; }
 }
+
+/* ═══ HeroUI finish ═══
+   Brings the panel onto the same look as the dashboard: white surfaces
+   with soft shadows on the grey canvas, filled fields inside them, pill
+   buttons, a pill tab for the active section. Layout above is unchanged. */
+.login-card,
+.card {
+  border: none;
+  border-radius: var(--rad-card);
+  box-shadow: var(--shadow-1);
+}
+.login-card { border-radius: var(--rad-modal); padding-bottom: 32px; }
+.field input,
+.field select {
+  border: 1px solid transparent;
+  background-color: var(--field-bg);
+  box-shadow: none;
+}
+.field input:hover,
+.field select:hover { background-color: var(--field-bg-hover); border-color: transparent; }
+.field input:focus,
+.field select:focus { background-color: var(--surface); border-color: var(--accent); box-shadow: var(--ring); }
+.btn-primary,
+.btn-add,
+.modal-actions button { border-radius: var(--rad-pill); }
+.btn-ghost,
+.btn-icon {
+  border: none;
+  border-radius: var(--rad-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.btn-ghost:hover,
+.btn-icon:hover { background: var(--surface); box-shadow: var(--shadow-lift); }
+.btn-inline { border: none; border-radius: var(--rad-pill); background: var(--field-bg); box-shadow: none; }
+.btn-inline:hover { background: var(--accent-wash); color: var(--accent-text); box-shadow: none; }
+.topbar { border-bottom: none; }
+.tab-btn { border-radius: var(--rad-pill); }
+.tab-btn:hover { background: var(--surface); }
+.tab-btn.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
+.checkbox-row label { border: none; background: var(--field-bg); }
+th { background: var(--surface-2); }
+tbody tr:hover { background: var(--surface-2); }
+.row-actions button { border-radius: var(--rad-pill); }
+.row-actions button:hover { background: var(--accent-wash); box-shadow: none; }
+.modal-box { border: none; border-radius: var(--rad-modal); box-shadow: var(--shadow-2), var(--inset-hairline); }
+.modal-actions .btn-cancel { border: none; background: var(--field-bg); }
+.modal-actions .btn-cancel:hover { background: var(--field-bg-hover); }
+.toast { border-radius: 16px; background: var(--surface); color: var(--ink); }
+:root[data-theme="dark"] .toast { background: var(--surface); color: var(--ink); }
+@media (max-width: 860px) {
+  .tabs { background: var(--field-bg-hover); border-radius: var(--rad-pill); }
+}
+:root[data-theme="dark"] .tabs { background: none; }
+@media (max-width: 860px) { :root[data-theme="dark"] .tabs { background: rgba(255, 255, 255, 0.06); } }

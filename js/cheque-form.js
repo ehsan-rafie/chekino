@@ -191,26 +191,6 @@
     });
   }
 
-  // ---- optional details stay folded unless they hold something ---------------
-  const more = $('cqMore');
-  const moreToggle = $('cqMoreToggle');
-  function setMore(open) {
-    if (!more) return;
-    more.classList.toggle('is-open', open);
-    if (moreToggle) moreToggle.setAttribute('aria-expanded', String(open));
-  }
-  function hasOptional() {
-    return !!(val('spendDateInput') || val('notesInput') || files().length);
-  }
-  function syncMore() { setMore(hasOptional()); }
-  if (moreToggle) {
-    moreToggle.addEventListener('click', () => {
-      setMore(true);
-      const first = $('spendDateInput');
-      if (first) first.focus();
-    });
-  }
-
   // ---- copy the sayad id (view mode) -------------------------------------------
   const copyBtn = $('cqfCopySayad');
   if (copyBtn) {
@@ -242,7 +222,6 @@
 
   // ---- render ---------------------------------------------------------------
   let last = '';
-  let wasLocked = null;
   function render() {
     const locked = body.classList.contains('ve-locked');
     const serial = digits(val('serialInput'));
@@ -261,12 +240,6 @@
     ].join('|');
     if (snapshot === last) return;
     last = snapshot;
-
-    // Leaving view mode for the form: fold or unfold the optional details
-    // to match what this cheque actually has.
-    if (wasLocked === true && !locked) syncMore();
-    wasLocked = locked;
-    if (isErr('spendDateField') || isErr('fileField')) setMore(true);
 
     // The cheque is the view — readable by assistive tech only when shown.
     cheque.setAttribute('aria-hidden', locked ? 'false' : 'true');
@@ -362,14 +335,10 @@
       signPending = null;
       thumbsKey = '';
       render();
-      syncMore();
-      // dashboard.js may fill a restored draft a moment after opening
-      setTimeout(syncMore, 200);
       timer = setInterval(render, 300);
     } else if (!open && timer) {
       clearInterval(timer);
       timer = 0;
-      wasLocked = null;
     }
   };
   new MutationObserver(watchOpen).observe(overlay, { attributes: true, attributeFilter: ['class'] });

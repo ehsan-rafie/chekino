@@ -4,20 +4,12 @@
    and the spacing / type / radius / motion scales. Page stylesheets add
    layout on top of these but never invent their own palette or sizes.
 
-   The system is minimal on purpose, with one accent (Lajvard, لاجورد —
-   lapis lazuli):
-
-     · A plain white field. Resting surfaces are separated by a hairline
-       and by space, not by shadows or tinted panels. Shadows exist only
-       for a card under the pointer and for things that float (menus,
-       modals).
-
-     · One colour means "press this": lapis (--accent), always flat. The
-       rest of the interface is ink on white. Turquoise (--accent-2) is
-       only used inside the drawing of a cheque, as its security print.
-
-     · Status is a coloured dot plus a Persian word — waiting lapis,
-       registered green, problem red, due-soon saffron — never colour alone.
+   The look follows HeroUI (heroui.com): a light grey canvas, white
+   surfaces with generous rounding and soft, layered shadows, pill-shaped
+   buttons and chips, and fields that are filled (not outlined) inside a
+   white surface. One accent — a clear blue — means "press this"; the rest
+   is neutral ink. Status is a coloured dot plus a Persian word, never
+   colour alone.
 
    Themes are resolved here for all three pages. boot.js always writes
    html[data-theme] before first paint, so the attribute is the only
@@ -37,31 +29,31 @@
    something named to point at.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  /* Paper: the canvas and its steps. Cool, with a hair of lapis in it,
-     so white sheets lift off it without any border at all. */
+  /* Paper: the canvas and its steps. Neutral zinc greys, so white
+     cards lift off the canvas with a soft shadow and no border. */
   --paper-0: #FFFFFF;
-  --paper-1: #F8F9FB;
-  --paper-2: #F3F4F7;
-  --paper-3: #ECEEF2;
+  --paper-1: #F7F7F8;
+  --paper-2: #F4F4F5;
+  --paper-3: #EAEAEC;
 
   /* Rules drawn in the same ink, at three strengths. */
-  --line-1: #EEEFF3;
-  --line-2: #E3E5EB;
-  --line-3: #C9CDD6;
+  --line-1: #EFEFF1;
+  --line-2: #E4E4E7;
+  --line-3: #D0D0D6;
 
-  /* Ink: lapis-black, not neutral black — text and shadows share it. */
-  --ink-deep: #0F1120;
-  --ink-mid: #474B5C;
-  --ink-soft: #6B7082;  /* 4.9:1 on white */
+  /* Ink: zinc, near-black to mid-grey. */
+  --ink-deep: #18181B;
+  --ink-mid: #3F3F46;
+  --ink-soft: #6B6B74;  /* 5.1:1 on white, 4.7:1 on the canvas */
 
-  /* Lajvard — lapis lazuli. 600 is the action colour (9:1 on white). */
-  --lajvard-50:  #EEF0FC;
-  --lajvard-100: #E0E4FA;
-  --lajvard-200: #C4CBF4;
-  --lajvard-400: #7082EA;
-  --lajvard-500: #4257DC;
-  --lajvard-600: #2C3FC4;
-  --lajvard-700: #2332A1;
+  /* The accent (still named lajvard-*): a clear blue. 600 is the action colour. */
+  --lajvard-50:  #EBF2FE;
+  --lajvard-100: #D9E7FD;
+  --lajvard-200: #B6D0FB;
+  --lajvard-400: #5A96F2;
+  --lajvard-500: #2A7AEE;
+  --lajvard-600: #0B66E4;  /* 5.2:1 under white text */
+  --lajvard-700: #0953BD;
   --lajvard-800: #1B2679;
   --lajvard-900: #121A50;
 
@@ -74,9 +66,9 @@
 
   /* Status inks. The -text steps are the same hue darkened until small
      text clears WCAG AA on its own wash as well as on white. */
-  --sabz-50:  #E3F5EC;  --sabz-600: #17875B;  --sabz-700: #0F6E48;
-  --anar-50:  #FCEAE8;  --anar-200: #F3C6C1;  --anar-600: #C93B33;  --anar-700: #A92E28;
-  --zafaran-50: #FCF3DD; --zafaran-500: #D08E0C; --zafaran-700: #8F5F00;
+  --sabz-50:  #E7F6EC;  --sabz-600: #16A34A;  --sabz-700: #15803D;
+  --anar-50:  #FDECEC;  --anar-200: #F8C8C8;  --anar-600: #DC2626;  --anar-700: #B91C1C;
+  --zafaran-50: #FDF3E1; --zafaran-500: #E09B12; --zafaran-700: #92400E;
 
   /* ── spacing: 4pt grid ── */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
@@ -86,11 +78,12 @@
      The deeper something sits, the tighter its corner: a field inside a
      card inside a modal reads as nested because each step is visibly
      softer than the one it sits in. */
-  --rad-xs: 6px;      /* chips inside controls, tiny tags */
-  --rad-ctl: 10px;    /* inputs, buttons, tooltips */
-  --rad-card: 12px;   /* cards, panels, step cards */
-  --rad-float: 16px;  /* modals, popovers, the command palette */
-  --rad-pill: 999px;  /* status, count, tag — never a button */
+  --rad-xs: 8px;      /* chips inside controls, tiny tags */
+  --rad-ctl: 12px;    /* inputs, menu items, tooltips */
+  --rad-card: 20px;   /* cards and surfaces */
+  --rad-float: 20px;  /* popovers, dropdowns, the command palette */
+  --rad-modal: 24px;  /* modals and dialogs */
+  --rad-pill: 999px;  /* buttons, chips, tabs, counts */
 
   /* ── type scale (Elements of Typographic Style, roughly 1.2) ── */
   --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
@@ -131,11 +124,14 @@
 :root {
   color-scheme: light;
 
-  --bg: var(--paper-0);
+  --bg: var(--paper-2);
   --surface: var(--paper-0);
   --surface-2: var(--paper-1);
   --surface-sunken: var(--paper-2);
-  --surface-glass: rgba(255, 255, 255, 0.86);
+  --surface-glass: rgba(244, 244, 245, 0.82);
+  /* A field that sits inside a white surface is filled, not outlined. */
+  --field-bg: #F1F1F3;
+  --field-bg-hover: #EAEAED;
 
   --border-subtle: var(--line-1);
   --border: var(--line-2);
@@ -175,16 +171,19 @@
      Depth is kept for two cases only:
        lift · a card under the pointer
        2    · something floating above the page (menus, modals) */
-  --shadow-1: none;
-  --shadow-lift: 0 1px 2px rgba(15, 17, 32, 0.04), 0 8px 20px -10px rgba(15, 17, 32, 0.14);
-  --shadow-2: 0 1px 2px rgba(15, 17, 32, 0.05), 0 18px 44px -14px rgba(15, 17, 32, 0.2);
+  --shadow-1: 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lift: 0 0 1px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 20px rgba(0, 0, 0, 0.07);
+  --shadow-2: 0 0 1px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05), 0 14px 38px rgba(0, 0, 0, 0.12);
   --shadow-float: var(--shadow-2);
   --shadow-accent: none;
-  --inset-hairline: none;
-  --ring: 0 0 0 3px rgba(44, 63, 196, 0.14);
-  --ring-bad: 0 0 0 3px rgba(201, 59, 51, 0.12);
+  /* An empty shadow rather than none, so it can be listed after another
+     shadow ("var(--shadow-2), var(--inset-hairline)") without making the
+     whole declaration invalid. */
+  --inset-hairline: 0 0 0 0 transparent;
+  --ring: 0 0 0 3px rgba(11, 102, 228, 0.22);
+  --ring-bad: 0 0 0 3px rgba(220, 38, 38, 0.18);
 
-  --scrim: rgba(15, 17, 32, 0.28);
+  --scrim: rgba(0, 0, 0, 0.32);
 
   --skeleton-base: var(--paper-3);
   --skeleton-sheen: var(--paper-1);
@@ -195,7 +194,7 @@
   --blue-900: var(--accent-text);
   --blue-hover: var(--accent-hover);
   --blue-700: var(--accent);
-  --blue-600: var(--accent-line);
+  --blue-600: var(--accent);
   --blue-100: var(--accent-wash);
   --error: var(--state-bad);
   --error-bg: var(--state-bad-bg);
@@ -214,34 +213,36 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0D0E14;
-  --surface: #13151C;
-  --surface-2: #181A22;
-  --surface-sunken: #101117;
-  --surface-glass: rgba(13, 14, 20, 0.8);
+  --bg: #0C0C0E;
+  --surface: #18181B;
+  --surface-2: #1F1F23;
+  --surface-sunken: #121214;
+  --surface-glass: rgba(12, 12, 14, 0.8);
+  --field-bg: rgba(255, 255, 255, 0.07);
+  --field-bg-hover: rgba(255, 255, 255, 0.1);
 
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border: rgba(255, 255, 255, 0.09);
   --border-strong: rgba(255, 255, 255, 0.16);
 
-  --ink: #ECEDF3;
-  --ink-2: #B7BAC8;
-  --muted: #858A9C;
+  --ink: #F4F4F5;
+  --ink-2: #C4C4CC;
+  --muted: #8E8E98;
 
-  --accent: #7A8BF6;
-  --accent-hover: #95A3F8;
-  --accent-text: #AFB9FA;
-  --accent-wash: rgba(122, 139, 246, 0.14);
-  --accent-line: rgba(122, 139, 246, 0.42);
-  --accent-grad: linear-gradient(#7A8BF6, #7A8BF6);
-  --on-accent: #0A0E24;
+  --accent: #2F7CF6;
+  --accent-hover: #4A8FF8;
+  --accent-text: #7CB1FA;
+  --accent-wash: rgba(47, 124, 246, 0.16);
+  --accent-line: rgba(47, 124, 246, 0.45);
+  --accent-grad: linear-gradient(#2F7CF6, #2F7CF6);
+  --on-accent: #FFFFFF;
 
   --accent-2: #3FD5C3;
   --accent-2-wash: rgba(63, 213, 195, 0.12);
 
-  --st-pending: #8A99F7;  --st-pending-bg: rgba(122, 139, 246, 0.14);
-  --st-done:    #4CCB91;  --st-done-bg:    rgba(76, 203, 145, 0.13);
-  --st-problem: #FF7D72;  --st-problem-bg: rgba(255, 125, 114, 0.13);
+  --st-pending: #6AA6FA;  --st-pending-bg: rgba(47, 124, 246, 0.16);
+  --st-done:    #4ADE80;  --st-done-bg:    rgba(74, 222, 128, 0.13);
+  --st-problem: #F87171;  --st-problem-bg: rgba(248, 113, 113, 0.14);
 
   --state-idle: #B3B9D2;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8C92B0;
   --state-ok: #4CCB91;     --state-ok-bg: rgba(76, 203, 145, 0.13);
@@ -251,15 +252,15 @@
   --state-bad-text: #FF8F85;
   --state-ok-text: #5ED69E;
 
-  --shadow-1: none;
-  --shadow-lift: 0 12px 28px -12px rgba(0, 0, 0, 0.7);
+  --shadow-1: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 28px -12px rgba(0, 0, 0, 0.7);
   --shadow-2:
     0 1px 1px rgba(0, 0, 0, 0.12),
     0 3px 6px rgba(0, 0, 0, 0.16),
     0 28px 64px -18px rgba(0, 0, 0, 0.8);
   --shadow-accent: none;
   --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --ring: 0 0 0 3px rgba(122, 139, 246, 0.22);
+  --ring: 0 0 0 3px rgba(47, 124, 246, 0.3);
   --ring-bad: 0 0 0 3px rgba(255, 125, 114, 0.18);
 
   --scrim: rgba(0, 0, 0, 0.55);
@@ -267,7 +268,7 @@
   --skeleton-base: rgba(255, 255, 255, 0.05);
   --skeleton-sheen: rgba(255, 255, 255, 0.10);
 
-  --blue-600: var(--accent-line);
+  --blue-600: var(--accent);
   --error-border: rgba(255, 125, 114, 0.34);
   --success-border: rgba(76, 203, 145, 0.34);
   --n-7: #5F6584; --n-8: #767C9A;
@@ -386,6 +387,7 @@ button:disabled { cursor: not-allowed; }
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border-strong);
+  border: none;
   border-radius: var(--rad-float);
   box-shadow: var(--shadow-2);
   overflow: hidden;
@@ -524,6 +526,7 @@ kbd {
 :root .due-alert-count,
 :root .st-opt { border-radius: var(--rad-pill); }
 
+/* Buttons and tabs are pills (HeroUI); menu items keep the field radius. */
 :root button.btn-primary,
 :root button.btn-add,
 :root button.submit,
@@ -535,10 +538,10 @@ kbd {
 :root .filter-clear-btn,
 :root .ths-report-btn,
 :root .tab-btn,
-:root .cp-item,
 :root .modal-actions button,
 :root .confirm-actions button,
-:root .btn-inline { border-radius: var(--rad-ctl); }
+:root .btn-inline { border-radius: var(--rad-pill); }
+:root .cp-item { border-radius: 10px; }
 
 /* ── Sheets rest on the paper ──
    Panels carry the resting shadow; in the dark theme the inner hairline
