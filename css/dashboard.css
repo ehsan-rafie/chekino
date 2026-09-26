@@ -1169,63 +1169,11 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   background-size: 100% 36px, 100% 36px, 100% 10px, 100% 10px;
   background-attachment: local, local, scroll, scroll;
 }
-/* A real two-column GRID, not two independent flex stacks. Independent
-   stacks drift apart the moment one row is taller than its counterpart
-   (the amount field's amount-words line under row 2 made every row after
-   it in this column sit lower than the matching row in the other column —
-   notes ended up next to nid/benef instead of across from it). A shared
-   grid's row tracks are the same height for both columns by definition,
-   so row N always lines up across N regardless of content height.
-   .ve-col-cheque/.ve-col-people stay in the markup (for the JS lock logic
-   and the section header each owns) but go display:contents so their
-   children become direct grid items placed by explicit column/row below. */
-.ve-columns { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 14px; align-items: start; }
-.ve-col-cheque, .ve-col-people { display: contents; }
-.ve-col-row { display: flex; gap: 12px; }
-.ve-col-row .form-field { min-width: 0; }
-@media (min-width: 601px) {
-  /* Grid column tracks number left-to-right regardless of the page's RTL
-     direction (unlike flex, which reverses with it) — column 1 is the
-     LEFT track here, so "چک" (meant to read on the right) is the one
-     that has to ask for column 2. */
-  #sectionCheque   { grid-column: 2; grid-row: 1; }
-  #sectionPeople   { grid-column: 1; grid-row: 1; }
-  #rowSerialSayad  { grid-column: 2; grid-row: 2; }
-  #rowOwnerSend    { grid-column: 1; grid-row: 2; }
-  #rowDueAmount    { grid-column: 2; grid-row: 3; }
-  #rowPartySpend   { grid-column: 1; grid-row: 3; }
-  #notesField      { grid-column: 2; grid-row: 4; }
-  #rowBenefNid     { grid-column: 1; grid-row: 4; }
-  #fileField       { grid-column: 2; grid-row: 5; }
-  #channelField    { grid-column: 1; grid-row: 5; }
-}
-@media (max-width: 600px) {
-  /* Below the modal's own mobile breakpoint everything already goes
-     single-column full-width (.modal-box itself goes full-screen here —
-     see the max-width:601px rule elsewhere), so a field-pair row would
-     just be two half-width boxes on an already-narrow phone. Stack them
-     instead: the flex-basis ratios above only mean anything once a row
-     actually has two fields side by side. The explicit grid-row/column
-     placement above is desktop-only, so mobile just falls back to plain
-     DOM order in a single column. */
-  .ve-columns { grid-template-columns: 1fr; }
-  .ve-col-row { flex-direction: column; }
-}
-
 .form-field {
   position: relative;
   margin-bottom: 14px;
 }
 .form-field:last-child { margin-bottom: 0; }
-/* Every field that lives inside the cheque form's two-column grid
-   (.ve-columns) gets its vertical spacing from the grid's own row-gap now,
-   not from its own margin — a field keeping its 14px margin ON TOP of the
-   grid gap is exactly how row N drifted out of alignment with the other
-   column's row N (see .ve-columns above). This used to be patched one ID
-   at a time (#amountField, #nidField, then .ve-col-row .form-field) each
-   time a new field hit the same trap; zeroing every .form-field under
-   .ve-columns in one rule is what actually closes it off for good. */
-.ve-columns .form-field { margin-bottom: 0; }
 
 .form-field input {
   width: 100%;
@@ -2290,37 +2238,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-body.ve-locked .date-cal-btn,
 .modal-body.ve-locked .file-add,
 .modal-body.ve-locked .file-remove { display: none; }
-.form-section {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  /* No margin of its own — it's a grid row now (see .ve-columns), and the
-     grid's own row-gap already spaces it from the row below. A margin here
-     on top of that gap would double the space, which is exactly the kind
-     of drift that threw rows out of sync between the two columns before. */
-  margin: 0;
-}
-.form-section span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--blue-700);
-  font-variation-settings: var(--f-label);
-  white-space: nowrap;
-}
-.form-section span svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-}
-.form-section .line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
 
 .date-cal-btn {
   width: 28px;

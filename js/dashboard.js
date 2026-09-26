@@ -331,9 +331,10 @@ function buildStatusSentence(c) {
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
 const veFieldsWrapA2 = document.getElementById('veFieldsWrapA2');
 const veFieldsWrapB = document.getElementById('veFieldsWrapB');
+const veFieldsWrapC = document.getElementById('veFieldsWrapC');
 function lockFormFields(locked) {
   modalBody.classList.toggle('ve-locked', locked);
-  [veFieldsWrapA, veFieldsWrapA2, veFieldsWrapB].forEach(w => {
+  [veFieldsWrapA, veFieldsWrapA2, veFieldsWrapB, veFieldsWrapC].forEach(w => {
     if (locked) w.setAttribute('inert', ''); else w.removeAttribute('inert');
   });
   // The sayad field sits outside the inert wrapper so its text can still

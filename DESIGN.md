@@ -311,6 +311,14 @@ Radius increases in three small, closely-spaced steps rather than a marketing sy
 ### Modal
 **`modal`** — `{colors.surface}`, 1px border, `{rounded.card}`, `{elevation.float}` shadow — one of only two places in the system with a real shadow (the other is a dropdown). `role="dialog" aria-modal="true"`.
 
+### Cheque form (add / view / edit modal)
+Styles in `css/cheque-form.css`, behavior in `js/cheque-form.js`, both scoped to `#modalOverlay`.
+- **Two panes.** The form on the start (right) side, a sticky aside on the end (left) side with a live drawing of the Sayad cheque. Below 860px the aside moves on top and drops its progress/facts block.
+- **Three numbered step cards** (مشخصات چک / طرفین چک / ارسال و پیوست). Fields sit on a 6-track grid (`.cq-span-2/3/4/6`). The step badge turns into a green check when that step's required fields are filled, and red when one of them has `.error`.
+- **The cheque drawing** is `aria-hidden`: it only mirrors fields that already announce themselves. Its guilloche background is `color-mix()` of `{colors.accent}` so it follows dark mode. In view mode it carries a rotated stamp for the status (ثبت شد / ثبت نشد / منتظر ثبت).
+- **`js/cheque-form.js` is read-only.** It never writes to a field or to modal state. Several values change without an input event (calendar `setDate`, `setAmountValue`, channel chips), so it also re-reads every 300ms while the modal is open and skips the redraw when nothing changed.
+- **The inert wrappers are load-bearing.** `#veFieldsWrapA/A2/B/C` are what `lockFormFields()` makes inert in view mode. `#sayadField` sits outside them on purpose so its digits stay selectable.
+
 ## Do's and Don'ts
 
 ### Do
