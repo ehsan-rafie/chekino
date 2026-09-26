@@ -1,8 +1,8 @@
 /* ===== Cheque modal: one window, two faces =====
-   Add / edit: a plain form in three sections, in the order the work
-   happens, with a one-line hint under every field that is easy to mix up.
-   View: the cheque itself (css/cheque.css), drawn from the same fields,
-   with what the cheque doesn't carry listed underneath.
+   Add / edit: a quiet settings-style form (rows: title + one line on the
+   start side, fields on the other, hairlines between rows) with compact
+   filled fields. View: the cheque itself (css/cheque.css), drawn from the
+   same fields, with what the cheque doesn't carry listed underneath.
 
    dashboard.js marks view mode by adding .ve-locked to #modalBody (via
    lockFormFields); that single class decides which face shows. Scoped to
@@ -13,204 +13,217 @@
 .cq-body:not(.ve-locked) .cq-view { display: none; }
 .cq-body.ve-locked .cq-form { display: none; }
 
-#modalOverlay .modal-box { max-width: 760px; }
+#modalOverlay .modal-box { max-width: 720px; }
 #modalOverlay .modal-box:has(.cq-body.ve-locked) { max-width: 860px; }
 @media (min-width: 601px) {
-  #modalOverlay .modal-box { max-height: min(92vh, 960px); }
+  #modalOverlay .modal-box { max-height: min(92vh, 900px); }
 }
 
 .cq-body.modal-body { padding: 0; background: var(--surface); }
 .cq-body > .form-alert { margin: var(--s4) 28px 0; }
-
-/* ---- Header: title + "N required left" ---- */
 .modal-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.cq-remaining {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 10px;
-  border: none;
-  border-radius: var(--rad-pill);
-  background: var(--state-warn-bg);
-  color: var(--state-warn-text);
-  font-size: var(--t-micro);
-  font-variation-settings: var(--f-label);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
-}
-.cq-remaining::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.cq-remaining.is-ready { background: var(--state-ok-bg); color: var(--state-ok-text); cursor: default; }
-.cq-remaining[hidden] { display: none; }
 
 /* ═══ Add / edit: the form ═══ */
-.cq-form {
+#modalOverlay .cq-form {
+  --field-bg: #F2F3F5;
+  --field-bg-hover: #EBECEF;
   display: flex;
   flex-direction: column;
-  padding: 0 28px 12px;
+  padding: 0 28px;
+}
+:root[data-theme="dark"] #modalOverlay .cq-form {
+  --field-bg: rgba(255, 255, 255, 0.06);
+  --field-bg-hover: rgba(255, 255, 255, 0.09);
 }
 
-.cq-step { padding: 22px 0 24px; }
-.cq-step + .cq-step { border-top: 1px solid var(--border-subtle); }
-
-.cq-step-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.cq-step-num {
-  position: relative;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  margin-top: 1px;
-  border-radius: var(--rad-pill);
-  box-shadow: inset 0 0 0 1px var(--border-strong);
-  color: var(--muted);
+/* A row: what it is on one side, the fields on the other. */
+.cq-row {
   display: grid;
-  place-items: center;
-  font-size: var(--t-micro);
-  font-variation-settings: var(--f-num);
-  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-subtle);
 }
-.cq-step-num span { transition: opacity var(--dur-2) var(--ease); }
-.cq-step-num svg {
-  position: absolute;
-  width: 13px;
-  height: 13px;
-  opacity: 0;
-  transform: scale(0.4);
-  transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease-spring);
-}
-.cq-step:focus-within .cq-step-num { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
-.cq-step.has-error .cq-step-num { color: var(--state-bad); box-shadow: inset 0 0 0 1.5px var(--state-bad); }
-.cq-step.is-done .cq-step-num { background: var(--state-ok); box-shadow: none; color: #fff; }
-.cq-step.is-done .cq-step-num span { opacity: 0; }
-.cq-step.is-done .cq-step-num svg { opacity: 1; transform: none; }
-
-.cq-step-text h3 {
+.cq-form > .cq-row:first-child { border-top: none; }
+.cq-row-head h3 {
   margin: 0;
-  font-size: var(--t-value);
-  line-height: 1.5;
-  color: var(--ink);
-  font-variation-settings: var(--f-title);
-}
-.cq-step-text p {
-  margin: 2px 0 0;
   font-size: var(--t-cap);
-  color: var(--muted);
+  line-height: 1.6;
+  color: var(--ink);
+  font-variation-settings: 'wght' 600, 'dots' 1;
 }
-
-/* Field grid (6 tracks) */
-.cq-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 18px 14px;
-  align-items: start;
-}
-.cq-grid .form-field { margin-bottom: 0; min-width: 0; }
-.cq-span-2 { grid-column: span 2; }
-.cq-span-3 { grid-column: span 3; }
-.cq-span-4 { grid-column: span 4; }
-.cq-span-6 { grid-column: 1 / -1; }
-.cq-grid .form-field label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* One quiet line under a field that's easy to get wrong. It steps aside
-   when the field shows an error, so only one message is ever there. */
-.field-hint {
-  margin-top: 6px;
+.cq-row-head p {
+  margin: 2px 0 0;
   font-size: var(--t-micro);
   line-height: 1.7;
   color: var(--muted);
 }
-.form-field.error .field-hint { display: none; }
+.cq-row-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 12px;
+  min-width: 0;
+}
+.cq-w-1 { flex: 1 1 0; min-width: 120px; }
+.cq-w-2 { flex: 2 1 0; min-width: 180px; }
+.cq-w-half { flex: 1 1 0; min-width: 150px; }
+.cq-w-full { flex: 1 1 100%; }
+.cq-row-fields .form-field { margin-bottom: 0; min-width: 0; }
 
-/* Serial and sayad are read digit by digit: left-to-right, tabular,
-   tracked a little so a transposed digit is findable. */
+/* ---- Fields: 36px, filled, no border until focus ---- */
+#modalOverlay .cq-form .form-field label {
+  margin-bottom: 6px;
+  font-size: var(--t-micro);
+  color: var(--ink-2);
+  font-variation-settings: 'wght' 540, 'dots' 1;
+  white-space: nowrap;
+}
+#modalOverlay .cq-form .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]),
+#modalOverlay .cq-form .date-input-wrap,
+#modalOverlay .cq-form .amount-box,
+#modalOverlay .cq-form .ms-box,
+#modalOverlay .cq-form .notes-input {
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid transparent !important;
+  border-radius: 10px;
+  background: var(--field-bg);
+  box-shadow: none !important;
+  font-size: var(--t-body);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+#modalOverlay .cq-form .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]) { padding: 0 12px; }
+#modalOverlay .cq-form .form-field input::placeholder,
+#modalOverlay .cq-form .notes-input::placeholder,
+#modalOverlay .cq-form .ms-placeholder { color: var(--muted); font-size: var(--t-cap); font-variation-settings: var(--f-body); }
+#modalOverlay .cq-form .form-field input:not(.amount-input):not(.date-mask-input):hover,
+#modalOverlay .cq-form .date-input-wrap:hover,
+#modalOverlay .cq-form .amount-box:hover,
+#modalOverlay .cq-form .ms-box:hover,
+#modalOverlay .cq-form .notes-input:hover { background: var(--field-bg-hover); }
+#modalOverlay .cq-form .form-field input:not(.amount-input):not(.date-mask-input):focus,
+#modalOverlay .cq-form .date-input-wrap:focus-within,
+#modalOverlay .cq-form .amount-box:focus-within,
+#modalOverlay .cq-form .ms-box[aria-expanded="true"],
+#modalOverlay .cq-form .notes-input:focus {
+  background: var(--surface);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-wash) !important;
+  outline: none;
+}
+#modalOverlay .cq-form .form-field.error input:not(.amount-input):not(.date-mask-input),
+#modalOverlay .cq-form .form-field.error .date-input-wrap,
+#modalOverlay .cq-form .form-field.error .amount-box,
+#modalOverlay .cq-form .form-field.error .ms-box {
+  background: var(--state-bad-bg);
+  border-color: transparent !important;
+}
+#modalOverlay .cq-form .form-field.error input:not(.amount-input):not(.date-mask-input):focus,
+#modalOverlay .cq-form .form-field.error .date-input-wrap:focus-within,
+#modalOverlay .cq-form .form-field.error .amount-box:focus-within {
+  background: var(--surface);
+  border-color: var(--state-bad) !important;
+  box-shadow: 0 0 0 3px var(--state-bad-bg) !important;
+}
+#modalOverlay .cq-form .field-msg { margin-top: 5px; font-size: 11.5px; }
+
+/* Wrapped inputs sit transparent inside their filled box */
+#modalOverlay .cq-form .date-input-wrap { padding: 0 12px 0 4px; }
+#modalOverlay .cq-form .date-input-wrap input,
+#modalOverlay .cq-form .amount-box input { background: transparent; font-size: var(--t-body); }
+#modalOverlay .cq-form .date-cal-btn { width: 28px; height: 28px; color: var(--muted); }
+#modalOverlay .cq-form .ms-box { height: auto; padding: 4px 10px 4px 8px; }
+#modalOverlay .cq-form .ms-chip { padding: 2px 8px 2px 6px; font-size: var(--t-micro); background: var(--surface); box-shadow: 0 0 0 1px var(--border); }
+#modalOverlay .cq-form .ms-caret svg { width: 16px; height: 16px; color: var(--muted); }
+
+/* Serial and sayad are read digit by digit */
 #serialInput, #sayadInput {
   direction: ltr;
   text-align: left;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
+#serialInput::placeholder, #sayadInput::placeholder { letter-spacing: 0; text-align: right; }
 
-/* Amount: the one large number in the form */
-#amountField .amount-box { height: 52px; padding: 0 14px; gap: var(--s3); }
+/* Amount: same height as everything else, figures a touch heavier */
+#modalOverlay .cq-form .amount-box { padding: 0 12px; gap: 8px; }
 .form-field#amountField .amount-input,
 .form-field#amountField .amount-input:focus {
-  font-size: 22px;
+  font-size: var(--t-value);
   letter-spacing: 0.01em;
-  font-variation-settings: 'wght' 620, 'dots' 1;
+  font-variation-settings: 'wght' 600, 'dots' 1;
 }
-#amountField .amount-input::placeholder { font-size: 18px; }
 #amountField .amount-unit {
   margin: 0;
-  padding: 3px 10px;
-  font-size: var(--t-micro);
-  background: var(--surface-2);
+  padding: 0;
+  background: none;
   color: var(--muted);
-  font-variation-settings: var(--f-label);
+  font-size: var(--t-micro);
 }
-#amountField .amount-words { margin-top: 6px; font-size: var(--t-micro); }
+#amountField .amount-words { margin-top: 5px; font-size: 11.5px; color: var(--muted); }
 #amountField .amount-words:empty { display: none; }
-.cq-tall .date-input-wrap { height: 52px !important; }
 
-/* Optional details, folded */
-.cq-more {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--rad-ctl);
-  transition: border-color var(--dur-2) var(--ease);
-}
-.cq-more[open] { border-color: var(--border); }
-.cq-more summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  list-style: none;
-  cursor: pointer;
-  font-size: var(--t-cap);
-  color: var(--ink);
-  font-variation-settings: var(--f-label);
-  border-radius: var(--rad-ctl);
-  -webkit-user-select: none;
-  user-select: none;
-}
-.cq-more summary::-webkit-details-marker { display: none; }
-.cq-more summary:hover { background: var(--surface-2); }
-.cq-more summary svg {
-  width: 16px;
-  height: 16px;
+/* National id kind (حقیقی / حقوقی) sits quietly inside the field */
+#modalOverlay .cq-form .nid-kind {
+  top: 50%;
+  left: auto;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 0;
+  background: none;
   color: var(--muted);
-  flex-shrink: 0;
-  transition: transform var(--dur-2) var(--ease);
+  font-size: 11px;
 }
-.cq-more[open] summary svg { transform: rotate(180deg); }
-.cq-more summary small {
-  margin-inline-start: auto;
-  font-size: var(--t-micro);
-  color: var(--muted);
-  font-variation-settings: var(--f-body);
+#modalOverlay .cq-form #nidInput { direction: ltr; text-align: left; }
+
+/* Notes grow with their content; the upload is one quiet line */
+#modalOverlay .cq-form .notes-input {
+  height: auto;
+  padding: 8px 12px;
+  line-height: 1.6;
+  resize: none;
+  field-sizing: content;
+  max-height: 140px;
 }
-.cq-more-grid { padding: 4px 14px 16px; }
-#notesField .notes-input { min-height: 42px; resize: vertical; }
-#fileField .file-box {
-  min-height: 64px;
+#modalOverlay .cq-form .notes-count:empty { display: none; }
+#modalOverlay .cq-form .file-box {
+  min-height: 36px;
+  padding: 6px 10px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: var(--s2);
+  gap: 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: none;
 }
+#modalOverlay .cq-form .file-box:hover { border-color: var(--accent); background: var(--accent-wash); }
+#modalOverlay .cq-form .file-add { font-size: var(--t-cap); }
+#modalOverlay .cq-form .file-add svg { width: 16px; height: 16px; }
+
+/* ---- Optional details ---- */
+.cq-more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font-family: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.cq-more-toggle svg { width: 15px; height: 15px; }
+.cq-more-toggle:hover { color: var(--accent-hover); }
+.cq-more-body { display: none; }
+.cq-more.is-open .cq-more-toggle { display: none; }
+.cq-more.is-open .cq-more-body { display: contents; }
 
 /* ═══ View: the cheque ═══ */
 .cq-view {
@@ -290,7 +303,7 @@
   overflow: hidden;
   background: var(--surface-2);
   cursor: zoom-in;
-  transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  transition: border-color var(--dur-1) var(--ease);
 }
 .cq-thumb:hover { border-color: var(--border-strong); }
 .cq-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -299,21 +312,35 @@
 .cq-view .ve-history { margin: 0; }
 .cq-view .ve-history-list { gap: var(--s3); }
 
+/* ---- Footer: a compact save at the end, not a full-width bar ---- */
+#modalOverlay .modal-footer { justify-content: flex-end; padding: 12px 28px; }
+#modalOverlay .modal-footer .delete-confirm-wrap { order: -1; }
+#modalOverlay .modal-footer .save-confirm-wrap { flex: 0 1 auto; }
+#modalOverlay .modal-footer .btn-submit {
+  flex: 0 0 auto;
+  min-width: 140px;
+  height: 38px;
+  padding: 0 18px;
+  font-size: var(--t-cap);
+}
+#modalOverlay .modal-footer .btn-clear { width: 38px; height: 38px; }
+#modalOverlay .modal-footer .btn-clear svg { width: 17px; height: 17px; }
+#modalOverlay .modal-footer .btn-clear.confirming-delete { width: 128px; }
+#modalOverlay .modal-footer .save-confirm-slide { height: 38px; }
+
 /* ---- Narrow screens ---- */
 @media (max-width: 600px) {
   .cq-body > .form-alert { margin: 12px 16px 0; }
-  .cq-form { padding: 0 16px 8px; }
-  .cq-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  .cq-grid > *, .cq-grid .ve-fields-wrap > * { grid-column: 1 / -1; }
-  .cq-tall .date-input-wrap { height: 42px !important; }
-  .cq-more summary small { display: none; }
+  #modalOverlay .cq-form { padding: 0 16px; }
+  .cq-row { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px 0; }
+  .cq-row-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .cq-row-head p { margin: 0; }
+  .cq-w-1, .cq-w-2, .cq-w-half { flex-basis: 100%; }
   .cq-view { padding: 16px; gap: 16px; }
   .cq-view-facts { grid-template-columns: minmax(0, 1fr); }
   .cq-view-facts .cq-narrow-only { display: flex; }
-  .modal-title-row { gap: 8px; }
-  .cq-remaining { height: 24px; padding: 0 8px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cq-step-num, .cq-step-num svg, .cq-more summary svg { transition: none; }
+  #modalOverlay .modal-footer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 6px)); }
+  #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
+  #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }
+  #modalOverlay .modal-footer .btn-clear { width: 44px; height: 44px; }
 }

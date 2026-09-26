@@ -1,4 +1,5 @@
-// Live Sayad cheque + step progress for the add/view/edit cheque modal.
+// View face of the cheque modal: the drawn Sayad cheque plus the facts it
+// doesn't carry, and the fold of the form's optional details.
 //
 // Read-only on purpose: it never writes to a form field or touches the
 // modal's own state, it only mirrors what dashboard.js already put in the
@@ -129,7 +130,7 @@
     return chips ? [...chips.children].map((c) => c.textContent.trim()).filter(Boolean) : [];
   }
 
-  // ---- required fields per step -------------------------------------------
+  // ---- fields whose error state the view reacts to ---------------------------
   const isErr = (id) => { const f = $(id); return !!(f && f.classList.contains('error')); };
   const CHECKS = [
     [1, 'serialField', () => digits(val('serialInput')).length === 6],
@@ -143,7 +144,6 @@
     [3, 'sendDateField', () => !!jalaliParts(val('sendDateInput'))],
     [3, 'channelField', () => channelNames().length > 0],
   ];
-  const isOk = ([, f, test]) => test() && !isErr(f);
 
   function statusStamp() {
     const b = $('veStatusBanner');
@@ -191,25 +191,24 @@
     });
   }
 
-  // ---- "N required fields left" chip in the modal header ---------------------
-  const remaining = $('cqRemaining');
-  if (remaining) {
-    remaining.addEventListener('click', () => {
-      const field = remaining.dataset.target && $(remaining.dataset.target);
-      if (!field) return;
-      const target = field.querySelector('input:not([type="file"]), textarea, .ms-box');
-      field.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      if (target) setTimeout(() => target.focus({ preventScroll: true }), 250);
-    });
-  }
-
   // ---- optional details stay folded unless they hold something ---------------
   const more = $('cqMore');
+  const moreToggle = $('cqMoreToggle');
+  function setMore(open) {
+    if (!more) return;
+    more.classList.toggle('is-open', open);
+    if (moreToggle) moreToggle.setAttribute('aria-expanded', String(open));
+  }
   function hasOptional() {
     return !!(val('spendDateInput') || val('notesInput') || files().length);
   }
-  function syncMore() {
-    if (more) more.open = hasOptional();
+  function syncMore() { setMore(hasOptional()); }
+  if (moreToggle) {
+    moreToggle.addEventListener('click', () => {
+      setMore(true);
+      const first = $('spendDateInput');
+      if (first) first.focus();
+    });
   }
 
   // ---- copy the sayad id (view mode) -------------------------------------------
@@ -267,7 +266,7 @@
     // to match what this cheque actually has.
     if (wasLocked === true && !locked) syncMore();
     wasLocked = locked;
-    if (more && (isErr('spendDateField') || isErr('fileField'))) more.open = true;
+    if (isErr('spendDateField') || isErr('fileField')) setMore(true);
 
     // The cheque is the view — readable by assistive tech only when shown.
     cheque.setAttribute('aria-hidden', locked ? 'false' : 'true');
@@ -341,23 +340,6 @@
     if (notesRow) notesRow.hidden = !notes;
     renderThumbs();
 
-    // Section badges + the header chip
-    [1, 2, 3].forEach((n) => {
-      const step = $('cqStep' + n);
-      if (!step) return;
-      const need = CHECKS.filter(([s]) => s === n);
-      step.classList.toggle('is-done', need.every(isOk));
-      step.classList.toggle('has-error', need.some(([, f]) => isErr(f)));
-    });
-    if (remaining) {
-      const missing = CHECKS.filter((c) => !isOk(c));
-      remaining.hidden = locked;
-      remaining.classList.toggle('is-ready', missing.length === 0);
-      remaining.textContent = missing.length ? `${toFa(missing.length)} مورد ضروری مانده` : 'آماده‌ی ثبت';
-      remaining.dataset.target = missing.length ? missing[0][1] : '';
-      remaining.disabled = missing.length === 0;
-      remaining.title = missing.length ? 'رفتن به اولین مورد خالی' : '';
-    }
   }
 
   // ---- wiring ---------------------------------------------------------------

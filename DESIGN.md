@@ -92,16 +92,16 @@ border + lift shadow. Empty columns just say so in muted text.
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window, two
 faces, switched by the `.ve-locked` class dashboard.js puts on `#modalBody`:
 
-- *Add / edit — a plain form.* Three sections in the order the work
-  happens: «اطلاعات روی چک», «اشخاص», «ارسال برای ثبت». Each has one
-  sentence saying what it is for, and every field that is easy to mix up
-  (serial vs sayad id; owner vs party vs beneficiary; national id length)
-  carries a one-line `.field-hint` that steps aside when the field shows an
-  error. Optional fields (spend date, notes, photo) are folded into a
-  «جزئیات بیشتر» `<details>`, opened automatically when they hold a value or
-  an error. The header chip `#cqRemaining` says how many required fields are
-  left («۳ مورد ضروری مانده» → «آماده‌ی ثبت») and jumps to the first empty
-  one. A section's number turns into a green check when it is complete.
+- *Add / edit — a quiet settings-style form* (modelled on Tailwind's
+  Catalyst settings page, with HeroUI-style fields). Rows (`.cq-row`): a
+  short title and one muted line on the start side (180px), the fields on
+  the other, rows split by a hairline — «شناسه‌ی چک», «مبلغ و سررسید»,
+  «صاحب چک و طرف حساب», «ذینفع», «ارسال برای ثبت», «جزئیات بیشتر». Fields
+  are 36px, filled (`--field-bg`), no border until focus (then white with a
+  lapis border and 3px wash ring); errors turn the fill red. Field labels
+  are 12px. Optional fields (spend date, notes, photo) hide behind a
+  «+ افزودن …» link and open by themselves when they hold a value or an
+  error. The save button is compact and sits at the end of the footer.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
   its stamp, and below it only what the cheque doesn't carry (party, send
   date, channels, spend date, notes, photos, sayad id with a copy button)
