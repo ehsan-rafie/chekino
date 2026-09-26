@@ -138,7 +138,9 @@
   font-variation-settings: var(--f-body);
   white-space: nowrap;
 }
-.cqc-num { font-variant-numeric: tabular-nums; }
+/* Values use the font's proportional digits (IRANSansX's tabular ones are cut
+   wide); only the sayad id, printed in groups of four, keeps them. */
+#cqfSayad { font-variant-numeric: tabular-nums; }
 
 .cqc-head {
   display: flex;
@@ -203,11 +205,12 @@
   line-height: 2.15;
   color: var(--text);
 }
+.cqc-keep { white-space: nowrap; }
 .cqc-fill {
   padding: 0 0.3em 0.05em;
   border-bottom: 1px dotted var(--rule);
   color: var(--pen);
-  font-variation-settings: 'wght' 600, 'dots' 1;
+  font-variation-settings: 'wght' 600;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   border-radius: 0.2em;
@@ -279,7 +282,7 @@
   unicode-bidi: isolate;
   font-size: 1.2em;
   color: var(--pen);
-  font-variation-settings: 'wght' 700, 'dots' 1;
+  font-variation-settings: 'wght' 700;
   white-space: nowrap;
 }
 .cqc-amount-box b.is-empty { color: var(--soft); opacity: 0.6; }
@@ -320,7 +323,7 @@
   border: 0.12em solid currentColor;
   border-radius: 0.4em;
   font-size: 1.6em;
-  font-variation-settings: 'wght' 740, 'dots' 1;
+  font-variation-settings: 'wght' 740;
   white-space: nowrap;
   pointer-events: none;
   rotate: -10deg;

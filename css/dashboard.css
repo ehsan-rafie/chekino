@@ -59,7 +59,7 @@ html, body {
   margin: 0;
   padding: 0;
   background-color: var(--bg);
-  font-family: 'IRANYekanX', 'Tahoma', sans-serif;
+  font-family: 'IRANSansX', 'Tahoma', sans-serif;
   font-variation-settings: var(--f-body);
   color: var(--ink);
   min-height: 100vh;
@@ -3258,7 +3258,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 5px;
   font-size: var(--t-micro);
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 .chk-due svg { width: 13px; height: 13px; opacity: 0.55; flex-shrink: 0; }
@@ -3284,7 +3283,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-size: var(--t-sub);
   color: var(--ink);
   font-variation-settings: var(--f-title);
-  font-variant-numeric: tabular-nums;
   direction: ltr;
   unicode-bidi: isolate;
 }
@@ -3307,7 +3305,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   gap: 5px;
   font-size: var(--t-cap);
   color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
   white-space: nowrap;
   flex-shrink: 0;
@@ -3536,7 +3533,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    header that has only two. It now borrows the chip's own radius and
    colour, so it reads as part of the title rather than a separate badge.
    The 3px top padding is why the digit finally sits in the middle:
-   IRANYekanX reserves 5px of descender below the baseline at this size,
+   the font reserves room for descenders below the baseline at this size,
    but Persian digits have no descender at all, so centring the font's box
    parks the ink 1.5px high. Padding pushes the baseline back down. */
 .board-col-count {
@@ -3552,7 +3549,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--col-accent);
   font-size: 11.5px;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
 
@@ -3846,7 +3842,7 @@ html, body { background-color: var(--bg); }
   font-size: 28px;
   line-height: 1.3;
   color: var(--ink);
-  font-variation-settings: 'wght' 720, 'dots' 1;
+  font-variation-settings: 'wght' 720;
 }
 .board-page-title p {
   margin: 4px 0 0;
@@ -3881,7 +3877,7 @@ html, body { background-color: var(--bg); }
   background: var(--accent);
   color: var(--on-accent);
   box-shadow: none;
-  font-variation-settings: 'wght' 580, 'dots' 1;
+  font-variation-settings: 'wght' 580;
   transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease), opacity var(--dur-1) var(--ease);
 }
 .add-check-btn:hover,
@@ -3927,7 +3923,7 @@ html, body { background-color: var(--bg); }
   background: var(--surface);
   color: var(--ink-2);
   box-shadow: var(--shadow-1);
-  font-variation-settings: 'wght' 540, 'dots' 1;
+  font-variation-settings: 'wght' 540;
   transition: box-shadow var(--dur-2) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 .icon-action:hover,
@@ -4013,7 +4009,7 @@ html, body { background-color: var(--bg); }
   box-shadow: var(--shadow-1);
   color: var(--col-accent);
   font-size: var(--t-cap);
-  font-variation-settings: 'wght' 600, 'dots' 1;
+  font-variation-settings: 'wght' 600;
 }
 .board-col-icon {
   width: 7px;
@@ -4096,7 +4092,7 @@ html, body { background-color: var(--bg); }
 .chk-serial b {
   font-size: 17px;
   letter-spacing: 0.03em;
-  font-variation-settings: 'wght' 700, 'dots' 1;
+  font-variation-settings: 'wght' 700;
 }
 .chk-serial svg { display: none; }
 /* Due date as a small chip; soft amber / red when it needs attention */
@@ -4112,8 +4108,8 @@ html, body { background-color: var(--bg); }
   font-variation-settings: var(--f-num);
 }
 .chk-due svg { display: none; }
-.chk-due-soon { background: var(--state-warn-bg); color: var(--state-warn-text); font-variation-settings: 'wght' 600, 'dots' 1; }
-.chk-due-overdue { background: var(--state-bad-bg); color: var(--state-bad-text); font-variation-settings: 'wght' 600, 'dots' 1; }
+.chk-due-soon { background: var(--state-warn-bg); color: var(--state-warn-text); font-variation-settings: 'wght' 600; }
+.chk-due-overdue { background: var(--state-bad-bg); color: var(--state-bad-text); font-variation-settings: 'wght' 600; }
 .chk-due-soon::before,
 .chk-due-overdue::before {
   content: '';
@@ -4129,7 +4125,7 @@ html, body { background-color: var(--bg); }
 .chk-amount {
   font-size: var(--t-value);
   color: var(--ink);
-  font-variation-settings: 'wght' 640, 'dots' 1;
+  font-variation-settings: 'wght' 640;
 }
 .chk-amount svg { display: none; }
 
@@ -4186,7 +4182,7 @@ html, body { background-color: var(--bg); }
   margin-bottom: 6px;
   font-size: var(--t-cap);
   color: var(--ink);
-  font-variation-settings: 'wght' 540, 'dots' 1;
+  font-variation-settings: 'wght' 540;
 }
 .form-field label .req { display: none; }
 .form-field label .opt { color: var(--muted); font-size: var(--t-micro); font-variation-settings: var(--f-body); }
@@ -4306,7 +4302,7 @@ html, body { background-color: var(--bg); }
   border-bottom: none;
   background: var(--surface);
 }
-.modal-header h2 { font-size: var(--t-sub); font-variation-settings: 'wght' 650, 'dots' 1; }
+.modal-header h2 { font-size: var(--t-sub); font-variation-settings: 'wght' 650; }
 .modal-close {
   width: 34px;
   height: 34px;
@@ -4392,7 +4388,7 @@ html, body { background-color: var(--bg); }
   background: transparent;
   color: var(--ink);
   font-size: var(--t-body);
-  font-variation-settings: 'wght' 650, 'dots' 1;
+  font-variation-settings: 'wght' 650;
 }
 .cal-select:hover, .cal-select:focus { background: var(--field-bg); border: none; }
 .cal-select-wrap::after { left: 10px; border-color: var(--muted); }
@@ -4410,7 +4406,7 @@ html, body { background-color: var(--bg); }
 .cal-day {
   border-radius: var(--rad-pill);
   font-size: var(--t-body);
-  font-variation-settings: 'wght' 500, 'dots' 1;
+  font-variation-settings: 'wght' 500;
   color: var(--ink);
 }
 .cal-day:hover:not(:disabled) { background: var(--field-bg); }
@@ -4418,7 +4414,7 @@ html, body { background-color: var(--bg); }
 .cal-day.today {
   background: none;
   color: var(--accent-text);
-  font-variation-settings: 'wght' 750, 'dots' 1;
+  font-variation-settings: 'wght' 750;
   box-shadow: inset 0 0 0 1.5px var(--accent-line);
 }
 .cal-day.today.holiday { background: none; color: var(--state-bad-text); }
@@ -4427,7 +4423,7 @@ html, body { background-color: var(--bg); }
   background: var(--accent-wash) !important;
   color: var(--accent-text) !important;
   box-shadow: none;
-  font-variation-settings: 'wght' 750, 'dots' 1;
+  font-variation-settings: 'wght' 750;
 }
 .cal-day.range-mid { background: var(--accent-wash); color: var(--accent-text); border-radius: 0; }
 .cal-day.range-start,
@@ -4448,7 +4444,7 @@ html, body { background-color: var(--bg); }
   border-radius: var(--rad-pill);
   background: var(--field-bg);
   color: var(--ink);
-  font-variation-settings: 'wght' 560, 'dots' 1;
+  font-variation-settings: 'wght' 560;
 }
 .cal-today-btn:hover { background: var(--accent-wash); color: var(--accent-text); }
 .cal-confirm-btn { height: 34px; }

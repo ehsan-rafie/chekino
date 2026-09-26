@@ -15,10 +15,13 @@
    html[data-theme] before first paint, so the attribute is the only
    switch — bare :root is light, [data-theme="dark"] is dark.
 */
+/* IRANSansX (fontiran.com, licensed): the variable Farsi-numerals cut, so
+   every digit renders Persian. Axes: wght 100–1000 and DOTS 0–8, where
+   DOTS 0 (the default) is ordinary separate dots and 4 is joined dots. */
 @font-face {
-  font-family: 'IRANYekanX';
-  src: url('/fonts/IRANYekanXVFaNumVF.woff2') format('woff2'),
-       url('/fonts/IRANYekanXVFaNumVF.ttf') format('truetype');
+  font-family: 'IRANSansX';
+  src: url('/fonts/IRANSansXVFaNum.woff2') format('woff2'),
+       url('/fonts/IRANSansXVFaNum.woff') format('woff');
   font-weight: 100 1000;
   font-display: swap;
 }
@@ -92,19 +95,18 @@
   /* ── control + row heights ── */
   --h-sm: 34px; --h-md: 42px; --h-lg: 50px; --h-row: 44px;
 
-  /* ── IRANYekanX axes. wght runs 100–1000; dots stays at 1 on working
-     text and opens up to 2 only on the wordmark and display sizes, where
-     the font's own dot shapes have room to be a feature. ── */
-  --f-brand:   'wght' 820, 'dots' 2;
-  --f-display: 'wght' 760, 'dots' 2;
-  --f-title:   'wght' 660, 'dots' 1;
-  --f-label:   'wght' 580, 'dots' 1;
-  --f-btn:     'wght' 620, 'dots' 1;
-  --f-value:   'wght' 520, 'dots' 1;
-  --f-num:     'wght' 580, 'dots' 1;
-  --f-body:    'wght' 420, 'dots' 1;
-  --f-hint:    'wght' 360, 'dots' 1;
-  --f-micro:   'wght' 480, 'dots' 1;
+  /* ── IRANSansX weights, on the wght axis (100–1000). DOTS is left at
+     its default everywhere. ── */
+  --f-brand:   'wght' 820;
+  --f-display: 'wght' 760;
+  --f-title:   'wght' 660;
+  --f-label:   'wght' 580;
+  --f-btn:     'wght' 620;
+  --f-value:   'wght' 520;
+  --f-num:     'wght' 580;
+  --f-body:    'wght' 420;
+  --f-hint:    'wght' 360;
+  --f-micro:   'wght' 480;
 
   /* ── motion ──
      Presses answer in 100ms, the common case in 180ms, and anything that
@@ -391,7 +393,7 @@ button:disabled { cursor: not-allowed; }
   border-radius: var(--rad-float);
   box-shadow: var(--shadow-2);
   overflow: hidden;
-  font-family: 'IRANYekanX', 'Tahoma', sans-serif;
+  font-family: 'IRANSansX', 'Tahoma', sans-serif;
 }
 
 .cp-search {

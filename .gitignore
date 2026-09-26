@@ -14,3 +14,7 @@ Thumbs.db
 # AI agent tooling (not part of the site)
 skills-lock.json
 .gstack/
+
+# IRANSansX is licensed from fontiran.com for this site only: the files
+# live on the server and on the owner's PC, never in the repo.
+fonts/IRANSansX*

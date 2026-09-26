@@ -3672,13 +3672,13 @@ function generateReport() {
 <title>گزارش چک‌های ${statusId ? statusById(statusId).name : 'همه'} — چکینو</title>
 <style>
   @font-face {
-    font-family: 'IRANYekanX';
-    src: url('${location.origin}/fonts/IRANYekanXVFaNumVF.woff2') format('woff2'),
-         url('${location.origin}/fonts/IRANYekanXVFaNumVF.woff') format('woff');
+    font-family: 'IRANSansX';
+    src: url('${location.origin}/fonts/IRANSansXVFaNum.woff2') format('woff2'),
+         url('${location.origin}/fonts/IRANSansXVFaNum.woff') format('woff');
     font-weight: 100 1000;
     font-display: swap;
   }
-  * { font-family: 'IRANYekanX', Tahoma, Arial, sans-serif; }
+  * { font-family: 'IRANSansX', Tahoma, Arial, sans-serif; }
   body { padding: 28px 34px; color: #141934; font-size: 15px; }
   .report-brand { text-align: center; font-size: 27px; font-weight: 700; color: #2C3FC4; margin-bottom: 6px; }
   .report-titlebar { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #2C3FC4; padding-bottom: 12px; margin-bottom: 22px; flex-wrap: wrap; gap: 8px; }

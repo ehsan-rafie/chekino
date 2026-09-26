@@ -47,7 +47,7 @@
   margin: 0 0 16px;
   font-size: var(--t-body);
   color: var(--ink);
-  font-variation-settings: 'wght' 650, 'dots' 1;
+  font-variation-settings: 'wght' 650;
 }
 .cq-card-title svg {
   width: 28px;
@@ -80,7 +80,7 @@
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
-#serialInput, #sayadInput { letter-spacing: 0.08em; }
+#serialInput, #sayadInput { letter-spacing: 0.03em; }
 #serialInput::placeholder, #sayadInput::placeholder, #nidInput::placeholder { letter-spacing: 0; text-align: right; }
 
 /* Amount: same height as everything else, figures a touch heavier */
@@ -89,7 +89,7 @@
 .form-field#amountField .amount-input:focus {
   font-size: var(--t-value);
   letter-spacing: 0.01em;
-  font-variation-settings: 'wght' 620, 'dots' 1;
+  font-variation-settings: 'wght' 620;
 }
 #amountField .amount-unit {
   margin: 0;

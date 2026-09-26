@@ -44,7 +44,8 @@ shadows:
   ring: "0 0 0 3px rgba(11,102,228,.22)"  # focus
 
 typography:
-  family: "IRANYekanX (variable: wght 100–1000, dots 1–2)"
+  family: "IRANSansX, licensed from fontiran.com (fonts/IRANSansXVFaNum.woff2, variable Farsi-numerals cut: wght 100–1000, DOTS 0–8 left at 0)"
+  digits: "proportional everywhere; tabular only in tables and the sayad id"
   scale: [12, 13, 14, 15, 17, 22, 28, 32]
 
 radius: { control: 12px, menu-item: 10px, card: 20px, float: 20px, modal: 24px, pill: 999px }
@@ -72,9 +73,16 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    the calendar. No gradients.
 5. **Status is a dot and a word.** Pending blue, registered green, problem
    red, due-soon amber — always a small dot plus the Persian label.
-6. **Type and space carry hierarchy.** One family (IRANYekanX). **Never
+6. **Type and space carry hierarchy.** One family (IRANSansX). **Never
    letter-space Persian text** — it breaks the joins. Machine values (serial,
-   sayad id, national id) are set LTR, tabular.
+   sayad id, national id) are set LTR. IRANSansX's tabular digits are cut
+   wide, so single values (amounts, dates, serials on cards and on the
+   cheque) use its proportional digits; only tables and the sayad id are
+   tabular.
+   The font is licensed for this site only. Its files are git-ignored: they
+   sit in `fonts/` on the owner's PC and on the server, and must not be
+   committed or copied anywhere public. A fresh clone falls back to Tahoma
+   until `IRANSansXVFaNum.woff2` / `.woff` are put back in `fonts/`.
 7. **Motion only answers the user.** No idle or looping animation.
    `prefers-reduced-motion` is honoured globally.
 
