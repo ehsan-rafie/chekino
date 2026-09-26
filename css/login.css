@@ -1,305 +1,340 @@
-/* Palette, theme handling and the shared scales live in shared.css. */
+/* Login — two panes. The form sits on the start (right) side on plain
+   paper; the art pane on the end side is a sheet of lapis security print
+   that draws itself in once on load, with a sample Sayad cheque lying on
+   it. That draw-in is the page's one orchestrated moment; everything
+   after it moves only when the user does something. */
 
 * { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: var(--bg);
+html, body { margin: 0; min-height: 100%; }
+body {
   font-family: 'IRANYekanX', 'Tahoma', sans-serif;
-  font-variation-settings: 'wght' 420, 'dots' 1;
+  font-variation-settings: var(--f-body);
   color: var(--ink);
+  background: var(--bg);
 }
 
-body {
+.auth {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(0, 1.15fr);
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ═══ Form pane ═══ */
+.auth-pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--s6);
+  padding: var(--s7) clamp(24px, 6vw, 88px);
+}
+.auth-brand {
+  width: 100%;
+  max-width: 400px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background-image:
-    radial-gradient(circle at 15% 20%, rgba(45,140,255,0.07) 0%, transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(45,140,255,0.07) 0%, transparent 45%);
+  gap: 10px;
+  font-size: 22px;
+  color: var(--ink);
+  font-variation-settings: var(--f-brand);
 }
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
+.auth-brand .brand-mark {
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+  filter: drop-shadow(0 6px 12px rgba(44, 63, 196, 0.3));
 }
 
 .card {
-  animation: cardIn 0.35s ease both;
-  position: relative;
   width: 100%;
-  max-width: 480px;
-  background: var(--surface);
-  border-radius: var(--rad-card);
-  padding: 40px 32px 32px;
-  border: 1px solid var(--border);
-  overflow: hidden;
+  max-width: 400px;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none !important;
+  animation: authIn 0.6s var(--ease-out) 0.15s both;
 }
-
-/* stub edge — nods to a cheque's perforated counterfoil */
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 5px;
-  height: 100%;
-  background: var(--accent);
-  /* follows the card's own corner instead of squaring off against it */
-  border-radius: 0 var(--rad-card) var(--rad-card) 0;
+@keyframes authIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
 }
-/* the perforated-edge dashed line was removed — it read as visual clutter
-   rather than the intended cheque-stub nod */
-
-.brand {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
+.brand { margin-bottom: var(--s5); }
 .brand h1 {
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: -0.2px;
-  color: var(--blue-900);
-  font-variation-settings: 'wght' 760, 'dots' 2;
+  margin: 0 0 var(--s2);
+  font-size: var(--t-display);
+  line-height: 1.3;
+  color: var(--ink);
+  font-variation-settings: var(--f-display);
 }
-
 .brand p {
-  margin: 8px 0 0;
-  font-size: 14px;
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--t-body);
+  line-height: 1.9;
   color: var(--muted);
-  font-variation-settings: 'wght' 420, 'dots' 1;
 }
 
-form { margin-top: 8px; }
+form { display: flex; flex-direction: column; gap: 14px; margin: 0; }
 
-.field {
-  position: relative;
-  margin-bottom: 16px;
-}
-
+/* Floating-label field: the label sits inside the box and lifts onto its
+   top edge once the field is focused or filled. */
+.field { position: relative; }
 .field input {
   width: 100%;
-  height: var(--h-lg);
-  padding: 0 16px;
-  border: 1.5px solid var(--border);
+  height: 56px;
+  padding: 18px 16px 0;
+  border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
-  font-size: 15px;
-  font-family: inherit;
-  font-variation-settings: 'wght' 420, 'dots' 1;
-  color: var(--ink);
   background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-value);
+  font-variation-settings: var(--f-value);
+  text-align: right;
+  box-shadow: 0 1px 1px rgba(20, 25, 52, 0.03);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
-
+.field input:hover { border-color: var(--border-strong); }
 .field input::placeholder { color: transparent; }
-
-/* hide native browser password-reveal icons so only our custom eye shows */
 .field input[type="password"]::-ms-reveal,
 .field input[type="password"]::-ms-clear { display: none; }
-.field input[type="password"]::-webkit-textfield-decoration-container { display: none; }
-
+#passField input { padding-left: 48px; }
 .field label {
   position: absolute;
-  right: 12px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 0 4px;
-  font-size: 15px;
+  font-size: var(--t-value);
   color: var(--muted);
   pointer-events: none;
-  transition: all 0.15s ease;
-  font-variation-settings: 'wght' 420, 'dots' 1;
-  background: var(--surface);
+  transform-origin: right center;
+  transition: top var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease);
 }
-
 .field input:focus ~ label,
 .field input:not(:placeholder-shown) ~ label {
-  top: 0;
-  font-size: 12px;
+  top: 17px;
+  transform: translateY(-50%) scale(0.8);
   color: var(--accent-text);
-  font-variation-settings: 'wght' 550, 'dots' 1;
+  font-variation-settings: var(--f-label);
 }
-
-.field input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-wash);
-}
-
-.field.error input {
-  border-color: var(--error);
-}
+.field input:focus { border-color: var(--accent); box-shadow: var(--ring); }
+.field.error input { border-color: var(--state-bad); }
+.field.error input:focus { box-shadow: var(--ring-bad); }
 .field.error input:focus ~ label,
-.field.error input:not(:placeholder-shown) ~ label {
-  color: var(--error);
-}
+.field.error input:not(:placeholder-shown) ~ label { color: var(--state-bad-text); }
 
 .toggle-eye {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--rad-ctl);
-  transition: color 0.15s ease, background 0.15s ease;
-  border: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
   padding: 0;
-  background: transparent;
-  font: inherit;
+  border: none;
+  border-radius: var(--rad-ctl);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-/* Grows the tap target past the 24px glyph. Height is free to expand; width is
-   kept narrow so the target does not reach into the field's typing area. */
-.toggle-eye::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 30px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.toggle-eye:hover { color: var(--blue-600); background: var(--blue-100); }
-.toggle-eye:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  color: var(--blue-600);
-}
+.toggle-eye:hover { color: var(--accent-text); background: var(--accent-wash); }
+.toggle-eye:active { transform: translateY(-50%) scale(0.94); }
 .toggle-eye svg { width: 18px; height: 18px; }
 
 .alert {
   display: none;
   align-items: center;
-  gap: 10px;
-  background: var(--error-bg);
-  color: var(--error);
-  border: 1px solid var(--error-border);
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+  padding: 12px 14px;
   border-radius: var(--rad-ctl);
-  padding: 10px 14px;
-  font-size: 13px;
-  margin-bottom: 16px;
-  font-variation-settings: 'wght' 460, 'dots' 1;
+  background: var(--state-bad-bg);
+  color: var(--state-bad-text);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
 }
-.alert.show { display: flex; animation: slideDown 0.22s ease; }
-.alert svg { width: 17px; height: 17px; flex-shrink: 0; }
-
-.alert.success {
-  background: var(--success-bg);
-  color: var(--success);
-  border-color: var(--success-border);
-}
+.alert.show { display: flex; animation: alertIn var(--dur-3) var(--ease-out); }
+@keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.alert svg { width: 18px; height: 18px; flex-shrink: 0; }
+.alert.success { background: var(--state-ok-bg); color: var(--state-ok-text); }
 
 button.submit {
-  width: 100%;
-  height: var(--h-lg);
+  position: relative;
+  overflow: hidden;
+  height: 54px;
+  margin-top: 6px;
   border: none;
   border-radius: var(--rad-ctl);
-  background: var(--blue-700);
-  color: var(--white);
-  font-size: 15px;
+  background: var(--accent-grad);
+  color: var(--on-accent);
   font-family: inherit;
-  font-variation-settings: 'wght' 600, 'dots' 1;
+  font-size: var(--t-value);
+  font-variation-settings: var(--f-btn);
+  box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.05s ease;
-  margin-top: 6px;
+  transition: transform var(--dur-1) var(--ease), filter var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
-button.submit:hover { background: var(--blue-hover); }
+button.submit:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 1px 2px rgba(35, 50, 161, 0.3), 0 14px 28px -12px rgba(44, 63, 196, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
 button.submit:active { transform: scale(0.99); }
-button.submit:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.submit:disabled {
-  opacity: 0.6;
-  cursor: progress;
-  transform: none;
-  background: var(--blue-700);
+button.submit:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+button.submit:disabled { opacity: 0.7; cursor: progress; }
+
+.auth-foot {
+  width: 100%;
+  margin: 0;
+  max-width: 400px;
+  font-size: var(--t-micro);
+  line-height: 1.9;
+  color: var(--muted);
 }
 
-.hint {
-  text-align: center;
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--muted);
-  font-variation-settings: 'wght' 400, 'dots' 1;
+/* ═══ Art pane ═══ */
+.auth-art {
+  --art-bg: #141C52;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: var(--s7) var(--s6);
+  margin: 14px;
+  margin-inline-start: 0;
+  border-radius: 28px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, #2C3FC4 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, #0B6F66 0%, transparent 60%),
+    var(--art-bg);
+  color: #fff;
+  isolation: isolate;
 }
-.hint a { color: var(--blue-700); text-decoration: none; font-variation-settings: 'wght' 550, 'dots' 1; }
-.hint a:hover { text-decoration: underline; }
+.auth-guilloche {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.auth-guilloche path { fill: none; vector-effect: non-scaling-stroke; }
+.auth-guilloche .g-a { stroke: #3FD5C3; stroke-width: 0.8; opacity: 0.22; }
+.auth-guilloche .g-b { stroke: #95A3F8; stroke-width: 0.7; opacity: 0.18; }
+.auth-guilloche .g-r { stroke: #C4CBF4; stroke-width: 0.8; opacity: 0.2; }
+.auth-guilloche .g-r2 { stroke: #3FD5C3; opacity: 0.26; }
+/* The one load sequence: each line is drawn in by pen (stroke-dashoffset,
+   set up in login-art.js), families slightly staggered. */
+.auth-guilloche.is-drawing path {
+  animation: authDraw 2.4s var(--ease-out) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes authDraw { to { stroke-dashoffset: 0; } }
+
+.auth-art-inner {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+.auth-cheque {
+  --hole: var(--art-bg);
+  transform: rotate(-3deg);
+  animation: chequeIn 1s var(--ease-out) 0.5s both;
+}
+.auth-cheque .cq-cheque {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 2px 4px rgba(4, 8, 30, 0.3),
+    0 40px 80px -30px rgba(4, 8, 30, 0.9);
+}
+@keyframes chequeIn {
+  from { opacity: 0; transform: translateY(26px) rotate(-3deg); }
+  to   { opacity: 1; transform: rotate(-3deg); }
+}
+
+.auth-copy { animation: authIn 0.8s var(--ease-out) 0.9s both; }
+.auth-copy h2 {
+  margin: 0 0 var(--s3);
+  max-width: 26ch;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.55;
+  font-variation-settings: var(--f-display);
+  color: #fff;
+}
+.auth-copy p {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.9;
+  color: rgba(224, 228, 250, 0.72);
+}
+
+/* ═══ Support button ═══ */
 .tg-float {
   position: fixed;
-  bottom: 28px;
-  left: 28px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 200;
   width: 52px;
   height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  background: var(--blue-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--white);
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #fff;
   cursor: pointer;
-  border: none;
-  z-index: 200;
-  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 10px 24px -10px rgba(4, 8, 30, 0.6);
+  transition: transform var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease);
 }
-.tg-float:hover { background: var(--blue-700); transform: scale(1.06); }
-.tg-float svg { width: 26px; height: 26px; color: #fff; }
+.tg-float:hover { background: rgba(255, 255, 255, 0.24); transform: translateY(-2px); }
+.tg-float svg { width: 24px; height: 24px; }
 .tg-tooltip {
   position: fixed;
-  bottom: 44px;
-  left: 96px;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border);
-  font-size: 13px;
+  bottom: 38px;
+  left: 88px;
+  z-index: 200;
   padding: 6px 12px;
   border-radius: var(--rad-ctl);
+  background: #141934;
+  color: #F3F4FB;
+  font-size: var(--t-micro);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  transform: translateX(6px);
-  z-index: 200;
+  transform: translateX(-6px);
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
-.tg-tooltip.show { opacity: 1; transform: translateX(0); }
-.identifier-chip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--blue-100);
-  border: 1px solid var(--blue-600);
-  border-radius: var(--rad-ctl);
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  color: var(--blue-900);
+.tg-tooltip.show { opacity: 1; transform: none; }
+
+/* ═══ Narrow screens: the art becomes a band above the form ═══ */
+@media (max-width: 960px) {
+  .auth { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .auth-art {
+    order: -1;
+    margin: 12px 12px 0;
+    padding: 28px 20px 24px;
+    border-radius: 22px;
+  }
+  .auth-art-inner { max-width: 420px; gap: var(--s4); }
+  .auth-copy { display: none; }
+  .auth-pane { justify-content: flex-start; gap: var(--s5); padding: 28px 22px 96px; }
+  .auth-brand { display: none; }
+  .brand h1 { font-size: 26px; }
+  .tg-float { background: var(--accent); border: none; box-shadow: var(--shadow-accent); }
+  .tg-float:hover { background: var(--accent-hover); }
 }
-.identifier-chip span { direction: ltr; }
-.identifier-chip button {
-  background: none;
-  border: none;
-  color: var(--blue-700);
-  font-family: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 2px 4px;
+
+:root[data-theme="dark"] .auth-art { --art-bg: #0A0F33; }
+:root[data-theme="dark"] .tg-tooltip { background: #EDEFFA; color: #141934; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .auth-copy, .auth-cheque { animation: none; }
+  .auth-guilloche.is-drawing path { animation: none; stroke-dashoffset: 0 !important; }
 }
-.identifier-chip button:hover { text-decoration: underline; }

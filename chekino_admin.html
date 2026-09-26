@@ -2,14 +2,14 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260922d" data-mode="admin"></script>
+<script src="/js/boot.js?v=20260926b" data-mode="admin"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>چکینو | پنل مدیریت</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%232C3FC4'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANYekanXVFaNumVF.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260922d">
-<link rel="stylesheet" href="/css/admin.css?v=20260922d">
+<link rel="stylesheet" href="/css/shared.css?v=20260926b">
+<link rel="stylesheet" href="/css/admin.css?v=20260926b">
 </head>
 <body class="chekino-auth-pending">
 
@@ -17,9 +17,11 @@
 
   <div id="loginScreen">
     <div class="login-card">
+      <div class="login-band" aria-hidden="true"></div>
       <div class="brand">
-        <h1>چکینو</h1>
-        <p>پنل مدیریت — ورود مخصوص ادمین سیستم</p>
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="5" width="30" height="22" rx="6" fill="currentColor"/><path d="M9 5v22" stroke="#fff" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="1.6 2"/><path d="M14 13.5h11M14 18.5h7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        <h1>پنل مدیریت چکینو</h1>
+        <p>این ورود فقط برای مدیر سامانه است.</p>
       </div>
       <div class="alert" id="loginAlert"></div>
       <form id="loginForm">
@@ -44,7 +46,10 @@
 
   <div id="panel">
     <div class="topbar">
-      <h1>پنل مدیریت <span class="brand-accent">چکینو</span></h1>
+      <div class="topbar-brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="5" width="30" height="22" rx="6" fill="currentColor"/><path d="M9 5v22" stroke="#fff" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="1.6 2"/><path d="M14 13.5h11M14 18.5h7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        <h1>چکینو <span class="brand-accent">پنل مدیریت</span></h1>
+      </div>
       <div class="topbar-user">
         <span class="admin-name" id="adminNameLabel"></span>
         <button class="btn-icon" id="themeToggleBtn" title="تغییر تم" aria-label="تغییر تم روشن و تاریک">
@@ -55,11 +60,13 @@
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="companies">شرکت‌ها</button>
-      <button class="tab-btn" data-tab="plans">پلن‌ها</button>
-      <button class="tab-btn" data-tab="account">تنظیمات حساب من</button>
-    </div>
+    <div class="admin-shell">
+    <nav class="tabs" aria-label="بخش‌های پنل">
+      <button class="tab-btn active" data-tab="companies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg><span>شرکت‌ها</span></button>
+      <button class="tab-btn" data-tab="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span>پلن‌ها</span></button>
+      <button class="tab-btn" data-tab="account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><span>حساب من</span></button>
+    </nav>
+    <div class="admin-main">
 
     <!-- ==================== COMPANIES TAB ==================== -->
     <div class="tab-panel active" id="tabCompanies">
@@ -179,6 +186,8 @@
         </div>
         <button class="btn-add" id="accountSaveBtn" style="width:100%">ذخیره تغییرات</button>
       </div>
+    </div>
+    </div>
     </div>
   </div>
 </div>
@@ -313,8 +322,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/shared.js?v=20260922d"></script>
-<script src="/js/palette.js?v=20260922d"></script>
-<script src="/js/admin.js?v=20260922d"></script>
+<script src="/js/shared.js?v=20260926b"></script>
+<script src="/js/palette.js?v=20260926b"></script>
+<script src="/js/admin.js?v=20260926b"></script>
 </body>
 </html>

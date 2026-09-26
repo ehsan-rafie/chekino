@@ -2,48 +2,137 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260922d" data-mode="login"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/js/boot.js?v=20260926b" data-mode="login"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>چکینو | ورود</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B5CFF'/%3E%3Cpath d='M9 16.5l4.8 4.8L23 12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%232C3FC4'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANYekanXVFaNumVF.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260922d">
-<link rel="stylesheet" href="/css/login.css?v=20260922d">
+<link rel="stylesheet" href="/css/shared.css?v=20260926b">
+<link rel="stylesheet" href="/css/cheque.css?v=20260926b">
+<link rel="stylesheet" href="/css/login.css?v=20260926b">
 </head>
 <body>
 
-<div class="card">
-  <div class="brand">
-    <h1>چکینو</h1>
-    <p>سیستم مدیریت ثبت چک صیادی</p>
-  </div>
+<main class="auth">
 
-  <div class="alert" id="alertBox" role="alert">
-    <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/></svg>
-    <span id="alertText">لطفاً نام کاربری و رمز عبور خود را وارد کنید</span>
-  </div>
-
-  <form id="loginForm" novalidate>
-    <div class="field" id="usernameField">
-      <input type="text" id="username" placeholder=" " autocomplete="username" dir="ltr" style="text-align:right">
-      <label for="username">نام کاربری</label>
+  <section class="auth-pane">
+    <div class="auth-brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="5" width="30" height="22" rx="6" fill="currentColor"/>
+        <path d="M9 5v22" stroke="#fff" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="1.6 2"/>
+        <path d="M14 13.5h11M14 18.5h7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>چکینو</span>
     </div>
 
-    <div class="field" id="passField">
-      <input type="password" id="password" placeholder=" " autocomplete="current-password">
-      <label for="password">رمز عبور</label>
-      <button type="button" class="toggle-eye" id="eyeToggle" aria-label="نمایش رمز عبور" aria-pressed="false">
-        <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
+    <div class="card">
+      <div class="brand">
+        <h1>ورود به حساب شرکت</h1>
+        <p>نام کاربری و رمز عبوری را که برای شرکت‌تان ساخته شده وارد کنید.</p>
+      </div>
+
+      <div class="alert" id="alertBox" role="alert">
+        <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/></svg>
+        <span id="alertText">لطفاً نام کاربری و رمز عبور خود را وارد کنید</span>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="field" id="usernameField">
+          <input type="text" id="username" placeholder=" " autocomplete="username" dir="ltr">
+          <label for="username">نام کاربری</label>
+        </div>
+
+        <div class="field" id="passField">
+          <input type="password" id="password" placeholder=" " autocomplete="current-password" dir="ltr">
+          <label for="password">رمز عبور</label>
+          <button type="button" class="toggle-eye" id="eyeToggle" aria-label="نمایش رمز عبور" aria-pressed="false">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" class="submit">ورود به سیستم</button>
+      </form>
     </div>
 
-    <button type="submit" class="submit">ورود به سیستم</button>
-  </form>
+    <p class="auth-foot">حساب ندارید یا رمز را فراموش کرده‌اید؟ از دکمه‌ی پشتیبانی پایین صفحه پیام بدهید.</p>
+  </section>
 
-</div>
+  <!-- The art pane: a sheet of security print that draws itself in once,
+       with a sample cheque lying on it. Decorative — aria-hidden. -->
+  <aside class="auth-art" aria-hidden="true">
+    <svg class="auth-guilloche" id="authGuilloche" preserveAspectRatio="xMidYMid slice"></svg>
+
+    <div class="auth-art-inner">
+      <div class="cq-cheque-wrap auth-cheque">
+        <div class="cq-cheque" data-status="done" id="authCheque">
+          <svg class="cqc-guilloche" id="authChequeGuilloche" preserveAspectRatio="none"></svg>
+          <div class="cqc-glare"></div>
+          <div class="cqc-stub">
+            <div class="cqc-stub-title">ته چک</div>
+            <div class="cqc-stub-row"><span>سریال</span><b class="cqc-num">۴۸۲۹۱۳</b></div>
+            <div class="cqc-stub-row"><span>تاریخ</span><b class="cqc-num">۱۴۰۵/۰۸/۱۵</b></div>
+            <div class="cqc-stub-row"><span>مبلغ</span><b class="cqc-num">۴۵۰٬۰۰۰٬۰۰۰</b></div>
+            <div class="cqc-stub-row"><span>در وجه</span><b>مریم کاظمی</b></div>
+          </div>
+          <div class="cqc-perf"></div>
+          <div class="cqc-main">
+            <div class="cqc-head">
+              <div class="cqc-bank">
+                <svg class="cqc-emblem" viewBox="0 0 40 40">
+                  <circle cx="20" cy="20" r="18.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="20" cy="20" r="15" fill="none" stroke="currentColor" stroke-width="0.6" stroke-dasharray="1.2 1.6"/>
+                  <path d="M11 29h18M12.5 27V18.5M17.5 27V18.5M22.5 27V18.5M27.5 27V18.5M10.5 17.5 20 11l9.5 6.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+                </svg>
+                <div class="cqc-bank-text"><b>چک صیادی</b><span>شعبه ــــــ &nbsp; کد ــــ</span></div>
+              </div>
+              <div class="cqc-ids">
+                <span class="cqc-k">شناسه صیادی</span>
+                <div class="cqc-sayad"><span>۱۲۳۴</span><span>۵۶۷۸</span><span>۹۰۱۲</span><span>۳۴۵۶</span></div>
+                <span class="cqc-serial"><span class="cqc-k">سریال</span><b class="cqc-num">۴۸۲۹۱۳</b></span>
+              </div>
+            </div>
+            <div class="cqc-date">
+              <span class="cqc-k">تاریخ</span>
+              <span class="cqc-datebox"><i>۱۴۰۵</i><i>۰۸</i><i>۱۵</i></span>
+              <span class="cqc-fill cqc-date-words">پانزدهم آبان‌ماه یک هزار و چهارصد و پنج</span>
+            </div>
+            <p class="cqc-text">
+              به موجب این چک مبلغ
+              <span class="cqc-fill">چهارصد و پنجاه میلیون</span>
+              ریال در وجه
+              <span class="cqc-fill">مریم کاظمی</span>
+              به شماره / شناسه ملی
+              <span class="cqc-fill cqc-num">۰۰۹۸۷۶۵۴۳۲</span>
+              پرداخت نمایید.
+            </p>
+            <div class="cqc-foot">
+              <div class="cqc-owner"><span class="cqc-k">نام صاحب حساب</span><b class="cqc-fill">شرکت بازرگانی آرمان</b></div>
+              <div class="cqc-sign">
+                <svg class="cqc-signature" viewBox="0 0 200 64"><path id="authSignPath" d=""/></svg>
+                <span class="cqc-k">محل امضا</span>
+              </div>
+              <div class="cqc-amount">
+                <span class="cqc-k">مبلغ به عدد</span>
+                <div class="cqc-amount-box is-filled"><b class="cqc-num">۴۵۰٬۰۰۰٬۰۰۰</b><span>ریال</span></div>
+              </div>
+            </div>
+            <div class="cqc-micr" dir="ltr">⑆482913⑆  1234567890123456⑈  000450000000⑇</div>
+          </div>
+          <div class="cqc-stamp">ثبت شد</div>
+        </div>
+      </div>
+
+      <div class="auth-copy">
+        <h2>هر چکی که صادر می‌کنید، تا ثبت در سامانه‌ی صیاد جلوی چشم شماست.</h2>
+        <p>ثبت چک، پیگیری ثبت ذینفع و یادآوری سررسید، در یک صفحه.</p>
+      </div>
+    </div>
+  </aside>
+
+</main>
 
 <button class="tg-float" id="tgBtn" aria-label="پشتیبانی تلگرام">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -53,8 +142,10 @@
 </button>
 <div class="tg-tooltip" id="tgTooltip">پشتیبانی تلگرام</div>
 
-<script src="/js/shared.js?v=20260922d"></script>
-<script src="/js/login.js?v=20260922d"></script>
+<script src="/js/shared.js?v=20260926b"></script>
+<script src="/js/print.js?v=20260926b"></script>
+<script src="/js/login.js?v=20260926b"></script>
+<script src="/js/login-art.js?v=20260926b"></script>
 
 </body>
 </html>

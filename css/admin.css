@@ -1,6 +1,6 @@
-/* Palette, theme handling and the shared scales live in shared.css.
-   Deferring to it is also what gives this panel the same manual
-   light/dark toggle the rest of the app has. */
+/* Admin panel — the same Lajvard system as the dashboard (tokens in
+   shared.css), laid out as a tool for one operator: a glass top bar, a
+   side navigation, and white sheets of forms and tables on the paper. */
 
 * { box-sizing: border-box; }
 body {
@@ -8,435 +8,481 @@ body {
   min-height: 100vh;
   background: var(--bg);
   font-family: 'IRANYekanX', 'Tahoma', sans-serif;
+  font-variation-settings: var(--f-body);
   color: var(--ink);
-  padding: 24px 16px;
-  /* Same soft wash as the login page and dashboard particles — a flat
-     background here would read as a different, plainer product. */
-  background-image:
-    radial-gradient(circle at 15% 20%, rgba(45,140,255,0.07) 0%, transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(45,140,255,0.07) 0%, transparent 45%);
-  background-attachment: fixed;
 }
+button { font-family: inherit; cursor: pointer; border: none; }
 
-.wrap { max-width: 1100px; margin: 0 auto; }
+.wrap { min-height: 100vh; }
 
-/* ---- Login screen ---- */
+/* ═══ Login screen ═══ */
 #loginScreen {
-  min-height: 70vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
+  padding: 24px 16px;
 }
 .login-card {
-  animation: cardIn 0.35s ease both;
   position: relative;
   width: 100%;
-  max-width: 380px;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
-  background: var(--card-bg);
-  padding: 32px 28px;
+  max-width: 400px;
   overflow: hidden;
+  padding: 0 28px 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--rad-float);
+  background: var(--surface);
+  animation: adminCardIn 0.5s var(--ease-out) both;
 }
-/* stub edge — same cheque-counterfoil nod as the company login card, so
-   the two "front doors" of the app read as one product. */
-.login-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 5px;
-  height: 100%;
-  background: var(--accent);
-  border-radius: 0 var(--rad-card) var(--rad-card) 0;
+@keyframes adminCardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
 }
-
-/* Brand lockup — identical to the company login page's. */
-.brand { text-align: center; margin-bottom: 24px; }
+/* A strip of lapis security print across the top of the card */
+.login-band {
+  height: 92px;
+  margin: 0 -28px 0;
+  background:
+    repeating-radial-gradient(circle at 100% 0, transparent 0 9px, rgba(63, 213, 195, 0.18) 9px 10px),
+    repeating-radial-gradient(circle at 0 100%, transparent 0 11px, rgba(149, 163, 248, 0.2) 11px 12px),
+    linear-gradient(135deg, #2C3FC4, #121A50 70%, #0B6F66);
+}
+.brand { margin-top: -26px; margin-bottom: 22px; text-align: start; }
+.brand .brand-mark {
+  width: 52px;
+  height: 52px;
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-lift);
+}
 .brand h1 {
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: -0.2px;
-  color: var(--blue-900);
-  font-variation-settings: 'wght' 760, 'dots' 2;
+  margin: 14px 0 4px;
+  font-size: var(--t-title);
+  font-variation-settings: var(--f-display);
 }
-.brand p {
-  margin: 8px 0 0;
-  font-size: 14px;
-  color: var(--muted);
-  font-variation-settings: 'wght' 420, 'dots' 1;
-}
-.brand-accent { color: var(--accent-text); font-variation-settings: var(--f-brand); }
+.brand p { margin: 0; font-size: var(--t-cap); color: var(--muted); }
 
+/* ═══ Fields ═══ */
 .field { margin-bottom: 16px; }
-.field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-.field input, .field select {
+.field label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variation-settings: var(--f-label);
+}
+.field input,
+.field select {
   width: 100%;
   height: var(--h-md);
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-ctl);
   padding: 0 12px;
-  font-family: inherit;
-  font-size: 14px;
-  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
   color: var(--ink);
-}
-.field input:focus, .field select:focus {
+  font-family: inherit;
+  font-size: var(--t-body);
+  font-variation-settings: var(--f-value);
+  box-shadow: 0 1px 1px rgba(20, 25, 52, 0.03);
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-wash);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.field input:hover,
+.field select:hover { border-color: var(--border-strong); }
+.field input:focus,
+.field select:focus { border-color: var(--accent); box-shadow: var(--ring); }
+.field select {
+  appearance: none;
+  padding-left: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23646A88' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 10px center;
+  background-size: 16px;
 }
 
-/* Floating-label variant, used only on the admin login card — the same
-   pattern the company login uses. The panel's own data-entry forms keep
-   plain labels-above-input: dense multi-field rows read better that way. */
-.field.float-field {
-  position: relative;
-  margin-bottom: 16px;
-}
-.field.float-field input {
-  height: var(--h-lg);
-  padding: 0 16px;
-}
+/* Floating label (login) */
+.field.float-field { position: relative; }
+.field.float-field input { height: 54px; padding: 18px 14px 0; }
 .field.float-field input::placeholder { color: transparent; }
 .field.float-field input[type="password"]::-ms-reveal,
 .field.float-field input[type="password"]::-ms-clear { display: none; }
-.field.float-field input::-webkit-textfield-decoration-container { display: none; }
 .field.float-field label {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   margin: 0;
-  padding: 0 4px;
-  font-size: 15px;
+  font-size: var(--t-value);
   color: var(--muted);
+  font-variation-settings: var(--f-body);
   pointer-events: none;
-  transition: all 0.15s ease;
-  background: var(--card-bg);
+  transform-origin: right center;
+  transition: top var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease);
 }
 .field.float-field input:focus ~ label,
 .field.float-field input:not(:placeholder-shown) ~ label {
-  top: 0;
-  font-size: 12px;
+  top: 16px;
+  transform: translateY(-50%) scale(0.8);
   color: var(--accent-text);
-  font-variation-settings: 'wght' 550, 'dots' 1;
+  font-variation-settings: var(--f-label);
 }
 .toggle-eye {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
   border-radius: var(--rad-ctl);
-  transition: color 0.15s ease, background 0.15s ease;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
 }
 .toggle-eye:hover { color: var(--accent-text); background: var(--accent-wash); }
 .toggle-eye svg { width: 18px; height: 18px; }
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-}
-.btn-primary {
-  width: 100%;
+
+/* ═══ Buttons ═══ */
+.btn-primary,
+.btn-add {
   height: var(--h-md);
-  background: var(--blue-700);
-  color: #fff;
+  padding: 0 18px;
   border-radius: var(--rad-ctl);
-  font-size: 14px;
+  background: var(--accent-grad);
+  color: var(--on-accent);
+  font-size: var(--t-body);
   font-variation-settings: var(--f-btn);
+  white-space: nowrap;
+  box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: filter var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
 }
-.btn-primary:hover { background: var(--blue-hover); }
-.btn-primary:disabled { opacity: 0.6; cursor: default; }
-.alert {
-  display: none;
-  border: 1px solid var(--error-border);
-  background: var(--error-bg);
-  color: var(--error);
-  border-radius: var(--rad-ctl);
-  padding: 10px 12px;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-.alert.show { display: block; }
-.alert.success { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.btn-primary { width: 100%; }
+#loginBtn { height: 50px; margin-top: 4px; }
+.btn-primary:hover,
+.btn-add:hover { filter: brightness(1.08); }
+.btn-primary:disabled,
+.btn-add:disabled { opacity: 0.65; cursor: progress; }
+.btn-primary:not(:disabled):active,
+.btn-add:not(:disabled):active { transform: scale(0.98); }
 
-/* ---- Main panel ---- */
-#panel { display: none; }
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.topbar h1 { font-size: 21px; margin: 0; }
-.topbar-user { display: flex; align-items: center; gap: 12px; }
-.admin-name { font-size: 13px; color: var(--muted); }
-.btn-ghost {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink);
-  border-radius: var(--rad-ctl);
-  padding: 8px 16px;
-  font-size: 13px;
-}
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-wash); }
-
-/* Square icon button, same footprint as the dashboard's so the two panels
-   feel like one product. */
-.btn-icon {
-  width: var(--h-sm);
-  height: var(--h-sm);
-  display: grid;
-  place-items: center;
+.btn-ghost,
+.btn-icon,
+.btn-inline {
+  height: 38px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
-  background: transparent;
-  color: var(--muted);
-  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  box-shadow: var(--shadow-1);
+  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
-.btn-icon:hover { color: var(--accent-text); border-color: var(--accent); background: var(--accent-wash); }
-.btn-icon:active { transform: scale(0.94); }
-.btn-icon svg { width: 16px; height: 16px; }
+.btn-ghost:hover,
+.btn-icon:hover,
+.btn-inline:hover { border-color: var(--border-strong); color: var(--ink); box-shadow: var(--shadow-lift); }
+.btn-icon { width: 38px; padding: 0; display: grid; place-items: center; }
+.btn-icon svg { width: 17px; height: 17px; }
 .btn-icon .icon-moon { display: none; }
 html[data-theme="dark"] .btn-icon .icon-sun { display: none; }
 html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
+.btn-inline { height: var(--h-md); flex-shrink: 0; }
 
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-.tab-btn {
-  background: transparent;
-  padding: 10px 16px;
-  font-size: 14px;
-  color: var(--muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.tab-btn.active { color: var(--blue-700); border-bottom-color: var(--blue-600); font-weight: 600; }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-.card {
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
-  background: var(--card-bg);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-.card h2 { font-size: 15px; margin: 0 0 16px; }
-
-/* A card that's just a table wrapper gets the same header-strip treatment
-   as the dashboard's table section — a light band the title sits in,
-   instead of a title floating loose above a table with no clear top. */
-.card.card-table { padding: 0; overflow: hidden; }
-.card-head-strip {
-  padding: 14px 20px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-}
-.card-head-strip h2 { margin: 0; }
-.card-table .table-wrap { padding: 0 20px 20px; }
-.card-table table { margin-top: 4px; }
-
-.form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-.form-row .field { flex: 1; min-width: 150px; margin-bottom: 0; }
-.btn-add {
-  height: 42px;
-  padding: 0 20px;
-  background: var(--blue-700);
-  color: #fff;
-  border-radius: var(--rad-ctl);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.btn-add:hover { background: var(--blue-hover); }
-
-.checkbox-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-.checkbox-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
-
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-th { color: var(--muted); font-weight: 600; font-size: 13px; }
-tbody tr:hover { background: var(--blue-100); }
-.table-wrap { overflow-x: auto; }
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 10px;
-  border-radius: var(--rad-pill);
-  font-size: 12px;
-  border: 1px solid var(--border);
-}
-.badge.active { color: var(--success); border-color: var(--success); background: var(--success-bg); }
-.badge.inactive { color: var(--error); border-color: var(--error-border); background: var(--error-bg); }
-
-.row-actions { display: flex; gap: 6px; }
-.row-actions button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink-2);
-  border-radius: var(--rad-ctl);
-  padding: 4px 10px;
-  font-size: 12px;
-  transition: border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
-}
-.row-actions button:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-wash); }
-/* A delete button reads as destructive before it is pressed, not only once
-   the pointer is already on it. */
-.row-actions button.danger { color: var(--state-bad-text); }
-.row-actions button.danger:hover { border-color: var(--state-bad); color: var(--state-bad); background: var(--state-bad-bg); }
-
-/* ---- Modal ---- */
-.modal-overlay {
+/* ═══ Alerts, toast ═══ */
+.alert {
   display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(15,27,51,0.45);
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 16px;
-}
-.modal-overlay.show { display: flex; }
-.modal-box {
-  width: 100%;
-  max-width: 460px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--rad-card);
-  padding: 24px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.modal-box h2 { font-size: 15px; margin: 0 0 16px; }
-.modal-sub { font-size: 13px; color: var(--muted); margin: -12px 0 16px; }
-.input-with-btn { display: flex; gap: 8px; }
-.input-with-btn input { flex: 1; }
-.btn-inline {
-  height: 42px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink);
+  margin-bottom: 14px;
+  padding: 11px 14px;
   border-radius: var(--rad-ctl);
-  font-size: 13px;
-  white-space: nowrap;
+  background: var(--state-bad-bg);
+  color: var(--state-bad-text);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
 }
-.btn-inline:hover { border-color: var(--blue-600); color: var(--blue-700); }
-.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-.modal-actions button {
-  flex: 1;
-  height: var(--h-md);
-  border-radius: var(--rad-ctl);
-  font-size: 13px;
-  font-variation-settings: var(--f-btn);
-}
-.modal-actions .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--ink); }
-.modal-actions .btn-cancel:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.alert.show { display: block; animation: adminAlertIn var(--dur-3) var(--ease-out); }
+.alert.success { background: var(--state-ok-bg); color: var(--state-ok-text); }
+@keyframes adminAlertIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
-/* ---- Confirmation dialog ---- */
-.confirm-box { max-width: 400px; }
-.confirm-box h2 { margin-bottom: 8px; }
-.confirm-body {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-/* A destructive confirm is the one button in the app that should look like
-   it costs something. */
-.modal-actions .btn-primary.danger { background: var(--state-bad); }
-.modal-actions .btn-primary.danger:hover { background: var(--state-bad); filter: brightness(0.92); }
 .toast {
   position: fixed;
   bottom: 24px;
   left: 50%;
-  transform: translateX(-50%);
-  background: var(--ink);
-  color: var(--bg);
-  padding: 10px 20px;
-  border-radius: var(--rad-ctl);
-  font-size: 13px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
   z-index: 100;
-}
-.toast.show { opacity: 1; }
-
-/* ═══════════════════════════════════════════════════════════════════
-   V2 POLISH PASS — same calibration as the dashboard's, applied here so
-   the two panels move together instead of drifting apart over time.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* ── Table: a real header, a real hover, tabular figures ── */
-table { border-spacing: 0; }
-th, td { padding: 11px 12px; transition: background var(--dur-1) var(--ease); }
-th {
+  padding: 12px 20px;
+  border-radius: var(--rad-card);
+  background: #141934;
+  color: #F3F4FB;
   font-size: var(--t-cap);
   font-variation-settings: var(--f-label);
-  letter-spacing: 0.03em;
+  box-shadow: 0 18px 40px -14px rgba(20, 25, 52, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-2) var(--ease);
+}
+:root[data-theme="dark"] .toast { background: #EDEFFA; color: #141934; }
+.toast.show { opacity: 1; animation: adminToastIn var(--dur-3) var(--ease-spring) both; }
+@keyframes adminToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%); }
+}
+
+/* ═══ Panel shell ═══ */
+#panel { display: none; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-glass);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  backdrop-filter: saturate(1.6) blur(14px);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-brand .brand-mark { width: 30px; height: 30px; color: var(--accent); filter: drop-shadow(0 4px 8px rgba(44, 63, 196, 0.28)); }
+.topbar h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  font-variation-settings: var(--f-brand);
+}
+.brand-accent {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: var(--rad-pill);
+  background: var(--accent-wash);
+  color: var(--accent-text);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+.topbar-user { display: flex; align-items: center; gap: 8px; }
+.admin-name {
+  margin-inline-end: 4px;
+  font-size: var(--t-cap);
+  color: var(--muted);
+  direction: ltr;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 28px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 28px;
+  align-items: start;
+}
+.tabs {
+  position: sticky;
+  top: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-1), var(--inset-hairline);
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: var(--rad-ctl);
+  background: none;
+  color: var(--ink-2);
+  font-size: var(--t-body);
+  font-variation-settings: var(--f-label);
+  text-align: start;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.tab-btn svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.8; }
+.tab-btn:hover { background: var(--surface-2); color: var(--ink); }
+.tab-btn.active {
+  background: var(--accent-wash);
+  color: var(--accent-text);
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+.tab-btn.active svg { opacity: 1; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: adminPanelIn var(--dur-3) var(--ease-out); }
+@keyframes adminPanelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ═══ Cards ═══ */
+.card {
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--rad-card);
+  background: var(--surface);
+}
+.card h2 {
+  margin: 0 0 18px;
+  font-size: var(--t-sub);
+  font-variation-settings: var(--f-title);
+}
+.card.card-table { padding: 0; overflow: hidden; }
+.card-head-strip {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.card-head-strip h2 { margin: 0; }
+.card-table .table-wrap { padding: 0; }
+
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.form-row .field { flex: 1; min-width: 160px; margin-bottom: 0; }
+.checkbox-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.checkbox-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-pill);
+  background: var(--surface);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.checkbox-row label:has(input:checked) { border-color: var(--accent-line); background: var(--accent-wash); color: var(--accent-text); }
+.checkbox-row input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+
+/* ═══ Tables ═══ */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--t-cap); }
+th, td {
+  padding: 13px 16px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-subtle);
+}
+th {
   background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
 }
+td { color: var(--ink); font-variant-numeric: tabular-nums; }
+td:first-child { font-variation-settings: var(--f-title); }
+tbody tr { transition: background var(--dur-1) var(--ease); }
 tbody tr:hover { background: var(--accent-wash); }
-tbody tr:hover td { border-bottom-color: var(--border-strong); }
-td { font-variant-numeric: tabular-nums; }
+tbody tr:last-child td { border-bottom: none; }
 
-/* ── Buttons and controls: one motion language ── */
-.btn-primary, .btn-add, .btn-ghost, .btn-inline, .row-actions button,
-.tab-btn, .btn-icon {
-  transition:
-    background var(--dur-1) var(--ease),
-    border-color var(--dur-1) var(--ease),
-    color var(--dur-1) var(--ease);
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
 }
-.btn-primary:not(:disabled):active,
-.btn-add:not(:disabled):active { transform: scale(0.97); }
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge.active { color: var(--state-ok-text); background: var(--state-ok-bg); }
+.badge.inactive { color: var(--state-bad-text); background: var(--state-bad-bg); }
 
-/* ── Overlays: the same blurred, warm-tinted backdrop as the dashboard ── */
+.row-actions { display: flex; gap: 4px; }
+.row-actions button {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--rad-ctl);
+  background: none;
+  color: var(--ink-2);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.row-actions button:hover { background: var(--surface); color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.row-actions button.danger { color: var(--state-bad-text); }
+.row-actions button.danger:hover { background: var(--state-bad-bg); color: var(--state-bad-text); box-shadow: none; }
+
+/* ═══ Modals ═══ */
 .modal-overlay {
-  background: rgba(22, 21, 17, 0.44);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
 }
-:root[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.6); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .modal-overlay { background: rgba(0, 0, 0, 0.6); }
+.modal-overlay.show { display: flex; }
+.modal-box {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--rad-float);
+  background: var(--surface);
 }
 .modal-overlay.show .modal-box { animation: adminFloatIn var(--dur-3) var(--ease-out) both; }
 @keyframes adminFloatIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-box h2 { margin: 0 0 18px; font-size: var(--t-sub); font-variation-settings: var(--f-title); }
+.modal-sub { margin: -12px 0 16px; font-size: var(--t-cap); color: var(--muted); }
+.input-with-btn { display: flex; gap: 8px; }
+.input-with-btn input { flex: 1; }
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.modal-actions button { height: var(--h-md); padding: 0 16px; border-radius: var(--rad-ctl); font-variation-settings: var(--f-btn); }
+.modal-actions .btn-cancel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.modal-actions .btn-cancel:hover { border-color: var(--border-strong); background: var(--surface-2); }
+
+.confirm-box { max-width: 400px; }
+.confirm-box h2 { margin-bottom: 8px; }
+.confirm-body { margin: 0; font-size: var(--t-cap); line-height: 1.9; color: var(--muted); }
+/* A destructive confirm is the one button that should look like it costs
+   something. */
+.modal-actions .btn-primary.danger { background: var(--state-bad); box-shadow: 0 8px 18px -8px var(--state-bad); }
+
+/* ═══ Narrow screens: the side nav becomes a segmented bar ═══ */
+@media (max-width: 860px) {
+  .topbar { height: 58px; padding: 0 14px; }
+  .admin-name { display: none; }
+  .brand-accent { display: none; }
+  .admin-shell { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px 14px 32px; }
+  .tabs {
+    position: static;
+    flex-direction: row;
+    padding: 4px;
+    background: var(--surface-sunken);
+    border: none;
+    box-shadow: none;
+  }
+  .tab-btn { flex: 1; justify-content: center; height: 40px; font-size: var(--t-cap); }
+  .tab-btn.active { background: var(--surface); box-shadow: var(--shadow-1); }
+  .card { padding: 18px 16px; }
+  .card-head-strip { padding: 16px; }
 }
 
-/* ── Toast rides the same spring as the dashboard's ── */
-.toast.show { animation: adminToastIn var(--dur-3) var(--ease-spring) both; }
-@keyframes adminToastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .login-card, .tab-panel.active, .modal-overlay.show .modal-box, .toast.show, .alert.show { animation: none; }
 }
-
-/* ── Tabs get a smoother underline instead of a hard snap ── */
-.tab-btn { transition: color var(--dur-1) var(--ease), border-color var(--dur-2) var(--ease); }

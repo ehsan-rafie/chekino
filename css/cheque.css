@@ -1,0 +1,365 @@
+/* ===== The Sayad cheque leaf =====
+   One drawing, used in two places: the live preview in the cheque form
+   (filled by js/cheque-form.js) and the sample on the login page (drawn by
+   js/login-art.js). Guilloche and signature strokes come from js/print.js.
+   Page stylesheets place it; this file only draws it. */
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE SAYAD CHEQUE
+   Laid out like the printed leaf: stub (ته‌چک) on the binding side,
+   perforated tear line, then the cheque — bank mark and sayad id on top,
+   the date boxed and written out, the payment sentence with its blanks,
+   owner / signature / amount along the foot, and the MICR line at the
+   bottom edge. Everything is sized in em off a container-relative font
+   size, so the whole leaf scales as one object from phone to desktop.
+
+   The paper and print colours are the cheque's own, not the theme's: a
+   cheque is paper in the dark theme too — it is only dimmed a little.
+   ═══════════════════════════════════════════════════════════════════ */
+.cq-cheque-wrap {
+  container-type: inline-size;
+  perspective: 1200px;
+}
+.cq-cheque {
+  --paper-a: #F7F8FF;
+  --paper-b: #EEF5FB;
+  --paper-c: #E8F6F2;
+  --print: #2C3FC4;
+  --print-2: #13A594;
+  --pen: #1A2A94;
+  --text: #2B3152;
+  --soft: #6C7396;
+  --rule: rgba(44, 63, 196, 0.32);
+  /* What shows through the punched holes of the tear line: whatever the
+     cheque is lying on. Pages that place it on another surface set it. */
+  --hole: var(--surface-sunken);
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 20% auto minmax(0, 1fr);
+  aspect-ratio: 1.9;
+  font-size: 2.3cqi;
+  line-height: 1.5;
+  color: var(--text);
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(112deg, var(--paper-a) 0%, var(--paper-b) 48%, var(--paper-c) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(44, 63, 196, 0.16),
+    0 1px 1px rgba(20, 25, 52, 0.08),
+    0 14px 30px -14px rgba(20, 25, 52, 0.45),
+    0 30px 60px -30px rgba(20, 25, 52, 0.35);
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.6s var(--ease-out), box-shadow var(--dur-3) var(--ease);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.cq-cheque.is-tilting { transition: transform 0.12s linear; }
+:root[data-theme="dark"] .cq-cheque {
+  filter: brightness(0.93) saturate(0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 18px 40px -16px rgba(0, 0, 0, 0.9);
+}
+
+/* Security print */
+.cqc-guilloche {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cqc-guilloche path { fill: none; vector-effect: non-scaling-stroke; }
+.cqc-guilloche .g-a { stroke: var(--print-2); stroke-width: 0.6; opacity: 0.26; }
+.cqc-guilloche .g-b { stroke: var(--print); stroke-width: 0.5; opacity: 0.13; }
+.cqc-guilloche .g-r { stroke: var(--print); stroke-width: 0.6; opacity: 0.14; }
+.cqc-guilloche .g-r2 { stroke: var(--print-2); opacity: 0.2; }
+
+.cqc-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 0%), rgba(255, 255, 255, 0.6), transparent 42%);
+  transition: opacity var(--dur-3) var(--ease);
+}
+.cq-cheque.is-tilting .cqc-glare { opacity: 1; }
+
+/* Stub (ته‌چک) */
+.cqc-stub {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  padding: 1em 0.8em 0.8em;
+  background: rgba(255, 255, 255, 0.4);
+}
+.cqc-stub-title {
+  margin-bottom: 0.3em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  color: var(--print);
+  font-size: 0.95em;
+  font-variation-settings: var(--f-title);
+}
+.cqc-stub-row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: 0.25em;
+  border-bottom: 1px dotted var(--rule);
+}
+.cqc-stub-row span { font-size: 0.72em; color: var(--soft); }
+.cqc-stub-row b {
+  font-size: 0.86em;
+  color: var(--pen);
+  font-variation-settings: var(--f-value);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cqc-stub-row b.is-empty { color: var(--soft); opacity: 0.6; }
+
+/* The tear line: a dashed cut with the punched holes showing the desk
+   beneath. */
+.cqc-perf {
+  position: relative;
+  z-index: 1;
+  width: 0.9em;
+  background:
+    radial-gradient(circle, var(--hole) 0 0.2em, transparent 0.24em) center / 100% 0.95em repeat-y,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+}
+
+/* The cheque itself */
+.cqc-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+  padding: 0.9em 1.15em 0.6em;
+}
+.cqc-k {
+  font-size: 0.72em;
+  color: var(--soft);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+}
+.cqc-num { font-variant-numeric: tabular-nums; }
+
+.cqc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8em;
+}
+.cqc-bank { display: flex; align-items: center; gap: 0.5em; min-width: 0; }
+.cqc-emblem { width: 2.7em; height: 2.7em; color: var(--print); flex-shrink: 0; }
+.cqc-bank-text { display: flex; flex-direction: column; line-height: 1.35; }
+.cqc-bank-text b { font-size: 1.2em; color: var(--print); font-variation-settings: var(--f-display); }
+.cqc-bank-text span { font-size: 0.7em; color: var(--soft); }
+
+.cqc-ids { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15em; }
+.cqc-sayad {
+  direction: ltr;
+  display: flex;
+  gap: 0.5em;
+  padding: 0.2em 0.6em;
+  border: 1px solid var(--rule);
+  border-radius: 0.35em;
+  background: rgba(255, 255, 255, 0.78);
+  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.cqc-sayad span {
+  font-size: 1em;
+  letter-spacing: 0.1em;
+  color: var(--pen);
+  font-variation-settings: var(--f-num);
+  font-variant-numeric: tabular-nums;
+}
+.cqc-sayad.is-empty span { color: var(--soft); opacity: 0.55; }
+.cqc-serial { display: flex; align-items: baseline; gap: 0.4em; }
+.cqc-serial b {
+  font-size: 0.92em;
+  letter-spacing: 0.08em;
+  color: var(--pen);
+  font-variation-settings: var(--f-num);
+}
+.cqc-serial b.is-empty { color: var(--soft); letter-spacing: 0; opacity: 0.6; }
+
+/* Date: boxed digits, then the same date in words */
+.cqc-date { display: flex; align-items: center; gap: 0.55em; min-width: 0; }
+.cqc-datebox { direction: ltr; display: inline-flex; gap: 0.25em; flex-shrink: 0; }
+.cqc-datebox i {
+  font-style: normal;
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--rule);
+  border-radius: 0.25em;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--pen);
+  font-size: 0.95em;
+  font-variation-settings: var(--f-num);
+}
+.cqc-datebox.is-empty i { color: var(--soft); opacity: 0.6; }
+.cqc-date-words { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* The payment sentence and its blanks */
+.cqc-text {
+  margin: 0;
+  font-size: 0.95em;
+  line-height: 2.15;
+  color: var(--text);
+}
+.cqc-fill {
+  padding: 0 0.3em 0.05em;
+  border-bottom: 1px dotted var(--rule);
+  color: var(--pen);
+  font-variation-settings: 'wght' 600, 'dots' 1;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  border-radius: 0.2em;
+  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+/* An empty blank still reads as a blank to be filled in. */
+.cqc-fill.is-empty::after { content: '\2003\2003\2003\2003\2003\2003'; }
+.cqc-fill-wide.is-empty::after { content: '\2003\2003\2003\2003\2003\2003\2003\2003\2003\2003\2003'; }
+.cqc-date-words.is-empty::after { content: ''; }
+.cqc-date-words { border-bottom: 1px dotted var(--rule); }
+
+@keyframes cqcInkIn {
+  from { opacity: 0; filter: blur(1.5px); }
+  to   { opacity: 1; filter: none; }
+}
+.cq-cheque .ink-in { animation: cqcInkIn 0.5s var(--ease-out); }
+
+/* Foot: owner · signature · amount */
+.cqc-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.9em;
+  margin-top: auto;
+}
+.cqc-owner { display: flex; flex-direction: column; min-width: 0; }
+.cqc-owner b {
+  font-size: 0.95em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: none;
+  padding: 0;
+}
+.cqc-owner b.is-empty::after { content: ''; }
+.cqc-sign { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.cqc-signature {
+  width: 118%;
+  height: 3.6em;
+  margin: -1.2em -9% -0.2em;
+  overflow: visible;
+}
+.cqc-signature path {
+  fill: none;
+  stroke: var(--pen);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.55, 0.1, 0.35, 1);
+}
+.cqc-sign .cqc-k {
+  padding-top: 0.2em;
+  border-top: 1px dotted var(--rule);
+  text-align: center;
+}
+.cqc-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15em; }
+.cqc-amount-box {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  padding: 0.3em 0.7em;
+  border: 1.5px solid var(--print);
+  border-radius: 0.4em;
+  background: rgba(255, 255, 255, 0.82);
+  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.cqc-amount-box b {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-size: 1.2em;
+  color: var(--pen);
+  font-variation-settings: 'wght' 700, 'dots' 1;
+  white-space: nowrap;
+}
+.cqc-amount-box b.is-empty { color: var(--soft); opacity: 0.6; }
+.cqc-amount-box.is-filled b::before,
+.cqc-amount-box.is-filled b::after { content: '#'; opacity: 0.55; margin: 0 0.1em; }
+.cqc-amount-box span { font-size: 0.72em; color: var(--soft); }
+
+/* MICR line, printed along the bottom edge */
+.cqc-micr {
+  margin-top: 0.1em;
+  font-family: 'OCR A Extended', 'OCR A Std', Consolas, 'Courier New', ui-monospace, monospace;
+  font-size: 0.8em;
+  letter-spacing: 0.14em;
+  color: rgba(20, 25, 52, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* "Where does this go?" — the blank a focused field fills, marked the way
+   a person would mark it: with a highlighter. */
+.cq-cheque .is-focus {
+  background: rgba(255, 213, 79, 0.5);
+  box-shadow: 0 0 0 0.2em rgba(255, 213, 79, 0.5);
+  border-radius: 0.2em;
+}
+
+/* Rubber stamp for the status, in view mode */
+.cqc-stamp {
+  position: absolute;
+  z-index: 2;
+  /* Over the stub and across the tear line: the stub only repeats what
+     the cheque says, so the stamp never hides a value that matters. */
+  top: 52%;
+  inset-inline-start: 3%;
+  display: none;
+  padding: 0.1em 0.85em 0.2em;
+  border: 0.22em double currentColor;
+  border-radius: 0.45em;
+  font-size: 1.9em;
+  font-variation-settings: 'wght' 800, 'dots' 2;
+  white-space: nowrap;
+  pointer-events: none;
+  rotate: -13deg;
+  opacity: 0.8;
+  mix-blend-mode: multiply;
+  filter: url(#cqcRough);
+}
+.cq-cheque[data-status="done"] .cqc-stamp,
+.cq-cheque[data-status="problem"] .cqc-stamp,
+.cq-cheque[data-status="pending"] .cqc-stamp {
+  display: block;
+  animation: cqcStamp 0.42s var(--ease-spring) both;
+}
+.cq-cheque[data-status="done"] .cqc-stamp { color: #148352; }
+.cq-cheque[data-status="problem"] .cqc-stamp { color: #C9302A; }
+.cq-cheque[data-status="pending"] .cqc-stamp { color: #2C3FC4; }
+@keyframes cqcStamp {
+  0%   { opacity: 0; scale: 1.9; }
+  60%  { opacity: 0.85; scale: 0.96; }
+  100% { opacity: 0.8; scale: 1; }
+}
+
+@media (max-width: 600px) {
+  .cq-cheque { aspect-ratio: 1.75; font-size: 2.55cqi; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cq-cheque, .cqc-signature path { transition: none; }
+  .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp { animation: none; }
+}

@@ -3181,9 +3181,9 @@ const boardStatusTabs = document.getElementById('boardStatusTabs');
 const tableEmpty = document.getElementById('tableEmpty');
 
 const STATUSES = [
-  { id: 'pending', name: 'منتظر ثبت',   color: '#123A9A', cls: 'st-pending' },
-  { id: 'done',    name: 'ثبت شد',      color: '#14805C', cls: 'st-done' },
-  { id: 'problem', name: 'مشکل در ثبت', color: '#C2453C', cls: 'st-problem' }
+  { id: 'pending', name: 'منتظر ثبت',   color: 'var(--st-pending)', cls: 'st-pending' },
+  { id: 'done',    name: 'ثبت شد',      color: 'var(--st-done)', cls: 'st-done' },
+  { id: 'problem', name: 'مشکل در ثبت', color: 'var(--st-problem)', cls: 'st-problem' }
 ];
 const STATUSES_IDS = new Set(STATUSES.map(s => s.id));
 let openStatusMenu = null;
@@ -3678,10 +3678,10 @@ function generateReport() {
     font-display: swap;
   }
   * { font-family: 'IRANYekanX', Tahoma, Arial, sans-serif; }
-  body { padding: 28px 34px; color: #1a1f2b; font-size: 15px; }
-  .report-brand { text-align: center; font-size: 27px; font-weight: 700; color: #123A9A; margin-bottom: 6px; }
-  .report-titlebar { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #123A9A; padding-bottom: 12px; margin-bottom: 22px; flex-wrap: wrap; gap: 8px; }
-  .report-titlebar h1 { font-size: 21px; margin: 0; color: #1a1f2b; }
+  body { padding: 28px 34px; color: #141934; font-size: 15px; }
+  .report-brand { text-align: center; font-size: 27px; font-weight: 700; color: #2C3FC4; margin-bottom: 6px; }
+  .report-titlebar { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #2C3FC4; padding-bottom: 12px; margin-bottom: 22px; flex-wrap: wrap; gap: 8px; }
+  .report-titlebar h1 { font-size: 21px; margin: 0; color: #141934; }
   .print-meta { font-size: 14px; color: #667; }
   .report-actions { text-align: center; margin-bottom: 24px; }
   .report-print-btn {
@@ -3691,27 +3691,27 @@ function generateReport() {
     padding: 12px 26px;
     border: none;
     border-radius: 9px;
-    background: #123A9A;
+    background: #2C3FC4;
     color: #fff;
     font-family: inherit;
     font-size: 16px;
     cursor: pointer;
   }
-  .report-print-btn:hover { background: #0D2C77; }
+  .report-print-btn:hover { background: #2332A1; }
   .print-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
-  .ps-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 130px; padding: 12px 16px; border-radius: 8px; background: #EDF1FA; font-size: 13.5px; color: #123A9A; }
+  .ps-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 130px; padding: 12px 16px; border-radius: 8px; background: #EEF0FC; font-size: 13.5px; color: #2C3FC4; }
   .ps-item b { font-size: 20px; }
-  .ps-item.ps-done { background: #E3F6ED; color: #14805C; }
-  .ps-item.ps-problem { background: #FCEBEA; color: #C2453C; }
+  .ps-item.ps-done { background: #E3F5EC; color: #17875B; }
+  .ps-item.ps-problem { background: #FCEAE8; color: #C93B33; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { border: 1px solid #D3DCF1; padding: 9px 11px; text-align: center; }
+  th, td { border: 1px solid #D8DCE8; padding: 9px 11px; text-align: center; }
   .print-nid { font-size: 11.5px; color: #778; margin-top: 2px; }
-  th { background: #123A9A; color: #fff; font-weight: normal; }
-  tbody tr:nth-child(even) { background: #F4F6FA; }
+  th { background: #2C3FC4; color: #fff; font-weight: normal; }
+  tbody tr:nth-child(even) { background: #F7F8FC; }
   .print-status-pill { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 13px; color: #fff; }
-  .print-status-pill.st-pending { background: #123A9A; }
-  .print-status-pill.st-done { background: #14805C; }
-  .print-status-pill.st-problem { background: #C2453C; }
+  .print-status-pill.st-pending { background: #2C3FC4; }
+  .print-status-pill.st-done { background: #17875B; }
+  .print-status-pill.st-problem { background: #C93B33; }
   @media print {
     @page { size: A4 landscape; margin: 14mm; }
     html, body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }

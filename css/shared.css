@@ -4,24 +4,26 @@
    and the spacing / type / radius / motion scales. Page stylesheets add
    layout on top of these but never invent their own palette or sizes.
 
-   The system follows two rules borrowed from Linear:
+   The system is called Lajvard (لاجورد, lapis lazuli). Every choice in it
+   comes from the thing the product is about — the Sayad cheque — rather
+   than from a generic dashboard kit:
 
-     1 · The data layer is flat. Tables, panels, filter bars and cards carry
-         a 1px line and nothing else — no shadow. Depth is reserved for
-         things that genuinely float above the page (modals, popovers,
-         dropdowns, the command palette). That's why --shadow-1 is `none`:
-         every data surface already asks for it, so flattening happens here
-         instead of in three page stylesheets.
+     · Paper and ink. The page is a cool, faintly lapis-tinted paper; the
+       objects on it (cards, panels, the cheque itself) are white sheets
+       with a soft ink-tinted shadow. Shadows are never plain grey.
 
-     2 · Hierarchy comes from weight, size and spacing — not from colour or
-         ornament. Colour carries meaning only: the accent means "this is
-         interactive", and the status colours mean state. Neither is ever
-         decoration.
+     · Lapis for action, turquoise for security print. Lapis (--accent) is
+       the one colour that means "you can press this". Turquoise
+       (--accent-2) is reserved for guilloche lines and the cheque's
+       security details — it is never a button.
 
-   Themes are resolved here too, for all three pages at once, in three states:
-     · bare :root                      → light
-     · prefers-color-scheme: dark      → dark, unless the user forced light
-     · html[data-theme="dark"]         → dark, whatever the OS says
+     · Status is ink on a stamp. Waiting is lapis, registered is green,
+       a problem is pomegranate red, and due-soon is saffron. Each always
+       travels with an icon and a Persian word, never colour alone.
+
+   Themes are resolved here for all three pages. boot.js always writes
+   html[data-theme] before first paint, so the attribute is the only
+   switch — bare :root is light, [data-theme="dark"] is dark.
 */
 @font-face {
   font-family: 'IRANYekanX';
@@ -32,152 +34,165 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   1 · PRIMITIVES — raw scales. Components never reference these
-   directly; they go through the semantic roles in section 2.
-
-   The neutrals are close to true grey — an earlier pass leaned warm
-   (PostHog/Arc's paper tone) and it read as cream/yellow against the
-   reference this app is now matched to, which runs a clean, barely-there
-   grey. What warmth is left is a hair, not a tint anyone should be able
-   to name.
+   1 · PRIMITIVES — raw scales. Components go through the semantic
+   roles in section 2; the primitives are here so those roles have
+   something named to point at.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  --n-1:  #FCFCFC;  --n-2:  #F7F7F6;  --n-3:  #EFEFED;  --n-4:  #E4E4E1;
-  --n-5:  #D6D6D2;  --n-6:  #C2C2BD;  --n-7:  #A3A39E;  --n-8:  #878782;
-  --n-9:  #696964;  --n-10: #4B4B46;  --n-11: #2E2E2B;  --n-12: #181816;
+  /* Paper: the canvas and its steps. Cool, with a hair of lapis in it,
+     so white sheets lift off it without any border at all. */
+  --paper-0: #FFFFFF;
+  --paper-1: #F9FAFD;
+  --paper-2: #F2F4F9;
+  --paper-3: #E8EBF3;
 
-  /* Sampled off the reference board: one deep navy-blue for anything
-     interactive, a mint green for "won"/done, a dusty red for
-     "lost"/problem. Its lavender is deliberately not carried over. */
-  --blue-wash: #EDF1FA;  --blue-soft: #D3DCF1;  --blue-line: #A9B8E2;
-  --blue-base: #123A9A;  --blue-deep: #0D2C77;
+  /* Rules drawn in the same ink, at three strengths. */
+  --line-1: #E7E9F1;
+  --line-2: #D8DCE8;
+  --line-3: #B9BFD3;
 
-  --green-wash: #E3F6ED;  --green-base: #14805C;
-  --amber-wash: #FDF1E3;  --amber-base: #B26A08;
-  --red-wash:   #FCEBEA;  --red-base:   #C2453C;  --red-line: #F0C6C2;
-  /* --red-base is sized for fills (a status dot, a column's top bar, a
-     pill under white text) where contrast is never in question. As small
-     text it only clears WCAG AA on pure white — on any tinted row it
-     lands at 4.4:1. This is the same red, darkened just enough to pass
-     on the tinted surfaces too (4.85:1 on --blue-wash, 5.49:1 on white). */
-  --red-text:   #B93F36;
-  /* Same story for the green: #14805C is a fine fill but only reaches
-     4.37:1 as small text on its own wash. */
-  --green-text: #13774F;
+  /* Ink: lapis-black, not neutral black — text and shadows share it. */
+  --ink-deep: #141934;
+  --ink-mid: #434A68;
+  --ink-soft: #646A88;  /* 5.3:1 on white, 4.8:1 on paper-2 */
 
-  /* ── spacing: 4pt grid, seven steps, nothing off-scale ── */
+  /* Lajvard — lapis lazuli. 600 is the action colour (9:1 on white). */
+  --lajvard-50:  #EEF0FC;
+  --lajvard-100: #E0E4FA;
+  --lajvard-200: #C4CBF4;
+  --lajvard-400: #7082EA;
+  --lajvard-500: #4257DC;
+  --lajvard-600: #2C3FC4;
+  --lajvard-700: #2332A1;
+  --lajvard-800: #1B2679;
+  --lajvard-900: #121A50;
+
+  /* Firouzeh — turquoise. Security print only: guilloche, micro-text,
+     the cheque's own details. Never a button, never a status. */
+  --firouzeh-50:  #E2F6F3;
+  --firouzeh-400: #2BC2B0;
+  --firouzeh-500: #14A594;
+  --firouzeh-700: #0B6F66;
+
+  /* Status inks. The -text steps are the same hue darkened until small
+     text clears WCAG AA on its own wash as well as on white. */
+  --sabz-50:  #E3F5EC;  --sabz-600: #17875B;  --sabz-700: #0F6E48;
+  --anar-50:  #FCEAE8;  --anar-200: #F3C6C1;  --anar-600: #C93B33;  --anar-700: #A92E28;
+  --zafaran-50: #FCF3DD; --zafaran-500: #D08E0C; --zafaran-700: #8F5F00;
+
+  /* ── spacing: 4pt grid ── */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
-  --s5: 24px; --s6: 32px; --s7: 48px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
 
-  /* ── radius, assigned by role ──
-     Verified against shadcn/ui's own computed styles (the de-facto
-     standard right now): its default button is rounded-md, 8px, not a
-     pill. Pills stay — they're a real, near-universal convention — but
-     narrowed to exactly the things a pill means somewhere else too:
-     status, count and tag. A button you press keeps the same soft
-     rectangle as the field you type into. */
-  --rad-ctl: 8px;     /* inputs, buttons, table/panel surfaces */
-  --rad-card: 10px;   /* panels, cards — one step softer than a control */
-  --rad-float: 12px;  /* modals, popovers, dropdowns, command palette */
+  /* ── radius, one step per layer of the page ──
+     The deeper something sits, the tighter its corner: a field inside a
+     card inside a modal reads as nested because each step is visibly
+     softer than the one it sits in. */
+  --rad-xs: 6px;      /* chips inside controls, tiny tags */
+  --rad-ctl: 10px;    /* inputs, buttons, tooltips */
+  --rad-card: 14px;   /* cards, panels, step cards */
+  --rad-float: 20px;  /* modals, popovers, the command palette */
   --rad-pill: 999px;  /* status, count, tag — never a button */
 
-  /* ── type scale: seven steps, no half-pixels ── */
+  /* ── type scale (Elements of Typographic Style, roughly 1.2) ── */
   --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
-  --t-sub: 17px;   --t-title: 21px; --t-display: 28px;
+  --t-sub: 17px;   --t-title: 22px; --t-display: 32px; --t-hero: 46px;
 
-  /* ── control + row heights ──
-     --h-row is the list/table rhythm: roomy enough to scan comfortably,
-     tighter than the old 56px so more cheques fit on one screen. */
-  --h-sm: 32px; --h-md: 40px; --h-lg: 48px; --h-row: 44px;
+  /* ── control + row heights ── */
+  --h-sm: 34px; --h-md: 42px; --h-lg: 50px; --h-row: 44px;
 
-  /* ── font weight axes (IRANYekanX is variable, 100–1000) ──
-     Large text is deliberately not bold. The weight that reads as premium
-     at display sizes is a medium one — linear.app sets its 64px headline at
-     510, shadcn's own button label at 500 — and letting size carry the
-     emphasis instead of weight is most of what separates an elegant
-     heading from a shouty one. These sit a little above the Latin numbers
-     because Persian script, being cursive and lower-contrast, thins out
-     faster than Latin at the same weight. */
-  --f-brand:  'wght' 680, 'dots' 2;
-  --f-title:  'wght' 600, 'dots' 1;
-  --f-label:  'wght' 590, 'dots' 1;
-  --f-btn:    'wght' 560, 'dots' 1;
-  --f-value:  'wght' 510, 'dots' 1;
-  --f-num:    'wght' 550, 'dots' 1;
-  --f-body:   'wght' 430, 'dots' 1;
-  --f-hint:   'wght' 330, 'dots' 1;
-  --f-micro:  'wght' 470, 'dots' 1;
+  /* ── IRANYekanX axes. wght runs 100–1000; dots stays at 1 on working
+     text and opens up to 2 only on the wordmark and display sizes, where
+     the font's own dot shapes have room to be a feature. ── */
+  --f-brand:   'wght' 820, 'dots' 2;
+  --f-display: 'wght' 760, 'dots' 2;
+  --f-title:   'wght' 660, 'dots' 1;
+  --f-label:   'wght' 580, 'dots' 1;
+  --f-btn:     'wght' 620, 'dots' 1;
+  --f-value:   'wght' 520, 'dots' 1;
+  --f-num:     'wght' 580, 'dots' 1;
+  --f-body:    'wght' 420, 'dots' 1;
+  --f-hint:    'wght' 360, 'dots' 1;
+  --f-micro:   'wght' 480, 'dots' 1;
 
   /* ── motion ──
-     Everything the user causes lands inside 200ms; the common case is
-     150ms — the exact figure shadcn's own transition uses, on the same
-     curve. Only opacity, transform and colour are animated — never a
-     property that forces layout. */
-  --dur-1: 90ms;    /* instant feedback: hover, press */
-  --dur-2: 150ms;   /* the default */
-  --dur-3: 220ms;   /* entrances, state changes worth noticing */
+     Presses answer in 100ms, the common case in 180ms, and anything that
+     enters the screen in 280ms on the expo curve. The spring is used for
+     things the user just caused to arrive (a stamp, a check mark). */
+  --dur-1: 100ms;
+  --dur-2: 180ms;
+  --dur-3: 280ms;
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);   /* overshoot-free entrances */
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1); /* one tasteful overshoot, used once */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ════════════════════════════════════════════════════════════════
-   2 · SEMANTIC ROLES — one token per purpose, so the "wrong blue"
-   can't be picked by accident. The accent means exactly one thing:
-   this is interactive. Status colours are reserved for state and
-   are never used as decoration.
+   2 · SEMANTIC ROLES — one token per purpose.
    ════════════════════════════════════════════════════════════════ */
 :root {
-  --bg: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-2: var(--n-1);
-  --surface-sunken: var(--n-3);
+  color-scheme: light;
 
-  /* Three border tiers. With shadows gone from the data layer, these lines
-     carry all of the structure, so which tier a line uses is the difference
-     between a panel reading as one object or as loose parts:
-       subtle → row dividers, internal separators
-       default → inputs, buttons, table headers
-       strong → outer edges of a panel, sticky headers, filter bars */
-  --border-subtle: var(--n-3);
-  --border: var(--n-4);
-  --border-strong: var(--n-6);
+  --bg: var(--paper-2);
+  --surface: var(--paper-0);
+  --surface-2: var(--paper-1);
+  --surface-sunken: var(--paper-3);
+  --surface-glass: rgba(255, 255, 255, 0.78);
 
-  --ink: var(--n-12);
-  --ink-2: var(--n-10);
-  --muted: var(--n-9);
+  --border-subtle: var(--line-1);
+  --border: var(--line-2);
+  --border-strong: var(--line-3);
 
-  --accent: var(--blue-base);
-  --accent-hover: var(--blue-deep);
-  --accent-text: var(--blue-deep);
-  --accent-wash: var(--blue-wash);
-  --accent-line: var(--blue-line);
+  --ink: var(--ink-deep);
+  --ink-2: var(--ink-mid);
+  --muted: var(--ink-soft);
 
-  --state-idle: var(--n-10);   --state-idle-bg: var(--n-3);      --state-idle-dot: var(--n-8);
-  --state-ok: var(--green-base);   --state-ok-bg: var(--green-wash);
-  --state-warn: var(--amber-base); --state-warn-bg: var(--amber-wash);
-  --state-bad: var(--red-base);    --state-bad-bg: var(--red-wash);
-  --state-bad-text: var(--red-text);   /* small red text — see --red-text */
-  --state-ok-text: var(--green-text);  /* small green text on a green wash */
+  --accent: var(--lajvard-600);
+  --accent-hover: var(--lajvard-700);
+  --accent-text: var(--lajvard-700);
+  --accent-wash: var(--lajvard-50);
+  --accent-line: var(--lajvard-200);
+  --accent-grad: linear-gradient(180deg, var(--lajvard-500) 0%, var(--lajvard-600) 55%, var(--lajvard-700) 100%);
+  --on-accent: #FFFFFF;
 
-  /* The data layer is flat: every panel, table and bar in the app asks for
-     --shadow-1, and it resolves to nothing. Structure comes from the border
-     tiers and from stepping the background between layers. */
-  --shadow-1: none;
-  /* Reserved for genuinely floating surfaces. Two stacked shadows: a tight
-     dark one that reads as contact, and a wide soft one that reads as height.
-     Tinted with the warm ink instead of a generic black, so the shadow
-     belongs to this palette instead of looking borrowed. */
-  --shadow-2: 0 1px 2px rgba(22, 21, 17, 0.08), 0 16px 36px -10px rgba(22, 21, 17, 0.16);
+  --accent-2: var(--firouzeh-500);
+  --accent-2-wash: var(--firouzeh-50);
+
+  /* The three board states, by id — dashboard.js paints status dots with
+     var(--st-<id>) so the palette lives here and follows the theme. */
+  --st-pending: var(--lajvard-600);  --st-pending-bg: var(--lajvard-50);
+  --st-done:    var(--sabz-600);     --st-done-bg:    var(--sabz-50);
+  --st-problem: var(--anar-600);     --st-problem-bg: var(--anar-50);
+
+  --state-idle: var(--ink-mid);   --state-idle-bg: var(--paper-3);   --state-idle-dot: var(--line-3);
+  --state-ok: var(--sabz-600);      --state-ok-bg: var(--sabz-50);
+  --state-warn: var(--zafaran-500); --state-warn-bg: var(--zafaran-50);
+  --state-warn-text: var(--zafaran-700);
+  --state-bad: var(--anar-600);     --state-bad-bg: var(--anar-50);
+  --state-bad-text: var(--anar-700);
+  --state-ok-text: var(--sabz-700);
+
+  /* Shadows are ink, not grey: every layer is tinted with --ink-deep's own
+     hue so depth belongs to this palette. Three heights:
+       1 · a sheet resting on the paper (cards, panels)
+       2 · something floating above the page (menus, modals)
+       lift · a sheet under the pointer */
+  --shadow-1: 0 1px 2px rgba(20, 25, 52, 0.05), 0 2px 6px -2px rgba(20, 25, 52, 0.06);
+  --shadow-lift: 0 2px 4px rgba(20, 25, 52, 0.05), 0 12px 28px -12px rgba(20, 25, 52, 0.22);
+  --shadow-2: 0 2px 6px -1px rgba(20, 25, 52, 0.06), 0 24px 56px -16px rgba(20, 25, 52, 0.28);
   --shadow-float: var(--shadow-2);
-  /* On light there is no lit edge to simulate — the border already reads. */
+  --shadow-accent: 0 1px 2px rgba(35, 50, 161, 0.3), 0 8px 18px -8px rgba(44, 63, 196, 0.55);
   --inset-hairline: none;
+  --ring: 0 0 0 4px rgba(44, 63, 196, 0.16);
+  --ring-bad: 0 0 0 4px rgba(201, 59, 51, 0.14);
 
-  --skeleton-base: var(--n-3);
-  --skeleton-sheen: var(--n-1);
+  --scrim: rgba(18, 26, 80, 0.32);
 
-  /* ── legacy aliases: the three page stylesheets were written against
-     these names, so they keep resolving — now to system values. ── */
+  --skeleton-base: var(--paper-3);
+  --skeleton-sheen: var(--paper-1);
+
+  /* ── legacy aliases: the page stylesheets were written against these
+     names, so they keep resolving — now to Lajvard values. ── */
   --white: #FFFFFF;
   --blue-900: var(--accent-text);
   --blue-hover: var(--accent-hover);
@@ -186,124 +201,78 @@
   --blue-100: var(--accent-wash);
   --error: var(--state-bad);
   --error-bg: var(--state-bad-bg);
-  --error-border: var(--red-line);
+  --error-border: var(--anar-200);
   --success: var(--state-ok);
   --success-bg: var(--state-ok-bg);
-  --success-border: #9BDDBB;
+  --success-border: #A6DCC2;
   --card-bg: var(--surface);
+  --n-1: var(--paper-1); --n-3: var(--paper-3); --n-4: var(--line-2); --n-6: var(--line-3);
+  --n-7: #9AA0B8; --n-8: #7D839E; --n-9: var(--ink-soft); --n-10: var(--ink-mid); --n-12: var(--ink-deep);
 }
 
-/* The dark palette, defined once. Both selectors below load the same
-   values so the OS setting and the in-app toggle can't drift apart. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    /* Near-black, neutral — not a blue-black. The surfaces above it are the
-       same colour lifted by a few percent of white, which is how the site
-       this is modelled on separates layers: by light, not by hue. */
-    --bg: #08090A;
-    --surface: #0F1011;        /* bg + 3% white */
-    --surface-2: #141516;      /* bg + 5% white */
-    --surface-sunken: #0B0C0D;
-
-    /* Lines are translucent white rather than a lighter grey. On a near-black
-       ground that reads as an edge catching light instead of a stroke drawn
-       on top, and it stays correct over whatever surface sits beneath it. */
-    --border-subtle: rgba(255, 255, 255, 0.05);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.12);
-
-    --ink: #F7F8F8;
-    --ink-2: #D0D6E0;
-    --muted: #8A8F98;
-
-    --accent: #5C87E8;
-    --accent-hover: #7BA0EF;
-    --accent-text: #9CBAF4;
-    --accent-wash: rgba(92, 135, 232, 0.15);
-    --accent-line: rgba(92, 135, 232, 0.4);
-
-    --state-idle: #AEB8C8;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8A8F98;
-    --state-ok: #4CC38A;     --state-ok-bg: rgba(76, 195, 138, 0.13);
-    --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.13);
-    --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.13);
-  --state-bad-text: #FF8078;   /* already light-on-dark; no darkening needed */
-  --state-ok-text: #4CC38A;
-    --state-bad-text: #FF8078;   /* already light-on-dark; no darkening needed */
-    --state-ok-text: #4CC38A;
-
-    --shadow-1: none;
-    /* Four stacked shadows that tighten as they darken, the way the site does
-       it. One big soft shadow reads as a drop shadow; this reads as an object
-       resting on a surface. */
-    --shadow-2:
-      0 8px 2px rgba(0, 0, 0, 0),
-      0 5px 2px rgba(0, 0, 0, 0.02),
-      0 3px 2px rgba(0, 0, 0, 0.06),
-      0 1px 1px rgba(0, 0, 0, 0.10),
-      0 16px 40px -12px rgba(0, 0, 0, 0.7);
-    /* An inner hairline of white — what makes a dark panel look lit from
-       inside its own edge rather than cut out of the page. */
-    --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-
-    --skeleton-base: rgba(255, 255, 255, 0.05);
-    --skeleton-sheen: rgba(255, 255, 255, 0.10);
-
-    --blue-600: var(--accent-line);
-    --error-border: rgba(255, 128, 120, 0.32);
-    --success-border: rgba(76, 195, 138, 0.32);
-  }
-}
+/* Night: the same lapis, after dark. Surfaces separate by lightness
+   steps of one deep blue-black; lines are translucent white, so they read
+   as an edge catching light. */
 :root[data-theme="dark"] {
-  /* Near-black, neutral — not a blue-black. The surfaces above it are the
-     same colour lifted by a few percent of white, which is how the site
-     this is modelled on separates layers: by light, not by hue. */
-  --bg: #08090A;
-  --surface: #0F1011;        /* bg + 3% white */
-  --surface-2: #141516;      /* bg + 5% white */
-  --surface-sunken: #0B0C0D;
+  color-scheme: dark;
 
-  /* Lines are translucent white rather than a lighter grey. On a near-black
-     ground that reads as an edge catching light instead of a stroke drawn
-     on top, and it stays correct over whatever surface sits beneath it. */
+  --bg: #090C1A;
+  --surface: #10142A;
+  --surface-2: #151A33;
+  --surface-sunken: #0C1024;
+  --surface-glass: rgba(16, 20, 42, 0.72);
+
   --border-subtle: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.15);
 
-  --ink: #F7F8F8;
-  --ink-2: #D0D6E0;
-  --muted: #8A8F98;
+  --ink: #EDEFFA;
+  --ink-2: #BEC3DB;
+  --muted: #8C92B0;
 
-  --accent: #5C87E8;
-  --accent-hover: #7BA0EF;
-  --accent-text: #9CBAF4;
-  --accent-wash: rgba(92, 135, 232, 0.15);
-  --accent-line: rgba(92, 135, 232, 0.4);
+  --accent: #7A8BF6;
+  --accent-hover: #95A3F8;
+  --accent-text: #AFB9FA;
+  --accent-wash: rgba(122, 139, 246, 0.14);
+  --accent-line: rgba(122, 139, 246, 0.42);
+  --accent-grad: linear-gradient(180deg, #8595F7 0%, #6E80F0 55%, #5B6DE6 100%);
+  --on-accent: #0A0E24;
 
-  --state-idle: #AEB8C8;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8A8F98;
-  --state-ok: #4CC38A;     --state-ok-bg: rgba(76, 195, 138, 0.13);
-  --state-warn: #E8A63F;   --state-warn-bg: rgba(232, 166, 63, 0.13);
-  --state-bad: #FF8078;    --state-bad-bg: rgba(255, 128, 120, 0.13);
+  --accent-2: #3FD5C3;
+  --accent-2-wash: rgba(63, 213, 195, 0.12);
 
-  --shadow-1: none;
-  /* Four stacked shadows that tighten as they darken, the way the site does
-     it. One big soft shadow reads as a drop shadow; this reads as an object
-     resting on a surface. */
+  --st-pending: #8A99F7;  --st-pending-bg: rgba(122, 139, 246, 0.14);
+  --st-done:    #4CCB91;  --st-done-bg:    rgba(76, 203, 145, 0.13);
+  --st-problem: #FF7D72;  --st-problem-bg: rgba(255, 125, 114, 0.13);
+
+  --state-idle: #B3B9D2;   --state-idle-bg: rgba(255, 255, 255, 0.06); --state-idle-dot: #8C92B0;
+  --state-ok: #4CCB91;     --state-ok-bg: rgba(76, 203, 145, 0.13);
+  --state-warn: #F0B24A;   --state-warn-bg: rgba(240, 178, 74, 0.13);
+  --state-warn-text: #F0B24A;
+  --state-bad: #FF7D72;    --state-bad-bg: rgba(255, 125, 114, 0.13);
+  --state-bad-text: #FF8F85;
+  --state-ok-text: #5ED69E;
+
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 32px -12px rgba(0, 0, 0, 0.7);
   --shadow-2:
-    0 8px 2px rgba(0, 0, 0, 0),
-    0 5px 2px rgba(0, 0, 0, 0.02),
-    0 3px 2px rgba(0, 0, 0, 0.06),
-    0 1px 1px rgba(0, 0, 0, 0.10),
-    0 16px 40px -12px rgba(0, 0, 0, 0.7);
-  /* An inner hairline of white — what makes a dark panel look lit from
-     inside its own edge rather than cut out of the page. */
+    0 1px 1px rgba(0, 0, 0, 0.12),
+    0 3px 6px rgba(0, 0, 0, 0.16),
+    0 28px 64px -18px rgba(0, 0, 0, 0.8);
+  --shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(122, 139, 246, 0.55);
   --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --ring: 0 0 0 4px rgba(122, 139, 246, 0.24);
+  --ring-bad: 0 0 0 4px rgba(255, 125, 114, 0.2);
+
+  --scrim: rgba(3, 5, 14, 0.62);
 
   --skeleton-base: rgba(255, 255, 255, 0.05);
   --skeleton-sheen: rgba(255, 255, 255, 0.10);
 
   --blue-600: var(--accent-line);
-  --error-border: rgba(255, 128, 120, 0.32);
-  --success-border: rgba(76, 195, 138, 0.32);
+  --error-border: rgba(255, 125, 114, 0.34);
+  --success-border: rgba(76, 203, 145, 0.34);
+  --n-7: #5F6584; --n-8: #767C9A;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -321,10 +290,17 @@ a:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--rad-ctl);
 }
 
-::selection { background: var(--accent); color: #fff; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--ink); }
+body, button, input, textarea, select {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--accent); color: var(--on-accent); }
 
 /* Digits line up column-to-column instead of jittering by glyph width —
    it matters most anywhere amounts or dates stack vertically. */
@@ -389,16 +365,12 @@ button:disabled { cursor: not-allowed; }
   position: fixed;
   inset: 0;
   z-index: 900;
-  background: rgba(15, 23, 40, 0.38);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: var(--scrim);
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
   padding: 12vh 16px 16px;
   justify-content: center;
   align-items: flex-start;
-}
-:root[data-theme="dark"] .cp-overlay { background: rgba(0, 0, 0, 0.55); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .cp-overlay { background: rgba(0, 0, 0, 0.55); }
 }
 .cp-overlay.show { display: flex; animation: cpFade var(--dur-2) var(--ease) both; }
 .cp-overlay.show .cp-box { animation: cpRise var(--dur-3) var(--ease-out) both; }
@@ -532,26 +504,18 @@ kbd {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   5 · THE SITE FINISH
-   Four details carried over from linear.app itself. Each is small; the
-   combination is most of why that page reads as expensive.
+   5 · THE FINISH
+   Small, system-wide details. Each is minor; together they are what
+   makes the app read as considered rather than assembled.
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Tracking tightens as type grows ──
-   Letter-spacing on the site scales negatively with size: roughly -0.022em
-   at display sizes, easing to normal by body copy. Large text set at default
-   tracking is the single most common tell of an unconsidered interface. */
-.brand h1,
-.header-logo,
-.topbar h1 { letter-spacing: -0.02em; }
+/* No tracking on Persian text, ever: letter-spacing pulls the joins of a
+   cursive script apart. Tracking is only applied to Latin digits and
+   machine values (see .data-value above). */
 
 /* ── Pills mean state, not "press me" ──
-   Checked against shadcn/ui's own computed styles: its default button is
-   rounded-md — 8px, not a pill. A full pill is Linear's marketing-site
-   signature, not a cross-industry standard, and stamping it on every
-   button read as a costume rather than a system. Reserved instead for
-   exactly the things a pill conventionally means everywhere — Vuexy,
-   Metronic, GitHub, Linear's own app: status, count, tag. */
+   Status, count and tag. A button you press keeps the same soft
+   rectangle as the field you type into. */
 :root .status-btn,
 :root .status-filter-chip,
 :root .ths-count,
@@ -562,8 +526,6 @@ kbd {
 :root .due-alert-count,
 :root .st-opt { border-radius: var(--rad-pill); }
 
-/* Buttons, tabs and menu items take the control radius instead — the same
-   shape as the inputs they sit beside. */
 :root button.btn-primary,
 :root button.btn-add,
 :root button.submit,
@@ -580,24 +542,16 @@ kbd {
 :root .confirm-actions button,
 :root .btn-inline { border-radius: var(--rad-ctl); }
 
-/* ── Panels are lit from inside their own edge ──
-   A translucent white hairline set inside the border. On the light theme it
-   resolves to nothing, because there is no darkness for an edge to catch. */
+/* ── Sheets rest on the paper ──
+   Panels carry the resting shadow; in the dark theme the inner hairline
+   is what makes a panel read as lit from its own edge. */
 :root .table-wrap,
 :root .filter-bar,
 :root .due-alert-bar,
 :root .card,
-:root .login-card,
-:root .modal-box,
-:root .confirm-box,
-:root .cp-box,
-:root .filter-popover,
-:root .cal-popup,
-:root .status-menu,
-:root .ac-list,
-:root .ms-list { box-shadow: var(--shadow-1), var(--inset-hairline); }
+:root .login-card { box-shadow: var(--shadow-1), var(--inset-hairline); }
 
-/* The floating set keeps its own depth, with the hairline on top of it. */
+/* Floating surfaces keep their own depth, with the hairline on top. */
 :root .modal-box,
 :root .confirm-box,
 :root .cp-box,
@@ -607,21 +561,22 @@ kbd {
 :root .ac-list,
 :root .ms-list { box-shadow: var(--shadow-2), var(--inset-hairline); }
 
-/* ── An ambient pool of light behind the page ──
-   Not a gradient people should notice; a very slight lift at the top of the
-   viewport so the page doesn't read as a flat sheet of black. Fixed, so it
-   costs one paint and never moves. */
+/* ── Light from the top of the page ──
+   One wide, very faint pool of lapis at the top edge, so the paper reads
+   as lit rather than as a flat fill. Behind everything (z-index -1),
+   fixed, one paint. */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
-  background: radial-gradient(60% 50% at 50% 0%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 100%);
+  background:
+    radial-gradient(1100px 520px at 85% -12%, rgba(66, 87, 220, 0.08), transparent 70%),
+    radial-gradient(900px 480px at 0% -20%, rgba(20, 165, 148, 0.05), transparent 70%);
 }
-:root:not([data-theme="dark"]) body::before { background: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) body::before {
-    background: radial-gradient(60% 50% at 50% 0%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 100%);
-  }
+:root[data-theme="dark"] body::before {
+  background:
+    radial-gradient(1100px 560px at 85% -14%, rgba(122, 139, 246, 0.13), transparent 70%),
+    radial-gradient(900px 480px at 0% -20%, rgba(63, 213, 195, 0.06), transparent 70%);
 }

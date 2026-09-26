@@ -1,99 +1,111 @@
-/* ===== Cheque modal: stepped form + live cheque preview =====
+/* ===== Cheque modal: stepped form + live Sayad cheque =====
    Loaded after dashboard.css and scoped to #modalOverlay so the people
    modal, which shares .modal-box, is untouched. Layout, from the start
-   (right) edge in RTL: the form as three numbered step cards, then a
-   sticky aside with a drawing of the Sayad cheque that js/cheque-form.js
-   fills in live. Only design-system tokens from shared.css are used. */
+   (right) edge in RTL: the form as three numbered step cards on the
+   paper, then the "desk" — a sticky aside where js/cheque-form.js writes
+   the cheque out as the form is filled. */
 
-#modalOverlay .modal-box {
-  max-width: 1120px;
-}
+#modalOverlay .modal-box { max-width: 1200px; }
 @media (min-width: 601px) {
-  #modalOverlay .modal-box { max-height: 90vh; }
-  #modalOverlay .modal-header { padding: 14px 24px; }
+  #modalOverlay .modal-box { max-height: min(92vh, 980px); }
 }
-#modalOverlay .modal-header h2 { font-size: var(--t-sub); }
 
-.cq-body.modal-body { padding: 0; }
-.cq-body > .form-alert { margin: 16px 24px 0; }
+.cq-body.modal-body { padding: 0; background: var(--surface-2); }
+.cq-body > .form-alert { margin: var(--s4) var(--s5) 0; }
 
-/* The aside's tinted column and its divider are painted by the layout and
-   the form, not by the aside itself: the aside has to stay only as tall as
-   its content, or position: sticky has no room to stick. */
+/* The desk's tint and its divider are painted by the layout, not by the
+   aside: the aside must stay only as tall as its content, or
+   position: sticky has no room to stick. */
 .cq-layout {
+  --desk-w: 540px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) var(--desk-w);
   align-items: stretch;
-  background: linear-gradient(to left, var(--surface) calc(100% - 360px), var(--surface-2) 0);
+  background: linear-gradient(to left, transparent calc(100% - var(--desk-w)), var(--surface-sunken) 0);
 }
 
 .cq-form {
   display: flex;
   flex-direction: column;
-  gap: var(--s4);
-  padding: 20px 24px 24px;
+  gap: 14px;
+  padding: var(--s5);
   min-width: 0;
-  border-inline-end: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border-subtle);
 }
 
 /* ---- Step cards ---- */
 .cq-step {
-  border: 1px solid var(--border);
+  position: relative;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--rad-card);
   background: var(--surface);
-  padding: 16px 18px 18px;
-  transition: border-color var(--dur-2) var(--ease);
+  padding: 18px 20px 20px;
+  box-shadow: var(--shadow-1), var(--inset-hairline);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
-.cq-step:focus-within { border-color: var(--accent-line); }
+.cq-step:focus-within {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 4px var(--accent-wash), var(--shadow-1);
+}
 .cq-step.has-error { border-color: var(--error-border); }
 
 .cq-step-head {
   display: flex;
   align-items: center;
   gap: var(--s3);
-  margin-bottom: var(--s4);
+  margin-bottom: 18px;
 }
 .cq-step-num {
   position: relative;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--rad-pill);
-  border: 1.5px solid var(--border-strong);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--border);
   color: var(--muted);
   display: grid;
   place-items: center;
   font-size: var(--t-cap);
   font-variation-settings: var(--f-num);
-  transition: background var(--dur-3) var(--ease), border-color var(--dur-3) var(--ease), color var(--dur-3) var(--ease);
+  transition: background var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), color var(--dur-3) var(--ease);
 }
+.cq-step-num span { transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
 .cq-step-num svg {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   opacity: 0;
-  transform: scale(0.4);
+  transform: scale(0.3) rotate(-30deg);
   transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease-spring);
 }
-.cq-step-num span { transition: opacity var(--dur-2) var(--ease); }
-.cq-step:focus-within .cq-step-num { border-color: var(--accent); color: var(--accent); }
-.cq-step.has-error .cq-step-num { border-color: var(--error); color: var(--error); }
+.cq-step:focus-within .cq-step-num {
+  color: var(--accent);
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.cq-step.has-error .cq-step-num {
+  color: var(--state-bad);
+  background: var(--state-bad-bg);
+  box-shadow: inset 0 0 0 1.5px var(--state-bad);
+}
 .cq-step.is-done .cq-step-num {
   background: var(--state-ok);
-  border-color: var(--state-ok);
-  color: var(--white);
+  box-shadow: 0 4px 10px -4px var(--state-ok);
+  color: #fff;
 }
-.cq-step.is-done .cq-step-num span { opacity: 0; }
-.cq-step.is-done .cq-step-num svg { opacity: 1; transform: scale(1); }
+.cq-step.is-done .cq-step-num span { opacity: 0; transform: scale(0.5); }
+.cq-step.is-done .cq-step-num svg { opacity: 1; transform: none; }
 
 .cq-step-text h3 {
   margin: 0;
-  font-size: var(--t-value);
+  font-size: var(--t-sub);
+  line-height: 1.4;
   color: var(--ink);
   font-variation-settings: var(--f-title);
 }
 .cq-step-text p {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   font-size: var(--t-micro);
   color: var(--muted);
   font-variation-settings: var(--f-body);
@@ -103,7 +115,7 @@
 .cq-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px 12px;
+  gap: 16px 14px;
   align-items: start;
 }
 .cq-grid .form-field { margin-bottom: 0; min-width: 0; }
@@ -113,46 +125,53 @@
 .cq-span-6 { grid-column: 1 / -1; }
 .cq-grid .form-field label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Serial and sayad are read digit by digit, so they get room and a
-   left-to-right, evenly spaced number rendering. */
+/* Serial and sayad are read digit by digit: left-to-right, tabular,
+   tracked a little so a transposed digit is findable. */
 #serialInput, #sayadInput {
   direction: ltr;
   text-align: left;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
 #serialInput::placeholder, #sayadInput::placeholder { letter-spacing: 0; text-align: right; }
 
 /* ---- Amount: the one big number in the form ---- */
 #amountField .amount-box {
-  height: 58px;
-  padding: 0 16px;
+  height: 60px;
+  padding: 0 18px;
   gap: var(--s3);
-}
-#amountField .amount-box:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-wash);
 }
 .form-field#amountField .amount-input,
 .form-field#amountField .amount-input:focus {
-  font-size: 24px;
-  letter-spacing: 0.5px;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+  font-variation-settings: 'wght' 640, 'dots' 1;
 }
-#amountField .amount-input::placeholder { font-size: 20px; }
+#amountField .amount-input::placeholder { font-size: 22px; }
 #amountField .amount-unit {
   margin: 0;
-  padding: 4px 12px;
+  padding: 5px 12px;
   font-size: var(--t-cap);
   background: var(--accent-wash);
   color: var(--accent-text);
+  font-variation-settings: var(--f-label);
 }
 #amountField .amount-words:empty { display: none; }
 
-/* ---- Beneficiary: its own well, it's who the cheque gets registered to ---- */
+/* The due date shares a row with the amount, so it matches its height. */
+.cq-tall .date-input-wrap { height: 60px !important; }
+.cq-tall .date-input-wrap input { font-size: var(--t-sub); }
+
+/* ---- Beneficiary: its own well — it's who the cheque is registered to ---- */
 .cq-benef {
-  border: 1px dashed var(--border-strong);
+  position: relative;
   border-radius: var(--rad-card);
-  padding: 12px 14px 14px;
+  padding: 14px 16px 16px;
+  background:
+    linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
+    repeating-linear-gradient(135deg, var(--accent-line) 0 6px, transparent 6px 11px) border-box;
+  border: 1px solid transparent;
 }
 .cq-benef-tag {
   display: flex;
@@ -163,12 +182,12 @@
   color: var(--ink-2);
   font-variation-settings: var(--f-label);
 }
-.cq-benef-tag svg { width: 14px; height: 14px; color: var(--accent); flex-shrink: 0; }
+.cq-benef-tag svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
 
 /* Notes and the upload box sit side by side at the same height. */
-#notesField .notes-input { min-height: 96px; resize: none; }
+#notesField .notes-input { min-height: 104px; resize: none; }
 #fileField .file-box {
-  min-height: 96px;
+  min-height: 104px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -176,227 +195,60 @@
   gap: var(--s2);
 }
 
-/* ---- Aside ---- */
+/* ═══ The desk (aside) ═══ */
 .cq-aside {
   position: sticky;
   top: 0;
   align-self: start;
-  padding: 20px 20px 24px;
+  padding: var(--s5) var(--s5) var(--s6);
 }
 .cq-aside-label {
-  margin-bottom: var(--s2);
-  font-size: var(--t-micro);
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-}
-
-/* View-mode status, moved from the top of the form into the aside. */
-.cq-aside .ve-status-banner {
-  margin: 0 0 var(--s3);
-  padding: 10px 12px;
-  font-size: var(--t-micro);
-  line-height: 1.95;
-}
-.cq-aside .ve-status-banner b { font-size: var(--t-cap); }
-.cq-aside .ve-history { margin-bottom: var(--s4); }
-.cq-aside .ve-history-list { gap: var(--s3); }
-
-/* ---- The cheque drawing ---- */
-.cq-cheque {
-  position: relative;
-  overflow: hidden;
-  padding: 14px 16px 12px;
-  border: 1px solid var(--accent-line);
-  border-radius: var(--rad-float);
-  color: var(--ink);
-  background:
-    repeating-radial-gradient(circle at 100% 0, transparent 0 9px, color-mix(in srgb, var(--accent) 7%, transparent) 9px 10px),
-    repeating-radial-gradient(circle at 0 100%, transparent 0 11px, color-mix(in srgb, var(--accent) 6%, transparent) 11px 12px),
-    linear-gradient(160deg, var(--accent-wash), var(--surface) 70%);
-}
-.cq-cheque::before {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: 4px;
-  background: var(--accent);
-}
-
-.cqc-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--s3);
-}
-.cqc-brand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent-text);
-  font-size: var(--t-cap);
-  font-variation-settings: var(--f-title);
-}
-.cqc-brand svg { width: 16px; height: 16px; }
-.cqc-serial { display: flex; align-items: baseline; gap: 6px; font-size: 11px; color: var(--muted); }
-.cqc-serial b {
-  direction: ltr;
-  color: var(--ink);
-  font-size: var(--t-cap);
-  letter-spacing: 1px;
-  font-variation-settings: var(--f-num);
-}
-
-.cqc-sayad {
-  direction: ltr;
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s2);
-  margin-bottom: var(--s2);
-  padding: 7px 10px;
-  border: 1px solid var(--accent-line);
-  border-radius: 6px;
-  background: var(--surface);
-}
-.cqc-sayad span {
-  font-size: var(--t-cap);
-  letter-spacing: 2px;
-  font-variation-settings: var(--f-num);
-  color: var(--ink);
-}
-.cqc-sayad.is-empty span { color: var(--n-7); }
-
-.cqc-line {
   display: flex;
   align-items: baseline;
-  gap: var(--s2);
-  min-width: 0;
-  padding: 6px 0;
-  border-bottom: 1px dotted var(--accent-line);
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variation-settings: var(--f-label);
 }
-.cqc-k {
-  flex-shrink: 0;
-  min-width: 38px;
-  font-size: 11px;
+.cq-aside-hint {
+  font-size: 11.5px;
   color: var(--muted);
   font-variation-settings: var(--f-body);
 }
-.cqc-v {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-cap);
-  font-variation-settings: var(--f-value);
-}
-.cqc-words {
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  font-size: var(--t-micro);
-  line-height: 1.7;
-}
-.cqc-nid {
-  margin-inline-start: auto;
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--muted);
-}
-.cqc-num { font-variation-settings: var(--f-num); }
-.cq-cheque .is-empty { color: var(--n-7); font-variation-settings: var(--f-hint); }
 
-.cqc-foot {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--s3);
-  margin-top: var(--s3);
-}
-.cqc-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 5px 10px;
-  border: 1.5px solid var(--accent);
-  border-radius: 6px;
-  background: var(--surface);
-  min-width: 0;
-}
-.cqc-amount b {
-  color: var(--accent-text);
-  font-size: var(--t-value);
-  white-space: nowrap;
-}
-.cqc-amount b.is-empty { color: var(--n-7); }
-.cqc-amount span { font-size: 11px; color: var(--muted); }
-.cqc-sign {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 96px;
-  max-width: 45%;
-}
-.cqc-sign-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0 4px 3px;
-  font-size: var(--t-cap);
-  color: var(--accent-text);
-  font-variation-settings: 'wght' 380, 'dots' 1;
-}
-.cqc-sign-name.is-empty { color: var(--n-7); }
-.cqc-sign .cqc-k {
-  align-self: stretch;
-  min-width: 0;
-  padding-top: 3px;
-  border-top: 1px solid var(--ink-2);
-  text-align: center;
-  font-size: 10px;
-}
-
-/* Rubber stamp for the cheque's status in view mode. */
-.cqc-stamp {
-  position: absolute;
-  /* Over the cheque's blank left side, clear of the right-aligned values. */
-  top: 38%;
-  inset-inline-end: 14px;
-  z-index: 1;
-  display: none;
-  padding: 3px 14px 4px;
-  border: 2.5px solid currentColor;
+/* View-mode status, beside the form rather than above it. */
+.cq-aside .ve-status-banner {
+  margin: 0 0 var(--s3);
+  padding: 12px 14px;
   border-radius: var(--rad-ctl);
-  font-size: var(--t-sub);
-  font-variation-settings: var(--f-title);
-  white-space: nowrap;
-  pointer-events: none;
-  rotate: -12deg;
-  opacity: 0.85;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font-size: var(--t-micro);
+  line-height: 2;
 }
-.cq-cheque[data-status="done"] .cqc-stamp,
-.cq-cheque[data-status="problem"] .cqc-stamp,
-.cq-cheque[data-status="pending"] .cqc-stamp {
-  display: block;
-  animation: cqStamp 0.32s var(--ease-out) both;
+.cq-aside .ve-status-banner b { font-size: var(--t-cap); }
+.cq-aside .ve-history {
+  margin-bottom: var(--s5);
+  padding: 12px 14px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  box-shadow: var(--shadow-1), var(--inset-hairline);
 }
-.cq-cheque[data-status="done"] .cqc-stamp { color: var(--state-ok); }
-.cq-cheque[data-status="problem"] .cqc-stamp { color: var(--state-bad); }
-.cq-cheque[data-status="pending"] .cqc-stamp { color: var(--accent); }
-@keyframes cqStamp {
-  from { opacity: 0; scale: 1.6; }
-  to { opacity: 0.85; scale: 1; }
-}
+.cq-aside .ve-history-list { gap: var(--s3); }
 
 /* ---- Progress + facts under the cheque ---- */
-.cq-summary { margin-top: var(--s4); }
+.cq-summary {
+  margin-top: var(--s5);
+  padding: 14px 16px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-1), var(--inset-hairline);
+}
 .cq-progress-top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: var(--t-micro);
   color: var(--muted);
   font-variation-settings: var(--f-label);
@@ -413,13 +265,14 @@
   height: 100%;
   inline-size: 0;
   border-radius: inherit;
-  background: var(--accent);
+  background: var(--accent-grad);
   transition: inline-size var(--dur-3) var(--ease-out), background var(--dur-3) var(--ease);
 }
 .cq-progress-bar.is-full span { background: var(--state-ok); }
 .modal-body.ve-locked .cq-progress { display: none; }
+.modal-body.ve-locked .cq-facts { margin-top: 0; }
 
-.cq-facts { margin: var(--s4) 0 0; }
+.cq-facts { margin: 14px 0 0; }
 .cq-facts div {
   display: flex;
   justify-content: space-between;
@@ -428,7 +281,7 @@
   padding: 8px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
-.cq-facts div:last-child { border-bottom: none; }
+.cq-facts div:last-child { border-bottom: none; padding-bottom: 0; }
 .cq-facts dt { font-size: var(--t-micro); color: var(--muted); }
 .cq-facts dd {
   margin: 0;
@@ -440,43 +293,37 @@
   color: var(--ink);
   font-variation-settings: var(--f-value);
 }
-.cq-facts dd.is-empty { color: var(--n-7); }
+.cq-facts dd.is-empty { color: var(--muted); }
 
 /* ---- Responsive ---- */
+@media (max-width: 1100px) {
+  .cq-layout { --desk-w: 440px; }
+}
 @media (max-width: 860px) {
-  .cq-layout { grid-template-columns: minmax(0, 1fr); }
+  .cq-layout { grid-template-columns: minmax(0, 1fr); background: none; }
   /* The cheque goes on top on narrow screens: in view mode the status is
-     the first thing you need, and in add mode the cheque is the running
-     confirmation of what's being typed. The progress/facts block would
-     just repeat the fields sitting right under it, so it goes. */
+     the first thing needed, and in add mode the cheque is the running
+     confirmation of what's being typed. */
   .cq-aside {
     order: -1;
     position: static;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
+    padding: var(--s4);
+    background: var(--surface-sunken);
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .cq-layout { background: none; }
-  .cq-form { border-inline-end: none; }
-  .cq-cheque { max-width: 440px; margin-inline: auto; }
-  .cq-aside-label { max-width: 440px; margin-inline: auto; margin-bottom: var(--s2); }
+  .cq-cheque-wrap, .cq-aside-label { max-width: 520px; margin-inline: auto; }
+  .cq-aside-hint { display: none; }
   .cq-summary { display: none; }
-  .cq-form { padding: 16px; }
+  .cq-form { padding: var(--s4); border-inline-end: none; }
 }
 @media (max-width: 600px) {
   .cq-body > .form-alert { margin: 12px 16px 0; }
-  .cq-step { padding: 14px 14px 16px; }
-  .cq-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .cq-step { padding: 16px 14px 18px; }
+  .cq-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .cq-grid > *, .cq-grid .ve-fields-wrap > * { grid-column: 1 / -1; }
-  .cqc-words-line { display: none; }
+  .cq-tall .date-input-wrap { height: var(--h-md) !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cq-step-num, .cq-step-num svg, .cq-progress-bar span { transition: none; }
-  .cq-cheque[data-status] .cqc-stamp { animation: none; }
 }
-
-/* The due date shares a row with the amount, so it matches its height. */
-.cq-tall .date-input-wrap,
-.cq-tall .date-input-wrap input { height: 58px; }
-.cq-tall .date-input-wrap input { font-size: var(--t-value); }
