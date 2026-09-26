@@ -29,7 +29,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
   max-width: 400px;
   overflow: hidden;
   padding: 0 28px 28px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
   border-radius: var(--rad-float);
   background: var(--surface);
   animation: adminCardIn 0.5s var(--ease-out) both;
@@ -38,25 +38,9 @@ button { font-family: inherit; cursor: pointer; border: none; }
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
 }
-/* A strip of lapis security print across the top of the card */
-.login-band {
-  height: 92px;
-  margin: 0 -28px 0;
-  background:
-    repeating-radial-gradient(circle at 100% 0, transparent 0 9px, rgba(63, 213, 195, 0.18) 9px 10px),
-    repeating-radial-gradient(circle at 0 100%, transparent 0 11px, rgba(149, 163, 248, 0.2) 11px 12px),
-    linear-gradient(135deg, #2C3FC4, #121A50 70%, #0B6F66);
-}
-.brand { margin-top: -26px; margin-bottom: 22px; text-align: start; }
-.brand .brand-mark {
-  width: 52px;
-  height: 52px;
-  padding: 8px;
-  border-radius: 16px;
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: var(--shadow-lift);
-}
+.login-band { display: none; }
+.brand { margin: 28px 0 22px; text-align: start; }
+.brand .brand-mark { width: 32px; height: 32px; color: var(--accent); }
 .brand h1 {
   margin: 14px 0 4px;
   font-size: var(--t-title);
@@ -151,18 +135,17 @@ button { font-family: inherit; cursor: pointer; border: none; }
   height: var(--h-md);
   padding: 0 18px;
   border-radius: var(--rad-ctl);
-  background: var(--accent-grad);
+  background: var(--accent);
   color: var(--on-accent);
   font-size: var(--t-body);
   font-variation-settings: var(--f-btn);
   white-space: nowrap;
-  box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: filter var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 .btn-primary { width: 100%; }
 #loginBtn { height: 50px; margin-top: 4px; }
 .btn-primary:hover,
-.btn-add:hover { filter: brightness(1.08); }
+.btn-add:hover { background: var(--accent-hover); }
 .btn-primary:disabled,
 .btn-add:disabled { opacity: 0.65; cursor: progress; }
 .btn-primary:not(:disabled):active,
@@ -179,12 +162,11 @@ button { font-family: inherit; cursor: pointer; border: none; }
   color: var(--ink-2);
   font-size: var(--t-cap);
   font-variation-settings: var(--f-label);
-  box-shadow: var(--shadow-1);
-  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease);
+  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
 }
 .btn-ghost:hover,
 .btn-icon:hover,
-.btn-inline:hover { border-color: var(--border-strong); color: var(--ink); box-shadow: var(--shadow-lift); }
+.btn-inline:hover { border-color: var(--border-strong); color: var(--ink); background: var(--surface-2); }
 .btn-icon { width: 38px; padding: 0; display: grid; place-items: center; }
 .btn-icon svg { width: 17px; height: 17px; }
 .btn-icon .icon-moon { display: none; }
@@ -214,17 +196,16 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
   z-index: 100;
   padding: 12px 20px;
   border-radius: var(--rad-card);
-  background: #141934;
-  color: #F3F4FB;
+  background: var(--ink);
+  color: var(--bg);
   font-size: var(--t-cap);
   font-variation-settings: var(--f-label);
-  box-shadow: 0 18px 40px -14px rgba(20, 25, 52, 0.55);
+  box-shadow: var(--shadow-2);
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%);
   transition: opacity var(--dur-2) var(--ease);
 }
-:root[data-theme="dark"] .toast { background: #EDEFFA; color: #141934; }
 .toast.show { opacity: 1; animation: adminToastIn var(--dur-3) var(--ease-spring) both; }
 @keyframes adminToastIn {
   from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
@@ -249,7 +230,7 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
   backdrop-filter: saturate(1.6) blur(14px);
 }
 .topbar-brand { display: flex; align-items: center; gap: 10px; }
-.topbar-brand .brand-mark { width: 30px; height: 30px; color: var(--accent); filter: drop-shadow(0 4px 8px rgba(44, 63, 196, 0.28)); }
+.topbar-brand .brand-mark { width: 26px; height: 26px; color: var(--accent); }
 .topbar h1 {
   display: flex;
   align-items: center;
@@ -293,10 +274,10 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--rad-card);
-  background: var(--surface);
-  box-shadow: var(--shadow-1), var(--inset-hairline);
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 .tab-btn {
   display: flex;
@@ -314,11 +295,8 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
 }
 .tab-btn svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.8; }
 .tab-btn:hover { background: var(--surface-2); color: var(--ink); }
-.tab-btn.active {
-  background: var(--accent-wash);
-  color: var(--accent-text);
-  box-shadow: inset -3px 0 0 var(--accent);
-}
+.tab-btn.active { background: var(--surface-2); color: var(--ink); }
+.tab-btn.active svg { color: var(--accent); }
 .tab-btn.active svg { opacity: 1; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: adminPanelIn var(--dur-3) var(--ease-out); }
@@ -328,7 +306,7 @@ html[data-theme="dark"] .btn-icon .icon-moon { display: block; }
 .card {
   margin-bottom: 20px;
   padding: 22px 24px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
 }
@@ -383,7 +361,7 @@ th {
 td { color: var(--ink); font-variant-numeric: tabular-nums; }
 td:first-child { font-variation-settings: var(--f-title); }
 tbody tr { transition: background var(--dur-1) var(--ease); }
-tbody tr:hover { background: var(--accent-wash); }
+tbody tr:hover { background: var(--surface-2); }
 tbody tr:last-child td { border-bottom: none; }
 
 .badge {
@@ -424,8 +402,8 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: center;
   padding: 16px;
   background: var(--scrim);
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
-  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 .modal-overlay.show { display: flex; }
 .modal-box {
@@ -461,7 +439,7 @@ tbody tr:last-child td { border-bottom: none; }
 .confirm-body { margin: 0; font-size: var(--t-cap); line-height: 1.9; color: var(--muted); }
 /* A destructive confirm is the one button that should look like it costs
    something. */
-.modal-actions .btn-primary.danger { background: var(--state-bad); box-shadow: 0 8px 18px -8px var(--state-bad); }
+.modal-actions .btn-primary.danger { background: var(--state-bad); }
 
 /* ═══ Narrow screens: the side nav becomes a segmented bar ═══ */
 @media (max-width: 860px) {

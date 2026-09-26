@@ -1,121 +1,101 @@
 /* ===== Cheque modal: stepped form + live Sayad cheque =====
    Loaded after dashboard.css and scoped to #modalOverlay so the people
    modal, which shares .modal-box, is untouched. Layout, from the start
-   (right) edge in RTL: the form as three numbered step cards on the
-   paper, then the "desk" — a sticky aside where js/cheque-form.js writes
-   the cheque out as the form is filled. */
+   (right) edge in RTL: the form, as three numbered sections separated by
+   space and a hairline; then a sticky side panel where js/cheque-form.js
+   writes the cheque out as the form is filled. */
 
 #modalOverlay .modal-box { max-width: 1200px; }
 @media (min-width: 601px) {
   #modalOverlay .modal-box { max-height: min(92vh, 980px); }
 }
 
-.cq-body.modal-body { padding: 0; background: var(--surface-2); }
-.cq-body > .form-alert { margin: var(--s4) var(--s5) 0; }
+.cq-body.modal-body { padding: 0; background: var(--surface); }
+.cq-body > .form-alert { margin: var(--s4) 28px 0; }
 
-/* The desk's tint and its divider are painted by the layout, not by the
-   aside: the aside must stay only as tall as its content, or
+/* The side panel's tint and divider are painted by the layout, not by the
+   panel itself: the panel must stay only as tall as its content, or
    position: sticky has no room to stick. */
 .cq-layout {
-  --desk-w: 540px;
+  --desk-w: 520px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--desk-w);
   align-items: stretch;
-  background: linear-gradient(to left, transparent calc(100% - var(--desk-w)), var(--surface-sunken) 0);
+  background: linear-gradient(to left, transparent calc(100% - var(--desk-w)), var(--surface-2) 0);
 }
 
 .cq-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: var(--s5);
+  padding: 4px 28px 28px;
   min-width: 0;
   border-inline-end: 1px solid var(--border-subtle);
 }
 
-/* ---- Step cards ---- */
+/* ---- Sections ---- */
 .cq-step {
-  position: relative;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--rad-card);
-  background: var(--surface);
-  padding: 18px 20px 20px;
-  box-shadow: var(--shadow-1), var(--inset-hairline);
-  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  padding: 24px 0 26px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
-.cq-step:focus-within {
-  border-color: var(--accent-line);
-  box-shadow: 0 0 0 4px var(--accent-wash), var(--shadow-1);
-}
-.cq-step.has-error { border-color: var(--error-border); }
+.cq-step + .cq-step { border-top: 1px solid var(--border-subtle); }
 
 .cq-step-head {
   display: flex;
   align-items: center;
-  gap: var(--s3);
+  gap: 12px;
   margin-bottom: 18px;
 }
 .cq-step-num {
   position: relative;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--rad-pill);
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 1.5px var(--border);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
   color: var(--muted);
   display: grid;
   place-items: center;
-  font-size: var(--t-cap);
+  font-size: var(--t-micro);
   font-variation-settings: var(--f-num);
-  transition: background var(--dur-3) var(--ease), box-shadow var(--dur-3) var(--ease), color var(--dur-3) var(--ease);
+  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
 }
-.cq-step-num span { transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+.cq-step-num span { transition: opacity var(--dur-2) var(--ease); }
 .cq-step-num svg {
   position: absolute;
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
   opacity: 0;
-  transform: scale(0.3) rotate(-30deg);
+  transform: scale(0.4);
   transition: opacity var(--dur-2) var(--ease), transform var(--dur-3) var(--ease-spring);
 }
-.cq-step:focus-within .cq-step-num {
-  color: var(--accent);
-  background: var(--accent-wash);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-}
-.cq-step.has-error .cq-step-num {
-  color: var(--state-bad);
-  background: var(--state-bad-bg);
-  box-shadow: inset 0 0 0 1.5px var(--state-bad);
-}
-.cq-step.is-done .cq-step-num {
-  background: var(--state-ok);
-  box-shadow: 0 4px 10px -4px var(--state-ok);
-  color: #fff;
-}
-.cq-step.is-done .cq-step-num span { opacity: 0; transform: scale(0.5); }
+.cq-step:focus-within .cq-step-num { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cq-step.has-error .cq-step-num { color: var(--state-bad); box-shadow: inset 0 0 0 1.5px var(--state-bad); }
+.cq-step.is-done .cq-step-num { background: var(--state-ok); box-shadow: none; color: #fff; }
+.cq-step.is-done .cq-step-num span { opacity: 0; }
 .cq-step.is-done .cq-step-num svg { opacity: 1; transform: none; }
 
+.cq-step-text { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .cq-step-text h3 {
   margin: 0;
-  font-size: var(--t-sub);
+  font-size: var(--t-value);
   line-height: 1.4;
   color: var(--ink);
   font-variation-settings: var(--f-title);
 }
 .cq-step-text p {
-  margin: 1px 0 0;
+  margin: 0;
   font-size: var(--t-micro);
   color: var(--muted);
-  font-variation-settings: var(--f-body);
 }
 
 /* ---- Field grid (6 tracks) ---- */
 .cq-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 16px 14px;
+  gap: 18px 14px;
   align-items: start;
 }
 .cq-grid .form-field { margin-bottom: 0; min-width: 0; }
@@ -130,64 +110,56 @@
 #serialInput, #sayadInput {
   direction: ltr;
   text-align: left;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
 #serialInput::placeholder, #sayadInput::placeholder { letter-spacing: 0; text-align: right; }
 
-/* ---- Amount: the one big number in the form ---- */
+/* ---- Amount: the one large number in the form ---- */
 #amountField .amount-box {
-  height: 60px;
-  padding: 0 18px;
+  height: 56px;
+  padding: 0 16px;
   gap: var(--s3);
 }
 .form-field#amountField .amount-input,
 .form-field#amountField .amount-input:focus {
-  font-size: 26px;
-  letter-spacing: 0.02em;
-  font-variation-settings: 'wght' 640, 'dots' 1;
+  font-size: 24px;
+  letter-spacing: 0.01em;
+  font-variation-settings: 'wght' 620, 'dots' 1;
 }
-#amountField .amount-input::placeholder { font-size: 22px; }
+#amountField .amount-input::placeholder { font-size: 20px; }
 #amountField .amount-unit {
   margin: 0;
-  padding: 5px 12px;
-  font-size: var(--t-cap);
-  background: var(--accent-wash);
-  color: var(--accent-text);
+  padding: 3px 10px;
+  font-size: var(--t-micro);
+  background: var(--surface-2);
+  color: var(--muted);
   font-variation-settings: var(--f-label);
 }
 #amountField .amount-words:empty { display: none; }
 
 /* The due date shares a row with the amount, so it matches its height. */
-.cq-tall .date-input-wrap { height: 60px !important; }
-.cq-tall .date-input-wrap input { font-size: var(--t-sub); }
+.cq-tall .date-input-wrap { height: 56px !important; }
+.cq-tall .date-input-wrap input { font-size: var(--t-value); }
 
-/* ---- Beneficiary: its own well — it's who the cheque is registered to ---- */
-.cq-benef {
-  position: relative;
-  border-radius: var(--rad-card);
-  padding: 14px 16px 16px;
-  background:
-    linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
-    repeating-linear-gradient(135deg, var(--accent-line) 0 6px, transparent 6px 11px) border-box;
-  border: 1px solid transparent;
-}
+/* ---- Beneficiary: a sub-heading, not a box ---- */
+.cq-benef { padding-top: 4px; }
 .cq-benef-tag {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: var(--s3);
+  margin-bottom: 12px;
   font-size: var(--t-micro);
-  color: var(--ink-2);
+  color: var(--muted);
   font-variation-settings: var(--f-label);
 }
-.cq-benef-tag svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+.cq-benef-tag svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* Notes and the upload box sit side by side at the same height. */
-#notesField .notes-input { min-height: 104px; resize: none; }
+#notesField .notes-input { min-height: 96px; resize: none; }
 #fileField .file-box {
-  min-height: 104px;
+  min-height: 96px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -195,32 +167,28 @@
   gap: var(--s2);
 }
 
-/* ═══ The desk (aside) ═══ */
+/* ═══ Side panel ═══ */
 .cq-aside {
   position: sticky;
   top: 0;
   align-self: start;
-  padding: var(--s5) var(--s5) var(--s6);
+  padding: 28px;
 }
 .cq-aside-label {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s3);
-  margin-bottom: var(--s3);
+  margin-bottom: 14px;
   font-size: var(--t-cap);
-  color: var(--ink-2);
+  color: var(--ink);
   font-variation-settings: var(--f-label);
 }
-.cq-aside-hint {
-  font-size: 11.5px;
-  color: var(--muted);
-  font-variation-settings: var(--f-body);
-}
+.cq-aside-hint { font-size: var(--t-micro); color: var(--muted); font-variation-settings: var(--f-body); }
 
 /* View-mode status, beside the form rather than above it. */
 .cq-aside .ve-status-banner {
-  margin: 0 0 var(--s3);
+  margin: 0 0 14px;
   padding: 12px 14px;
   border-radius: var(--rad-ctl);
   font-size: var(--t-micro);
@@ -228,22 +196,14 @@
 }
 .cq-aside .ve-status-banner b { font-size: var(--t-cap); }
 .cq-aside .ve-history {
-  margin-bottom: var(--s5);
-  padding: 12px 14px;
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  box-shadow: var(--shadow-1), var(--inset-hairline);
+  margin-bottom: 24px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .cq-aside .ve-history-list { gap: var(--s3); }
 
 /* ---- Progress + facts under the cheque ---- */
-.cq-summary {
-  margin-top: var(--s5);
-  padding: 14px 16px;
-  border-radius: var(--rad-card);
-  background: var(--surface);
-  box-shadow: var(--shadow-1), var(--inset-hairline);
-}
+.cq-summary { margin-top: 24px; }
 .cq-progress-top {
   display: flex;
   justify-content: space-between;
@@ -255,9 +215,9 @@
 }
 .cq-progress-top b { color: var(--ink); font-variation-settings: var(--f-num); }
 .cq-progress-bar {
-  height: 6px;
+  height: 4px;
   border-radius: var(--rad-pill);
-  background: var(--surface-sunken);
+  background: var(--border-subtle);
   overflow: hidden;
 }
 .cq-progress-bar span {
@@ -265,23 +225,23 @@
   height: 100%;
   inline-size: 0;
   border-radius: inherit;
-  background: var(--accent-grad);
+  background: var(--accent);
   transition: inline-size var(--dur-3) var(--ease-out), background var(--dur-3) var(--ease);
 }
 .cq-progress-bar.is-full span { background: var(--state-ok); }
 .modal-body.ve-locked .cq-progress { display: none; }
 .modal-body.ve-locked .cq-facts { margin-top: 0; }
 
-.cq-facts { margin: 14px 0 0; }
+.cq-facts { margin: 18px 0 0; }
 .cq-facts div {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--s3);
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
-.cq-facts div:last-child { border-bottom: none; padding-bottom: 0; }
+.cq-facts div:last-child { border-bottom: none; }
 .cq-facts dt { font-size: var(--t-micro); color: var(--muted); }
 .cq-facts dd {
   margin: 0;
@@ -297,7 +257,7 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 1100px) {
-  .cq-layout { --desk-w: 440px; }
+  .cq-layout { --desk-w: 430px; }
 }
 @media (max-width: 860px) {
   .cq-layout { grid-template-columns: minmax(0, 1fr); background: none; }
@@ -307,21 +267,20 @@
   .cq-aside {
     order: -1;
     position: static;
-    padding: var(--s4);
-    background: var(--surface-sunken);
+    padding: 16px;
+    background: var(--surface-2);
     border-bottom: 1px solid var(--border-subtle);
   }
   .cq-cheque-wrap, .cq-aside-label { max-width: 520px; margin-inline: auto; }
   .cq-aside-hint { display: none; }
   .cq-summary { display: none; }
-  .cq-form { padding: var(--s4); border-inline-end: none; }
+  .cq-form { padding: 0 16px 16px; border-inline-end: none; }
 }
 @media (max-width: 600px) {
   .cq-body > .form-alert { margin: 12px 16px 0; }
-  .cq-step { padding: 16px 14px 18px; }
-  .cq-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .cq-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .cq-grid > *, .cq-grid .ve-fields-wrap > * { grid-column: 1 / -1; }
-  .cq-tall .date-input-wrap { height: var(--h-md) !important; }
+  .cq-tall .date-input-wrap { height: 42px !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

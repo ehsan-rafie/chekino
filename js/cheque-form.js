@@ -269,34 +269,6 @@
     }, 0);
   });
 
-  // ---- a sheet you can tilt -------------------------------------------------
-  // Fine pointers only, and not under reduced motion: the cheque leans a
-  // few degrees toward the pointer and a sheen follows it across the paper.
-  const canTilt = window.matchMedia('(hover: hover) and (pointer: fine)').matches
-    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (canTilt) {
-    let tiltRaf = 0;
-    cheque.addEventListener('pointermove', (e) => {
-      if (tiltRaf) return;
-      tiltRaf = requestAnimationFrame(() => {
-        tiltRaf = 0;
-        const r = cheque.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width;
-        const py = (e.clientY - r.top) / r.height;
-        cheque.style.setProperty('--rx', ((0.5 - py) * 6).toFixed(2) + 'deg');
-        cheque.style.setProperty('--ry', ((px - 0.5) * 8).toFixed(2) + 'deg');
-        cheque.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
-        cheque.style.setProperty('--my', (py * 100).toFixed(1) + '%');
-        cheque.classList.add('is-tilting');
-      });
-    });
-    cheque.addEventListener('pointerleave', () => {
-      cheque.classList.remove('is-tilting');
-      cheque.style.setProperty('--rx', '0deg');
-      cheque.style.setProperty('--ry', '0deg');
-    });
-  }
-
   // ---- wiring ---------------------------------------------------------------
   let raf = 0;
   const schedule = () => {

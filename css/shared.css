@@ -4,22 +4,20 @@
    and the spacing / type / radius / motion scales. Page stylesheets add
    layout on top of these but never invent their own palette or sizes.
 
-   The system is called Lajvard (لاجورد, lapis lazuli). Every choice in it
-   comes from the thing the product is about — the Sayad cheque — rather
-   than from a generic dashboard kit:
+   The system is minimal on purpose, with one accent (Lajvard, لاجورد —
+   lapis lazuli):
 
-     · Paper and ink. The page is a cool, faintly lapis-tinted paper; the
-       objects on it (cards, panels, the cheque itself) are white sheets
-       with a soft ink-tinted shadow. Shadows are never plain grey.
+     · A plain white field. Resting surfaces are separated by a hairline
+       and by space, not by shadows or tinted panels. Shadows exist only
+       for a card under the pointer and for things that float (menus,
+       modals).
 
-     · Lapis for action, turquoise for security print. Lapis (--accent) is
-       the one colour that means "you can press this". Turquoise
-       (--accent-2) is reserved for guilloche lines and the cheque's
-       security details — it is never a button.
+     · One colour means "press this": lapis (--accent), always flat. The
+       rest of the interface is ink on white. Turquoise (--accent-2) is
+       only used inside the drawing of a cheque, as its security print.
 
-     · Status is ink on a stamp. Waiting is lapis, registered is green,
-       a problem is pomegranate red, and due-soon is saffron. Each always
-       travels with an icon and a Persian word, never colour alone.
+     · Status is a coloured dot plus a Persian word — waiting lapis,
+       registered green, problem red, due-soon saffron — never colour alone.
 
    Themes are resolved here for all three pages. boot.js always writes
    html[data-theme] before first paint, so the attribute is the only
@@ -42,19 +40,19 @@
   /* Paper: the canvas and its steps. Cool, with a hair of lapis in it,
      so white sheets lift off it without any border at all. */
   --paper-0: #FFFFFF;
-  --paper-1: #F9FAFD;
-  --paper-2: #F2F4F9;
-  --paper-3: #E8EBF3;
+  --paper-1: #F8F9FB;
+  --paper-2: #F3F4F7;
+  --paper-3: #ECEEF2;
 
   /* Rules drawn in the same ink, at three strengths. */
-  --line-1: #E7E9F1;
-  --line-2: #D8DCE8;
-  --line-3: #B9BFD3;
+  --line-1: #EEEFF3;
+  --line-2: #E3E5EB;
+  --line-3: #C9CDD6;
 
   /* Ink: lapis-black, not neutral black — text and shadows share it. */
-  --ink-deep: #141934;
-  --ink-mid: #434A68;
-  --ink-soft: #646A88;  /* 5.3:1 on white, 4.8:1 on paper-2 */
+  --ink-deep: #0F1120;
+  --ink-mid: #474B5C;
+  --ink-soft: #6B7082;  /* 4.9:1 on white */
 
   /* Lajvard — lapis lazuli. 600 is the action colour (9:1 on white). */
   --lajvard-50:  #EEF0FC;
@@ -90,8 +88,8 @@
      softer than the one it sits in. */
   --rad-xs: 6px;      /* chips inside controls, tiny tags */
   --rad-ctl: 10px;    /* inputs, buttons, tooltips */
-  --rad-card: 14px;   /* cards, panels, step cards */
-  --rad-float: 20px;  /* modals, popovers, the command palette */
+  --rad-card: 12px;   /* cards, panels, step cards */
+  --rad-float: 16px;  /* modals, popovers, the command palette */
   --rad-pill: 999px;  /* status, count, tag — never a button */
 
   /* ── type scale (Elements of Typographic Style, roughly 1.2) ── */
@@ -133,11 +131,11 @@
 :root {
   color-scheme: light;
 
-  --bg: var(--paper-2);
+  --bg: var(--paper-0);
   --surface: var(--paper-0);
   --surface-2: var(--paper-1);
-  --surface-sunken: var(--paper-3);
-  --surface-glass: rgba(255, 255, 255, 0.78);
+  --surface-sunken: var(--paper-2);
+  --surface-glass: rgba(255, 255, 255, 0.86);
 
   --border-subtle: var(--line-1);
   --border: var(--line-2);
@@ -152,7 +150,8 @@
   --accent-text: var(--lajvard-700);
   --accent-wash: var(--lajvard-50);
   --accent-line: var(--lajvard-200);
-  --accent-grad: linear-gradient(180deg, var(--lajvard-500) 0%, var(--lajvard-600) 55%, var(--lajvard-700) 100%);
+  /* Flat. Kept as a token so every primary button reads it from one place. */
+  --accent-grad: linear-gradient(var(--lajvard-600), var(--lajvard-600));
   --on-accent: #FFFFFF;
 
   --accent-2: var(--firouzeh-500);
@@ -172,21 +171,20 @@
   --state-bad-text: var(--anar-700);
   --state-ok-text: var(--sabz-700);
 
-  /* Shadows are ink, not grey: every layer is tinted with --ink-deep's own
-     hue so depth belongs to this palette. Three heights:
-       1 · a sheet resting on the paper (cards, panels)
-       2 · something floating above the page (menus, modals)
-       lift · a sheet under the pointer */
-  --shadow-1: 0 1px 2px rgba(20, 25, 52, 0.05), 0 2px 6px -2px rgba(20, 25, 52, 0.06);
-  --shadow-lift: 0 2px 4px rgba(20, 25, 52, 0.05), 0 12px 28px -12px rgba(20, 25, 52, 0.22);
-  --shadow-2: 0 2px 6px -1px rgba(20, 25, 52, 0.06), 0 24px 56px -16px rgba(20, 25, 52, 0.28);
+  /* Flat by default: resting surfaces carry a hairline, not a shadow.
+     Depth is kept for two cases only:
+       lift · a card under the pointer
+       2    · something floating above the page (menus, modals) */
+  --shadow-1: none;
+  --shadow-lift: 0 1px 2px rgba(15, 17, 32, 0.04), 0 8px 20px -10px rgba(15, 17, 32, 0.14);
+  --shadow-2: 0 1px 2px rgba(15, 17, 32, 0.05), 0 18px 44px -14px rgba(15, 17, 32, 0.2);
   --shadow-float: var(--shadow-2);
-  --shadow-accent: 0 1px 2px rgba(35, 50, 161, 0.3), 0 8px 18px -8px rgba(44, 63, 196, 0.55);
+  --shadow-accent: none;
   --inset-hairline: none;
-  --ring: 0 0 0 4px rgba(44, 63, 196, 0.16);
-  --ring-bad: 0 0 0 4px rgba(201, 59, 51, 0.14);
+  --ring: 0 0 0 3px rgba(44, 63, 196, 0.14);
+  --ring-bad: 0 0 0 3px rgba(201, 59, 51, 0.12);
 
-  --scrim: rgba(18, 26, 80, 0.32);
+  --scrim: rgba(15, 17, 32, 0.28);
 
   --skeleton-base: var(--paper-3);
   --skeleton-sheen: var(--paper-1);
@@ -216,26 +214,26 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #090C1A;
-  --surface: #10142A;
-  --surface-2: #151A33;
-  --surface-sunken: #0C1024;
-  --surface-glass: rgba(16, 20, 42, 0.72);
+  --bg: #0D0E14;
+  --surface: #13151C;
+  --surface-2: #181A22;
+  --surface-sunken: #101117;
+  --surface-glass: rgba(13, 14, 20, 0.8);
 
-  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --ink: #EDEFFA;
-  --ink-2: #BEC3DB;
-  --muted: #8C92B0;
+  --ink: #ECEDF3;
+  --ink-2: #B7BAC8;
+  --muted: #858A9C;
 
   --accent: #7A8BF6;
   --accent-hover: #95A3F8;
   --accent-text: #AFB9FA;
   --accent-wash: rgba(122, 139, 246, 0.14);
   --accent-line: rgba(122, 139, 246, 0.42);
-  --accent-grad: linear-gradient(180deg, #8595F7 0%, #6E80F0 55%, #5B6DE6 100%);
+  --accent-grad: linear-gradient(#7A8BF6, #7A8BF6);
   --on-accent: #0A0E24;
 
   --accent-2: #3FD5C3;
@@ -253,18 +251,18 @@
   --state-bad-text: #FF8F85;
   --state-ok-text: #5ED69E;
 
-  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 32px -12px rgba(0, 0, 0, 0.7);
+  --shadow-1: none;
+  --shadow-lift: 0 12px 28px -12px rgba(0, 0, 0, 0.7);
   --shadow-2:
     0 1px 1px rgba(0, 0, 0, 0.12),
     0 3px 6px rgba(0, 0, 0, 0.16),
     0 28px 64px -18px rgba(0, 0, 0, 0.8);
-  --shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -8px rgba(122, 139, 246, 0.55);
-  --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --ring: 0 0 0 4px rgba(122, 139, 246, 0.24);
-  --ring-bad: 0 0 0 4px rgba(255, 125, 114, 0.2);
+  --shadow-accent: none;
+  --inset-hairline: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --ring: 0 0 0 3px rgba(122, 139, 246, 0.22);
+  --ring-bad: 0 0 0 3px rgba(255, 125, 114, 0.18);
 
-  --scrim: rgba(3, 5, 14, 0.62);
+  --scrim: rgba(0, 0, 0, 0.55);
 
   --skeleton-base: rgba(255, 255, 255, 0.05);
   --skeleton-sheen: rgba(255, 255, 255, 0.10);
@@ -561,22 +559,4 @@ kbd {
 :root .ac-list,
 :root .ms-list { box-shadow: var(--shadow-2), var(--inset-hairline); }
 
-/* ── Light from the top of the page ──
-   One wide, very faint pool of lapis at the top edge, so the paper reads
-   as lit rather than as a flat fill. Behind everything (z-index -1),
-   fixed, one paint. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(1100px 520px at 85% -12%, rgba(66, 87, 220, 0.08), transparent 70%),
-    radial-gradient(900px 480px at 0% -20%, rgba(20, 165, 148, 0.05), transparent 70%);
-}
-:root[data-theme="dark"] body::before {
-  background:
-    radial-gradient(1100px 560px at 85% -14%, rgba(122, 139, 246, 0.13), transparent 70%),
-    radial-gradient(900px 480px at 0% -20%, rgba(63, 213, 195, 0.06), transparent 70%);
-}
+/* No ambient gradients: the page is a plain white (or night) field. */

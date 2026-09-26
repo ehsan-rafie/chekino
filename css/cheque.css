@@ -21,9 +21,9 @@
   perspective: 1200px;
 }
 .cq-cheque {
-  --paper-a: #F7F8FF;
-  --paper-b: #EEF5FB;
-  --paper-c: #E8F6F2;
+  --paper-a: #FBFCFF;
+  --paper-b: #F5F8FC;
+  --paper-c: #F1F8F6;
   --print: #2C3FC4;
   --print-2: #13A594;
   --pen: #1A2A94;
@@ -45,21 +45,17 @@
   overflow: hidden;
   background: linear-gradient(112deg, var(--paper-a) 0%, var(--paper-b) 48%, var(--paper-c) 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(44, 63, 196, 0.16),
-    0 1px 1px rgba(20, 25, 52, 0.08),
-    0 14px 30px -14px rgba(20, 25, 52, 0.45),
-    0 30px 60px -30px rgba(20, 25, 52, 0.35);
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.6s var(--ease-out), box-shadow var(--dur-3) var(--ease);
+    inset 0 0 0 1px rgba(44, 63, 196, 0.14),
+    0 1px 2px rgba(15, 17, 32, 0.05),
+    0 12px 28px -16px rgba(15, 17, 32, 0.22);
   -webkit-user-select: none;
   user-select: none;
 }
-.cq-cheque.is-tilting { transition: transform 0.12s linear; }
 :root[data-theme="dark"] .cq-cheque {
   filter: brightness(0.93) saturate(0.96);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
-    0 18px 40px -16px rgba(0, 0, 0, 0.9);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+    0 16px 36px -18px rgba(0, 0, 0, 0.8);
 }
 
 /* Security print */
@@ -71,21 +67,12 @@
   pointer-events: none;
 }
 .cqc-guilloche path { fill: none; vector-effect: non-scaling-stroke; }
-.cqc-guilloche .g-a { stroke: var(--print-2); stroke-width: 0.6; opacity: 0.26; }
-.cqc-guilloche .g-b { stroke: var(--print); stroke-width: 0.5; opacity: 0.13; }
-.cqc-guilloche .g-r { stroke: var(--print); stroke-width: 0.6; opacity: 0.14; }
-.cqc-guilloche .g-r2 { stroke: var(--print-2); opacity: 0.2; }
+.cqc-guilloche .g-a { stroke: var(--print-2); stroke-width: 0.5; opacity: 0.14; }
+.cqc-guilloche .g-b { stroke: var(--print); stroke-width: 0.5; opacity: 0.07; }
+.cqc-guilloche .g-r { stroke: var(--print); stroke-width: 0.5; opacity: 0.08; }
+.cqc-guilloche .g-r2 { stroke: var(--print-2); opacity: 0.11; }
 
-.cqc-glare {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 0%), rgba(255, 255, 255, 0.6), transparent 42%);
-  transition: opacity var(--dur-3) var(--ease);
-}
-.cq-cheque.is-tilting .cqc-glare { opacity: 1; }
+.cqc-glare { display: none; }
 
 /* Stub (ته‌چک) */
 .cqc-stub {
@@ -312,11 +299,11 @@
   text-align: left;
 }
 
-/* "Where does this go?" — the blank a focused field fills, marked the way
-   a person would mark it: with a highlighter. */
+/* "Where does this go?" — the blank a focused field fills gets a quiet
+   lapis tint. */
 .cq-cheque .is-focus {
-  background: rgba(255, 213, 79, 0.5);
-  box-shadow: 0 0 0 0.2em rgba(255, 213, 79, 0.5);
+  background: rgba(44, 63, 196, 0.1);
+  box-shadow: 0 0 0 0.2em rgba(44, 63, 196, 0.1);
   border-radius: 0.2em;
 }
 
@@ -330,30 +317,28 @@
   inset-inline-start: 3%;
   display: none;
   padding: 0.1em 0.85em 0.2em;
-  border: 0.22em double currentColor;
-  border-radius: 0.45em;
-  font-size: 1.9em;
-  font-variation-settings: 'wght' 800, 'dots' 2;
+  border: 0.12em solid currentColor;
+  border-radius: 0.4em;
+  font-size: 1.6em;
+  font-variation-settings: 'wght' 740, 'dots' 1;
   white-space: nowrap;
   pointer-events: none;
-  rotate: -13deg;
-  opacity: 0.8;
+  rotate: -10deg;
+  opacity: 0.85;
   mix-blend-mode: multiply;
-  filter: url(#cqcRough);
 }
 .cq-cheque[data-status="done"] .cqc-stamp,
 .cq-cheque[data-status="problem"] .cqc-stamp,
 .cq-cheque[data-status="pending"] .cqc-stamp {
   display: block;
-  animation: cqcStamp 0.42s var(--ease-spring) both;
+  animation: cqcStamp 0.3s var(--ease-out) both;
 }
 .cq-cheque[data-status="done"] .cqc-stamp { color: #148352; }
 .cq-cheque[data-status="problem"] .cqc-stamp { color: #C9302A; }
 .cq-cheque[data-status="pending"] .cqc-stamp { color: #2C3FC4; }
 @keyframes cqcStamp {
-  0%   { opacity: 0; scale: 1.9; }
-  60%  { opacity: 0.85; scale: 0.96; }
-  100% { opacity: 0.8; scale: 1; }
+  from { opacity: 0; scale: 1.3; }
+  to   { opacity: 0.85; scale: 1; }
 }
 
 @media (max-width: 600px) {

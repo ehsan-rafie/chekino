@@ -48,7 +48,7 @@
   // opts: { width, height, lines, gap, rosettes: [[cx, cy, scale], ...], rough }
   function guilloche(svg, opts) {
     if (!svg || svg.childElementCount) return;
-    const o = Object.assign({ width: 1000, height: 510, lines: 34, gap: 16, rosettes: [[610, 250, 1]], rough: true }, opts);
+    const o = Object.assign({ width: 1000, height: 510, lines: 34, gap: 16, rosettes: [[610, 250, 1]], rough: false }, opts);
     svg.setAttribute('viewBox', `0 0 ${o.width} ${o.height}`);
     const add = (d, cls) => {
       const p = document.createElementNS(NS, 'path');
