@@ -205,7 +205,8 @@
   line-height: 2.15;
   color: var(--text);
 }
-.cqc-keep { white-space: nowrap; }
+.cqc-keep,
+.cqc-fill:not(.cqc-fill-wide) { white-space: nowrap; }
 .cqc-fill {
   padding: 0 0.3em 0.05em;
   border-bottom: 1px dotted var(--rule);

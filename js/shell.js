@@ -1,5 +1,7 @@
 // Dashboard shell: the header's command button, the one-line summary under
-// the page title, and the running total at the head of each board column.
+// the page title, the running total at the head of each board column, and
+// two Magic UI touches on the board (the pointer spotlight on a card and
+// the blur-fade the first cards arrive with).
 //
 // Read-only, like cheque-form.js: it reads the same cheque list the board
 // renders from (loadCheques / getFilteredCheques in dashboard.js) and
@@ -45,6 +47,41 @@
 
   const board = $('boardColumns');
   const summary = $('boardSummary');
+
+  // ---- Magic Card: the card under the pointer gets its light at the
+  // pointer (dashboard.css draws it from --mx / --my) ----
+  if (board && window.matchMedia('(hover: hover)').matches) {
+    let spotRaf = 0;
+    let lastMove = null;
+    board.addEventListener('pointermove', (e) => {
+      lastMove = e;
+      if (spotRaf) return;
+      spotRaf = requestAnimationFrame(() => {
+        spotRaf = 0;
+        const card = lastMove.target.closest && lastMove.target.closest('.check-card');
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${lastMove.clientX - r.left}px`);
+        card.style.setProperty('--my', `${lastMove.clientY - r.top}px`);
+      });
+    }, { passive: true });
+  }
+
+  // ---- Blur Fade: the first cards to arrive come in from a blur; later
+  // redraws (a filter, a status change) don't replay it ----
+  if (board) {
+    document.body.classList.add('is-entering');
+    const end = () => document.body.classList.remove('is-entering');
+    const fallback = setTimeout(end, 4000);
+    const watch = new MutationObserver(() => {
+      if (!board.querySelector('.check-card, .board-col-empty')) return;
+      watch.disconnect();
+      clearTimeout(fallback);
+      setTimeout(end, 1000);
+    });
+    watch.observe(board, { childList: true, subtree: true });
+  }
+
   if (!board || typeof window.loadCheques !== 'function') return;
 
   function recompute() {

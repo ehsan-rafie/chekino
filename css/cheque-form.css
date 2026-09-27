@@ -1,9 +1,10 @@
 /* ===== Cheque modal: one window, two faces =====
-   Add / edit: the modal body is the grey canvas; the form sits on it as
-   two white cards — «مشخصات چک» and «مشخصات اشخاص» — with filled fields
-   inside (HeroUI's form-in-a-card), then a free note.
+   Add / edit: the modal body is a faint grey; the form sits on it as two
+   bordered white cards — «مشخصات چک» and «مشخصات اشخاص» — each with a
+   header strip over its fields (Magic UI's card: title, hairline, body),
+   then a free note.
    View: the cheque itself (css/cheque.css), drawn from the same fields,
-   with what the cheque doesn't carry in a white card underneath.
+   with what the cheque doesn't carry in a bordered card underneath.
 
    dashboard.js marks view mode by adding .ve-locked to #modalBody (via
    lockFormFields); that single class decides which face shows. Scoped to
@@ -20,12 +21,12 @@
   #modalOverlay .modal-box { max-height: min(92vh, 920px); }
 }
 
-.cq-body.modal-body { padding: 0; background: var(--bg); }
+.cq-body.modal-body { padding: 0; background: var(--surface-2); }
 .cq-body > .form-alert { margin: 16px 20px 0; }
 .modal-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 /* The header and footer frame the grey body as white bars */
-#modalOverlay .modal-header { box-shadow: 0 1px 0 var(--border-subtle); position: relative; z-index: 1; }
-#modalOverlay .modal-footer { box-shadow: 0 -1px 0 var(--border-subtle); }
+#modalOverlay .modal-header { box-shadow: 0 1px 0 var(--border); position: relative; z-index: 1; }
+#modalOverlay .modal-footer { box-shadow: 0 -1px 0 var(--border); }
 
 /* ═══ Add / edit ═══ */
 .cq-form {
@@ -35,7 +36,8 @@
   padding: 18px 20px 20px;
 }
 .cq-card {
-  padding: 18px 18px 20px;
+  padding: 0;
+  border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
   box-shadow: var(--shadow-1);
@@ -43,19 +45,23 @@
 .cq-card-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
+  gap: 10px;
+  margin: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-subtle);
   font-size: var(--t-body);
   color: var(--ink);
-  font-variation-settings: 'wght' 650;
+  font-variation-settings: 'wght' 680;
 }
 .cq-card-title svg {
-  width: 28px;
-  height: 28px;
-  padding: 6px;
-  border-radius: 9px;
-  background: var(--accent-wash);
-  color: var(--accent);
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
   flex-shrink: 0;
 }
 
@@ -65,6 +71,7 @@
   gap: 14px 12px;
   align-items: start;
 }
+.cq-card > .cq-grid { padding: 16px 16px 18px; }
 .cq-grid .form-field { margin-bottom: 0; min-width: 0; }
 .cq-span-2 { grid-column: span 2; }
 .cq-span-3 { grid-column: span 3; }
@@ -100,21 +107,17 @@
 }
 #amountField .amount-words:empty { display: none; }
 
-/* The note sits on the grey canvas, so it is a white field (HeroUI's
-   primary input) rather than a filled one. */
+/* The note is an ordinary outlined field that grows with its text */
 #modalOverlay .cq-note .notes-input {
   height: auto;
   min-height: 60px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   line-height: 1.7;
   resize: none;
   field-sizing: content;
   max-height: 160px;
-  background: var(--surface);
-  box-shadow: var(--shadow-1) !important;
 }
-#modalOverlay .cq-note .notes-input:focus { box-shadow: var(--ring) !important; }
-#modalOverlay .cq-note label { padding-inline-start: 4px; }
+#modalOverlay .cq-note label { padding-inline-start: 2px; }
 #modalOverlay .notes-count:empty { display: none; }
 
 /* ═══ View: the cheque ═══ */
@@ -126,7 +129,7 @@
 }
 .cq-view .ve-status-banner {
   margin: 0;
-  padding: 12px 16px;
+  padding: 11px 14px;
   font-size: var(--t-cap);
   line-height: 2;
 }
@@ -139,7 +142,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 28px;
   margin: 0;
-  padding: 2px 18px 0;
+  padding: 2px 16px 0;
+  border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
   box-shadow: var(--shadow-1);
@@ -175,39 +179,41 @@
 .cq-sayad-row { display: inline-flex; align-items: center; gap: 10px; }
 #cqfSayad { letter-spacing: 0.06em; font-variation-settings: var(--f-num); }
 .cq-copy {
-  height: 28px;
-  padding: 0 12px;
-  border: none;
-  border-radius: var(--rad-pill);
-  background: var(--field-bg);
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-xs);
+  background: var(--surface);
   color: var(--ink-2);
+  box-shadow: var(--shadow-1);
   font-family: inherit;
   font-size: var(--t-micro);
   font-variation-settings: var(--f-label);
   cursor: pointer;
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
-.cq-copy:hover { background: var(--accent-wash); color: var(--accent-text); }
+.cq-copy:hover { background: var(--accent-wash); color: var(--ink); }
 .cq-thumbs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .cq-thumb {
   width: 64px;
   height: 64px;
   padding: 0;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
   overflow: hidden;
-  background: var(--field-bg);
+  background: var(--surface-2);
   box-shadow: var(--shadow-1);
   cursor: zoom-in;
-  transition: box-shadow var(--dur-2) var(--ease);
+  transition: box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
 }
-.cq-thumb:hover { box-shadow: var(--shadow-lift); }
+.cq-thumb:hover { box-shadow: var(--shadow-lift); border-color: var(--border-strong); }
 .cq-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cq-thumb.is-doc { width: auto; padding: 0 12px; font-family: inherit; font-size: var(--t-micro); color: var(--ink-2); cursor: default; }
 
 .cq-view .ve-history {
   margin: 0;
-  padding: 14px 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
   box-shadow: var(--shadow-1);
@@ -218,20 +224,21 @@
 #modalOverlay .modal-footer { justify-content: flex-end; }
 #modalOverlay .modal-footer .delete-confirm-wrap { order: -1; }
 #modalOverlay .modal-footer .save-confirm-wrap { flex: 0 1 auto; }
-#modalOverlay .modal-footer .btn-submit { flex: 0 0 auto; min-width: 140px; padding: 0 22px; }
+#modalOverlay .modal-footer .btn-submit { flex: 0 0 auto; min-width: 132px; padding: 0 20px; }
 #modalOverlay .modal-footer .btn-clear.confirming-delete { width: 132px; }
 
 /* ---- Narrow screens ---- */
 @media (max-width: 600px) {
   .cq-body > .form-alert { margin: 12px 14px 0; }
   .cq-form { padding: 14px; gap: 12px; }
-  .cq-card { padding: 16px 14px 18px; }
+  .cq-card > .cq-grid { padding: 14px 14px 16px; }
+  .cq-card-title { padding: 10px 14px; }
   .cq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cq-span-2, .cq-span-3 { grid-column: span 1; }
   .cq-span-4, .cq-span-6 { grid-column: 1 / -1; }
   #sayadField, #amountField, #fileField, #channelField { grid-column: 1 / -1; }
   .cq-view { padding: 14px; gap: 14px; }
-  .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 16px 0; }
+  .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 14px 0; }
   .cq-view-facts .cq-narrow-only { display: flex; }
   #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }

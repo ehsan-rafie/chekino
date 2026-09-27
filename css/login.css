@@ -1,8 +1,8 @@
-/* Login — two panes. The form sits on the start (right) side on plain
-   paper; the art pane on the end side is a sheet of lapis security print
-   that draws itself in once on load, with a sample Sayad cheque lying on
-   it. That draw-in is the page's one orchestrated moment; everything
-   after it moves only when the user does something. */
+/* Login — two panes. The form sits on the start (right) side in a
+   bordered card; the art pane on the end side is a faint grey panel with a
+   sample Sayad cheque lying on a fading grid. The border beam round the
+   card is the page's one moving thing; everything else moves only when
+   the user does something. */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
@@ -288,23 +288,98 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   .card, .auth-copy, .auth-cheque { animation: none; }
 }
 
-/* ═══ HeroUI finish ═══
-   The form sits on the grey canvas, so its fields are white with a soft
-   shadow (HeroUI's primary input); the art pane is a white surface. */
+/* ═══ Monochrome finish (Magic UI) ═══
+   The form is a bordered card with a Border Beam running round its edge —
+   the page's one moving thing — and the art pane is a faint grey panel
+   with a Grid Pattern fading out from behind the cheque. */
+.auth-brand .brand-mark { color: var(--ink); }
+.auth-brand .brand-mark path { stroke: var(--bg); }
+
+.card {
+  position: relative;
+  padding: 28px 26px 26px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1) !important;
+}
+.brand { margin-bottom: 22px; }
+.brand h1 { font-size: 24px; margin-bottom: 6px; }
+.brand p { font-size: var(--t-cap); line-height: 1.9; }
+
+/* Border Beam: a short bright arc of the border, turning once every
+   seven seconds. */
+@property --beam-turn { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--beam-turn), transparent 0deg 240deg, var(--beam-tail) 300deg, var(--beam-head) 352deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: beamTurn 7s linear infinite;
+  pointer-events: none;
+}
+@keyframes beamTurn { to { --beam-turn: 360deg; } }
+:root { --beam-head: #0A0A0A; --beam-tail: rgba(10, 10, 10, 0.18); --grid-line: rgba(0, 0, 0, 0.055); }
+:root[data-theme="dark"] { --beam-head: #FAFAFA; --beam-tail: rgba(250, 250, 250, 0.2); --grid-line: rgba(255, 255, 255, 0.06); }
+@media (prefers-reduced-motion: reduce) { .card::after { display: none; } }
+
 .field input {
-  border: 1px solid transparent;
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  height: 50px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
 }
-.field input:hover { border-color: transparent; box-shadow: var(--shadow-lift); }
-.field input:focus { border-color: var(--accent); box-shadow: var(--ring); }
+.field input:hover { border-color: var(--field-border-hover); }
+.field input:focus { border-color: var(--focus-edge); box-shadow: var(--ring); }
+.field input:focus ~ label,
+.field input:not(:placeholder-shown) ~ label { color: var(--ink-2); }
 .field.error input { border-color: var(--state-bad); }
-button.submit { border-radius: var(--rad-pill); }
-.auth-art {
-  --hole: var(--surface);
-  background: var(--surface);
+.toggle-eye { border-radius: 6px; }
+.toggle-eye:hover { color: var(--ink); background: var(--accent-wash); }
+.alert { border: 1px solid color-mix(in srgb, var(--state-bad) 22%, transparent); }
+.alert.success { border-color: color-mix(in srgb, var(--state-ok) 25%, transparent); }
+button.submit {
+  height: 44px;
+  margin-top: 8px;
+  border-radius: var(--rad-ctl);
   box-shadow: var(--shadow-1);
-  border-radius: 28px;
+  font-size: var(--t-body);
 }
-.tg-float { border: none; box-shadow: var(--shadow-lift); }
-.tg-tooltip { border-radius: 10px; }
+.auth-foot { text-align: center; }
+
+.auth-art {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  --hole: var(--surface-2);
+  box-shadow: none;
+}
+.auth-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 78%);
+  pointer-events: none;
+}
+.tg-float { width: 40px; height: 40px; border-radius: 10px; box-shadow: var(--shadow-lift); }
+.tg-tooltip { border-radius: 6px; }
+@media (max-width: 960px) {
+  .auth-art { border-radius: 14px; }
+  .card { padding: 22px 18px 20px; }
+}
