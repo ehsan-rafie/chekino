@@ -4925,90 +4925,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .board-page-actions { width: auto; }
 }
 
-/* ═══ «افزودن چک» as Magic UI's Shimmer Button ═══
-   A spark of light slides along the button and spins round its edge; a
-   backdrop inset by --cut covers everything but a hairline, so only the
-   edge catches it, blurred. A soft light rises from the bottom, stronger
-   under the pointer. The theme's corner (12px), not a capsule. The button
-   stays dark in both themes — the effect is made for a dark surface. */
-.shimmer-btn {
-  --spread: 90deg;
-  --shimmer-color: #FFFFFF;
-  --shimmer-bg: #0A0A0A;
-  --speed: 3s;
-  --cut: 0.05em;
-  isolation: isolate;
-  overflow: hidden;
-  padding: 0 18px 0 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--rad-ctl);
-  background: var(--shimmer-bg);
-  color: #FFFFFF;
-  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-}
-:root[data-theme="dark"] .shimmer-btn {
-  --shimmer-bg: #1A1A1A;
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.9);
-}
-.shimmer-btn:hover { background: var(--shimmer-bg); transform: none; box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
-.shimmer-btn:active { transform: translateY(1px); }
-.shimmer-btn svg { position: relative; }
-
-.shimmer-spark {
-  position: absolute;
-  inset: 0;
-  z-index: -30;
-  overflow: visible;
-  container-type: size;
-  filter: blur(2px);
-  pointer-events: none;
-}
-.shimmer-slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100cqh;
-  height: 100cqh;
-  animation: shimmerSlide var(--speed) ease-in-out infinite alternate;
-}
-.shimmer-spin {
-  position: absolute;
-  inset: -100%;
-  background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) var(--spread), transparent var(--spread));
-  animation: shimmerSpin calc(var(--speed) * 2) infinite linear;
-}
-.shimmer-highlight {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 -8px 10px rgba(255, 255, 255, 0.12);
-  pointer-events: none;
-  transition: box-shadow 0.3s ease-in-out;
-}
-.shimmer-btn:hover .shimmer-highlight { box-shadow: inset 0 -6px 10px rgba(255, 255, 255, 0.25); }
-.shimmer-btn:active .shimmer-highlight { box-shadow: inset 0 -10px 10px rgba(255, 255, 255, 0.25); }
-.shimmer-backdrop {
-  position: absolute;
-  inset: var(--cut);
-  z-index: -20;
-  border-radius: calc(var(--rad-ctl) - 1px);
-  background: var(--shimmer-bg);
-  pointer-events: none;
-}
-@keyframes shimmerSlide {
-  to { transform: translate(calc(100cqw - 100%), 0); }
-}
-@keyframes shimmerSpin {
-  0%       { transform: translateZ(0) rotate(0); }
-  15%, 35% { transform: translateZ(0) rotate(90deg); }
-  65%, 85% { transform: translateZ(0) rotate(270deg); }
-  100%     { transform: translateZ(0) rotate(360deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .shimmer-slide, .shimmer-spin { animation: none; }
-}
 /* ═══ Cheque photo: one slim row, the height of a field ═══
    After 21st.dev's File Upload: an image icon at the start, small
    thumbnails once files are added (a drop hint until then), and a small
@@ -5074,29 +4990,116 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .file-box .file-chip:hover .file-remove,
   .file-box .file-remove:focus-visible { opacity: 1; }
 }
-/* Same slide-and-spin as the original; only the lit strip is wider. In
-   the original it is 0.05em (≈0.7px) inside a 1px border, which reads on
-   the long edges but all but vanishes on the short sides, so the light
-   seemed to sink out of sight as it climbed the left side. The strip is
-   now 1.5px and the border is drawn beneath the light as an inset line. */
-.shimmer-btn {
-  --cut: 1.5px;
-  border: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+
+/* ═══ «افزودن چک» — Magic UI's Shimmer Button (@dillionverma) ═══
+   A class-for-class port of the component: same variables and defaults,
+   same four layers, same keyframes and timings. The one departure is the
+   corner (--radius: the theme's 12px instead of 100px), as asked. The
+   spark sits at the physical left like the component's LTR `inset-0`. */
+.add-check-btn.shimmer-btn {
+  --spread: 90deg;
+  --shimmer-color: #ffffff;
+  --radius: var(--rad-ctl);
+  --speed: 3s;
+  --cut: 0.05em;
+  --bg: rgba(0, 0, 0, 1);
+  position: relative;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: auto;
+  padding: 12px 24px;                                   /* px-6 py-3 */
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);           /* border-white/10 */
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: #ffffff;
+  font-size: 16px;                                      /* so 0.05em = 0.8px, as in the demo */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);    /* shadow-2xl */
+  transform: translateZ(0);                             /* transform-gpu */
+  transition: transform 300ms ease-in-out;
 }
-.shimmer-btn:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
-:root[data-theme="dark"] .shimmer-btn { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 10px 28px -12px rgba(0, 0, 0, 0.9); }
-.shimmer-backdrop { border-radius: calc(var(--rad-ctl) - 1.5px); }
-/* The blur sat on the spark's container, whose box ends exactly at the
-   button's edge — so wherever the light touched the edge (the climb up the
-   left side above all) the blur averaged it with empty space beyond and it
-   faded out. The same 2px blur now sits on the spinning light itself,
-   which reaches well past the button on every side. */
-.shimmer-spark { filter: none; }
-.shimmer-spin { filter: blur(2px); }
-/* And the wedge is bright across its second half rather than only at its
-   leading edge, so a short side it sweeps catches full light, not the dim
-   middle of the ramp. Same wedge, same motion. */
+.add-check-btn.shimmer-btn:hover { background: var(--bg); transform: translateZ(0); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+.add-check-btn.shimmer-btn:active { transform: translateY(1px); }
+.add-check-btn.shimmer-btn::after { display: none; }
+
+/* text-sm font-medium leading-none text-white lg:text-lg (tracking-tight
+   left out: letter-spacing breaks Persian joins) */
+.shimmer-label {
+  position: relative;
+  font-size: 14px;
+  line-height: 1;
+  font-variation-settings: 'wght' 560;
+  color: #ffffff;
+  text-align: center;
+}
+@media (min-width: 1024px) { .shimmer-label { font-size: 18px; } }
+
+/* spark container: -z-30 blur-[2px] absolute inset-0 overflow-visible [container-type:size] */
+.shimmer-spark {
+  position: absolute;
+  inset: 0;
+  z-index: -30;
+  overflow: visible;
+  container-type: size;
+  filter: blur(2px);
+  pointer-events: none;
+}
+/* spark: absolute inset-0 h-[100cqh] animate-shimmer-slide [aspect-ratio:1] */
+.shimmer-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100cqh;
+  aspect-ratio: 1;
+  border-radius: 0;
+  mask: none;
+  animation: shimmerSlide var(--speed) ease-in-out infinite alternate;
+}
+/* spark before: animate-spin-around absolute -inset-full w-auto rotate-0 conic-gradient */
 .shimmer-spin {
-  background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) calc(var(--spread) * 0.45), var(--shimmer-color) var(--spread), transparent var(--spread));
+  position: absolute;
+  inset: -100%;
+  width: auto;
+  rotate: 0deg;
+  translate: 0 0;
+  background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) var(--spread), transparent var(--spread));
+  animation: shimmerSpin calc(var(--speed) * 2) infinite linear;
+}
+/* highlight: absolute size-full rounded-2xl shadow-[inset_0_-8px_10px_#ffffff1f] */
+.shimmer-highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  box-shadow: inset 0 -8px 10px #ffffff1f;
+  transform: translateZ(0);
+  transition: all 300ms ease-in-out;
+  pointer-events: none;
+}
+.shimmer-btn:hover .shimmer-highlight { box-shadow: inset 0 -6px 10px #ffffff3f; }
+.shimmer-btn:active .shimmer-highlight { box-shadow: inset 0 -10px 10px #ffffff3f; }
+/* backdrop: absolute -z-20 [background:var(--bg)] [border-radius:var(--radius)] [inset:var(--cut)] */
+.shimmer-backdrop {
+  position: absolute;
+  inset: var(--cut);
+  z-index: -20;
+  border-radius: var(--radius);
+  background: var(--bg);
+  pointer-events: none;
+}
+@keyframes shimmerSlide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes shimmerSpin {
+  0%       { transform: translateZ(0) rotate(0); }
+  15%, 35% { transform: translateZ(0) rotate(90deg); }
+  65%, 85% { transform: translateZ(0) rotate(270deg); }
+  100%     { transform: translateZ(0) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-slide, .shimmer-spin { animation: none; }
 }
