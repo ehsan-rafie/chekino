@@ -110,16 +110,15 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 ## Components
 
 **Header.** 56px, white glass with one hairline under it. Brand mark +
-wordmark (the mark's strokes are drawn in the page colour, so it inverts);
-in the middle a command button that looks like a search field and opens
-the Ctrl+K palette; at the end ghost square icon buttons (support, theme,
-account). The floating support button is hidden on the dashboard, since
+wordmark (the mark's strokes are drawn in the page colour, so it inverts)
+at the start; ghost square icon buttons (support, theme, account) at the
+end. Nothing in the middle: the Ctrl+K palette has no button, only its
+shortcut. The floating support button is hidden on the dashboard, since
 the header already has one.
 
-**Page head.** Title (26px) with a one-line summary of what needs doing
-(`#boardSummary`), over a faint Dot Pattern that fades out towards the
-board. Actions at the other end, quietest first: «گزارش‌گیری» (unrolls
-into PDF / Excel), «مدیریت اشخاص», then the one primary «افزودن چک».
+**Page head.** No title and no summary line. The one primary action,
+«افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
+(unrolls into PDF / Excel) and «مدیریت اشخاص» sit at the other end.
 
 **Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
 «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when
@@ -168,10 +167,10 @@ used because the numeric inputs are `direction: ltr`.
 
 | Field | Prefix | Suffix |
 |---|---|---|
-| serial / sayad id | # / barcode icon | running digit count, green when complete |
-| amount | banknote icon | «ریال» |
+| serial / sayad id | # / barcode icon, on the left (a left-to-right group) | running digit count on the right, green when complete |
+| amount | — (no icon, no «۰» placeholder) | «ریال» |
 | owner / party / beneficiary | building / briefcase / person icon | arrow that opens the full list of names on file |
-| national id | id-card icon | «حقیقی» / «حقوقی» as a blue badge |
+| national id | id-card icon, on the left (left-to-right group) | «حقیقی» / «حقوقی» as a blue badge on the right |
 | dates | — | calendar button |
 | notes | — | character count inside, bottom corner |
 | board search | search icon | «/» key hint, clear button |
@@ -180,8 +179,11 @@ used because the numeric inputs are `direction: ltr`.
 | admin: company, plan, account fields | building / person / key / tag / people / cheque icons | «تومان» on prices; «تولید تصادفی» inside the new-password field; a copy button on the revealed password |
 
 Numbers, codes, usernames and passwords read left to right (`direction:
-ltr`, left-aligned, next to the suffix), while their Persian placeholders
-stay on the right; the search box turns left-to-right once something is
+ltr`, left-aligned). Serial, sayad id and national id are whole
+left-to-right groups (`.ig.is-ltr`): icon on the left where the number
+starts, count or badge on the right, placeholder next to the icon. The
+amount and the other numeric fields keep their suffix on the left, next
+to the digits; the search box turns left-to-right once something is
 typed. Generated passwords use a monospace face with Latin digits.
 
 **Drop-down lists** (people suggestions, send channels) follow HeroUI's

@@ -3737,10 +3737,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Canvas ── */
-/* The page colour lives on <html>; body stays clear so the dot field
-   behind the page head (z-index -1) shows through. */
-html { background-color: var(--bg); }
-body { background-color: transparent; }
+html, body { background-color: var(--bg); }
 .main {
   max-width: 1320px;
   margin-inline: auto;
@@ -4681,29 +4678,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
    their gaps pushed «گزارش‌گیری» away from its neighbours. */
 .export-cluster:not(.open) { gap: 0; }
 
-/* Dot Pattern (Magic UI): a field of faint dots behind the page head,
-   fading out towards the board, so the top of the page has a texture of
-   its own without adding anything to read. */
-.main { position: relative; }
-.main::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto;
-  height: 220px;
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(var(--dot-ink) 1px, transparent 1.4px);
-  background-size: 18px 18px;
-  background-position: center 6px;
-  -webkit-mask-image: radial-gradient(ellipse 55% 90% at 85% 0%, #000 20%, transparent 72%);
-  mask-image: radial-gradient(ellipse 55% 90% at 85% 0%, #000 20%, transparent 72%);
-}
-:root { --dot-ink: #D4D4D4; }
-:root[data-theme="dark"] { --dot-ink: rgba(255, 255, 255, 0.14); }
-@media (max-width: 720px) {
-  .main::before { height: 170px; -webkit-mask-image: radial-gradient(ellipse 90% 90% at 80% 0%, #000 15%, transparent 70%); mask-image: radial-gradient(ellipse 90% 90% at 80% 0%, #000 15%, transparent 70%); }
-}
-
 /* ═══ HeroUI blue: focus and selection ═══
    The one colour the interface uses for "this is where you are / this is
    what you picked". Fields get it through --focus-edge / --ring
@@ -4838,9 +4812,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 
 /* Amount: a banknote prefix; «ریال» is already the suffix */
-.amount-box .amount-pre { display: flex; align-items: center; flex-shrink: 0; color: var(--muted); }
-.amount-box .amount-pre svg { width: 16px; height: 16px; }
-.amount-box:focus-within .amount-pre { color: var(--ink-2); }
 #modalOverlay .amount-box { padding: 0 12px; gap: 10px; }
 .form-field#amountField .amount-input { direction: ltr; text-align: left; }
 
@@ -4948,3 +4919,15 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .ms-option .ms-check svg { width: 16px; height: 16px; color: var(--hl); stroke-width: 2.6; opacity: 0; }
 .ms-option.checked .ms-check svg { opacity: 1; }
 .ms-option.checked { font-variation-settings: var(--f-label); }
+
+/* ═══ Header and page head, trimmed ═══
+   No search box in the header (Ctrl+K still opens the palette) and no
+   page title: «افزودن چک» opens the page at the start, the report and
+   the people list sit at the other end. */
+.header-utility { margin-inline-start: auto; }
+.board-page-head { align-items: center; margin-bottom: 16px; }
+@media (max-width: 700px) {
+  .board-page-head { flex-wrap: nowrap; gap: 8px; }
+  .board-page-head .add-check-btn { flex: 1; justify-content: center; height: 40px; }
+  .board-page-actions { width: auto; }
+}

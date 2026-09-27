@@ -678,3 +678,9 @@ kbd {
   background: var(--accent-wash);
 }
 .ig-btn.ig-btn-text:hover { color: var(--ink); background: var(--field-bg-hover); box-shadow: inset 0 0 0 1px var(--border); }
+/* A left-to-right group, for numbers and codes: the prefix on the left
+   where the number starts, the suffix on the right */
+.ig.is-ltr .ig-pre { right: auto; left: 0; }
+.ig.is-ltr .ig-suf { left: auto; right: 0; }
+.ig.is-ltr.has-pre > input { padding-left: var(--pre-w, 38px) !important; padding-right: 12px !important; }
+.ig.is-ltr.has-suf > input { padding-right: var(--suf-w, 44px) !important; }

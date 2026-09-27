@@ -88,7 +88,7 @@
   font-variation-settings: var(--f-num);
 }
 #serialInput, #sayadInput { letter-spacing: 0.03em; }
-#serialInput::placeholder, #sayadInput::placeholder, #nidInput::placeholder { letter-spacing: 0; text-align: right; }
+#serialInput::placeholder, #sayadInput::placeholder, #nidInput::placeholder { letter-spacing: 0; text-align: left; }
 
 /* Amount: same height as everything else, figures a touch heavier */
 #modalOverlay .amount-box { height: 38px; padding: 0 12px; gap: 8px; }
