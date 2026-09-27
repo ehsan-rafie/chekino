@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260927d" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260927e" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260927d">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260927d">
-<link rel="stylesheet" href="/css/cheque.css?v=20260927d">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260927d">
+<link rel="stylesheet" href="/css/shared.css?v=20260927e">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260927e">
+<link rel="stylesheet" href="/css/cheque.css?v=20260927e">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260927e">
 </head>
 <body class="chekino-auth-pending">
 
@@ -93,7 +93,8 @@
     <div class="board-search-box">
       <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="searchInput" inputmode="numeric" placeholder="جستجو (سریال / شناسه صیادی)" aria-label="جستجو بر اساس شماره سریال یا شناسه صیادی">
+        <input type="text" id="searchInput" inputmode="numeric" placeholder="جستجوی سریال یا شناسه صیادی" aria-label="جستجو بر اساس شماره سریال یا شناسه صیادی">
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
         <button type="button" class="search-clear" id="searchClearBtn" title="پاک کردن" aria-label="پاک کردن جستجو">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -144,14 +145,17 @@
   </div>
 
   <div class="filter-popover" id="popAmount">
-    <div class="fp-title">بر اساس مبلغ (ریال)</div>
+    <div class="fp-title">بر اساس مبلغ</div>
     <div class="amount-filter-row">
-      <div class="amount-filter-box">
+      <div class="amount-filter-box ig has-pre has-suf">
+        <span class="ig-pre" aria-hidden="true">از</span>
         <input type="text" id="filterAmountMin" inputmode="numeric" placeholder="۰" aria-label="حداقل مبلغ (ریال)">
+        <span class="ig-suf" aria-hidden="true">ریال</span>
       </div>
-      <span class="af-sep">تا</span>
-      <div class="amount-filter-box">
-        <input type="text" id="filterAmountMax" inputmode="numeric" placeholder="۱۰۰,۰۰۰,۰۰۰,۰۰۰" aria-label="حداکثر مبلغ (ریال)">
+      <div class="amount-filter-box ig has-pre has-suf">
+        <span class="ig-pre" aria-hidden="true">تا</span>
+        <input type="text" id="filterAmountMax" inputmode="numeric" placeholder="بی‌سقف" aria-label="حداکثر مبلغ (ریال)">
+        <span class="ig-suf" aria-hidden="true">ریال</span>
       </div>
     </div>
     <div class="amount-presets">
@@ -165,13 +169,22 @@
     <div class="fp-title">بر اساس اشخاص</div>
     <div class="filter-people-row">
       <div class="form-field ac-field" id="filterOwnerField">
-        <input type="text" id="filterOwnerInput" class="ac-input" autocomplete="off" placeholder="صاحب چک" aria-label="فیلتر بر اساس صاحب چک">
+        <div class="ig has-pre">
+          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span>
+          <input type="text" id="filterOwnerInput" class="ac-input" autocomplete="off" placeholder="صاحب چک" aria-label="فیلتر بر اساس صاحب چک">
+        </div>
       </div>
       <div class="form-field ac-field" id="filterPartyField">
-        <input type="text" id="filterPartyInput" class="ac-input" autocomplete="off" placeholder="طرف حساب" aria-label="فیلتر بر اساس طرف حساب">
+        <div class="ig has-pre">
+          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
+          <input type="text" id="filterPartyInput" class="ac-input" autocomplete="off" placeholder="طرف حساب" aria-label="فیلتر بر اساس طرف حساب">
+        </div>
       </div>
       <div class="form-field ac-field" id="filterBenefField">
-        <input type="text" id="filterBenefInput" class="ac-input" autocomplete="off" placeholder="نام یا کد ملی ذینفع" aria-label="فیلتر بر اساس نام یا کد ملی ذینفع">
+        <div class="ig has-pre">
+          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input type="text" id="filterBenefInput" class="ac-input" autocomplete="off" placeholder="نام یا کد ملی ذینفع" aria-label="فیلتر بر اساس نام یا کد ملی ذینفع">
+        </div>
       </div>
     </div>
   </div>
@@ -273,14 +286,14 @@
       <div class="modal-body people-modal-body">
         <div class="people-panel" id="peoplePanelOwners" role="tabpanel">
           <div class="people-add-row">
-            <input type="text" id="newOwnerInput" placeholder="نام صاحب چک جدید">
+            <div class="ig has-pre"><span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span><input type="text" id="newOwnerInput" placeholder="نام صاحب چک جدید"></div>
             <button type="button" id="addOwnerBtn">افزودن</button>
           </div>
           <div class="people-list" id="ownersListBox"></div>
         </div>
         <div class="people-panel" id="peoplePanelParties" role="tabpanel" style="display:none">
           <div class="people-add-row">
-            <input type="text" id="newPartyInput" placeholder="نام طرف حساب جدید">
+            <div class="ig has-pre"><span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span><input type="text" id="newPartyInput" placeholder="نام طرف حساب جدید"></div>
             <button type="button" id="addPartyBtn">افزودن</button>
           </div>
           <div class="people-list" id="partiesListBox"></div>
@@ -291,8 +304,8 @@
             <select id="benefPartySelect"></select>
           </div>
           <div class="people-add-row">
-            <input type="text" id="newBenefNameInput" placeholder="نام ذینفع">
-            <input type="text" id="newBenefNidInput" placeholder="کد ملی" inputmode="numeric" maxlength="11" style="max-width:130px">
+            <div class="ig has-pre"><span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><input type="text" id="newBenefNameInput" placeholder="نام ذینفع"></div>
+            <div class="ig has-pre ig-nid"><span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><path d="M16 10h2M16 14h2"/></svg></span><input type="text" id="newBenefNidInput" placeholder="کد ملی" inputmode="numeric" maxlength="11"></div>
             <button type="button" id="addBenefBtn">افزودن</button>
           </div>
           <div class="people-list" id="benefListBox"></div>
@@ -451,13 +464,21 @@
             <div class="ve-fields-wrap" id="veFieldsWrapA">
               <div class="form-field cq-span-2" id="serialField">
                 <label for="serialInput">سریال</label>
-                <input type="text" id="serialInput" inputmode="numeric" maxlength="6" autocomplete="off" aria-describedby="serialMsg" placeholder="۶ رقم">
+                <div class="ig has-pre has-suf">
+                  <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></span>
+                  <input type="text" id="serialInput" inputmode="numeric" maxlength="6" autocomplete="off" aria-describedby="serialMsg" placeholder="۶ رقم">
+                  <span class="ig-suf" aria-hidden="true"><span class="ig-count" data-count-for="serialInput"></span></span>
+                </div>
                 <div class="field-msg" id="serialMsg">سریال باید ۶ رقم باشد</div>
               </div>
             </div>
             <div class="form-field cq-span-4" id="sayadField">
               <label for="sayadInput">شناسه صیادی</label>
-              <input type="text" id="sayadInput" inputmode="numeric" maxlength="16" autocomplete="off" aria-describedby="sayadMsg" placeholder="۱۶ رقم">
+              <div class="ig has-pre has-suf">
+                <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7v10M12 7v10M16 7v10"/></svg></span>
+                <input type="text" id="sayadInput" inputmode="numeric" maxlength="16" autocomplete="off" aria-describedby="sayadMsg" placeholder="۱۶ رقم">
+                <span class="ig-suf" aria-hidden="true"><span class="ig-count" data-count-for="sayadInput"></span></span>
+              </div>
               <div class="sayad-static" id="sayadStatic"></div>
               <div class="field-msg" id="sayadMsg">شناسه صیادی باید ۱۶ رقم باشد</div>
             </div>
@@ -466,6 +487,7 @@
               <div class="form-field amount-field cq-span-4" id="amountField">
                 <label for="amountInput">مبلغ</label>
                 <div class="amount-box" id="amountBox">
+                  <span class="amount-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span>
                   <input type="text" id="amountInput" class="amount-input" inputmode="numeric" autocomplete="off" aria-describedby="amountMsg" placeholder="۰">
                   <span class="amount-unit">ریال</span>
                 </div>
@@ -518,24 +540,37 @@
             <div class="ve-fields-wrap" id="veFieldsWrapB">
               <div class="form-field ac-field cq-span-3" id="ownerField">
                 <label for="ownerInput">صاحب چک</label>
-                <input type="text" id="ownerInput" class="ac-input" autocomplete="off" aria-describedby="ownerMsg">
+                <div class="ig has-pre has-suf">
+                  <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span>
+                  <input type="text" id="ownerInput" class="ac-input" autocomplete="off" aria-describedby="ownerMsg" placeholder="انتخاب کنید">
+                  <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="ownerInput" aria-label="نمایش فهرست صاحبان چک"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+                </div>
                 <div class="field-msg" id="ownerMsg">نام صاحب چک را وارد کنید</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="partyField">
                 <label for="partyInput">طرف حساب</label>
-                <input type="text" id="partyInput" class="ac-input" autocomplete="off" aria-describedby="partyMsg">
+                <div class="ig has-pre has-suf">
+                  <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
+                  <input type="text" id="partyInput" class="ac-input" autocomplete="off" aria-describedby="partyMsg" placeholder="انتخاب کنید">
+                  <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="partyInput" aria-label="نمایش فهرست طرف‌های حساب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+                </div>
                 <div class="field-msg" id="partyMsg">نام طرف حساب را وارد کنید</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="benefField">
                 <label for="benefInput">ذینفع</label>
-                <input type="text" id="benefInput" class="ac-input" autocomplete="off" aria-describedby="benefMsg">
+                <div class="ig has-pre has-suf">
+                  <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                  <input type="text" id="benefInput" class="ac-input" autocomplete="off" aria-describedby="benefMsg" placeholder="انتخاب کنید">
+                  <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="benefInput" aria-label="نمایش فهرست ذینفعان"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+                </div>
                 <div class="field-msg" id="benefMsg">نام ذینفع را وارد کنید</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="nidField">
                 <label for="nidInput">کد / شناسه ملی ذینفع</label>
-                <div class="nid-box" id="nidBox">
+                <div class="nid-box ig has-pre has-suf" id="nidBox">
+                  <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><path d="M16 10h2M16 14h2"/></svg></span>
                   <input type="text" id="nidInput" class="ac-input" inputmode="numeric" autocomplete="off" aria-describedby="nidMsg" placeholder="۱۰ یا ۱۱ رقم">
-                  <span class="nid-kind" id="nidKind"></span>
+                  <span class="ig-suf"><span class="nid-kind ig-badge" id="nidKind"></span></span>
                 </div>
                 <div class="field-msg" id="nidMsg">کد ملی ۱۰ رقم و شناسه ملی ۱۱ رقم است</div>
               </div>
@@ -570,8 +605,10 @@
         <div class="ve-fields-wrap" id="veFieldsWrapC">
           <div class="form-field notes-field cq-note" id="notesField">
             <label for="notesInput">توضیحات <span class="opt">اختیاری</span></label>
-            <textarea id="notesInput" class="notes-input" rows="2" maxlength="500" enterkeyhint="next" placeholder="مثلاً بابت فاکتور…"></textarea>
-            <div class="notes-count" id="notesCount"></div>
+            <div class="ig ig-area">
+              <textarea id="notesInput" class="notes-input" rows="2" maxlength="500" enterkeyhint="next" placeholder="مثلاً بابت فاکتور…"></textarea>
+              <div class="notes-count" id="notesCount"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -687,16 +724,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260927d"></script>
-<script src="/js/shared.js?v=20260927d"></script>
-<script src="/js/palette.js?v=20260927d"></script>
-<script src="/js/dashboard.js?v=20260927d"></script>
-<script src="/js/print.js?v=20260927d"></script>
-<script src="/js/cheque-form.js?v=20260927d"></script>
-<script src="/js/date-segments.js?v=20260927d"></script>
-<script src="/js/cal-picker.js?v=20260927d"></script>
-<script src="/js/shell.js?v=20260927d"></script>
-<script src="/js/theme-reveal.js?v=20260927d"></script>
+<script src="/js/icons.js?v=20260927e"></script>
+<script src="/js/shared.js?v=20260927e"></script>
+<script src="/js/palette.js?v=20260927e"></script>
+<script src="/js/dashboard.js?v=20260927e"></script>
+<script src="/js/print.js?v=20260927e"></script>
+<script src="/js/cheque-form.js?v=20260927e"></script>
+<script src="/js/date-segments.js?v=20260927e"></script>
+<script src="/js/cal-picker.js?v=20260927e"></script>
+<script src="/js/field-addons.js?v=20260927e"></script>
+<script src="/js/shell.js?v=20260927e"></script>
+<script src="/js/theme-reveal.js?v=20260927e"></script>
 
 </body>
 </html>

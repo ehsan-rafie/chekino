@@ -158,6 +158,30 @@ The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
 makes inert in view mode; `#sayadField` stays outside them. The wrappers
 are `display: contents`, so they never affect the grid.
 
+**Fields as input groups** (shared.css "INPUT GROUP", `js/field-addons.js`).
+HeroUI's InputGroup: the label above, a prefix at the start (the right)
+and a suffix at the end (the left), chosen for what the field holds. The
+add-ons are laid over the input's padding (`.ig`, `.ig-pre`, `.ig-suf`,
+`.has-pre` / `.has-suf`, widths via `--pre-w` / `--suf-w`), so each
+input keeps its own border, focus and error styles; physical sides are
+used because the numeric inputs are `direction: ltr`.
+
+| Field | Prefix | Suffix |
+|---|---|---|
+| serial / sayad id | # / barcode icon | running digit count, green when complete |
+| amount | banknote icon | «ریال» |
+| owner / party / beneficiary | building / briefcase / person icon | arrow that opens the full list of names on file |
+| national id | id-card icon | «حقیقی» / «حقوقی» as a blue badge |
+| dates | — | calendar button |
+| notes | — | character count inside, bottom corner |
+| board search | search icon | «/» key hint, clear button |
+| amount filter | «از» / «تا» | «ریال» |
+| login / admin sign-in | person / lock icon | show-password toggle |
+| admin: company, plan, account fields | building / person / key / tag / people / cheque icons | «تومان» on prices; «تولید تصادفی» inside the new-password field; a copy button on the revealed password |
+
+Numbers and codes are right-aligned next to their icon like every other
+field. Generated passwords use a monospace face with Latin digits.
+
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
 digits), and while the field has focus the segment the next digit goes
@@ -222,4 +246,5 @@ screens the navigation becomes segmented tabs.
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
 | `js/cal-picker.js` | the calendar's title button and its year / month picker |
+| `js/field-addons.js` | the live input-group suffixes on the dashboard: digit counts, list arrows, copy buttons |
 | `js/login-art.js` | the login page's sample cheque |

@@ -4805,3 +4805,83 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .cal-popup.is-picking .cal-nav-btn { visibility: hidden; }
 .account-btn:focus-visible { outline-color: var(--hl); }
 .board-status-tab:focus-visible { outline-color: var(--hl); }
+
+/* ═══ Input groups, field by field (HeroUI's InputGroup) ═══
+   The component itself is in shared.css; here each field gets the add-ons
+   that fit what it holds, and the room they need. */
+.form-field .ig > input { height: 38px; }
+#sayadField.view-mode .ig { display: none; }
+
+/* Serial and sayad id: a # / barcode prefix and a running digit count */
+.ig:has(#serialInput) { --suf-w: 56px; }
+.ig:has(#sayadInput) { --suf-w: 64px; }
+
+/* The three names: an icon for who they are, and an arrow that opens the
+   list of people already on file */
+.ig:has(.ac-input) { --suf-w: 40px; }
+
+/* National id: an id-card prefix, and «حقیقی» / «حقوقی» as a badge suffix */
+.ig:has(#nidInput) { --suf-w: 76px; }
+#nidKind {
+  position: static;
+  top: auto;
+  right: auto;
+  left: auto;
+  transform: none;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--rad-xs);
+  background: var(--hl-soft);
+  color: var(--hl-text);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+
+/* Amount: a banknote prefix; «ریال» is already the suffix */
+.amount-box .amount-pre { display: flex; align-items: center; flex-shrink: 0; color: var(--muted); }
+.amount-box .amount-pre svg { width: 16px; height: 16px; }
+.amount-box:focus-within .amount-pre { color: var(--ink-2); }
+#modalOverlay .amount-box { padding: 0 12px; gap: 10px; }
+.form-field#amountField .amount-input { text-align: right; }
+
+/* Notes: HeroUI's TextArea — the count sits inside, at the bottom corner */
+.ig-area { position: relative; }
+#modalOverlay .ig-area .notes-input { padding-bottom: 26px; }
+.ig-area .notes-count {
+  position: absolute;
+  left: 12px;
+  bottom: 7px;
+  margin: 0;
+  font-size: var(--t-micro);
+  pointer-events: none;
+}
+
+/* Search: a key hint for «/», gone once the box has focus or text */
+.board-search-box .search-kbd { display: inline-grid; height: 20px; min-width: 20px; margin: 0; font-size: 11px; opacity: 1; }
+.board-search-box .search-box input:not(:placeholder-shown) ~ .search-kbd { display: none; }
+
+/* Amount filter: «از» / «تا» as text prefixes, «ریال» as the suffix */
+.amount-filter-row { gap: 8px; align-items: stretch; }
+.amount-filter-box { --pre-w: 34px; --suf-w: 44px; }
+.amount-filter-box input {
+  height: 38px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
+  font-size: var(--t-body);
+  text-align: right;
+}
+.amount-filter-box input:hover { border-color: var(--field-border-hover); }
+.amount-filter-box input:focus { border-color: var(--focus-edge); box-shadow: var(--ring); }
+.amount-filter-box input::placeholder { text-align: right; }
+
+/* Filter by people: the same icons as the form */
+.filter-people-row .ac-input { height: 38px; font-size: var(--t-body); }
+
+/* People window: icons on the add fields */
+.people-add-row .ig { flex: 1; min-width: 0; }
+.people-add-row .ig-nid { flex: 0 0 150px; }
+.people-add-row .ig > input { width: 100%; height: 38px; }
+/* National id digits sit next to their icon, like serial and sayad id */
+.form-field #nidInput { text-align: right; }

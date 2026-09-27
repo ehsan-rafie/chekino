@@ -587,3 +587,94 @@ kbd {
    is switched off for the root snapshot. ── */
 ::view-transition-old(root),
 ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+/* ════════════════════════════════════════════════════════════════
+   6 · INPUT GROUP (HeroUI's InputGroup)
+   A field with a prefix at its start (the right, in this RTL app) and/or
+   a suffix at its end (the left): an icon, a word, a count, a badge, a
+   key hint or a small button, chosen for what the field holds. The input
+   keeps its own box, focus ring and error state; the add-ons are laid over
+   its padding, so every field style on the three pages still applies.
+   Physical sides on purpose: the numeric inputs are direction:ltr, and
+   their logical start would be the wrong side.
+   ════════════════════════════════════════════════════════════════ */
+.ig { position: relative; display: block; min-width: 0; }
+.ig > input,
+.ig > textarea { width: 100%; }
+.ig-pre,
+.ig-suf {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-body);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ig-pre { right: 0; }
+.ig-suf { left: 0; }
+.ig-pre svg,
+.ig-suf svg { width: 16px; height: 16px; flex-shrink: 0; }
+.ig.has-pre > input { padding-right: var(--pre-w, 38px) !important; }
+.ig.has-suf > input { padding-left: var(--suf-w, 44px) !important; }
+.ig:focus-within .ig-pre { color: var(--ink-2); }
+
+/* A small button inside the suffix: copy, show password, open the list */
+.ig-suf.has-btn { padding: 0 5px; }
+.ig-btn {
+  pointer-events: auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.ig-btn:hover { background: var(--accent-wash); color: var(--ink); }
+.ig-btn.is-done { color: var(--state-ok); }
+
+/* A badge in the suffix (HeroUI's Badge Suffix) */
+.ig-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--rad-xs);
+  background: var(--hl-soft);
+  color: var(--hl-text);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+.ig-badge:empty { display: none; }
+
+/* A running count ("۳ / ۶"), green once the field is complete */
+.ig-count { font-size: var(--t-micro); font-variation-settings: var(--f-num); direction: rtl; }
+.ig-count.is-full { color: var(--state-ok-text); }
+
+/* A key hint, gone once the field has focus or text */
+.ig-kbd { min-width: 20px; height: 20px; font-size: 11px; }
+.ig > input:focus ~ .ig-suf .ig-kbd,
+.ig > input:not(:placeholder-shown) ~ .ig-suf .ig-kbd { display: none; }
+/* A worded button in the suffix («تولید تصادفی») */
+.ig-btn.ig-btn-text {
+  width: auto;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  color: var(--ink-2);
+  background: var(--accent-wash);
+}
+.ig-btn.ig-btn-text:hover { color: var(--ink); background: var(--field-bg-hover); box-shadow: inset 0 0 0 1px var(--border); }

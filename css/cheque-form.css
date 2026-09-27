@@ -83,7 +83,7 @@
 /* Serial and sayad are read digit by digit */
 #serialInput, #sayadInput, #nidInput {
   direction: ltr;
-  text-align: left;
+  text-align: right;   /* next to their prefix icon, like every other field */
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }
@@ -236,7 +236,7 @@
   .cq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cq-span-2, .cq-span-3 { grid-column: span 1; }
   .cq-span-4, .cq-span-6 { grid-column: 1 / -1; }
-  #sayadField, #amountField, #fileField, #channelField { grid-column: 1 / -1; }
+  #sayadField, #amountField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
   .cq-view { padding: 14px; gap: 14px; }
   .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 14px 0; }
   .cq-view-facts .cq-narrow-only { display: flex; }

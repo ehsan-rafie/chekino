@@ -1817,10 +1817,14 @@ function createAutocomplete(cfg) {
     }
   }
 
-  function render() {
+  // browse: the arrow in the field's suffix asks for the list even while
+  // the field is empty, so the people on file can be picked without
+  // remembering how their name starts.
+  function render(browse) {
     const query = cfg.input.value;
-    if (query.trim() === '') { close(); return; }
-    matches = cfg.search(query).slice(0, 8);
+    const empty = query.trim() === '';
+    if (empty && !browse) { close(); return; }
+    matches = cfg.search(query).slice(0, empty ? 20 : 8);
     activeIdx = -1;
 
     let html = '';
@@ -1829,7 +1833,7 @@ function createAutocomplete(cfg) {
       const sub = cfg.secondary ? `<span class="ac-tag">${escapeHtml(cfg.secondary(item))}</span>` : '';
       html += `<div class="ac-item" data-idx="${i}">${main}${sub}</div>`;
     });
-    if (cfg.allowNew && !cfg.hasExact(query)) {
+    if (cfg.allowNew && !empty && !cfg.hasExact(query)) {
       // The label can depend on the query: a name that is new to *this* field
       // may still be someone already on file under another role, and calling
       // them "new" would suggest a second record is about to be created.
@@ -1898,6 +1902,12 @@ function createAutocomplete(cfg) {
     close();
     if (cfg.onBlur) cfg.onBlur();
     saveDraft();
+  });
+
+  // Sent by the suffix arrow (js/field-addons.js): toggle the full list.
+  cfg.input.addEventListener('ac-browse', () => {
+    if (cfg.list.classList.contains('show')) close();
+    else render(true);
   });
 
   return { close, render };

@@ -532,3 +532,26 @@ tbody tr:hover { background: var(--surface-2); }
 :root[data-theme="dark"] .tabs { background: none; }
 @media (max-width: 860px) { :root[data-theme="dark"] .tabs { background: rgba(255, 255, 255, 0.06); } }
 .checkbox-row input { accent-color: var(--hl); }
+
+/* ═══ Fields as HeroUI's InputGroup ═══
+   Icons at the start, units and buttons at the end (shared.css, "INPUT
+   GROUP"). Numbers and codes sit next to their icon like everything else. */
+.field .ig > input { height: 40px; text-align: right; }
+.field .ig > input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.field .ig > input[type="number"]::-webkit-outer-spin-button,
+.field .ig > input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.field .ig > input::placeholder { color: var(--muted); font-size: var(--t-cap); text-align: right; }
+.ig-suf .toggle-eye { position: static; top: auto; left: auto; width: 30px; height: 30px; transform: none; }
+.ig-suf .toggle-eye:hover { color: var(--ink); background: var(--accent-wash); }
+.ig-suf .toggle-eye svg { width: 17px; height: 17px; }
+.ig.ig-gen { --suf-w: 108px; }
+.ig:has(#revealedPassword) { --suf-w: 42px; }
+.ig:has(#newPlanPrice),
+.ig:has(#editPlanPrice) { --suf-w: 52px; }
+/* Generated passwords are read and copied character by character: a
+   monospace face keeps l / I / 1 apart and shows the digits as typed
+   (IRANSansX's Farsi-numerals cut would render them as Persian digits). */
+#newPasswordInput,
+#revealedPassword,
+#newCompanyPassword,
+#accountNewPassword { font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace; letter-spacing: 0.02em; }
