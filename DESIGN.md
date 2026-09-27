@@ -122,19 +122,21 @@ the header already has one.
 «افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
 (unrolls into PDF / Excel) and «مدیریت اشخاص» sit at the other end.
 The add button is Magic UI's Shimmer Button (`.shimmer-btn`): a dark
-button in both themes, a blurred spark sliding and spinning round its
-edge, a soft light rising from its bottom, the theme's 12px corner.
+button in both themes, a blurred spark travelling round its whole
+outline (`offset-path` on the button's rounded rect, so it climbs the
+short sides too instead of vanishing into the corners), a soft light
+rising from its bottom, the theme's 12px corner.
 
 **Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
 «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when
 something is filtered.
 
 **Board.** Three lanes on `--surface-2` with a subtle edge. Each head is a
-status dot, the name in ink, a small outlined count badge, and the lane's
-total at the far end. Cards: white, 1px edge, radius 16; serial on top
-with the due date as an outlined badge (amber / red wash with a dot when
-due soon / overdue), payee and amount in the middle, outlined 30px icon
-buttons and a tinted status square below. Under the pointer a soft light
+status dot, the name in ink and a small outlined count badge (no totals).
+Cards: white, 1px edge, radius 16; serial on top with the due date as an
+outlined badge (amber / red wash with a dot when due soon / overdue),
+payee and amount in the middle, borderless 30px icon buttons (a grey wash
+on hover) and a tinted status square without an edge below. Under the pointer a soft light
 follows the cursor and catches the card's edge (Magic Card; `shell.js`
 sets `--mx` / `--my`). Empty lanes say so in a dashed box. On narrow
 screens the lanes become segmented tabs.
@@ -145,11 +147,14 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
 
 - *Add / edit — two cards on a faint grey body.* Each card has a header
   strip (an outlined icon tile and the title) over a hairline, then its
-  fields. «مشخصات چک»: serial, sayad id, amount (with the amount in words),
-  due date, spend date (optional), photo (optional). «مشخصات اشخاص»:
-  owner, party, beneficiary and their national id, then — under a divider —
-  send date and the channels it was sent through. A free note (optional)
-  sits under the cards. Labels are short; there are no hints or side
+  fields. «مشخصات چک»: serial | sayad id, amount (with the amount in
+  words) | due date, then the photo (optional) as one slim row the height
+  of a field — an image icon, small thumbnails once added (a drop hint
+  until then), «انتخاب فایل» at the end (after 21st.dev's File Upload).
+  «مشخصات اشخاص», each person beside the date that belongs to them:
+  owner | send date, party | spend date (optional), beneficiary | their
+  national id, then the channels it was sent through across the card.
+  A free note (optional) sits under the cards. Labels are short; there are no hints or side
   descriptions. The save button is compact and sits at the end of the
   footer; saving an edit asks for a one-tap confirmation in place.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
@@ -258,7 +263,7 @@ screens the navigation becomes segmented tabs.
 | `css/login.css`, `css/admin.css` | the two other pages (each ends with a "Monochrome finish" section) |
 | `js/print.js` | guilloche + signature generators |
 | `js/cheque-form.js` | view face: the cheque and the facts card (read-only) |
-| `js/shell.js` | header command button, board summary, column totals, card spotlight, first-load blur-fade (read-only) |
+| `js/shell.js` | card spotlight, first-load blur-fade, tooltip tidy-up (read-only) |
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
 | `js/cal-picker.js` | the calendar's title button and its year / month picker |

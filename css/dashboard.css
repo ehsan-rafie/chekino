@@ -4065,13 +4065,6 @@ html, body { background-color: var(--bg); }
   font-variation-settings: var(--f-num);
   line-height: 1;
 }
-.board-col-sum {
-  margin-inline-start: auto;
-  font-size: var(--t-micro);
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-  white-space: nowrap;
-}
 .board-col-list { gap: 8px; padding: 0; }
 .board-col-empty {
   padding: 28px 12px;
@@ -4216,9 +4209,9 @@ html, body { background-color: var(--bg); }
 .receipt-btn {
   width: 30px;
   height: 30px;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--rad-ctl);
-  background: var(--surface);
+  background: transparent;
   color: var(--ink-2);
 }
 .eye-btn:hover, .receipt-btn:hover { background: var(--accent-wash); color: var(--ink); transform: none; }
@@ -4227,14 +4220,14 @@ html, body { background-color: var(--bg); }
   width: 30px;
   height: 30px;
   border-radius: var(--rad-ctl) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
+  box-shadow: none;
   background: color-mix(in srgb, currentColor 9%, var(--surface)) !important;
 }
 .check-card.st-pending .status-dot-btn { color: var(--st-pending); }
 .check-card.st-done .status-dot-btn { color: var(--st-done); }
 .check-card.st-problem .status-dot-btn { color: var(--st-problem); }
 .status-dot-btn svg { width: 15px; height: 15px; }
-.status-dot-btn:hover { transform: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent); }
+.status-dot-btn:hover { transform: none; box-shadow: none; background: color-mix(in srgb, currentColor 16%, var(--surface)) !important; }
 
 .check-card-ghost { rotate: 1.5deg; box-shadow: var(--shadow-2); }
 
@@ -5015,4 +5008,112 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shimmer-slide, .shimmer-spin { animation: none; }
+}
+/* The lit edge was a 0.7px gap inside a 1px border, so on the sides the
+   spark all but vanished under it. The border is now an inset line drawn
+   beneath the spark, and the lit gap is 1.5px all the way round. */
+.shimmer-btn {
+  --cut: 1.5px;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+}
+.shimmer-btn:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
+:root[data-theme="dark"] .shimmer-btn { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 10px 28px -12px rgba(0, 0, 0, 0.9); }
+.shimmer-backdrop { border-radius: calc(var(--rad-ctl) - 1.5px); }
+/* The spark now travels the button's own outline (offset-path) instead of
+   sliding left–right and spinning: at the ends the slide pointed its light
+   into the rounded corners, so the climb up each short side seemed to go
+   under something. One even loop round all four sides, corners included.
+   Browsers without offset-path shapes keep the slide-and-spin above. */
+@supports (offset-path: rect(0 100% 100% 0 round 12px)) {
+  .shimmer-spark { border-radius: inherit; }
+  .shimmer-slide {
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    offset-path: rect(0 100% 100% 0 round var(--rad-ctl));
+    offset-anchor: center;
+    offset-rotate: 0deg;
+    offset-distance: 0%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--shimmer-color) 0%, rgba(255, 255, 255, 0.55) 30%, transparent 68%);
+    animation: shimmerTravel 4.5s linear infinite;
+  }
+  .shimmer-spin { display: none; }
+}
+@keyframes shimmerTravel { to { offset-distance: 100%; } }
+@supports (offset-path: rect(0 100% 100% 0 round 12px)) {
+  .shimmer-spark { filter: blur(1px); }
+  .shimmer-slide {
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #FFFFFF 0%, rgba(255, 255, 255, 0.8) 22%, rgba(255, 255, 255, 0.25) 45%, transparent 70%);
+  }
+}
+
+/* ═══ Cheque photo: one slim row, the height of a field ═══
+   After 21st.dev's File Upload: an image icon at the start, small
+   thumbnails once files are added (a drop hint until then), and a small
+   «انتخاب فایل» button at the end. Dashed and blue only while a file is
+   dragged over it. */
+.file-box {
+  min-height: 38px;
+  padding: 4px;
+  padding-inline-start: 11px;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  border: 1px solid var(--field-border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
+}
+.file-box:hover { border-color: var(--field-border-hover); background: var(--field-bg); }
+.file-box.dragging { border-style: dashed; border-color: var(--hl); background: var(--hl-soft); }
+.file-lead { display: flex; flex-shrink: 0; color: var(--muted); }
+.file-lead svg { width: 16px; height: 16px; }
+.file-hint {
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--t-cap);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-chips:not(:empty) { flex: 1; gap: 6px; }
+.file-chips:not(:empty) ~ .file-hint { display: none; }
+.file-chip,
+.file-chip img,
+.file-chip .file-doc,
+.file-chip .file-view-overlay { width: 28px; height: 28px; border-radius: 7px; }
+.file-chip .file-doc { background: var(--surface-sunken); color: var(--ink-2); }
+.file-chip .file-doc svg { width: 15px; height: 15px; }
+.file-chip .file-view-overlay svg { width: 14px; height: 14px; }
+.file-remove { top: -5px; left: -5px; width: 16px; height: 16px; background: var(--ink); color: var(--bg); box-shadow: none; }
+.file-remove svg { width: 9px; height: 9px; }
+.file-add {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-wash);
+  color: var(--ink);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+.file-add:hover { background: var(--field-bg-hover); color: var(--ink); box-shadow: inset 0 0 0 1px var(--border); }
+.file-add svg { width: 14px; height: 14px; }
+@media (hover: none) { .file-hint { visibility: hidden; } }
+.file-box .file-add { width: auto; flex: 0 0 auto; margin-top: 0; }
+@media (hover: hover) {
+  .file-box .file-remove { opacity: 0; transition: opacity var(--dur-1) var(--ease); }
+  .file-box .file-chip:hover .file-remove,
+  .file-box .file-remove:focus-visible { opacity: 1; }
 }

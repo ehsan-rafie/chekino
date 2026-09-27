@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260927h" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260927n" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260927h">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260927h">
-<link rel="stylesheet" href="/css/cheque.css?v=20260927h">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260927h">
+<link rel="stylesheet" href="/css/shared.css?v=20260927n">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260927n">
+<link rel="stylesheet" href="/css/cheque.css?v=20260927n">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260927n">
 </head>
 <body class="chekino-auth-pending">
 
@@ -499,23 +499,19 @@
                 <div class="field-msg" id="dueDateMsg">تاریخ معتبر نیست</div>
               </div>
 
-              <div class="form-field date-field cq-span-2" id="spendDateField">
-                <label for="spendDateInput">تاریخ خرج <span class="opt">اختیاری</span></label>
-                <div class="date-input-wrap">
-                  <input type="text" id="spendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="spendDateMsg">
-                  <button type="button" class="date-cal-btn" id="spendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  </button>
-                </div>
-                <div class="field-msg" id="spendDateMsg">تاریخ معتبر نیست</div>
-              </div>
-              <div class="form-field file-field cq-span-4" id="fileField">
+              <div class="form-field file-field cq-span-6" id="fileField">
                 <label>عکس چک <span class="opt">اختیاری</span></label>
+                <!-- One slim row, the height of a field (after 21st.dev's
+                     File Upload): an image icon, the thumbnails once there
+                     are some (a hint to drop files until then), and a small
+                     «انتخاب فایل» button at the end. -->
                 <div class="file-box" id="fileBox">
+                  <span class="file-lead" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></span>
                   <div class="file-chips" id="fileChips"></div>
+                  <span class="file-hint">عکس یا PDF را اینجا رها کنید</span>
                   <button type="button" class="file-add" id="fileAddBtn" tabindex="0" aria-describedby="fileMsg">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <span>افزودن عکس</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                    <span>انتخاب فایل</span>
                   </button>
                   <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
                 </div>
@@ -541,6 +537,16 @@
                 </div>
                 <div class="field-msg" id="ownerMsg">نام صاحب چک را وارد کنید</div>
               </div>
+              <div class="form-field date-field cq-span-3" id="sendDateField">
+                <label for="sendDateInput">تاریخ ارسال</label>
+                <div class="date-input-wrap">
+                  <input type="text" id="sendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="sendDateMsg">
+                  <button type="button" class="date-cal-btn" id="sendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </button>
+                </div>
+                <div class="field-msg" id="sendDateMsg">تاریخ معتبر نیست</div>
+              </div>
               <div class="form-field ac-field cq-span-3" id="partyField">
                 <label for="partyInput">طرف حساب</label>
                 <div class="ig has-pre has-suf">
@@ -549,6 +555,16 @@
                   <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="partyInput" aria-label="نمایش فهرست طرف‌های حساب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
                 </div>
                 <div class="field-msg" id="partyMsg">نام طرف حساب را وارد کنید</div>
+              </div>
+              <div class="form-field date-field cq-span-3" id="spendDateField">
+                <label for="spendDateInput">تاریخ خرج <span class="opt">اختیاری</span></label>
+                <div class="date-input-wrap">
+                  <input type="text" id="spendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="spendDateMsg">
+                  <button type="button" class="date-cal-btn" id="spendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </button>
+                </div>
+                <div class="field-msg" id="spendDateMsg">تاریخ معتبر نیست</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="benefField">
                 <label for="benefInput">ذینفع</label>
@@ -568,20 +584,7 @@
                 </div>
                 <div class="field-msg" id="nidMsg">کد ملی ۱۰ رقم و شناسه ملی ۱۱ رقم است</div>
               </div>
-
-              <div class="cq-divider cq-span-6" aria-hidden="true"></div>
-
-              <div class="form-field date-field cq-span-2" id="sendDateField">
-                <label for="sendDateInput">تاریخ ارسال</label>
-                <div class="date-input-wrap">
-                  <input type="text" id="sendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="sendDateMsg">
-                  <button type="button" class="date-cal-btn" id="sendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  </button>
-                </div>
-                <div class="field-msg" id="sendDateMsg">تاریخ معتبر نیست</div>
-              </div>
-              <div class="form-field ms-field cq-span-4" id="channelField">
+              <div class="form-field ms-field cq-span-6" id="channelField">
                 <label>ارسال به صاحب چک از طریق</label>
                 <button type="button" class="ms-box" id="channelBox" aria-haspopup="listbox" aria-expanded="false" aria-controls="channelList" aria-describedby="channelMsg">
                   <span class="ms-chips" id="channelChips"></span>
@@ -718,17 +721,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260927h"></script>
-<script src="/js/shared.js?v=20260927h"></script>
-<script src="/js/palette.js?v=20260927h"></script>
-<script src="/js/dashboard.js?v=20260927h"></script>
-<script src="/js/print.js?v=20260927h"></script>
-<script src="/js/cheque-form.js?v=20260927h"></script>
-<script src="/js/date-segments.js?v=20260927h"></script>
-<script src="/js/cal-picker.js?v=20260927h"></script>
-<script src="/js/field-addons.js?v=20260927h"></script>
-<script src="/js/shell.js?v=20260927h"></script>
-<script src="/js/theme-reveal.js?v=20260927h"></script>
+<script src="/js/icons.js?v=20260927n"></script>
+<script src="/js/shared.js?v=20260927n"></script>
+<script src="/js/palette.js?v=20260927n"></script>
+<script src="/js/dashboard.js?v=20260927n"></script>
+<script src="/js/print.js?v=20260927n"></script>
+<script src="/js/cheque-form.js?v=20260927n"></script>
+<script src="/js/date-segments.js?v=20260927n"></script>
+<script src="/js/cal-picker.js?v=20260927n"></script>
+<script src="/js/field-addons.js?v=20260927n"></script>
+<script src="/js/shell.js?v=20260927n"></script>
+<script src="/js/theme-reveal.js?v=20260927n"></script>
 
 </body>
 </html>
