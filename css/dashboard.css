@@ -5009,49 +5009,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 @media (prefers-reduced-motion: reduce) {
   .shimmer-slide, .shimmer-spin { animation: none; }
 }
-/* The lit edge was a 0.7px gap inside a 1px border, so on the sides the
-   spark all but vanished under it. The border is now an inset line drawn
-   beneath the spark, and the lit gap is 1.5px all the way round. */
-.shimmer-btn {
-  --cut: 1.5px;
-  border: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
-}
-.shimmer-btn:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
-:root[data-theme="dark"] .shimmer-btn { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 10px 28px -12px rgba(0, 0, 0, 0.9); }
-.shimmer-backdrop { border-radius: calc(var(--rad-ctl) - 1.5px); }
-/* The spark now travels the button's own outline (offset-path) instead of
-   sliding left–right and spinning: at the ends the slide pointed its light
-   into the rounded corners, so the climb up each short side seemed to go
-   under something. One even loop round all four sides, corners included.
-   Browsers without offset-path shapes keep the slide-and-spin above. */
-@supports (offset-path: rect(0 100% 100% 0 round 12px)) {
-  .shimmer-spark { border-radius: inherit; }
-  .shimmer-slide {
-    top: 0;
-    left: 0;
-    width: 34px;
-    height: 34px;
-    offset-path: rect(0 100% 100% 0 round var(--rad-ctl));
-    offset-anchor: center;
-    offset-rotate: 0deg;
-    offset-distance: 0%;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--shimmer-color) 0%, rgba(255, 255, 255, 0.55) 30%, transparent 68%);
-    animation: shimmerTravel 4.5s linear infinite;
-  }
-  .shimmer-spin { display: none; }
-}
-@keyframes shimmerTravel { to { offset-distance: 100%; } }
-@supports (offset-path: rect(0 100% 100% 0 round 12px)) {
-  .shimmer-spark { filter: blur(1px); }
-  .shimmer-slide {
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(circle, #FFFFFF 0%, rgba(255, 255, 255, 0.8) 22%, rgba(255, 255, 255, 0.25) 45%, transparent 70%);
-  }
-}
-
 /* ═══ Cheque photo: one slim row, the height of a field ═══
    After 21st.dev's File Upload: an image icon at the start, small
    thumbnails once files are added (a drop hint until then), and a small
@@ -5116,4 +5073,30 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .file-box .file-remove { opacity: 0; transition: opacity var(--dur-1) var(--ease); }
   .file-box .file-chip:hover .file-remove,
   .file-box .file-remove:focus-visible { opacity: 1; }
+}
+/* Same slide-and-spin as the original; only the lit strip is wider. In
+   the original it is 0.05em (≈0.7px) inside a 1px border, which reads on
+   the long edges but all but vanishes on the short sides, so the light
+   seemed to sink out of sight as it climbed the left side. The strip is
+   now 1.5px and the border is drawn beneath the light as an inset line. */
+.shimmer-btn {
+  --cut: 1.5px;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+}
+.shimmer-btn:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
+:root[data-theme="dark"] .shimmer-btn { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 10px 28px -12px rgba(0, 0, 0, 0.9); }
+.shimmer-backdrop { border-radius: calc(var(--rad-ctl) - 1.5px); }
+/* The blur sat on the spark's container, whose box ends exactly at the
+   button's edge — so wherever the light touched the edge (the climb up the
+   left side above all) the blur averaged it with empty space beyond and it
+   faded out. The same 2px blur now sits on the spinning light itself,
+   which reaches well past the button on every side. */
+.shimmer-spark { filter: none; }
+.shimmer-spin { filter: blur(2px); }
+/* And the wedge is bright across its second half rather than only at its
+   leading edge, so a short side it sweeps catches full light, not the dim
+   middle of the ramp. Same wedge, same motion. */
+.shimmer-spin {
+  background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) calc(var(--spread) * 0.45), var(--shimmer-color) var(--spread), transparent var(--spread));
 }
