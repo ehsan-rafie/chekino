@@ -4931,3 +4931,88 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .board-page-head .add-check-btn { flex: 1; justify-content: center; height: 40px; }
   .board-page-actions { width: auto; }
 }
+
+/* ═══ «افزودن چک» as Magic UI's Shimmer Button ═══
+   A spark of light slides along the button and spins round its edge; a
+   backdrop inset by --cut covers everything but a hairline, so only the
+   edge catches it, blurred. A soft light rises from the bottom, stronger
+   under the pointer. The theme's corner (12px), not a capsule. The button
+   stays dark in both themes — the effect is made for a dark surface. */
+.shimmer-btn {
+  --spread: 90deg;
+  --shimmer-color: #FFFFFF;
+  --shimmer-bg: #0A0A0A;
+  --speed: 3s;
+  --cut: 0.05em;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0 18px 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--rad-ctl);
+  background: var(--shimmer-bg);
+  color: #FFFFFF;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+:root[data-theme="dark"] .shimmer-btn {
+  --shimmer-bg: #1A1A1A;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.9);
+}
+.shimmer-btn:hover { background: var(--shimmer-bg); transform: none; box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55); }
+.shimmer-btn:active { transform: translateY(1px); }
+.shimmer-btn svg { position: relative; }
+
+.shimmer-spark {
+  position: absolute;
+  inset: 0;
+  z-index: -30;
+  overflow: visible;
+  container-type: size;
+  filter: blur(2px);
+  pointer-events: none;
+}
+.shimmer-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100cqh;
+  height: 100cqh;
+  animation: shimmerSlide var(--speed) ease-in-out infinite alternate;
+}
+.shimmer-spin {
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(from calc(270deg - (var(--spread) * 0.5)), transparent 0, var(--shimmer-color) var(--spread), transparent var(--spread));
+  animation: shimmerSpin calc(var(--speed) * 2) infinite linear;
+}
+.shimmer-highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 -8px 10px rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+  transition: box-shadow 0.3s ease-in-out;
+}
+.shimmer-btn:hover .shimmer-highlight { box-shadow: inset 0 -6px 10px rgba(255, 255, 255, 0.25); }
+.shimmer-btn:active .shimmer-highlight { box-shadow: inset 0 -10px 10px rgba(255, 255, 255, 0.25); }
+.shimmer-backdrop {
+  position: absolute;
+  inset: var(--cut);
+  z-index: -20;
+  border-radius: calc(var(--rad-ctl) - 1px);
+  background: var(--shimmer-bg);
+  pointer-events: none;
+}
+@keyframes shimmerSlide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes shimmerSpin {
+  0%       { transform: translateZ(0) rotate(0); }
+  15%, 35% { transform: translateZ(0) rotate(90deg); }
+  65%, 85% { transform: translateZ(0) rotate(270deg); }
+  100%     { transform: translateZ(0) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-slide, .shimmer-spin { animation: none; }
+}

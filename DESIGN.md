@@ -100,12 +100,14 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    sit in `fonts/` on the owner's PC and on the server, and must not be
    committed or copied anywhere public. A fresh clone falls back to Tahoma
    until `IRANSansXVFaNum.woff2` / `.woff` are put back in `fonts/`.
-7. **Motion answers the user.** Four Magic UI moments, each tied to
-   something the user did or to the page arriving: the spotlight that
+7. **Motion answers the user, with two exceptions.** Magic UI moments tied
+   to something the user did or to the page arriving: the spotlight that
    follows the pointer across a cheque card, the blur-fade the first cards
-   arrive with, the theme switch opening as a circle from its button, and
-   (on the login page only) a border beam turning slowly round the form.
-   `prefers-reduced-motion` is honoured globally.
+   arrive with, the theme switch opening as a circle from its button. Two
+   quiet loops are the exceptions, each on the one thing it points at:
+   the shimmer round «افزودن چک» (Magic UI's Shimmer Button) and, on the
+   login page, a border beam round the form. `prefers-reduced-motion` stops
+   all of it.
 
 ## Components
 
@@ -119,6 +121,9 @@ the header already has one.
 **Page head.** No title and no summary line. The one primary action,
 «افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
 (unrolls into PDF / Excel) and «مدیریت اشخاص» sit at the other end.
+The add button is Magic UI's Shimmer Button (`.shimmer-btn`): a dark
+button in both themes, a blurred spark sliding and spinning round its
+edge, a soft light rising from its bottom, the theme's 12px corner.
 
 **Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
 «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when
