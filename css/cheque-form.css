@@ -83,7 +83,7 @@
 /* Serial and sayad are read digit by digit */
 #serialInput, #sayadInput, #nidInput {
   direction: ltr;
-  text-align: right;   /* next to their prefix icon, like every other field */
+  text-align: left;    /* numbers and codes read left to right */
   font-variant-numeric: tabular-nums;
   font-variation-settings: var(--f-num);
 }

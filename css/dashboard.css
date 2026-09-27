@@ -4842,7 +4842,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .amount-box .amount-pre svg { width: 16px; height: 16px; }
 .amount-box:focus-within .amount-pre { color: var(--ink-2); }
 #modalOverlay .amount-box { padding: 0 12px; gap: 10px; }
-.form-field#amountField .amount-input { text-align: right; }
+.form-field#amountField .amount-input { direction: ltr; text-align: left; }
 
 /* Notes: HeroUI's TextArea — the count sits inside, at the bottom corner */
 .ig-area { position: relative; }
@@ -4870,7 +4870,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   background: var(--field-bg);
   box-shadow: var(--field-shadow);
   font-size: var(--t-body);
-  text-align: right;
+  direction: ltr;
+  text-align: left;
 }
 .amount-filter-box input:hover { border-color: var(--field-border-hover); }
 .amount-filter-box input:focus { border-color: var(--focus-edge); box-shadow: var(--ring); }
@@ -4883,5 +4884,67 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .people-add-row .ig { flex: 1; min-width: 0; }
 .people-add-row .ig-nid { flex: 0 0 150px; }
 .people-add-row .ig > input { width: 100%; height: 38px; }
-/* National id digits sit next to their icon, like serial and sayad id */
-.form-field #nidInput { text-align: right; }
+/* Numbers read left to right: the search once something is typed (its
+   placeholder stays Persian, on the right), and the people window's id */
+#searchInput:not(:placeholder-shown) { direction: ltr; text-align: left; }
+#newBenefNidInput { direction: ltr; text-align: left; }
+#newBenefNidInput::placeholder { text-align: right; }
+
+/* ═══ Drop-down lists, minimal (HeroUI's ListBox) ═══
+   Short rows, one column, no boxes inside boxes: the people suggestions
+   show the name (the matched part in bold) and a quiet tag; the send
+   channels show a small logo, the name, and a blue check at the end when
+   chosen — no checkbox squares. */
+.ac-list,
+.ms-list { padding: 4px; border-radius: 14px; }
+.ac-item {
+  min-height: 34px;
+  padding: 6px 10px;
+  align-items: center;
+  border-radius: 9px;
+  font-size: var(--t-body);
+}
+.ac-item:hover,
+.ac-item.active { background: var(--accent-wash); color: var(--ink); }
+.ac-item mark { background: none; color: var(--ink); font-variation-settings: 'wght' 720; }
+.ac-item .ac-tag { font-size: var(--t-micro); color: var(--muted); }
+.ac-item + .ac-new { position: relative; margin-top: 5px; }
+.ac-item + .ac-new::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: var(--border-subtle);
+}
+.ac-new .ac-main::before { content: '+'; margin-inline-end: 6px; color: var(--muted); }
+.ac-new .ac-tag { color: var(--hl-text); }
+.ac-empty { padding: 10px; font-size: var(--t-cap); }
+
+.ms-list.show { display: block; }
+.ms-option {
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: var(--t-body);
+}
+.ms-option:hover,
+.ms-option.kb-active { background: var(--accent-wash); }
+.ms-option .ms-icon { width: 22px; height: 22px; border-radius: 6px; }
+.ms-option .ms-icon svg { width: 14px; height: 14px; }
+.ms-option .ms-icon-plain svg { width: 16px; height: 16px; }
+.ms-option .ms-check,
+.ms-option.checked .ms-check {
+  order: 3;
+  margin-inline-start: auto;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+.ms-option .ms-check svg { width: 16px; height: 16px; color: var(--hl); stroke-width: 2.6; opacity: 0; }
+.ms-option.checked .ms-check svg { opacity: 1; }
+.ms-option.checked { font-variation-settings: var(--f-label); }

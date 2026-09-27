@@ -923,14 +923,8 @@ function createDateField(cfg) {
       // clears the day first, exactly as expected.
       placeCaretAtEnd();
     }
-    // On desktop, clicking straight into the due-date field opens the
-    // calendar too — not just the little calendar-icon button next to it.
-    // Other date fields still only open via their own button. Guarded on
-    // the modal actually being open: a native confirm() dialog (e.g. the
-    // "close without saving?" prompt) hands focus back to whatever field
-    // had it once dismissed, which would otherwise reopen the calendar
-    // as a "ghost" floating over the page after the modal already closed.
-    if (window.innerWidth > 720 && api.calBtn && cfg.autoOpen && modalOverlay.classList.contains('show')) openCalendarFor(api);
+    // The calendar opens only from the field's own calendar button: focusing
+    // a date field (to type it) no longer pops it open.
   });
   api.input.addEventListener('mouseup', () => {
     // Clicking on empty space inside the field (not directly on a typed
@@ -1107,7 +1101,7 @@ function createDateField(cfg) {
 
 const dueDate = createDateField({
   input: dueDateInput, field: dueDateField, msg: dueDateMsg,
-  calBtn: dueDateCalBtn, required: true, autoOpen: true
+  calBtn: dueDateCalBtn, required: true
 });
 const spendDate = createDateField({
   input: spendDateInput, field: spendDateField, msg: spendDateMsg,

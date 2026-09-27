@@ -555,3 +555,9 @@ tbody tr:hover { background: var(--surface-2); }
 #revealedPassword,
 #newCompanyPassword,
 #accountNewPassword { font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace; letter-spacing: 0.02em; }
+/* Numbers, usernames and passwords read left to right; Persian
+   placeholders stay on the right */
+.field .ig > input[dir="ltr"],
+.field .ig > input[type="number"] { direction: ltr; text-align: left; }
+.field .ig > input[dir="ltr"]::placeholder,
+.field .ig > input[type="number"]::placeholder { text-align: right; }

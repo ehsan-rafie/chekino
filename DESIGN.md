@@ -179,8 +179,16 @@ used because the numeric inputs are `direction: ltr`.
 | login / admin sign-in | person / lock icon | show-password toggle |
 | admin: company, plan, account fields | building / person / key / tag / people / cheque icons | «تومان» on prices; «تولید تصادفی» inside the new-password field; a copy button on the revealed password |
 
-Numbers and codes are right-aligned next to their icon like every other
-field. Generated passwords use a monospace face with Latin digits.
+Numbers, codes, usernames and passwords read left to right (`direction:
+ltr`, left-aligned, next to the suffix), while their Persian placeholders
+stay on the right; the search box turns left-to-right once something is
+typed. Generated passwords use a monospace face with Latin digits.
+
+**Drop-down lists** (people suggestions, send channels) follow HeroUI's
+ListBox: one column, short rows, no boxes inside boxes. People show the
+name with the matched part in bold and a quiet tag, and «+ name / new» below
+a hairline; channels show a small logo, the name, and a blue check at the
+end when chosen.
 
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
@@ -188,7 +196,8 @@ digits), and while the field has focus the segment the next digit goes
 into is highlighted in soft blue. The segments are drawn over the real input, which
 keeps the caret, the typing rules, paste and validation
 (`createDateField` in dashboard.js); pressing a segment moves the caret
-into it. The calendar button sits inside the field at the end.
+into it. The calendar button sits inside the field at the end, and it is
+the only way the calendar opens — focusing the field to type doesn't.
 
 **Calendar** (Jalali). HeroUI's: a white popover (radius 20, ring + drop)
 with one «مهر ۱۴۰۵ ⌄» button at the start and two blue arrows at the end.

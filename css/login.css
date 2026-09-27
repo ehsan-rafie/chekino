@@ -424,3 +424,6 @@ form { gap: 16px; }
 .ig-suf .toggle-eye svg { width: 17px; height: 17px; }
 .field.error label { color: var(--state-bad-text); }
 .field.error input:focus { border-color: var(--state-bad); box-shadow: var(--ring-bad); }
+/* Username and password are Latin: they read left to right */
+.field .ig > input[dir="ltr"] { text-align: left; }
+.field .ig > input[dir="ltr"]::placeholder { text-align: right; }
