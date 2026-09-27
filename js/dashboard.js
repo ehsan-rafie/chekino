@@ -2652,8 +2652,16 @@ function renderCalendar() {
     selD = complete ? parseInt(t.dayStr(), 10) : null;
   }
 
+  // The weeks are filled out with the neighbouring months' days, faded and
+  // not clickable (HeroUI's calendar does the same), so the grid is always
+  // whole weeks instead of starting and ending on blank cells.
+  const prevM = calViewMonth === 1 ? 12 : calViewMonth - 1;
+  const prevY = calViewMonth === 1 ? calViewYear - 1 : calViewYear;
+  const prevDays = daysInJalaliMonth(prevY, prevM);
   let html = '';
-  for (let i = 0; i < startOffset; i++) html += `<button class="cal-day" disabled></button>`;
+  for (let i = 0; i < startOffset; i++) {
+    html += `<button type="button" class="cal-day outside" disabled tabindex="-1" aria-hidden="true">${toFa(prevDays - startOffset + 1 + i)}</button>`;
+  }
   for (let day = 1; day <= totalDays; day++) {
     const weekdayIdx = (startOffset + (day - 1)) % 7;
     let cls = 'cal-day';
@@ -2678,6 +2686,10 @@ function renderCalendar() {
       cls += ' selected';
     }
     html += `<button type="button" class="${cls}" data-day="${day}">${toFa(day)}</button>`;
+  }
+  const trailing = (7 - ((startOffset + totalDays) % 7)) % 7;
+  for (let i = 1; i <= trailing; i++) {
+    html += `<button type="button" class="cal-day outside" disabled tabindex="-1" aria-hidden="true">${toFa(i)}</button>`;
   }
   calGrid.innerHTML = html;
 

@@ -52,7 +52,7 @@ typography:
   digits: "proportional everywhere; tabular only in tables and the sayad id"
   scale: [12, 13, 14, 15, 17, 22, 26, 32]
 
-radius: { badge: 6px, control: 8px, lane-card: 10px, card: 12px, float: 12px, modal: 14px }
+radius: { badge: 8px, control: 12px, lane-card: 16px, menu: 16px, card: 20px, float: 20px, modal: 24px, calendar-day: circle }
 heights: { field: 38px, button: 36px, badge: 20–22px }
 motion: { press: 100ms, default: 180ms, enter: 280ms }
 ---
@@ -64,9 +64,11 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    (`--shadow-1`). Only things that float (menus, popovers, the calendar,
    modals, toasts) get a real drop, `--shadow-2`, together with the 1px
    ring in `--inset-hairline` standing in for a border.
-2. **Small corners, never a capsule.** Badges 6, controls and buttons 8,
-   cards inside a lane 10, cards and popovers 12, modals 14. `--rad-pill`
-   survives only as an alias for 8px, for older rules.
+2. **HeroUI corners, never a capsule.** Badges 8, fields, buttons and
+   icon buttons 12, cards inside a lane 16, menus 16, cards, popovers and
+   the calendar 20, modals 24; calendar days are circles. Buttons stay
+   rounded rectangles, not pills. `--rad-pill` survives only as an alias
+   for 12px, for older rules.
 3. **Ink is the action colour.** Primary buttons are solid `--accent`
    (near-black; near-white in the dark theme, with dark text). Secondary
    buttons are outlined; facet filters have a dashed edge until they hold
@@ -115,7 +117,7 @@ something is filtered.
 
 **Board.** Three lanes on `--surface-2` with a subtle edge. Each head is a
 status dot, the name in ink, a small outlined count badge, and the lane's
-total at the far end. Cards: white, 1px edge, radius 10; serial on top
+total at the far end. Cards: white, 1px edge, radius 16; serial on top
 with the due date as an outlined badge (amber / red wash with a dot when
 due soon / overdue), payee and amount in the middle, outlined 30px icon
 buttons and a tinted status square below. Under the pointer a soft light
@@ -146,11 +148,20 @@ The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
 makes inert in view mode; `#sayadField` stays outside them. The wrappers
 are `display: contents`, so they never affect the grid.
 
-**Calendar.** shadcn's: a white popover (radius 12, ring + drop). Month
-and year are ghost selects; the arrows are small outlined buttons. Day
-cells are rounded squares; today is a grey wash; the selected day is solid
-ink; in a range the ends are ink and the middle a wash. «امروز» is an
-outlined button.
+**Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
+month and year are three segments («روز» / «ماه» / «سال» until they hold
+digits), and while the field has focus the segment the next digit goes
+into is highlighted. The segments are drawn over the real input, which
+keeps the caret, the typing rules, paste and validation
+(`createDateField` in dashboard.js); pressing a segment moves the caret
+into it. The calendar button sits inside the field at the end.
+
+**Calendar.** HeroUI's: a white popover (radius 20, ring + drop) with the
+month and year at the start and the two arrows at the end. Day cells are
+circles, and the weeks are filled out with the neighbouring months' days,
+faded. Today is a grey wash; the selected day is a solid ink circle; in a
+range the ends are ink and the middle a wash. «امروز» is an outlined
+button.
 
 **The cheque** (`css/cheque.css`, `js/print.js`). Laid out like the printed
 leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id box,
@@ -162,13 +173,13 @@ MICR line. Its paper, blue print and faint guilloche are its own colours
 the leaf scales as one object. Used in the view face and on the login page.
 
 **Floating surfaces.** No border of their own: `--shadow-2` plus the 1px
-ring, radius 10–12, a 280ms rise. Menu items are radius 6 with a grey
+ring, radius 16–20, a 280ms rise. Menu items are radius 10 with a grey
 hover; checkboxes are solid ink when ticked. Overlays use `--scrim` with a
 light blur. Dropdowns and popovers live on `<body>`, `position: fixed`,
 positioned from the trigger's rect — never nested inside a transformed
 ancestor.
 
-**Modals.** Radius 14, header and footer framed by hairlines, a ghost
+**Modals.** Radius 24, header and footer framed by hairlines, a ghost
 close button. The people window uses segmented tabs and outlined rows.
 The command palette follows shadcn's Command.
 
@@ -195,4 +206,5 @@ screens the navigation becomes segmented tabs.
 | `js/cheque-form.js` | view face: the cheque and the facts card (read-only) |
 | `js/shell.js` | header command button, board summary, column totals, card spotlight, first-load blur-fade (read-only) |
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
+| `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
 | `js/login-art.js` | the login page's sample cheque |

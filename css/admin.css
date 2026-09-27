@@ -479,7 +479,7 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: var(--rad-card);
   box-shadow: var(--shadow-1);
 }
-.login-card { border-radius: 14px; padding-bottom: 28px; }
+.login-card { border-radius: 24px; padding-bottom: 28px; }
 .field input,
 .field select {
   border: 1px solid var(--field-border);
@@ -517,16 +517,16 @@ tbody tr:last-child td { border-bottom: none; }
 .checkbox-row label { border: 1px solid var(--border); background: var(--surface); border-radius: var(--rad-ctl); }
 th { background: var(--surface-2); color: var(--muted); }
 tbody tr:hover { background: var(--surface-2); }
-.row-actions button { border-radius: 6px; }
+.row-actions button { border-radius: 10px; }
 .row-actions button:hover { background: var(--accent-wash); box-shadow: none; }
-.modal-box { border: none; border-radius: 14px; box-shadow: var(--shadow-2), var(--inset-hairline); }
+.modal-box { border: none; border-radius: 24px; box-shadow: var(--shadow-2), var(--inset-hairline); }
 .modal-actions .btn-cancel { border: 1px solid var(--border); background: var(--surface); }
 .modal-actions .btn-cancel:hover { background: var(--accent-wash); }
-.toast { border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2), var(--inset-hairline); }
+.toast { border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2), var(--inset-hairline); }
 :root[data-theme="dark"] .toast { background: var(--surface); color: var(--ink); }
 @media (max-width: 860px) {
-  .tabs { padding: 3px; background: var(--surface-sunken); border-radius: 10px; }
-  .tab-btn { border-radius: 7px; }
+  .tabs { padding: 3px; background: var(--surface-sunken); border-radius: 14px; }
+  .tab-btn { border-radius: 10px; }
   .tab-btn.active { background: var(--surface); box-shadow: var(--shadow-1), var(--inset-hairline); }
 }
 :root[data-theme="dark"] .tabs { background: none; }

@@ -3796,7 +3796,7 @@ body { background-color: transparent; }
   height: 22px;
   padding: 0 6px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 7px;
   background: var(--surface);
   box-shadow: none;
   color: var(--muted);
@@ -3833,12 +3833,12 @@ body { background-color: transparent; }
 .account-menu {
   padding: 4px 4px 4px 10px;
   border: none;
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--shadow-2), var(--inset-hairline);
 }
 .company-name { font-size: var(--t-cap); font-variation-settings: var(--f-label); }
-.logout-btn { border-radius: 6px; }
+.logout-btn { border-radius: 10px; }
 .logout-btn:hover { background: var(--state-bad-bg); color: var(--state-bad-text); }
 
 /* The header already carries support; the floating copy is dropped here
@@ -4079,7 +4079,7 @@ body { background-color: transparent; }
 .board-col-empty {
   padding: 28px 12px;
   border: 1px dashed var(--border-strong);
-  border-radius: 10px;
+  border-radius: 16px;
   color: var(--muted);
   font-size: var(--t-cap);
   text-align: center;
@@ -4091,14 +4091,14 @@ body { background-color: transparent; }
     gap: 2px;
     padding: 3px;
     border: none;
-    border-radius: 10px;
+    border-radius: 14px;
     background: var(--surface-sunken);
     margin-bottom: 14px;
   }
   .board-status-tab {
     min-height: 34px;
     border: none;
-    border-radius: 7px;
+    border-radius: 10px;
     background: transparent;
     color: var(--muted);
   }
@@ -4118,7 +4118,7 @@ body { background-color: transparent; }
 .check-card {
   padding: 14px 14px 10px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--shadow-1);
   overflow: hidden;
@@ -4242,7 +4242,7 @@ body { background-color: transparent; }
 .check-card-ghost { rotate: 1.5deg; box-shadow: var(--shadow-2); }
 
 .board-skeleton-col { border: 1px solid var(--border-subtle); background: var(--surface-2); padding: 10px; border-radius: var(--rad-card); }
-.board-skeleton-col .sk-row { border-radius: 10px; }
+.board-skeleton-col .sk-row { border-radius: 16px; }
 
 /* Blur Fade: on first load only (shell.js holds body.is-entering until
    the board has arrived), the cards come in from a blur, one after the
@@ -4332,7 +4332,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .date-input-wrap { padding: 0 12px 0 4px; }
 .date-input-wrap input, .amount-box input { background: transparent; font-size: var(--t-body); }
-.date-cal-btn { width: 30px; height: 30px; border-radius: 6px; color: var(--muted); }
+.date-cal-btn { width: 30px; height: 30px; border-radius: 10px; color: var(--muted); }
 .date-cal-btn:hover { background: var(--accent-wash); color: var(--ink); }
 .ms-box { padding: 4px 10px 4px 8px; }
 .ms-chip { padding: 1px 8px 1px 7px; border-radius: var(--rad-xs); background: var(--surface-sunken); color: var(--ink); box-shadow: none; font-size: var(--t-micro); }
@@ -4425,7 +4425,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   color: var(--state-ok-text);
 }
 .ve-receipt-btn:hover { background: color-mix(in srgb, var(--state-ok) 16%, var(--surface)); }
-.ve-status-banner { border: 1px solid var(--border); border-radius: 10px; }
+.ve-status-banner { border: 1px solid var(--border); border-radius: 14px; }
 .ve-status-banner.st-pending { background: var(--surface-2); color: var(--ink-2); }
 .ve-status-banner.st-pending b { color: var(--ink); }
 .ve-status-banner.st-done { background: var(--st-done-bg); border-color: color-mix(in srgb, var(--state-ok) 25%, transparent); color: var(--state-ok-text); }
@@ -4442,12 +4442,12 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   box-shadow: var(--shadow-2), var(--inset-hairline);
 }
 .filter-popover { border-radius: var(--rad-float); padding: 14px; }
-.status-menu, .ac-list, .ms-list { border-radius: 10px; padding: 4px; }
+.status-menu, .ac-list, .ms-list { border-radius: 16px; padding: 6px; }
 .fp-title { font-size: var(--t-cap); color: var(--ink); font-variation-settings: var(--f-title); }
 .status-opt,
 .ac-item,
 .ms-option {
-  border-radius: 6px;
+  border-radius: 10px;
   transition: background var(--dur-1) var(--ease);
 }
 .status-opt:hover,
@@ -4455,7 +4455,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .ac-item.active,
 .ms-option:hover,
 .ms-option.kb-active { background: var(--accent-wash); color: var(--ink); }
-.ms-option .ms-check { border-radius: 4px; }
+.ms-option .ms-check { border-radius: 6px; }
 .af-preset {
   height: 28px;
   padding: 0 10px;
@@ -4468,55 +4468,111 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .radio-opt input,
 .checkbox-row input { accent-color: var(--accent); }
 
-/* ── Calendar: shadcn's — square-ish cells, ink selection ── */
+/* ── Date fields: HeroUI's DateField ──
+   js/date-segments.js lays three segments («روز» / «ماه» / «سال») over the
+   real input; the input keeps the caret, the typing and the value but its
+   own text is hidden. The segment the next digit goes into is highlighted
+   while the field has focus. */
+.date-input-wrap.has-dseg { position: relative; }
+.date-input-wrap.has-dseg .date-mask-input,
+.date-input-wrap.has-dseg .date-mask-input:focus {
+  color: transparent;
+  caret-color: transparent;
+  text-shadow: none;
+}
+.date-input-wrap.has-dseg .date-mask-input::placeholder { color: transparent; }
+.date-input-wrap.has-dseg .date-mask-input::selection { background: transparent; color: transparent; }
+.dseg {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 11px;
+  inset-inline-end: 38px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.dseg-part {
+  padding: 1px 4px;
+  border-radius: 7px;
+  color: var(--ink);
+  font-size: var(--t-body);
+  line-height: 1.7;
+  font-variation-settings: var(--f-num);
+  pointer-events: auto;
+  cursor: text;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.dseg-part.is-ph { color: var(--muted); font-variation-settings: var(--f-body); }
+.dseg-part.is-active { background: var(--seg-active); color: var(--ink); }
+.dseg-sep { color: var(--muted); padding: 0 1px; font-size: var(--t-cap); }
+.date-field.error .dseg-part:not(.is-ph) { color: var(--state-bad-text); }
+:root { --seg-active: rgba(0, 0, 0, 0.08); }
+:root[data-theme="dark"] { --seg-active: rgba(255, 255, 255, 0.14); }
+.date-input-wrap.has-dseg .date-cal-btn { color: var(--muted); }
+.date-input-wrap.has-dseg .date-cal-btn:hover { color: var(--ink); background: var(--accent-wash); }
+
+/* ── Calendar: HeroUI's — month and year at the start, the arrows at the
+   end, round day cells, the neighbouring months' days faded in ── */
 .cal-backdrop { background: var(--scrim); }
 .cal-popup {
-  width: 296px;
-  padding: 12px 12px 10px;
+  width: 292px;
+  padding: 12px;
   border-radius: var(--rad-float);
 }
 .cal-popup.anchored { border: none; }
-.cal-header { margin-bottom: 8px; }
-.cal-title-group { gap: 2px; }
+.cal-header { margin-bottom: 6px; gap: 2px; justify-content: flex-start; }
+.cal-title-group { order: -1; margin-inline-end: auto; gap: 0; }
+#calPrevBtn { order: 1; }
+#calNextBtn { order: 2; }
 .cal-select {
-  padding: 4px 10px 4px 24px;
+  padding: 4px 8px 4px 22px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   background: transparent;
   color: var(--ink);
   font-size: var(--t-body);
   font-variation-settings: 'wght' 640;
 }
 .cal-select:hover, .cal-select:focus { background: var(--accent-wash); border: none; }
-.cal-select-wrap::after { left: 10px; border-color: var(--muted); }
+.cal-select-wrap::after { left: 9px; border-color: var(--muted); }
 .cal-nav-btn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--surface);
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
   color: var(--ink-2);
-  box-shadow: var(--shadow-1);
+  box-shadow: none;
 }
 .cal-nav-btn:hover { background: var(--accent-wash); color: var(--ink); }
+.cal-nav-btn svg { width: 16px; height: 16px; }
 .cal-weekdays { margin-bottom: 2px; }
 .cal-weekdays span { font-size: var(--t-micro); color: var(--muted); padding: 4px 0; }
 .cal-grid { row-gap: 2px; }
 .cal-day {
-  border-radius: var(--rad-ctl);
+  width: 36px;
+  height: 36px;
+  margin: 0 auto;
+  aspect-ratio: auto;
+  border-radius: 50%;
   font-size: var(--t-body);
   font-variation-settings: 'wght' 480;
   color: var(--ink);
 }
 .cal-day:hover:not(:disabled) { background: var(--accent-wash); }
+.cal-day.outside,
+.cal-day.outside:disabled { visibility: visible; color: var(--muted); opacity: 0.5; cursor: default; }
 .cal-day.holiday { color: var(--state-bad-text); }
 .cal-day.today {
-  background: var(--accent-wash);
+  background: var(--seg-active);
   color: var(--ink);
-  font-variation-settings: 'wght' 720;
+  font-variation-settings: 'wght' 700;
   box-shadow: none;
 }
-.cal-day.today.holiday { background: var(--accent-wash); color: var(--state-bad-text); }
+.cal-day.today.holiday { background: var(--state-bad-bg); color: var(--state-bad-text); }
 .cal-day.selected,
 .cal-day.selected.holiday {
   background: var(--accent) !important;
@@ -4524,7 +4580,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   box-shadow: none;
   font-variation-settings: 'wght' 700;
 }
-.cal-day.range-mid { background: var(--accent-wash); color: var(--ink); border-radius: 0; }
+/* A range is a band: its two ends are solid circles-on-the-outside, the
+   days between them a wash with no rounding of their own */
+.cal-day.range-mid { width: 100%; background: var(--accent-wash); color: var(--ink); border-radius: 0; }
 .cal-day.range-start,
 .cal-day.range-end,
 .cal-day.range-start.holiday,
@@ -4533,12 +4591,12 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   color: var(--on-accent) !important;
   box-shadow: none;
 }
-.cal-day.range-start { border-radius: 0 var(--rad-ctl) var(--rad-ctl) 0; }
-.cal-day.range-end { border-radius: var(--rad-ctl) 0 0 var(--rad-ctl); }
-.cal-day.range-start.range-end { border-radius: var(--rad-ctl); }
+.cal-day.range-start { width: 100%; border-radius: 0 18px 18px 0; }
+.cal-day.range-end { width: 100%; border-radius: 18px 0 0 18px; }
+.cal-day.range-start.range-end { width: 36px; border-radius: 50%; }
 .cal-footer.show { margin-top: 10px; gap: 8px; }
 .cal-today-btn {
-  height: 32px;
+  height: 34px;
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
@@ -4547,14 +4605,14 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   font-variation-settings: 'wght' 560;
 }
 .cal-today-btn:hover { background: var(--accent-wash); color: var(--ink); }
-.cal-confirm-btn { height: 32px; }
-.cal-clear-btn { height: 32px; border: 1px solid var(--border); border-radius: var(--rad-ctl); background: var(--surface); }
+.cal-confirm-btn { height: 34px; }
+.cal-clear-btn { height: 34px; border: 1px solid var(--border); border-radius: var(--rad-ctl); background: var(--surface); }
 .cal-clear-btn:hover { background: var(--state-bad-bg); color: var(--state-bad-text); border-color: color-mix(in srgb, var(--state-bad) 25%, transparent); }
 
 /* ── Toast, tooltip, floats ── */
 .app-toast {
   padding: 11px 16px;
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-2), var(--inset-hairline);
@@ -4565,7 +4623,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .cell-tooltip,
 .tg-tooltip {
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--ink);
   color: var(--bg);
   font-size: var(--t-micro);
@@ -4575,7 +4633,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   width: 40px;
   height: 40px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -4594,8 +4652,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .confirm-actions .confirm-ok:hover { background: var(--state-bad); color: #fff; border-color: var(--state-bad); }
 
 /* ── People modal ── */
-.people-tabs { gap: 2px; padding: 3px; margin: 0 20px; border: none; border-radius: 10px; background: var(--surface-sunken); }
-.people-tab { border: none; border-radius: 7px; padding: 6px 12px; color: var(--muted); flex: 1; }
+.people-tabs { gap: 2px; padding: 3px; margin: 0 20px; border: none; border-radius: 14px; background: var(--surface-sunken); }
+.people-tab { border: none; border-radius: 10px; padding: 6px 12px; color: var(--muted); flex: 1; }
 .people-tab.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1), var(--inset-hairline); }
 .people-tab::after { display: none; }
 .people-add-row input {

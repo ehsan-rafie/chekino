@@ -75,12 +75,12 @@
      Small and tight, never a capsule: the deeper something sits, the
      tighter its corner, so a field inside a card inside a modal still
      reads as nested. */
-  --rad-xs: 6px;      /* badges, chips, kbd, tiny tags */
-  --rad-ctl: 8px;     /* inputs, buttons, menu items, tooltips */
-  --rad-card: 12px;   /* cards and panels */
-  --rad-float: 12px;  /* popovers, dropdowns, the command palette */
-  --rad-modal: 14px;  /* modals and dialogs */
-  --rad-pill: 8px;    /* kept for older rules: what used to be a pill is now a control */
+  --rad-xs: 8px;      /* badges, chips, tiny tags */
+  --rad-ctl: 12px;    /* inputs, buttons, icon buttons */
+  --rad-card: 20px;   /* cards and panels */
+  --rad-float: 20px;  /* popovers, the calendar, the command palette */
+  --rad-modal: 24px;  /* modals and dialogs */
+  --rad-pill: 12px;   /* kept for older rules: what used to be a pill is now a control */
 
   /* ── type scale (Elements of Typographic Style, roughly 1.2) ── */
   --t-micro: 12px; --t-cap: 13px; --t-body: 14px; --t-value: 15px;
@@ -491,7 +491,7 @@ kbd {
   padding: 0 5px;
   background: var(--surface-sunken);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--ink-2);
   font-family: inherit;
   font-size: var(--t-micro);
@@ -545,7 +545,7 @@ kbd {
 :root .modal-actions button,
 :root .confirm-actions button,
 :root .btn-inline { border-radius: var(--rad-ctl); }
-:root .cp-item { border-radius: 6px; }
+:root .cp-item { border-radius: 10px; }
 
 /* ── Sheets rest on the page ──
    Panels carry their own 1px border and only the resting hair of shadow;

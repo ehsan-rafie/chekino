@@ -299,7 +299,7 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   position: relative;
   padding: 28px 26px 26px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--shadow-1) !important;
 }
@@ -340,7 +340,7 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
 .field input:focus ~ label,
 .field input:not(:placeholder-shown) ~ label { color: var(--ink-2); }
 .field.error input { border-color: var(--state-bad); }
-.toggle-eye { border-radius: 6px; }
+.toggle-eye { border-radius: 10px; }
 .toggle-eye:hover { color: var(--ink); background: var(--accent-wash); }
 .alert { border: 1px solid color-mix(in srgb, var(--state-bad) 22%, transparent); }
 .alert.success { border-color: color-mix(in srgb, var(--state-ok) 25%, transparent); }
@@ -358,7 +358,7 @@ button.submit {
   overflow: hidden;
   isolation: isolate;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 24px;
   background: var(--surface-2);
   --hole: var(--surface-2);
   box-shadow: none;
@@ -377,9 +377,9 @@ button.submit {
   mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 78%);
   pointer-events: none;
 }
-.tg-float { width: 40px; height: 40px; border-radius: 10px; box-shadow: var(--shadow-lift); }
-.tg-tooltip { border-radius: 6px; }
+.tg-float { width: 40px; height: 40px; border-radius: 14px; box-shadow: var(--shadow-lift); }
+.tg-tooltip { border-radius: 8px; }
 @media (max-width: 960px) {
-  .auth-art { border-radius: 14px; }
+  .auth-art { border-radius: 20px; }
   .card { padding: 22px 18px 20px; }
 }
