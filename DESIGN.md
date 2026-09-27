@@ -21,10 +21,13 @@ colors:
   ink: "#0A0A0A"
   ink-2: "#404040"
   muted: "#737373"         # 4.7:1 on white
-  accent: "#171717"        # primary buttons, selected day, checkboxes
+  accent: "#171717"        # primary buttons
   accent-hover: "#262626"
-  accent-wash: "#F5F5F5"   # hover and "selected" backgrounds
-  focus-edge: "#A3A3A3"    # focused field border, with a 3px grey ring
+  accent-wash: "#F5F5F5"   # hover backgrounds
+  hl: "#0485F7"            # HeroUI's blue: focus, the chosen day / year / month, ticks, applied filters
+  hl-text: "#1E63AE"       # blue text on the soft blue wash
+  hl-soft: "rgba(4,133,247,.14)"  # active date segment, today, range middle, applied filter
+  focus-edge: hl           # a focused field: blue edge + 1px blue ring = a 2px blue line
   pending: "#404040"       # the waiting state is ink, not a colour
   done: "#16A34A"
   problem: "#DC2626"
@@ -40,12 +43,14 @@ colors-dark:
   muted: "#A1A1A1"
   accent: "#E5E5E5"        # light buttons with dark text
   on-accent: "#171717"
+  hl: "#1A8CFF"
+  hl-text: "#7AB8FF"
 
 shadows:
   shadow-1: "0 1px 2px rgba(0,0,0,.04)"   # resting: cards, outlined buttons
   shadow-lift: "card under the pointer"
   shadow-2: "floating: menus, popovers, calendar, modals — always with the 1px ring --inset-hairline"
-  ring: "0 0 0 3px rgba(163,163,163,.45)"  # focus
+  ring: "0 0 0 1px var(--hl)"  # focus, on top of the blue edge
 
 typography:
   family: "IRANSansX, licensed from fontiran.com (fonts/IRANSansXVFaNum.woff2, variable Farsi-numerals cut: wght 100–1000, DOTS 0–8 left at 0)"
@@ -69,17 +74,22 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    the calendar 20, modals 24; calendar days are circles. Buttons stay
    rounded rectangles, not pills. `--rad-pill` survives only as an alias
    for 12px, for older rules.
-3. **Ink is the action colour.** Primary buttons are solid `--accent`
-   (near-black; near-white in the dark theme, with dark text). Secondary
-   buttons are outlined; facet filters have a dashed edge until they hold
-   a value. "Selected" and hover are a grey wash (`--accent-wash`). Focus
-   is a grey edge plus a soft 3px grey ring. No gradients.
-4. **Fields are outlined.** White, 38px, `--field-border`, radius 8. Hover
-   darkens the edge; focus uses `--focus-edge` and `--ring`; an error turns
-   the edge red with a red ring.
+3. **Ink to press, blue for "you are here".** Primary buttons are solid
+   `--accent` (near-black; near-white in the dark theme, with dark text).
+   Secondary buttons are outlined; facet filters have a dashed edge until
+   they hold a value. Hover is a grey wash (`--accent-wash`). HeroUI's
+   blue (`--hl`) is kept for focus and selection only: a 2px blue line
+   round the focused field, keyboard focus rings, the date segment being
+   typed, today / the chosen day / a range in the calendar, the chosen
+   year and month in its picker, ticked boxes, an applied filter, a lane
+   about to take a dragged card. No gradients.
+4. **Fields are outlined.** White, 38px, `--field-border`, radius 12. Hover
+   darkens the edge; focus turns it blue (`--focus-edge` + `--ring`); an
+   error turns the edge red with a red ring.
 5. **Colour means status.** Pending is ink; registered green, problem red,
-   due-soon amber — always a small dot plus the Persian label. The drawn
-   cheque keeps its own blue print, the only other colour on screen.
+   due-soon amber — always a small dot plus the Persian label. Besides the
+   focus blue, the drawn cheque's own blue print is the only other colour
+   on screen.
 6. **Type and space carry hierarchy.** One family (IRANSansX). **Never
    letter-space Persian text** — it breaks the joins. Machine values (serial,
    sayad id, national id) are set LTR. IRANSansX's tabular digits are cut
@@ -151,17 +161,21 @@ are `display: contents`, so they never affect the grid.
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
 digits), and while the field has focus the segment the next digit goes
-into is highlighted. The segments are drawn over the real input, which
+into is highlighted in soft blue. The segments are drawn over the real input, which
 keeps the caret, the typing rules, paste and validation
 (`createDateField` in dashboard.js); pressing a segment moves the caret
 into it. The calendar button sits inside the field at the end.
 
-**Calendar.** HeroUI's: a white popover (radius 20, ring + drop) with the
-month and year at the start and the two arrows at the end. Day cells are
-circles, and the weeks are filled out with the neighbouring months' days,
-faded. Today is a grey wash; the selected day is a solid ink circle; in a
-range the ends are ink and the middle a wash. «امروز» is an outlined
-button.
+**Calendar** (Jalali). HeroUI's: a white popover (radius 20, ring + drop)
+with one «مهر ۱۴۰۵ ⌄» button at the start and two blue arrows at the end.
+Day cells are circles, and the weeks are filled out with the neighbouring
+months' days, faded. Today is a soft blue circle with blue text; the
+chosen day is a solid blue circle; in a range the ends are solid blue and
+the middle a soft blue band. «امروز» is an outlined button. The title
+button (`js/cal-picker.js`) swaps the days for HeroUI's year grid (three
+columns, the chosen year solid blue); picking a year shows the twelve
+months, and picking a month goes back to the days. It writes to the two
+hidden `<select>`s dashboard.js reads, so the calendar logic is unchanged.
 
 **The cheque** (`css/cheque.css`, `js/print.js`). Laid out like the printed
 leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id box,
@@ -207,4 +221,5 @@ screens the navigation becomes segmented tabs.
 | `js/shell.js` | header command button, board summary, column totals, card spotlight, first-load blur-fade (read-only) |
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
+| `js/cal-picker.js` | the calendar's title button and its year / month picker |
 | `js/login-art.js` | the login page's sample cheque |

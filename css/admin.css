@@ -531,3 +531,4 @@ tbody tr:hover { background: var(--surface-2); }
 }
 :root[data-theme="dark"] .tabs { background: none; }
 @media (max-width: 860px) { :root[data-theme="dark"] .tabs { background: rgba(255, 255, 255, 0.06); } }
+.checkbox-row input { accent-color: var(--hl); }

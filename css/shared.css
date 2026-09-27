@@ -182,8 +182,17 @@
      so it must never be `none`. */
   --inset-hairline: 0 0 0 1px var(--line-2);
   /* Focus: a neutral edge and a soft grey halo, like shadcn/ui's ring. */
-  --focus-edge: #A3A3A3;
-  --ring: 0 0 0 3px rgba(163, 163, 163, 0.45);
+  /* HeroUI's blue, kept for focus and selection only: a focused field,
+     the date segment being typed, the chosen day, a ticked box, an
+     applied filter. Buttons stay ink. */
+  --hl: #0485F7;
+  --hl-hover: #0373D6;
+  --hl-text: #1E63AE;
+  --hl-soft: rgba(4, 133, 247, 0.14);
+  --on-hl: #FFFFFF;
+  /* Focus: a blue edge plus a 1px blue ring — a 2px blue line, as in HeroUI */
+  --focus-edge: var(--hl);
+  --ring: 0 0 0 1px var(--hl);
   --ring-bad: 0 0 0 3px rgba(220, 38, 38, 0.18);
 
   --scrim: rgba(0, 0, 0, 0.45);
@@ -197,7 +206,7 @@
   --blue-900: var(--accent-text);
   --blue-hover: var(--accent-hover);
   --blue-700: var(--accent);
-  --blue-600: var(--accent);
+  --blue-600: var(--hl);
   --blue-100: var(--accent-wash);
   --error: var(--state-bad);
   --error-bg: var(--state-bad-bg);
@@ -263,8 +272,13 @@
   --shadow-2: 0 4px 6px -4px rgba(0, 0, 0, 0.4), 0 20px 44px -12px rgba(0, 0, 0, 0.75);
   --shadow-accent: none;
   --inset-hairline: 0 0 0 1px rgba(255, 255, 255, 0.1);
-  --focus-edge: #737373;
-  --ring: 0 0 0 3px rgba(115, 115, 115, 0.5);
+  --hl: #1A8CFF;
+  --hl-hover: #3D9DFF;
+  --hl-text: #7AB8FF;
+  --hl-soft: rgba(26, 140, 255, 0.2);
+  --on-hl: #FFFFFF;
+  --focus-edge: var(--hl);
+  --ring: 0 0 0 1px var(--hl);
   --ring-bad: 0 0 0 3px rgba(255, 125, 114, 0.2);
 
   --scrim: rgba(0, 0, 0, 0.6);
@@ -272,7 +286,7 @@
   --skeleton-base: rgba(255, 255, 255, 0.05);
   --skeleton-sheen: rgba(255, 255, 255, 0.10);
 
-  --blue-600: var(--accent);
+  --blue-600: var(--hl);
   --error-border: rgba(255, 125, 114, 0.34);
   --success-border: rgba(76, 203, 145, 0.34);
   --n-7: #5F6584; --n-8: #767C9A;
@@ -291,7 +305,7 @@ body { line-height: 1.7; }
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--hl);
   outline-offset: 2px;
 }
 
@@ -303,7 +317,7 @@ body, button, input, textarea, select {
   text-rendering: optimizeLegibility;
 }
 
-::selection { background: var(--accent); color: var(--on-accent); }
+::selection { background: var(--hl-soft); color: inherit; }
 
 /* Digits line up column-to-column instead of jittering by glyph width —
    it matters most anywhere amounts or dates stack vertically. */
