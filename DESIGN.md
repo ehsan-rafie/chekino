@@ -311,12 +311,18 @@ fits, above it if not, its right edge on the field's — or its left edge,
 when the right would push it out past the form (the dates sit at the
 form's left and are narrower than the calendar).
 
-**Calendar** (Jalali). HeroUI's: a white popover (radius 20, ring + drop)
-with one «مهر ۱۴۰۵ ⌄» button at the start and two blue arrows at the end.
-Day cells are circles, and the weeks are filled out with the neighbouring
-months' days, faded. Today is a soft blue circle with blue text; the
-chosen day is a solid blue circle; in a range the ends are solid blue and
-the middle a soft blue band. «امروز» is an outlined button. The title
+**Calendar** (Jalali). HeroUI's, sized to the form: a white popover
+(radius 20, ring + drop) 264px across, with one «مهر ۱۴۰۵ ⌄» button at the
+start and two grey arrows at the end. Day cells are 32px circles with
+13px figures (the labels' size), and the weeks are filled out with the
+neighbouring months' days, faded; Fridays are red, as the Persian
+calendar prints them. Blue is for the choice alone: the chosen day is a
+solid blue circle, a range has solid blue ends and a soft blue band;
+today is only a thin grey ring (none once it's chosen or inside a
+range). «امروز» is a small outlined button (30px, radius 10) at the
+start of the footer; the range's «ثبت» and delete buttons are the same
+height. On a phone the calendar is a centred overlay with larger,
+finger-sized cells. The title
 button (`js/cal-picker.js`) swaps the days for HeroUI's year grid (three
 columns, the chosen year solid blue); picking a year shows the twelve
 months, and picking a month goes back to the days. It writes to the two

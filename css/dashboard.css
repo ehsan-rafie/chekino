@@ -4559,9 +4559,19 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 :root, :root[data-theme="dark"] { --seg-active: var(--hl-soft); }
 .dseg-part.is-active { color: var(--hl-text); }
 
-.cal-nav-btn { color: var(--hl-text); }
-.cal-nav-btn:hover { background: var(--hl-soft); color: var(--hl-text); }
-.cal-day.today { background: var(--hl-soft); color: var(--hl-text); }
+/* In the calendar only the chosen day (or range) is blue: the arrows are
+   grey like every other icon button, and today is a thin grey ring */
+.cal-nav-btn { color: var(--ink-2); }
+.cal-day.today,
+.cal-day.today.holiday { background: none; box-shadow: inset 0 0 0 1px var(--field-border-hover); }
+.cal-day.today { color: var(--ink); }
+.cal-pick.is-current { color: var(--ink); box-shadow: inset 0 0 0 1px var(--field-border-hover); }
+/* …but a chosen today, or one inside a range, is simply chosen */
+.cal-day.today.selected,
+.cal-day.today.range-start,
+.cal-day.today.range-end,
+.cal-pick.is-current.is-selected { box-shadow: none; }
+.cal-day.today.range-mid { background: var(--hl-soft); color: var(--hl-text); box-shadow: none; }
 .cal-day.selected,
 .cal-day.selected.holiday,
 .cal-day.range-start,
@@ -4961,3 +4971,37 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 @media (min-width: 1024px) { .shimmer-label { font-size: var(--t-body); } }
 .shimmer-icon { position: relative; width: 16px; height: 16px; flex-shrink: 0; color: #ffffff; }
 @media (max-width: 700px) { .add-check-btn.shimmer-btn { height: 40px; } }
+
+/* ═══ Calendar, sized to the form ═══
+   A 264px popover with 32px day circles and 13px figures — the labels'
+   size — instead of a 300px one that stood a size above the form it opens
+   from. «امروز» and the range buttons are small (30px, radius 10, like the
+   channel tags); «امروز» sits at the start of the footer rather than
+   running across it. The phone overlay keeps its larger, finger-sized
+   cells. */
+.cal-footer.show { margin-top: 8px; }
+#calFooterSingle { justify-content: flex-start; }
+.cal-today-btn,
+.cal-confirm-btn,
+.cal-clear-btn {
+  height: 30px;
+  border-radius: 10px;
+  font-size: var(--t-cap);
+  box-shadow: none;
+}
+.cal-today-btn { flex: 0 0 auto; width: auto; padding: 0 12px; }
+@media (min-width: 601px) {
+  .cal-popup,
+  .cal-popup.anchored { width: 264px; padding: 12px; }
+  .cal-header { margin-bottom: 4px; }
+  .cal-title-btn { height: 28px; font-size: var(--t-cap); }
+  .cal-nav-btn { width: 28px; height: 28px; }
+  .cal-weekdays span { padding: 2px 0; }
+  .cal-day { width: 32px; height: 32px; font-size: var(--t-cap); }
+  .cal-day.range-start.range-end { width: 32px; }
+  .cal-day.range-start { border-radius: 0 16px 16px 0; }
+  .cal-day.range-end { border-radius: 16px 0 0 16px; }
+  .cal-picker { height: 232px; }
+  .cal-pick { height: 32px; font-size: var(--t-cap); }
+  .cal-picker.is-months .cal-pick { height: 40px; }
+}
