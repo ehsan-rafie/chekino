@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260928h" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260928k" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260928h">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260928h">
-<link rel="stylesheet" href="/css/cheque.css?v=20260928h">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260928h">
+<link rel="stylesheet" href="/css/shared.css?v=20260928k">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260928k">
+<link rel="stylesheet" href="/css/cheque.css?v=20260928k">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260928k">
 </head>
 <body class="chekino-auth-pending">
 
@@ -205,21 +205,15 @@
 
 </main>
 
-
-  <!-- Outside the modal on purpose, exactly like the calendar below it: the
-       modal overlay is its own stacking context at z-index 300, so a list
-       nested inside it can never paint above the overlay no matter how high
-       its own z-index goes. It is positioned from the field's rect in JS, so
-       living here costs it nothing. -->
-  <div class="ms-list" id="channelList" role="listbox" aria-multiselectable="true" aria-label="روش‌های ارسال"></div>
-
-  <!-- The four person suggestion lists live here for a second reason on top
-       of the stacking one: they are position:fixed, and .modal-box keeps a
-       transform after its open animation (fill-mode both) while the overlay
-       carries a backdrop-filter. Either one makes itself the containing block
-       for fixed descendants, so a list nested inside the modal had its
-       viewport coordinates re-based onto the modal's padding box and landed
-       a few hundred pixels off. Anchored from <body> they stay in the
+  <!-- The four person suggestion lists live outside the modal on purpose.
+       The modal overlay is its own stacking context (z-index 300), so a list
+       nested inside it could never paint above it. And they are
+       position:fixed, while .modal-box keeps a transform after its open
+       animation (fill-mode both) and the overlay carries a backdrop-filter;
+       either one makes itself the containing block for fixed descendants,
+       so a list nested inside the modal had its viewport coordinates
+       re-based onto the modal's padding box and landed a few hundred
+       pixels off. Anchored from <body> they stay in the
        viewport's own coordinate space, which is what positionDropdown()
        measures in. -->
   <div class="ac-list" id="ownerList"></div>
@@ -593,15 +587,9 @@
                 </div>
                 <div class="field-msg" id="nidMsg">کد ملی ۱۰ رقم و شناسه ملی ۱۱ رقم است</div>
               </div>
-              <div class="form-field ms-field cq-span-6" id="channelField">
-                <label>ارسال به صاحب چک از طریق</label>
-                <button type="button" class="ms-box" id="channelBox" aria-haspopup="listbox" aria-expanded="false" aria-controls="channelList" aria-describedby="channelMsg">
-                  <span class="ms-chips" id="channelChips"></span>
-                  <span class="ms-placeholder" id="channelPlaceholder"></span>
-                  <span class="ms-caret">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </span>
-                </button>
+              <div class="form-field ch-field cq-span-6" id="channelField">
+                <label id="channelLabel">ارسال به صاحب چک از طریق</label>
+                <div class="ch-group" id="channelGroup" role="group" aria-labelledby="channelLabel" aria-describedby="channelMsg"></div>
                 <div class="field-msg" id="channelMsg">حداقل یک روش را انتخاب کنید</div>
               </div>
             </div>
@@ -722,17 +710,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260928h"></script>
-<script src="/js/shared.js?v=20260928h"></script>
-<script src="/js/palette.js?v=20260928h"></script>
-<script src="/js/dashboard.js?v=20260928h"></script>
-<script src="/js/print.js?v=20260928h"></script>
-<script src="/js/cheque-form.js?v=20260928h"></script>
-<script src="/js/date-segments.js?v=20260928h"></script>
-<script src="/js/cal-picker.js?v=20260928h"></script>
-<script src="/js/field-addons.js?v=20260928h"></script>
-<script src="/js/shell.js?v=20260928h"></script>
-<script src="/js/theme-reveal.js?v=20260928h"></script>
+<script src="/js/icons.js?v=20260928k"></script>
+<script src="/js/shared.js?v=20260928k"></script>
+<script src="/js/palette.js?v=20260928k"></script>
+<script src="/js/dashboard.js?v=20260928k"></script>
+<script src="/js/print.js?v=20260928k"></script>
+<script src="/js/cheque-form.js?v=20260928k"></script>
+<script src="/js/date-segments.js?v=20260928k"></script>
+<script src="/js/cal-picker.js?v=20260928k"></script>
+<script src="/js/field-addons.js?v=20260928k"></script>
+<script src="/js/shell.js?v=20260928k"></script>
+<script src="/js/theme-reveal.js?v=20260928k"></script>
 
 </body>
 </html>

@@ -209,10 +209,7 @@ const sendDateInput = document.getElementById('sendDateInput');
 const sendDateMsg = document.getElementById('sendDateMsg');
 const sendDateCalBtn = document.getElementById('sendDateCalBtn');
 const channelField = document.getElementById('channelField');
-const channelBox = document.getElementById('channelBox');
-const channelChips = document.getElementById('channelChips');
-const channelPlaceholder = document.getElementById('channelPlaceholder');
-const channelList = document.getElementById('channelList');
+const channelGroup = document.getElementById('channelGroup');
 const channelMsg = document.getElementById('channelMsg');
 const fileField = document.getElementById('fileField');
 const fileBox = document.getElementById('fileBox');
@@ -531,7 +528,6 @@ function resetAllFields(opts) {
   sendDate.reset();
   clearFiles();
   clearChannels();
-  closeChannelList();
   notesInput.value = '';
   updateNotesCount();
   amountInput.value = '';
@@ -689,7 +685,6 @@ document.addEventListener('keydown', (e) => {
   if (e.shiftKey) return;
   const t = e.target;
   if (t === notesInput) return;
-  if (t === channelBox || (channelList && channelList.contains(t))) return;
   if (dueDateCal.classList.contains('show')) return;
   const openList = document.querySelector('.ac-list.show');
   if (openList && openList.querySelector('.ac-item.active')) return;
@@ -2133,187 +2128,92 @@ notesInput.addEventListener('input', () => {
 // =========================================================
 // ---- "Sent via" multi-select ----
 // =========================================================
-// Logo files supplied by the user. Single-colour marks inherit their colour from
-// CSS; Rubika's mark is multi-colour and keeps its own palette.
-const LOGO_WHATSAPP = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 22L3.41152 16.8691C2.54422 15.3639 2.08876 13.6568 2.09099 11.9196C2.08095 6.44549 6.52644 2 11.99 2C14.6417 2 17.1315 3.02806 19.0062 4.9034C19.9303 5.82266 20.6627 6.91616 21.1611 8.12054C21.6595 9.32492 21.9139 10.6162 21.9096 11.9196C21.9096 17.3832 17.4641 21.8287 12 21.8287C10.3368 21.8287 8.71374 21.4151 7.26204 20.6192L2 22ZM7.49424 18.8349L7.79675 19.0162C9.06649 19.7676 10.5146 20.1644 11.99 20.1654C16.5264 20.1654 20.2263 16.4662 20.2263 11.9291C20.2263 9.73176 19.3696 7.65554 17.8168 6.1034C17.0533 5.33553 16.1453 4.72636 15.1453 4.31101C14.1452 3.89565 13.0728 3.68232 11.99 3.68331C7.44343 3.6839 3.74476 7.38316 3.74476 11.9202C3.74476 13.4724 4.17843 14.995 5.00502 16.3055L5.19645 16.618L4.35982 19.662L7.49483 18.8354L7.49424 18.8349Z" fill="currentColor"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M9.52024 7.76662C9.33885 7.35303 9.13737 7.34298 8.96603 7.34298C8.81477 7.33294 8.65288 7.33294 8.48154 7.33294C8.32083 7.33294 8.04845 7.39321 7.81684 7.64549C7.58464 7.89719 6.95007 8.49217 6.95007 9.71167C6.95007 10.9318 7.83693 12.1111 7.95805 12.2724C8.07858 12.4337 9.67149 15.0139 12.192 16.0124C14.2883 16.839 14.712 16.6777 15.1657 16.6269C15.6189 16.5767 16.6275 16.0325 16.839 15.4476C17.0405 14.8733 17.0405 14.3693 16.9802 14.2682C16.9199 14.1678 16.748 14.1069 16.5064 13.9758C16.2541 13.8552 15.0446 13.2502 14.813 13.1693C14.5808 13.0889 14.4195 13.0487 14.2582 13.2904C14.0969 13.5427 13.623 14.0969 13.4724 14.2582C13.3306 14.4195 13.1799 14.4396 12.9377 14.3185C12.686 14.1979 11.8895 13.9356 10.9418 13.0889C10.2056 12.4331 9.71167 11.6171 9.56041 11.3755C9.41979 11.1232 9.54032 10.992 9.67149 10.8709C9.78257 10.7604 9.92378 10.579 10.0449 10.4378C10.1654 10.296 10.2056 10.1855 10.2966 10.0242C10.377 9.86292 10.3368 9.71167 10.2765 9.59114C10.2157 9.48006 9.74239 8.25997 9.52024 7.76603V7.76662Z" fill="currentColor"/></svg>';
-const LOGO_EITAA    = '<svg viewBox="0 0 3584.55 3673.6" xmlns="http://www.w3.org/2000/svg"><g id="Isolation_Mode" data-name="Isolation Mode"> <path d="M1071.43,2.75H2607.66C3171,2.75,3631.82,462.91,3631.82,1026.2v493.93c-505,227-1014.43,1348.12-1756.93,1104.51-61.16,43.46-202.11,222.55-212,358.43-257.11-34.24-553.52-328.88-517.95-646.62C717,2026.91,1070.39,1455.5,1409.74,1225.51c727.32-492.94,1737.05-69,1175.39,283.45-341.52,214.31-1071.84,355.88-995.91-170.24-200.34,57.78-328.58,431.34-87.37,626-223.45,219.53-180.49,623.07,58.36,755.57,241.56-625.87,1082.31-544.08,1422-1291.2,255.57-562-123.34-1202.37-880.91-1104C1529.56,399.34,993.64,881.63,725.62,1453.64,453.68,2034,494.15,2811.15,1052.55,3202.82c657.15,460.92,1356.78,34.13,1780.52-523.68,249.77-328.78,468-693,798.75-903.37v875.72c0,563.28-460.88,1024.86-1024.16,1024.86H1071.43c-563.29,0-1024.16-460.87-1024.16-1024.16V1026.9C47.27,463.61,508.14,2.74,1071.43,2.74Z" transform="translate(-47.27 -2.74)" fill-rule="evenodd" fill="currentColor"/> </g></svg>';
-const LOGO_TELEGRAM = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M41.4193 7.30899C41.4193 7.30899 45.3046 5.79399 44.9808 9.47328C44.8729 10.9883 43.9016 16.2908 43.1461 22.0262L40.5559 39.0159C40.5559 39.0159 40.3401 41.5048 38.3974 41.9377C36.4547 42.3705 33.5408 40.4227 33.0011 39.9898C32.5694 39.6652 24.9068 34.7955 22.2086 32.4148C21.4531 31.7655 20.5897 30.4669 22.3165 28.9519L33.6487 18.1305C34.9438 16.8319 36.2389 13.8019 30.8426 17.4812L15.7331 27.7616C15.7331 27.7616 14.0063 28.8437 10.7686 27.8698L3.75342 25.7055C3.75342 25.7055 1.16321 24.0823 5.58815 22.459C16.3807 17.3729 29.6555 12.1786 41.4193 7.30899Z" fill="currentColor"/></svg>';
-const LOGO_BALE     = '<svg viewBox="0 0 1000 999.63" xmlns="http://www.w3.org/2000/svg"><g id="File"> <path d="M1009.65,466.44c-1.3-21.39-5-42.79-9.7-63.78C987.56,346,964.66,291.8,933.47,242.91,863.09,132.24,747.53,51,619,24a411.57,411.57,0,0,0-57.28-9.1,443.14,443.14,0,0,0-76.38-1.7,388.45,388.45,0,0,0-61.88,7.2c-18.7,2.6-36.89,7.8-55,12.69-16.9,5.3-33.69,11.3-50.09,18.2a469.62,469.62,0,0,0-45.78,22.09,437.61,437.61,0,0,0-42.69,26.29,100.06,100.06,0,0,1-10.6,6.8c-34.19-26-68.78-51.38-104.77-74.77-9.89-6.1-19.49-13-30.59-16.7-18.19-6.4-39.48-1.5-53.78,11.5C16.55,38.57,10.66,57.37,12.26,75.26c.1,23.79-.1,47.69.2,71.48-.3,24-.1,48.18-.2,72.18s-.1,48,.1,72q-.3,42,0,83.87-.3,40.78.1,81.57c.2,34-1.6,68.18,2.19,102.07,2.7,34.89,9.9,69.48,20.3,102.77,47.38,154.85,175.24,283,330.8,328.3l.1.6c32.39,9.6,65.68,16.7,99.27,19.29,37.28,3.6,75.07,3.5,112.16-2.19,19.9-1.5,39.39-6.4,58.88-10.7A566.24,566.24,0,0,0,702,974.59c20.1-8.6,40-17.9,58.89-29.1a455,455,0,0,0,48.38-31.59,496.83,496.83,0,0,0,51.28-43.48,486.75,486.75,0,0,0,35.19-38A500,500,0,0,0,926.27,792c8.6-12.79,16.6-26.09,24.3-39.49,7.89-15.19,15.49-30.39,22.29-46.08,7.4-18.8,14.7-37.69,19.89-57.18,4.4-16,9.2-32,10.8-48.49,4.2-17.39,6.1-35.69,6.8-53.48A412.52,412.52,0,0,0,1009.65,466.44ZM826.51,400.86c-6.1,16.2-16.8,30.09-29.5,41.69-11.09,11-22.09,22.09-33.19,33.19-11.79,11.79-23.59,23.49-35.28,35.39-11.3,11.19-22.6,22.39-33.89,33.79-12.3,12.29-24.7,24.59-36.89,36.89-14,14.09-28.09,28-42.09,42.08-13.2,13.3-26.49,26.49-39.79,39.79s-26.79,26.69-40.09,40.09c-12.29,11.79-23.49,24.89-37.38,35a105.49,105.49,0,0,1-57.89,16c-23.59-1.5-46.68-10.79-63.68-27.39q-78.42-78.42-156.95-157c-12.79-12.7-21.39-29.09-26-46.39-4.8-23.89-2-49.48,10.3-70.77,9.39-16.5,23.79-29.6,40.18-39a107.88,107.88,0,0,1,57.89-9.7c21.39,3.2,41.88,13,56.88,28.79,28.39,28.39,56.68,56.88,85.27,85.18,8.6-8.2,16.9-16.8,25.1-25.3,12-11.49,23.79-23.29,35.28-35.39,11.4-10.59,22.3-21.79,33.09-33.09,7.7-6.89,14.7-14.49,22.1-21.79,12-11.7,23.69-23.59,35.39-35.49,11.29-10.79,22.19-22,33.09-33,11.79-11.49,23.29-23.29,35-34.89a106.64,106.64,0,0,1,42.18-26.39A107.77,107.77,0,0,1,768,274.5c25.7,9.8,46.29,30,57.59,54.88C833.9,352.28,834.9,377.87,826.51,400.86Z" transform="translate(-12 -12.19)" fill="currentColor"/> </g></svg>';
-const LOGO_CALL     = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21.97 18.33C21.97 18.69 21.89 19.06 21.72 19.42C21.55 19.78 21.33 20.12 21.04 20.44C20.55 20.98 20.01 21.37 19.4 21.62C18.8 21.87 18.15 22 17.45 22C16.43 22 15.34 21.76 14.19 21.27C13.04 20.78 11.89 20.12 10.75 19.29C9.6 18.45 8.51 17.52 7.47 16.49C6.44 15.45 5.51 14.36 4.68 13.22C3.86 12.08 3.2 10.94 2.72 9.81C2.24 8.67 2 7.58 2 6.54C2 5.86 2.12 5.21 2.36 4.61C2.6 4 2.98 3.44 3.51 2.94C4.15 2.31 4.85 2 5.59 2C5.87 2 6.15 2.06 6.4 2.18C6.66 2.3 6.89 2.48 7.07 2.74L9.39 6.01C9.57 6.26 9.7 6.49 9.79 6.71C9.88 6.92 9.93 7.13 9.93 7.32C9.93 7.56 9.86 7.8 9.72 8.03C9.59 8.26 9.4 8.5 9.16 8.74L8.4 9.53C8.29 9.64 8.24 9.77 8.24 9.93C8.24 10.01 8.25 10.08 8.27 10.16C8.3 10.24 8.33 10.3 8.35 10.36C8.53 10.69 8.84 11.12 9.28 11.64C9.73 12.16 10.21 12.69 10.73 13.22C11.27 13.75 11.79 14.24 12.32 14.69C12.84 15.13 13.27 15.43 13.61 15.61C13.66 15.63 13.72 15.66 13.79 15.69C13.87 15.72 13.95 15.73 14.04 15.73C14.21 15.73 14.34 15.67 14.45 15.56L15.21 14.81C15.46 14.56 15.7 14.37 15.93 14.25C16.16 14.11 16.39 14.04 16.64 14.04C16.83 14.04 17.03 14.08 17.25 14.17C17.47 14.26 17.7 14.39 17.95 14.56L21.26 16.91C21.52 17.09 21.7 17.3 21.81 17.55C21.91 17.8 21.97 18.05 21.97 18.33Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" fill="none"/></svg>';
-const LOGO_SMS      = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 20.5H7C4 20.5 2 19 2 15.5V8.5C2 5 4 3.5 7 3.5H17C20 3.5 22 5 22 8.5V15.5C22 19 20 20.5 17 20.5Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/> <path d="M17 9L13.87 11.5C12.84 12.32 11.15 12.32 10.12 11.5L7 9" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+// Seven ways the owner can be told, shown all at once as toggle tags
+// (HeroUI's TagGroup, selection "multiple"): one press picks a channel, a
+// second drops it. The five messengers carry their official marks in
+// their own colours, taken from each one's site — telegram.org,
+// whatsapp.com, eitaa.com, bale.ai (the mark from its logo) and rubika.ir
+// (the hexagon from its logo). Colours are fill attributes, never classes
+// or <style>, so nothing leaks into the page. A call and a text message
+// have no brand, so they get line icons in the ink of the text.
+const LOGO_TELEGRAM = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="chTgGrad" x1="50%" x2="50%" y1="0%" y2="99.258%"><stop offset="0%" stop-color="#2AABEE"/><stop offset="100%" stop-color="#229ED9"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><circle cx="64" cy="64" r="64" fill="url(#chTgGrad)" fill-rule="nonzero"/><path fill="#FFF" fill-rule="nonzero" d="M28.9700376,63.3244248 C47.6273373,55.1957357 60.0684594,49.8368063 66.2934036,47.2476366 C84.0668845,39.855031 87.7600616,38.5708563 90.1672227,38.528 C90.6966555,38.5191258 91.8804274,38.6503351 92.6472251,39.2725385 C93.294694,39.7979149 93.4728387,40.5076237 93.5580865,41.0057381 C93.6433345,41.5038525 93.7494885,42.63857 93.6651041,43.5252052 C92.7019529,53.6451182 88.5344133,78.2034783 86.4142057,89.5379542 C85.5170662,94.3339958 83.750571,95.9420841 82.0403991,96.0994568 C78.3237996,96.4414641 75.5015827,93.6432685 71.9018743,91.2836143 C66.2690414,87.5912212 63.0868492,85.2926952 57.6192095,81.6896017 C51.3004058,77.5256038 55.3966232,75.2369981 58.9976911,71.4967761 C59.9401076,70.5179421 76.3155302,55.6232293 76.6324771,54.2720454 C76.6721165,54.1030573 76.7089039,53.4731496 76.3346867,53.1405352 C75.9604695,52.8079208 75.4081573,52.921662 75.0095933,53.0121213 C74.444641,53.1403447 65.4461175,59.0880351 48.0140228,70.8551922 C45.4598218,72.6091037 43.1463059,73.4636682 41.0734751,73.4188859 C38.7883453,73.3695169 34.3926725,72.1268388 31.1249416,71.0646282 C27.1169366,69.7617838 23.931454,69.0729605 24.208838,66.8603276 C24.3533167,65.7078514 25.9403832,64.5292172 28.9700376,63.3244248 Z"/></g></svg>';
+const LOGO_WHATSAPP = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720"><path fill="#25D366" d="M360,0C161.18,0,0,161.18,0,360c0,65.41,17.45,126.75,47.94,179.61L0,720l187.02-44.21c51.34,28.18,110.28,44.21,172.98,44.21,198.82,0,360-161.18,360-360S558.82,0,360,0ZM360,655.52c-60.17,0-116.13-17.98-162.82-48.87l-110.49,28.14,30.99-105.61c-33.53-47.93-53.2-106.26-53.2-169.19,0-163.21,132.31-295.52,295.52-295.52s295.52,132.31,295.52,295.52-132.31,295.52-295.52,295.52Z"/><path fill="#25D366" d="M444.35,407.52l87.1,41.06c4,1.88,6.56,5.94,6.2,10.34-.94,11.46-5.54,34.43-26.13,55.02-58.12,58.12-162.49-7.64-166.74-10.18-25.67-13.79-50.06-32.24-73.19-55.36-23.12-23.12-41.58-47.52-55.37-73.19-2.55-4.24-68.31-108.61-10.18-166.74,20.59-20.59,43.56-25.19,55.02-26.13,4.41-.36,8.46,2.2,10.34,6.2l41.07,87.1c1.94,4.12,1.09,9.02-2.13,12.24l-30.61,30.61c-6.62,6.62-8.56,16.93-4,25.11,11.17,20.03,26.19,39.32,43.59,57.07,17.75,17.4,37.04,32.43,57.07,43.59,8.18,4.56,18.48,2.62,25.11-4l30.61-30.61c3.22-3.22,8.12-4.08,12.24-2.13Z"/></svg>';
+const LOGO_EITAA    = '<svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 4196.7 4300.97"><g><rect width="4196.7" height="4300.97" fill="#FFFFFF" rx="1300" ry="1400"/><path fill="#EF7F1A" d="M1199.06 0l1798.58 0c659.49,0 1199.06,538.75 1199.06,1198.23l0 578.29c-591.21,265.82 -1187.67,1578.34 -2056.97,1293.13 -71.6,50.88 -236.63,260.56 -248.25,419.65 -301.01,-40.09 -648.04,-385.06 -606.4,-757.05 -500.94,-362.4 -87.24,-1031.4 310.07,-1300.67 851.52,-577.12 2033.69,-80.77 1376.12,331.87 -399.85,250.9 -1254.9,416.65 -1166,-199.33 -234.55,67.66 -384.69,505.01 -102.28,732.89 -261.61,257.03 -211.32,729.47 68.32,884.6 282.81,-732.75 1267.14,-636.99 1664.89,-1511.71 299.22,-658.01 -144.4,-1407.7 -1031.35,-1292.51 -669.43,86.94 -1296.86,651.59 -1610.65,1321.28 -318.39,679.51 -271.01,1589.34 382.76,2047.9 769.36,539.64 1588.48,39.96 2084.59,-613.11 292.41,-384.93 547.93,-811.4 935.15,-1057.64l0 1025.27c0,659.47 -539.58,1199.88 -1199.06,1199.88l-1798.58 0c-659.49,0 -1199.06,-539.58 -1199.06,-1199.07l0 -1902.84c0,-659.49 539.57,-1199.06 1199.06,-1199.06z"/></g></svg>';
+const LOGO_BALE     = '<svg viewBox="54 4 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M72.2139 4.1563C72.2051 4.15482 72.1962 4.15433 72.1878 4.15285C71.9482 4.12031 71.707 4.09171 71.464 4.06952C71.3821 4.06213 71.2993 4.0572 71.2169 4.05079C71.0409 4.03747 70.8649 4.02465 70.6869 4.01726C70.5631 4.01183 70.4383 4.01035 70.3141 4.00789C70.2091 4.00592 70.1055 4 70 4C69.9522 4 69.9043 4.00247 69.8565 4.00296C69.8235 4.00345 69.7909 4.00148 69.7579 4.00197C69.6864 4.00296 69.6159 4.0074 69.5449 4.00937C69.4423 4.01233 69.3393 4.01529 69.2367 4.01972C69.1253 4.02515 69.0148 4.03205 68.9039 4.03994C68.8018 4.04684 68.7002 4.05374 68.5987 4.06262C68.4882 4.07248 68.3787 4.08382 68.2688 4.09565C68.1687 4.1065 68.0681 4.11686 67.9685 4.12968C67.859 4.14348 67.7506 4.15975 67.6416 4.17553C67.5425 4.19032 67.4434 4.20413 67.3452 4.22089C67.2368 4.23914 67.1298 4.25935 67.0223 4.27957C66.9247 4.29781 66.827 4.31556 66.7304 4.33578C66.6229 4.35797 66.5169 4.38262 66.4104 4.40727C66.3147 4.42897 66.2191 4.45017 66.1244 4.47384C66.0174 4.50046 65.9119 4.52955 65.8059 4.55815C65.7127 4.5833 65.619 4.60795 65.5268 4.63458C65.4212 4.66515 65.3172 4.69818 65.2132 4.73122C65.1215 4.75982 65.0297 4.78792 64.9385 4.818C64.835 4.85251 64.7324 4.88998 64.6299 4.92647C64.5396 4.95852 64.4494 4.98958 64.3601 5.02311C64.2576 5.06206 64.156 5.10348 64.0539 5.14441C63.9671 5.17941 63.8794 5.21294 63.7931 5.24943C63.69 5.29282 63.589 5.33917 63.4874 5.38453C63.4036 5.422 63.3192 5.458 63.2359 5.49695C63.1343 5.54428 63.0342 5.59507 62.9337 5.64438C62.8528 5.68431 62.7709 5.72277 62.6906 5.76419C62.5895 5.81646 62.4899 5.87119 62.3903 5.92542C62.3124 5.96783 62.2335 6.00826 62.1566 6.05165C62.054 6.10934 61.9539 6.16998 61.8528 6.23014C61.7803 6.27304 61.7074 6.31445 61.6359 6.35834C61.5269 6.42539 61.4204 6.49541 61.3129 6.56493C61.2513 6.60487 60.6329 7.02743 60.6329 7.02743C60.6329 7.02743 57.7178 4.80616 56.5547 4.20018C55.3915 3.59421 54 4.43834 54 5.74989V8.70336V19.6933C54 19.7983 54 19.9014 54 20C54 28.4822 60.6014 35.4182 68.9463 35.9615C68.9946 35.965 69.0424 35.9694 69.0908 35.9724C69.251 35.9813 69.4127 35.9847 69.574 35.9892C69.6741 35.9921 69.7727 35.9985 69.8733 35.9995C69.8945 35.9995 69.9157 35.9985 69.9369 35.9985C69.9581 35.9985 69.9793 36 70.001 36C70.1213 36 70.2396 35.9936 70.3595 35.9911C70.4941 35.9882 70.6292 35.9872 70.7633 35.9808C70.9033 35.9744 71.0424 35.9625 71.1814 35.9522C71.3141 35.9423 71.4467 35.9349 71.5784 35.9221C71.7164 35.9088 71.853 35.8896 71.9901 35.8728C72.1207 35.8565 72.2524 35.8422 72.3826 35.823C72.5182 35.8028 72.6518 35.7771 72.7864 35.754C72.9156 35.7313 73.0448 35.7106 73.173 35.6849C73.3071 35.6578 73.4392 35.6258 73.5719 35.5957C73.6981 35.5671 73.8248 35.54 73.9496 35.5084C74.0812 35.4749 74.2109 35.4364 74.3411 35.3999C74.4649 35.3649 74.5891 35.3324 74.7114 35.2949C74.8406 35.255 74.9673 35.2106 75.095 35.1677C75.2158 35.1273 75.3381 35.0883 75.4574 35.0449C75.5837 34.9991 75.7074 34.9488 75.8322 34.9C75.9505 34.8536 76.0698 34.8092 76.1872 34.7599C76.3105 34.7082 76.4313 34.652 76.5526 34.5972C76.6679 34.5455 76.7843 34.4957 76.8982 34.4409C77.018 34.3837 77.1354 34.3216 77.2532 34.2614C77.3661 34.2038 77.48 34.1485 77.591 34.0884C77.7069 34.0258 77.8198 33.9587 77.9337 33.8936C78.0436 33.8305 78.1551 33.7694 78.2636 33.7038C78.3765 33.6357 78.4864 33.5633 78.5974 33.4923C78.7034 33.4247 78.8109 33.3586 78.9154 33.2886C79.0249 33.2152 79.1309 33.1373 79.2384 33.0608C79.3409 32.9884 79.4445 32.9173 79.5451 32.8429C79.6506 32.764 79.7531 32.6812 79.8567 32.6003C79.9553 32.5229 80.0549 32.448 80.1516 32.3686C80.2541 32.2843 80.3532 32.196 80.4533 32.1092C80.547 32.0284 80.6427 31.949 80.7344 31.8656C80.833 31.7764 80.9282 31.6827 81.0248 31.591C81.1141 31.5062 81.2053 31.4229 81.2925 31.3356C81.3867 31.2414 81.4775 31.1438 81.5692 31.0471C81.6545 30.9579 81.7413 30.8706 81.8246 30.7794C81.9143 30.6808 82.0001 30.5787 82.0874 30.4777C82.1683 30.3845 82.2511 30.2933 82.3295 30.1981C82.4143 30.096 82.4947 29.99 82.5765 29.8855C82.6535 29.7879 82.7323 29.6922 82.8068 29.5926C82.8862 29.4866 82.9611 29.3771 83.0381 29.2692C83.1105 29.1676 83.185 29.0675 83.2545 28.9644C83.3295 28.854 83.3995 28.7401 83.472 28.6277C83.539 28.5231 83.6081 28.4206 83.6727 28.3146C83.7422 28.2007 83.8068 28.0833 83.8738 27.967C83.936 27.859 84.0006 27.7525 84.0602 27.643C84.1248 27.5237 84.185 27.4019 84.2466 27.2806C84.3028 27.1712 84.361 27.0632 84.4147 26.9522C84.4749 26.828 84.5291 26.7008 84.5863 26.575C84.6366 26.4641 84.6894 26.3541 84.7367 26.2417C84.791 26.1135 84.8398 25.9824 84.8911 25.8527C84.9354 25.7398 84.9828 25.6284 85.0247 25.514C85.0735 25.3813 85.1164 25.2457 85.1618 25.1111C85.2002 24.9967 85.2416 24.8843 85.2776 24.7689C85.3205 24.6314 85.3575 24.4913 85.3965 24.3523C85.429 24.2374 85.4645 24.124 85.4941 24.0081C85.5311 23.8656 85.5612 23.7212 85.5942 23.5772C85.6203 23.4618 85.6499 23.3484 85.6736 23.232C85.7042 23.0841 85.7278 22.9342 85.754 22.7848C85.7742 22.6704 85.7973 22.5575 85.8151 22.4427C85.8393 22.2854 85.8565 22.1261 85.8757 21.9678C85.8891 21.8584 85.9063 21.7504 85.9172 21.6399C85.9354 21.4619 85.9463 21.2815 85.9581 21.1015C85.9645 21.0093 85.9744 20.9181 85.9793 20.8254C85.9926 20.5665 85.9985 20.3057 85.999 20.0434C85.999 20.0291 86 20.0148 86 20C86.001 11.9152 80.0026 5.23464 72.2139 4.1563ZM79.3404 17.9528L70.0503 27.2431C69.4404 27.8526 68.6416 28.1573 67.8423 28.1573C67.043 28.1573 66.2442 27.8526 65.6343 27.2431L60.6605 22.2691C59.4412 21.0497 59.4412 19.073 60.6605 17.8537C61.8799 16.6348 63.8567 16.6348 65.0761 17.8537L67.8428 20.6203L74.9254 13.5374C76.1448 12.3185 78.1215 12.3185 79.3409 13.5374C80.5598 14.7572 80.5598 16.7334 79.3404 17.9528Z" fill="#00B894"/></svg>';
 const LOGO_RUBIKA   = '<svg viewBox="0 0 495.37 543.04" xmlns="http://www.w3.org/2000/svg"><path d="M246.07,0h1.76c.48,42.73-.25,128.44-.25,128.44-40.86-22.92-82-45.3-122.84-68.29q40.13-22.81,80.32-45.51c12.69-7.16,26.33-13.31,41-14.64Z" fill="#b8ce01"/><path d="M247.73,0h3C266.62,1.43,281,9,294.67,16.68Q332.91,38.25,371.05,60c-41,22.73-82.45,45.82-123.51,68.48-.35-42.73.63-85.77.15-128.5Z" fill="#7db425"/><path d="M124.77,60.11,247.61,128.4,123.92,200.66s-.06-45.85.08-68.71C123.89,108.21,124.77,60.11,124.77,60.11Z" fill="#f6a925"/><path d="M371.19,60l.35.19c-.1,42.59,0,85.18,0,127.77-.07,4.17-.11,12.77-.11,12.77L247.62,128.45S330.2,82.76,371.23,60Z" fill="#35ac9d"/><path d="M371.44,60.21c27.28,15.51,54.37,31.36,81.47,47.17,13.11,7.36,27,15.52,34.16,29.39-38.38,21.25-115.68,64-115.68,64s-.06-8.61,0-12.78q0-63.89,0-127.77Z" fill="#59d6bd"/><path d="M46.5,105c25.65-15,78.19-44.88,78.19-44.88L124,200.66S47,158.21,8.71,137C17.05,122.13,32.11,113.12,46.5,105Z" fill="#ef7414"/><path d="M247.5,128.44l123.81,72.3s-39.84,22-59.62,32.64c-21.14,12-64.09,35.82-64.09,35.82L123.94,200.66Z" fill="#fff"/><path d="M0,193C.11,174.17-.23,154.15,8.66,137,47,158.21,123.92,200.66,123.92,200.66,82.55,224.58,41.38,248.86,0,272.81,0,246.21,0,219.62,0,193Z" fill="#e74b50"/><path d="M487.07,136.77c7.54,14.1,8.64,30.5,8.22,46.19v90.11L371.41,200.76S448.69,158,487.07,136.77Z" fill="#794387"/><path d="M123.92,200.66c.19-.08,123.66,68.54,123.66,68.54s0,71.69.07,106.76c.2,11.29-.07,34.11-.07,34.11-41.27-22.78-82.32-45.76-123.6-68.54l-.07-.31V200.66Z" fill="#e4e4e4"/><path d="M0,272.81c41.35-24,82.52-48.23,123.89-72.15q-.06,70.29,0,140.56c-6.35-2.65-12.13-6.43-18.19-9.64C70.5,312.21,35.38,292.39,0,273.21v-.4Z" fill="#794387"/><path d="M371.39,200.76v86.18c-.13,18.27.46,36.47,0,54.73-41.21,22.4-123.82,68.4-123.82,68.4s.27-22.82.07-34.11c0-35.07-.07-106.76-.07-106.76Z" fill="#f1f1f1"/><path d="M371.39,200.76s123.88,72.14,123.88,72.31c-41.17,22.82-123.87,68.6-123.87,68.6h0c.46-18.26-.13-36.46,0-54.73V200.76Z" fill="#4c3683"/><path d="M0,273.21c35.36,19.21,70.43,39,105.7,58.4,6.06,3.21,11.84,7,18.19,9.64l.07.31Q67,374.79,10,408.05C6,402,4,394.86,2.53,387.8.14,376,0,364,0,352v-78.8Z" fill="#4c3683"/><path d="M495.27,273.07c.06,27.65,0,55.3,0,82.95.4,17.73-.12,36.62-9.57,52.25-34.2-20-114.33-66.6-114.33-66.6S454.1,295.89,495.27,273.07Z" fill="#e74b50"/><path d="M10,408Q67,374.72,124,341.53c-.25,46.83.08,93.67-.16,140.49q-40.35-22.75-80.49-45.86C30.82,428.76,18,420.53,10,408Z" fill="#0f68a0"/><path d="M124,341.53c41.28,22.78,82.33,45.76,123.6,68.54-41.2,24-123.7,72-123.76,71.95.24-46.82-.09-93.66.16-140.49Z" fill="#49bdca"/><path d="M371.2,341.76l.2-.09c.12,46.84-.25,93.69.19,140.53l-.31.15c-32.66-19.51-65.71-38.4-98.52-57.68-8.26-4.7-25.18-14.6-25.18-14.6S330,364.21,371.2,341.76Z" fill="#f6a925"/><path d="M371.4,341.67h0c3.65,2.49,80.13,46.62,114.33,66.6-4.86,8.3-12.56,14.39-20.32,19.84-12.52,8.42-25.88,15.47-38.9,23.05-18.31,10.35-36.5,20.91-54.92,31-.44-46.84-.07-93.69-.19-140.53Z" fill="#ef7414"/><path d="M247.58,410.07V543c-10.25-1.51-21.42-3.87-30.5-9.08C186,516.66,154.81,499.5,123.82,482,165,458,206.38,434.12,247.58,410.07Z" fill="#7db425"/><path d="M247.58,410.07s16.92,9.9,25.18,14.6c32.81,19.28,65.86,38.17,98.52,57.68q-47.79,26.44-95.57,53A62.47,62.47,0,0,1,249.84,543h-2.26Z" fill="#b8ce01"/><path d="M602.83,233.66" fill="#f1f1f1"/></svg>';
+const LOGO_CALL     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+const LOGO_SMS      = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg>';
 
 const CHANNELS = [
-  { id: 'rubika',   name: 'روبیکا',  color: '#FFFFFF', icon: LOGO_RUBIKA,   mono: false },
-  { id: 'whatsapp', name: 'واتس‌اپ', color: '#25D366', icon: LOGO_WHATSAPP, mono: true },
-  { id: 'eitaa',    name: 'ایتا',    color: '#F5911E', icon: LOGO_EITAA,    mono: true },
-  { id: 'telegram', name: 'تلگرام',  color: '#229ED9', icon: LOGO_TELEGRAM, mono: true },
-  { id: 'bale',     name: 'بله',     color: '#1BA13E', icon: LOGO_BALE,     mono: true },
-  { id: 'call',     name: 'تماس',    color: '#2D8CFF', icon: LOGO_CALL,     mono: true },
-  { id: 'sms',      name: 'پیامک',   color: '#64748B', icon: LOGO_SMS,      mono: true }
+  { id: 'rubika',   name: 'روبیکا',  icon: LOGO_RUBIKA },
+  { id: 'whatsapp', name: 'واتس‌اپ', icon: LOGO_WHATSAPP },
+  { id: 'eitaa',    name: 'ایتا',    icon: LOGO_EITAA },
+  { id: 'telegram', name: 'تلگرام',  icon: LOGO_TELEGRAM },
+  { id: 'bale',     name: 'بله',     icon: LOGO_BALE },
+  { id: 'call',     name: 'تماس',    icon: LOGO_CALL },
+  { id: 'sms',      name: 'پیامک',   icon: LOGO_SMS }
 ];
 
 let selectedChannels = [];
-let channelActiveIdx = -1;
 
-function renderChannelOptions() {
-  channelList.innerHTML = CHANNELS.map(c => `
-    <div class="ms-option${selectedChannels.includes(c.id) ? ' checked' : ''}" data-id="${c.id}" role="option" aria-selected="${selectedChannels.includes(c.id)}">
-      <span class="ms-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-      <span class="ms-icon${c.mono ? '' : ' ms-icon-plain'}" style="background:${c.color}">${c.icon}</span>
-      <span>${c.name}</span>
-    </div>`).join('');
+channelGroup.innerHTML = CHANNELS.map((c, i) => `
+  <button type="button" class="ch-tag" data-id="${c.id}" aria-pressed="false" tabindex="${i === 0 ? 0 : -1}">
+    <span class="ch-logo" aria-hidden="true">${c.icon}</span>
+    <span class="ch-name">${c.name}</span>
+  </button>`).join('');
+const channelTags = [...channelGroup.querySelectorAll('.ch-tag')];
 
-  channelList.querySelectorAll('.ms-option').forEach((el, i) => {
-    el.classList.toggle('kb-active', i === channelActiveIdx);
-    el.addEventListener('mousedown', (e) => e.preventDefault());  // don't steal focus from the field
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      channelActiveIdx = i;
-      toggleChannel(el.dataset.id);
-    });
-  });
+// One tab stop for the whole group (the tag last pressed or moved to);
+// the arrow keys walk the tags — in a right-to-left row, ArrowLeft is the
+// next one — and Home / End jump to the ends. Space or Enter toggles, as
+// on any button.
+function setChannelTabStop(tag) {
+  channelTags.forEach(t => { t.tabIndex = t === tag ? 0 : -1; });
 }
-
-function setChannelActive(idx) {
-  const items = channelList.querySelectorAll('.ms-option');
-  if (!items.length) return;
-  channelActiveIdx = (idx + items.length) % items.length;
-  items.forEach((el, i) => el.classList.toggle('kb-active', i === channelActiveIdx));
-  items[channelActiveIdx].scrollIntoView({ block: 'nearest' });
+function channelTabStop() {
+  return channelTags.find(t => t.tabIndex === 0) || channelTags[0];
 }
-
-const CHANNEL_COLS = 2;
-// Row/column-aware navigation for the two-column channel grid, so all four
-// arrow keys move the way they visually look like they should — not just a
-// flat +1/-1 through the list, which used to make ArrowDown zig-zag across
-// columns instead of moving straight down.
-function moveChannelActive(dRow, dCol) {
-  const items = channelList.querySelectorAll('.ms-option');
-  if (!items.length) return;
-  if (channelActiveIdx < 0) { setChannelActive(0); return; }
-  const row = Math.floor(channelActiveIdx / CHANNEL_COLS);
-  const col = channelActiveIdx % CHANNEL_COLS;
-  const newCol = col + dCol;
-  if (newCol < 0 || newCol >= CHANNEL_COLS) return;
-  const newIdx = (row + dRow) * CHANNEL_COLS + newCol;
-  if (newIdx < 0 || newIdx >= items.length) return;
-  setChannelActive(newIdx);
-}
+channelGroup.addEventListener('click', (e) => {
+  const tag = e.target.closest('.ch-tag');
+  if (!tag) return;
+  setChannelTabStop(tag);
+  toggleChannel(tag.dataset.id);
+});
+channelGroup.addEventListener('keydown', (e) => {
+  const i = channelTags.indexOf(document.activeElement);
+  if (i < 0) return;
+  let next = -1;
+  if (e.key === 'ArrowLeft') next = Math.min(i + 1, channelTags.length - 1);
+  else if (e.key === 'ArrowRight') next = Math.max(i - 1, 0);
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = channelTags.length - 1;
+  if (next < 0) return;
+  e.preventDefault();
+  setChannelTabStop(channelTags[next]);
+  channelTags[next].focus();
+});
 
 function toggleChannel(id) {
   const i = selectedChannels.indexOf(id);
   if (i >= 0) selectedChannels.splice(i, 1);
   else selectedChannels.push(id);
-  renderChannelOptions();
   renderChannelChips();
   channelField.classList.remove('error');
   saveDraft();
 }
 
+// Paints the tags from selectedChannels (after a toggle, a draft restore or
+// opening a cheque). An id the list doesn't know — an older record, a
+// channel retired since — is kept in selectedChannels untouched, so saving
+// doesn't silently drop it.
 function renderChannelChips() {
-  if (selectedChannels.length === 0) {
-    channelChips.innerHTML = '';
-    channelPlaceholder.style.display = '';
-    return;
-  }
-  channelPlaceholder.style.display = 'none';
-  // A channel id the front-end doesn't know (an older record, a channel
-  // retired from the list) used to throw here and leave the whole view
-  // modal blank. Show the raw id instead and keep the form usable.
-  channelChips.innerHTML = selectedChannels.map(id => {
-    const c = CHANNELS.find(x => x.id === id);
-    if (!c) return `<span class="ms-chip"><span class="ch-dot" style="background:var(--muted)"></span>${escapeHtml(id)}</span>`;
-    return `<span class="ms-chip"><span class="ch-dot" style="background:${c.color === '#FFFFFF' ? 'var(--blue-600)' : c.color}"></span>${c.name}</span>`;
-  }).join('');
+  channelTags.forEach(t => t.setAttribute('aria-pressed', String(selectedChannels.includes(t.dataset.id))));
 }
-
-// Positioned like the calendar: fixed, computed from the field's own rect, so it
-// floats above the form instead of forcing it to scroll.
-function positionChannelList() {
-  const r = channelBox.getBoundingClientRect();
-  const w = Math.max(r.width, 300);
-  const h = channelList.offsetHeight || 200;
-  let left = r.right - w;
-  left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-  let top = r.bottom + 6;
-  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
-  channelList.style.left = left + 'px';
-  channelList.style.top = top + 'px';
-  channelList.style.width = w + 'px';
-}
-
-function openChannelList() {
-  renderChannelOptions();
-  channelList.classList.add('show');
-  channelField.classList.add('open');
-  channelBox.setAttribute('aria-expanded', 'true');
-  positionChannelList();
-  window.addEventListener('scroll', positionChannelList, true);
-  window.addEventListener('resize', positionChannelList);
-}
-function closeChannelList() {
-  channelList.classList.remove('show');
-  channelField.classList.remove('open');
-  channelBox.setAttribute('aria-expanded', 'false');
-  channelActiveIdx = -1;
-  window.removeEventListener('scroll', positionChannelList, true);
-  window.removeEventListener('resize', positionChannelList);
-}
-
-// A plain click both focuses the button and fires 'click' in the same gesture,
-// so opening on focus and toggling on click would fight each other (open, then
-// immediately close). Only toggle when the button already had focus beforehand.
-let channelWasFocused = false;
-channelBox.addEventListener('mousedown', () => {
-  channelWasFocused = (document.activeElement === channelBox);
-});
-channelBox.addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (!channelWasFocused) return;   // the focus handler just opened it — leave it be
-  if (channelList.classList.contains('show')) closeChannelList();
-  else openChannelList();
-});
-document.addEventListener('click', (e) => {
-  if (channelList.classList.contains('show') && !channelList.contains(e.target) && e.target !== channelBox) closeChannelList();
-});
-
-// Tab onto the field opens it; arrows move between logos; space/enter ticks the
-// highlighted one; tab moves on to the next field, same as any ordinary control.
-channelBox.addEventListener('focus', () => {
-  if (!channelList.classList.contains('show')) openChannelList();
-});
-channelBox.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeChannelList(); return; }
-  if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-    e.preventDefault();
-    if (!channelList.classList.contains('show')) openChannelList();
-    // Two-column grid, right-to-left: column 0 is the visually-right column.
-    if (e.key === 'ArrowDown') moveChannelActive(1, 0);
-    else if (e.key === 'ArrowUp') moveChannelActive(-1, 0);
-    else if (e.key === 'ArrowRight') moveChannelActive(0, -1);
-    else if (e.key === 'ArrowLeft') moveChannelActive(0, 1);
-    return;
-  }
-  if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!channelList.classList.contains('show')) { openChannelList(); return; }
-    if (channelActiveIdx >= 0) {
-      toggleChannel(CHANNELS[channelActiveIdx].id);
-      setChannelActive(channelActiveIdx);   // keep the highlight after the re-render
-    }
-    return;
-  }
-  if (e.key === 'Tab') {
-    closeChannelList();   // let the browser carry on to the next/previous field
-  }
-});
 
 function clearChannels() {
   selectedChannels = [];
   renderChannelChips();
-  renderChannelOptions();
+  setChannelTabStop(channelTags[0]);
   channelField.classList.remove('error');
 }
 
@@ -2895,7 +2795,7 @@ submitCheckBtn.addEventListener('click', async () => {
   ];
   sendDate.fillTodayIfEmpty();          // never let this one go unrecorded
   checks.push([sendDate.validate(), sendDateInput]);
-  checks.push([validateChannels(), channelBox]);
+  checks.push([validateChannels(), channelTabStop()]);
 
   const firstBad = checks.find(([ok]) => !ok);
   if (firstBad) {
@@ -2983,7 +2883,7 @@ function handleSaveEdit() {
   ];
   sendDate.fillTodayIfEmpty();
   checks.push([sendDate.validate(), sendDateInput]);
-  checks.push([validateChannels(), channelBox]);
+  checks.push([validateChannels(), channelTabStop()]);
 
   const firstBad = checks.find(([ok]) => !ok);
   if (firstBad) {
@@ -4858,7 +4758,6 @@ document.addEventListener('keydown', (e) => {
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
-  if (channelList.classList.contains('show')) { closeChannelList(); return; }
   if (activePopover) { closePopover(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
@@ -4888,7 +4787,6 @@ function closeTopmostLayer() {
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return true; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
-  if (channelList.classList.contains('show')) { closeChannelList(); return true; }
   if (activePopover) { closePopover(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }

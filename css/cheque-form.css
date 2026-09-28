@@ -321,3 +321,53 @@
 }
 /* the photo row is exactly as tall as the note beside it */
 #fileField .file-box { min-height: 38px; padding-block: 3px; }
+
+/* ---- «ارسال به صاحب چک از طریق»: toggle tags ----
+   HeroUI's TagGroup with multiple selection. All seven are in view — a
+   list this short doesn't belong behind a dropdown — as equal tiles the
+   height of a field, so the row lines up with the fields above it; on a
+   phone they wrap four and three. The tiles follow the theme (outlined,
+   like a field); the logos keep their brands' own colours, which is how
+   they are recognised at a glance. A chosen tag takes the selection
+   blue: a blue edge and a faint blue wash. No press-in (shared.css). */
+.ch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ch-tag {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  height: 38px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-body);
+  white-space: nowrap;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.ch-tag:hover { border-color: var(--field-border-hover); }
+.ch-logo { display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0; }
+.ch-logo svg { display: block; width: 18px; height: 18px; }
+.ch-name { overflow: hidden; text-overflow: ellipsis; }
+.ch-tag[aria-pressed="true"] {
+  border-color: var(--hl);
+  background: var(--hl-soft);
+  background: color-mix(in srgb, var(--hl) 7%, var(--field-bg));
+  box-shadow: inset 0 0 0 0.5px var(--hl);
+  color: var(--ink);
+}
+.ch-field.error .ch-tag { border-color: var(--state-bad); }
+@media (max-width: 600px) {
+  .ch-tag { flex-basis: calc(25% - 6px); gap: 5px; padding: 0 5px; }
+}

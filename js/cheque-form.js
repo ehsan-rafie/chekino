@@ -126,8 +126,8 @@
     }
   }
   function channelNames() {
-    const chips = $('channelChips');
-    return chips ? [...chips.children].map((c) => c.textContent.trim()).filter(Boolean) : [];
+    const group = $('channelGroup');
+    return group ? [...group.querySelectorAll('.ch-tag[aria-pressed="true"] .ch-name')].map((c) => c.textContent.trim()).filter(Boolean) : [];
   }
 
   // ---- fields whose error state the view reacts to ---------------------------

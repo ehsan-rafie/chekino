@@ -337,10 +337,10 @@ body, button, input, textarea, select {
    never a property that forces layout. */
 button:not(:disabled):active { transform: scale(0.97); }
 button { transition: transform var(--dur-1) var(--ease); }
-/* …except the controls that belong to a field — the channel picker, a
+/* …except the controls that belong to a field — the channel tags, a
    field's calendar / list / copy / show-password button, the photo row's
    buttons. A field stays still under the pointer. */
-.ms-box:active,
+.ch-tag:active,
 .ig-btn:active,
 .date-cal-btn:active,
 .file-add:active,
@@ -563,7 +563,6 @@ kbd {
 :root .status-filter-chip,
 :root .ths-count,
 :root .badge,
-:root .ms-chip,
 :root .file-chip,
 :root .ac-tag,
 :root .due-alert-count,
@@ -603,8 +602,7 @@ kbd {
 :root .filter-popover,
 :root .cal-popup,
 :root .status-menu,
-:root .ac-list,
-:root .ms-list { box-shadow: var(--shadow-2), var(--inset-hairline); }
+:root .ac-list { box-shadow: var(--shadow-2), var(--inset-hairline); }
 
 /* No ambient gradients: the page is a plain white (or night) field. */
 

@@ -17,7 +17,6 @@ button, input, textarea, select { font-family: inherit; }
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible,
-.ms-option:focus-visible,
 .radio-opt:focus-visible {
   outline: 2px solid var(--blue-600);
   outline-offset: 2px;
@@ -1488,106 +1487,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   font-variation-settings: var(--f-hint);
 }
 
-.ms-field { position: relative; }
-.ms-box {
-  width: 100%;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  cursor: pointer;
-  font-family: inherit;
-  text-align: right;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.ms-placeholder {
-  flex: 1;
-  color: var(--muted);
-  font-size: 14px;
-  font-variation-settings: var(--f-hint);
-}
-.ms-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; }
-.ms-chips:empty { display: none; }
-.ms-chip {
-  animation: popIn 0.16s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 6px;
-  border-radius: var(--rad-pill);
-  background: var(--blue-100);
-  color: var(--blue-900);
-  font-size: 13px;
-  font-variation-settings: var(--f-micro);
-}
-.ms-chip .ch-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.ms-box:focus { outline: none; border-color: var(--blue-600); }
-.ms-field.open .ms-box { border-color: var(--blue-600); }
-.ms-field.error .ms-box { border-color: var(--error); }
-.ms-caret { color: var(--muted); display: flex; flex-shrink: 0; }
-.ms-caret svg { width: 18px; height: 18px; transition: transform 0.15s ease; }
-.ms-field.open .ms-caret svg { transform: rotate(180deg); }
-
-.ms-list {
-  position: fixed;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--rad-ctl);
-  padding: 6px;
-  /* Above the modal overlay (300), below the calendar (601) — it lives outside
-     the modal so this number is actually comparable against them. */
-  z-index: 600;
-  display: none;
-  max-height: 260px;
-  overflow-y: auto;
-}
-.ms-list.show { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; animation: slideDown 0.16s ease; }
-@media (max-width: 420px) { .ms-list.show { grid-template-columns: 1fr; } }
-.ms-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 10px;
-  border-radius: var(--rad-ctl);
-  cursor: pointer;
-  font-size: 15px;
-  font-variation-settings: var(--f-body);
-  color: var(--ink);
-}
-.ms-option:hover { background: var(--bg); }
-.ms-option .ms-check {
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-ctl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-.ms-option .ms-check svg { width: 13px; height: 13px; color: #fff; opacity: 0; }
-.ms-option.checked .ms-check { background: var(--blue-600); border-color: var(--blue-600); }
-.ms-option.checked .ms-check svg { opacity: 1; }
-.ms-option.kb-active { background: var(--blue-100); }
-.ms-option .ms-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--rad-ctl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: #fff;
-}
-.ms-option .ms-icon svg { width: 18px; height: 18px; }
-.ms-option .ms-icon-plain { border: 1px solid var(--border); }
-.ms-option .ms-icon-plain svg { width: 21px; height: 21px; }
-
 .file-box {
   border: 1.5px dashed var(--border);
   border-radius: var(--rad-ctl);
@@ -2231,7 +2130,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .modal-body.ve-locked .form-field textarea,
 .modal-body.ve-locked .amount-box,
 .modal-body.ve-locked .date-input-wrap,
-.modal-body.ve-locked .ms-box,
 .modal-body.ve-locked .file-box {
   cursor: default;
 }
@@ -2826,7 +2724,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-popup,
 .status-menu,
 .ac-list,
-.ms-list,
 .app-toast,
 .lightbox-card,
 .pe-card {
@@ -3039,7 +2936,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
    display:block with no transition. A menu that snaps into existence
    reads as a bug the first time you see it and gets ignored after —
    neither is the goal. */
-.ac-list.show, .ms-list.show, .status-menu.show, .filter-popover.show {
+.ac-list.show, .status-menu.show, .filter-popover.show {
   animation: menuIn var(--dur-2) var(--ease-out) both;
 }
 @keyframes menuIn {
@@ -4273,7 +4170,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]),
 .date-input-wrap,
 .amount-box,
-.ms-box,
 .form-field .notes-input {
   border: 1px solid var(--field-border) !important;
   border-radius: var(--rad-ctl);
@@ -4285,20 +4181,16 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]),
 .date-input-wrap { height: 38px; }
 .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]) { padding: 0 12px; }
-.ms-box { min-height: 38px; height: auto; }
 .form-field input::placeholder,
-.form-field .notes-input::placeholder,
-.ms-placeholder { color: var(--muted); font-size: var(--t-cap); font-variation-settings: var(--f-body); }
+.form-field .notes-input::placeholder { color: var(--muted); font-size: var(--t-cap); font-variation-settings: var(--f-body); }
 .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]):hover,
 .date-input-wrap:hover,
 .amount-box:hover,
-.ms-box:hover,
 .form-field .notes-input:hover { border-color: var(--field-border-hover) !important; }
 .form-field input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]):focus,
 .amount-box:focus-within,
 .date-input-wrap:focus-within,
 .form-field .notes-input:focus,
-.ms-box[aria-expanded="true"],
 .ac-field:focus-within .ac-input {
   background: var(--field-bg) !important;
   border-color: var(--focus-edge) !important;
@@ -4307,8 +4199,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .form-field.error input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]),
 .form-field.error .date-input-wrap,
-.form-field.error .amount-box,
-.form-field.error .ms-box { background: var(--field-bg); border-color: var(--state-bad) !important; }
+.form-field.error .amount-box { background: var(--field-bg); border-color: var(--state-bad) !important; }
 .form-field.error input:not(.amount-input):not(.date-mask-input):not([type="checkbox"]):not([type="radio"]):focus,
 .date-field.error .date-input-wrap:focus-within,
 .amount-field.error .amount-box:focus-within { background: var(--field-bg) !important; border-color: var(--state-bad) !important; box-shadow: var(--ring-bad) !important; }
@@ -4320,9 +4211,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .date-input-wrap input, .amount-box input { background: transparent; font-size: var(--t-body); }
 .date-cal-btn { width: 30px; height: 30px; border-radius: 10px; color: var(--muted); }
 .date-cal-btn:hover { background: var(--accent-wash); color: var(--ink); }
-.ms-box { padding: 4px 10px 4px 8px; }
-.ms-chip { padding: 1px 8px 1px 7px; border-radius: var(--rad-xs); background: var(--surface-sunken); color: var(--ink); box-shadow: none; font-size: var(--t-micro); }
-.ms-caret svg { width: 16px; height: 16px; color: var(--muted); }
 .amount-words { color: var(--muted); font-size: var(--t-micro); margin-top: 5px; }
 .nid-kind {
   top: 50%;
@@ -4421,27 +4309,22 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .filter-popover,
 .status-menu,
 .ac-list,
-.ms-list,
 .cal-popup {
   border: none;
   background: var(--surface);
   box-shadow: var(--shadow-2), var(--inset-hairline);
 }
 .filter-popover { border-radius: var(--rad-float); padding: 14px; }
-.status-menu, .ac-list, .ms-list { border-radius: 16px; padding: 6px; }
+.status-menu, .ac-list { border-radius: 16px; padding: 6px; }
 .fp-title { font-size: var(--t-cap); color: var(--ink); font-variation-settings: var(--f-title); }
 .status-opt,
-.ac-item,
-.ms-option {
+.ac-item {
   border-radius: 10px;
   transition: background var(--dur-1) var(--ease);
 }
 .status-opt:hover,
 .ac-item:hover,
-.ac-item.active,
-.ms-option:hover,
-.ms-option.kb-active { background: var(--accent-wash); color: var(--ink); }
-.ms-option .ms-check { border-radius: 6px; }
+.ac-item.active { background: var(--accent-wash); color: var(--ink); }
 .af-preset {
   height: 28px;
   padding: 0 10px;
@@ -4684,8 +4567,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .cal-day.range-start.holiday,
 .cal-day.range-end.holiday { background: var(--hl) !important; color: var(--on-hl) !important; }
 .cal-day.range-mid { background: var(--hl-soft); color: var(--hl-text); }
-
-.ms-option.checked .ms-check { background: var(--hl); border-color: var(--hl); }
 .radio-opt input,
 .checkbox-row input { accent-color: var(--hl); }
 
@@ -4852,11 +4733,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 
 /* ═══ Drop-down lists, minimal (HeroUI's ListBox) ═══
    Short rows, one column, no boxes inside boxes: the people suggestions
-   show the name (the matched part in bold) and a quiet tag; the send
-   channels show a small logo, the name, and a blue check at the end when
-   chosen — no checkbox squares. */
-.ac-list,
-.ms-list { padding: 4px; border-radius: 14px; }
+   show the name (the matched part in bold) and a quiet tag. (The send
+   channels are no longer a list — see the tags in cheque-form.css.) */
+.ac-list { padding: 4px; border-radius: 14px; }
 .ac-item {
   min-height: 34px;
   padding: 6px 10px;
@@ -4881,33 +4760,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .ac-new .ac-main::before { content: '+'; margin-inline-end: 6px; color: var(--muted); }
 .ac-new .ac-tag { color: var(--hl-text); }
 .ac-empty { padding: 10px; font-size: var(--t-cap); }
-
-.ms-list.show { display: block; }
-.ms-option {
-  gap: 10px;
-  min-height: 36px;
-  padding: 6px 10px;
-  border-radius: 9px;
-  font-size: var(--t-body);
-}
-.ms-option:hover,
-.ms-option.kb-active { background: var(--accent-wash); }
-.ms-option .ms-icon { width: 22px; height: 22px; border-radius: 6px; }
-.ms-option .ms-icon svg { width: 14px; height: 14px; }
-.ms-option .ms-icon-plain svg { width: 16px; height: 16px; }
-.ms-option .ms-check,
-.ms-option.checked .ms-check {
-  order: 3;
-  margin-inline-start: auto;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 0;
-  background: none;
-}
-.ms-option .ms-check svg { width: 16px; height: 16px; color: var(--hl); stroke-width: 2.6; opacity: 0; }
-.ms-option.checked .ms-check svg { opacity: 1; }
-.ms-option.checked { font-variation-settings: var(--f-label); }
 
 /* ═══ Header and page head, trimmed ═══
    No search box in the header (Ctrl+K still opens the palette) and no

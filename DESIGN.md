@@ -92,7 +92,7 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    keeps its move / resize cursors. The icons and suffixes inside a field
    catch the pointer, and pressing one puts the caret in the field
    (`js/field-addons.js`). Buttons press in slightly (scale .97); the
-   controls that belong to a field — the channel picker, a field's
+   controls that belong to a field — the channel tags, a field's
    calendar / list / copy button, the photo row's button — don't.
 5. **Colour means status.** Pending is ink; registered green, problem red,
    due-soon amber — always a small dot plus the Persian label. Besides the
@@ -171,6 +171,17 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   them: owner | send date, party | spend date, beneficiary | their
   national id, then the channels across the section. On phones every
   cheque field is full width; the people keep their pairs.
+  **The channels are toggle tags**, not a dropdown (HeroUI's TagGroup,
+  selection «multiple»): seven options are too few to hide behind a
+  list. Seven equal tiles, a field's height, in one row (four and three
+  on a phone); each holds a logo and the name. The five messengers carry
+  their official marks in their brand colours, taken from their own
+  sites (telegram.org, whatsapp.com, eitaa.com, bale.ai, rubika.ir) and
+  inlined with fill attributes, never classes, so nothing leaks into the
+  page; call and SMS get line icons. The tiles themselves are the
+  theme's — outlined like a field — and a chosen one takes the selection
+  blue (blue edge, faint blue wash). One tab stop for the group; the
+  arrow keys walk it, Space / Enter toggles.
   **Nothing marks required or optional** — no «اختیاری», no asterisk, no
   dot. All but the photo, spend date and note are required
   (`aria-required` on the inputs); saving focuses the first field that
@@ -179,8 +190,8 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   label — «سریال (۶ رقم)», «شناسه صیادی (۱۶ رقم)», «کد / شناسه ملی ذینفع
   (۱۰ یا ۱۱ رقم)» — not a placeholder: it stays visible while typing, and
   Persian placeholder text inside a left-to-right box came out reversed
-  («رقم ۶»). The name and channel pickers have no «انتخاب کنید»; their
-  icon and arrow say it. Placeholders left: the date segments and the
+  («رقم ۶»). The name pickers have no «انتخاب کنید»; their icon and
+  arrow say it. Placeholders left: the date segments and the
   note's example. The save button is compact and sits at the end of the
   footer; saving an edit asks for a one-tap confirmation in place.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
@@ -222,11 +233,9 @@ amount and the other numeric fields keep their suffix on the left, next
 to the digits; the search box turns left-to-right once something is
 typed. Generated passwords use a monospace face with Latin digits.
 
-**Drop-down lists** (people suggestions, send channels) follow HeroUI's
-ListBox: one column, short rows, no boxes inside boxes. People show the
-name with the matched part in bold and a quiet tag, and «+ name / new» below
-a hairline; channels show a small logo, the name, and a blue check at the
-end when chosen.
+**Drop-down lists** (people suggestions) follow HeroUI's ListBox: one
+column, short rows, no boxes inside boxes. People show the name with the
+matched part in bold and a quiet tag, and «+ name / new» below a hairline.
 
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
