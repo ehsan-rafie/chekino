@@ -109,6 +109,26 @@
   color: var(--muted);
   font-size: var(--t-micro);
 }
+/* The amount in words sits on the label's own line, at its far end — like
+   the «(۶ رقم)» hints — so it appears without moving anything below it.
+   One line: a long one ends in «…» and shows in full on hover (title). */
+.field-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 6px;
+}
+.field-head > label { flex: 0 0 auto; margin-bottom: 0; }
+#amountField .amount-words {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #amountField .amount-words:empty { display: none; }
 
 /* The note is an ordinary outlined field that grows with its text */
@@ -415,18 +435,35 @@
    section, and Enter / Tab run down the right one before the left. Below
    1100px (tablets, phones) the stacked layout above stays. The photo and
    the note each take a full row, so the columns come out four rows each;
-   the channel tags go under their label, where all five fit on one line. */
+   the channel tags go under their label, where all five fit on one line.
+   The two columns share their rows (subgrid, down through each section
+   to its fields): a row is as tall as the taller side, so the rows line
+   up across the form even when an error line opens under one field. The
+   tags are a field's height here, so the last rows end level too. */
 @media (min-width: 1100px) {
   #modalOverlay .modal-box { max-width: 1040px; }
   .cq-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto repeat(4, auto);   /* the titles, then four rows of fields */
     align-items: start;
-    column-gap: 36px;
+    gap: 12px 36px;
+  }
+  .cq-card {
+    display: grid;
+    grid-row: 1 / span 5;
+    grid-template-rows: subgrid;
   }
   .cq-card + .cq-card { margin-top: 0; }
+  .cq-card-title { margin: 0; }
+  .cq-card > .cq-grid {
+    grid-row: 2 / span 4;
+    grid-template-rows: subgrid;
+  }
   #fileField, #notesField { grid-column: 1 / -1; }
   #channelField { display: block; }
   #channelField > label { display: block; margin: 0 0 6px; line-height: inherit; }
   #channelField > .field-msg { margin-top: 5px; }
+  #channelField .ch-tag,
+  #channelField .ch-other { height: 38px; }
 }

@@ -452,7 +452,7 @@ function openModal() {
   document.body.style.overflow = 'hidden';
   modalBody.scrollTop = 0;
   lastFocusedFormField = null;   // don't let the mobile scroll-assist jump to where we left off last time
-  setTimeout(() => serialInput.focus(), 50);
+  setTimeout(() => sayadInput.focus(), 50);   // the first field
 }
 
 let stickyFieldsUntouched = false;
@@ -529,7 +529,7 @@ function resetAllFields(opts) {
   notesInput.value = '';
   updateNotesCount();
   amountInput.value = '';
-  amountWords.textContent = '';
+  amountWords.textContent = amountWords.title = '';
   amountField.classList.remove('error');
   ownerInput.value = '';
   ownerField.classList.remove('error');
@@ -1249,17 +1249,18 @@ function setAmountValue(rawDigits, digitsBeforeCaret) {
 function updateAmountWords(rawDigits) {
   const raw = rawDigits === undefined ? amountRawDigits() : rawDigits;
   if (raw === '' || parseInt(raw, 10) === 0) {
-    amountWords.textContent = '';
+    amountWords.textContent = amountWords.title = '';
     return;
   }
   const rial = parseInt(raw, 10);
-  if (!Number.isSafeInteger(rial)) { amountWords.textContent = ''; return; }
+  if (!Number.isSafeInteger(rial)) { amountWords.textContent = amountWords.title = ''; return; }
   const toman = Math.floor(rial / 10);
   const remRial = rial % 10;
   let text = '';
   if (toman > 0) text = numberToPersianWords(toman) + ' تومان';
   if (remRial > 0) text += (text ? ' و ' : '') + numberToPersianWords(remRial) + ' ریال';
   amountWords.textContent = text;
+  amountWords.title = text;               // in full, when a long one runs past the label line
 }
 
 amountInput.addEventListener('input', () => {
@@ -3054,7 +3055,7 @@ submitCheckBtn.addEventListener('click', async () => {
     addCheckBtn.classList.add('just-saved');
     setTimeout(() => addCheckBtn.classList.remove('just-saved'), 700);
     showFormAlert('success', `چک با شماره سریال ${savedSerial} با موفقیت ثبت شد`);
-    serialInput.focus();
+    sayadInput.focus();
   } catch (e) {
     showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
   } finally {
@@ -3249,7 +3250,7 @@ clearFormBtn.addEventListener('click', async () => {
   clearFormBtn.title = 'پاک کردن فرم';
   clearFormBtn.style.borderColor = '';
   clearFormBtn.style.color = '';
-  serialInput.focus();
+  sayadInput.focus();
 });
 
 // =========================================================

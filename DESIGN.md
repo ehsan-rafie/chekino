@@ -175,11 +175,20 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   on the left — so the form is about half as tall (no scroll at 1280×720)
   and each field nearer the size of what goes in it; there the photo and
   the note each take a full row, and the channel tags sit under their
-  label (all five on one line). Enter / Tab run down the right column
-  before the left. Narrower screens keep the stacked layout described
-  here. «مشخصات چک»: serial | sayad id, amount (with the amount in
-  words) | due date, then the photo | the note side by side at one
-  field's height. The photo is one slim row (an image icon, small
+  label at a field's height (all five on one line). The two columns
+  share their rows (CSS subgrid), so each row lines up across the form,
+  error lines included, and the last rows end level. Enter / Tab run
+  down the right column before the left. Narrower screens keep the
+  stacked layout described here.
+  **In every pair the short field sits at the end** (the left): sayad id
+  | serial, amount | due date, owner | send date, party | spend date. So
+  the sayad id — the cheque's main number — comes first, and the form
+  opens with the caret in it. «مشخصات چک»: sayad id | serial, amount |
+  due date, then the photo | the note side by side at one field's
+  height. **The amount in words** sits on the amount label's own line,
+  at its far end (like the «(۶ رقم)» hints), so it appears without moving
+  anything; one line, a long one ending in «…» with the whole of it on
+  hover. The photo is one slim row (an image icon, small
   thumbnails once added, a drop hint until then, «انتخاب فایل» at the
   end, after 21st.dev's File Upload); the note is a single line that
   grows as it is typed into (up to 120px), its count at the end of the
