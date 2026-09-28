@@ -361,7 +361,7 @@ function openModalForView(id) {
   renderVeHistory(c);
 
   serialInput.value = toFa(c.serial);
-  sayadInput.value = toFa(c.sayad);
+  sayadInput.value = groupSayad(toFa(c.sayad));
   sayadStatic.textContent = toFa(c.sayad);
   sayadField.classList.add('view-mode');
   const [dy, dm, dd] = c.dueDate.split('/').map(n => parseInt(n, 10));
@@ -490,7 +490,7 @@ function restoreDraftIfAny() {
   const hasData = (d.serial || '') !== '' || (d.sayad || '') !== '' || (d.amount || '') !== '' || (d.owner || '') !== '' || (d.party || '') !== '' || (Array.isArray(d.dueSlots) && d.dueSlots.some(x => x !== null));
   if (!hasData) return;
   serialInput.value = d.serial || '';
-  sayadInput.value = d.sayad || '';
+  sayadInput.value = groupSayad(d.sayad || '');
   if (Array.isArray(d.dueSlots) && d.dueSlots.length === 8) dueDate.slots = d.dueSlots.slice();
   dueDate.touched = !!d.dueTouched;
   dueDate.render();
@@ -727,17 +727,43 @@ serialInput.addEventListener('blur', () => {
   if (serialInput.value.length > 0) validateSerial();
 });
 
-// ---- Sayad ID field: digits only, live validation ----
+// ---- Sayad ID field: digits only, in fours, live validation ----
+// Shown in groups of four («۱۲۳۴ ۵۶۷۸ ۹۰۱۲ ۳۴۵۶»), as the cheque prints it,
+// while it's typed. The spaces are only for the eye: sayadDigits() is what
+// gets checked, compared and saved.
+const groupSayad = (s) => String(s).replace(/[^0-9۰-۹]/g, '').slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ');
+const sayadDigits = () => sayadInput.value.replace(/[^0-9۰-۹]/g, '');
 sayadInput.addEventListener('input', () => {
-  sayadInput.value = sayadInput.value.replace(/[^0-9۰-۹]/g, '');
-  if (sayadInput.value.length === 16) {
+  const pos = sayadInput.selectionStart ?? sayadInput.value.length;
+  const before = sayadInput.value.slice(0, pos).replace(/[^0-9۰-۹]/g, '').length;
+  sayadInput.value = groupSayad(sayadInput.value);
+  let p = 0;                                  // the caret stays after the same digit
+  for (let n = 0; p < sayadInput.value.length && n < before; p++) if (sayadInput.value[p] !== ' ') n++;
+  if (document.activeElement === sayadInput) sayadInput.setSelectionRange(p, p);
+  if (sayadDigits().length === 16) {
     sayadField.classList.remove('error');
   }
   checkSayadDuplicate();
   saveDraft();
 });
+// Backspace just after a space (or Delete just before one) takes the
+// digit beyond it, instead of stopping at the space
+sayadInput.addEventListener('beforeinput', (e) => {
+  const back = e.inputType === 'deleteContentBackward';
+  if (!back && e.inputType !== 'deleteContentForward') return;
+  const s = sayadInput.selectionStart;
+  if (s !== sayadInput.selectionEnd) return;
+  const v = sayadInput.value;
+  if ((back ? v[s - 1] : v[s]) !== ' ') return;
+  e.preventDefault();
+  const i = back ? s - 2 : s + 1;
+  if (i < 0 || i >= v.length) return;
+  sayadInput.value = v.slice(0, i) + v.slice(i + 1);
+  sayadInput.setSelectionRange(i, i);
+  sayadInput.dispatchEvent(new Event('input', { bubbles: true }));
+});
 sayadInput.addEventListener('blur', () => {
-  if (sayadInput.value.length > 0) validateSayad();
+  if (sayadDigits().length > 0) validateSayad();
 });
 
 function validateSerial() {
@@ -757,7 +783,7 @@ function validateSerial() {
 }
 
 function validateSayad() {
-  const len = sayadInput.value.length;
+  const len = sayadDigits().length;
   if (len === 0) {
     sayadField.classList.add('error');
     sayadMsg.textContent = 'شناسه صیادی چک را وارد کنید';
@@ -777,8 +803,6 @@ function validateSayad() {
 // =========================================================
 // slots[0..1]=day, [2..3]=month, [4..7]=year.
 // Displayed as YYYY/MM/DD left-to-right, so read right-to-left it is day/month/year.
-const IDX_TO_SLOT = [4, 5, 6, 7, null, 2, 3, null, 0, 1];
-const SLOT_TO_IDX = [8, 9, 5, 6, 0, 1, 2, 3];
 
 function toEnDigits(str) {
   const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
@@ -810,16 +834,13 @@ function createDateField(cfg) {
     return `${ch(4)}${ch(5)}${ch(6)}${ch(7)}/${ch(2)}${ch(3)}/${ch(0)}${ch(1)}`;
   };
 
-  api.render = (caretSlot) => {
+  api.render = () => {
     if (api.slots.every(x => x === null) && !api.touched) {
       api.input.value = '';                 // placeholder shows through
       return;
     }
     api.input.value = api.build();
-    if (typeof caretSlot === 'number' && document.activeElement === api.input) {
-      const pos = SLOT_TO_IDX[Math.max(0, Math.min(7, caretSlot))];
-      api.input.setSelectionRange(pos, pos);
-    }
+    placeCaret();                           // at the active segment (below)
   };
 
   api.reset = () => {
@@ -845,68 +866,123 @@ function createDateField(cfg) {
   api.setDate = (y, m, d) => {
     api.slots = (pad2(d) + pad2(m) + String(y)).split('');
     api.touched = true;
+    api.typed = 0;
     api.render();
     api.field.classList.remove('error');
   };
 
-  // Would this digit keep the whole date on track? Checks the other digits in the
-  // same group too, so editing one digit of an existing value is caught immediately.
-  function accepts(slot, d) {
-    const next = api.slots.slice();
-    next[slot] = d;
-    const dayT = next[0], dayO = next[1], monT = next[2], monO = next[3];
-    const yr = next.slice(4);
+  // ---- Segments ----
+  // The date is edited a segment at a time, as in HeroUI's DateField: day,
+  // month and year (in reading order), one of them active while the field
+  // has focus.
+  //   digits      the first one replaces what the segment held; the segment
+  //               moves on by itself once it's complete — two digits, or one
+  //               that can't start a longer number («۴» is day ۰۴, «۲» month
+  //               ۰۲). A year takes four. Persian or Latin digits alike.
+  //   Backspace   takes off the last digit, as in any input; in an empty
+  //               segment it steps back to the one before.
+  //   Delete      clears the segment.
+  //   ← / →       the next / previous segment (ArrowLeft is next in this
+  //               right-to-left line); Home / End the first / last; «/», «.»,
+  //               «-» or a space also move on.
+  //   ↑ / ↓       step the value (an empty segment starts from today).
+  // A lone day or month digit is padded («۳» → «۰۳») once its segment is
+  // left. The real <input> keeps the value ("YYYY/MM/DD", '_' for an empty
+  // digit) with its caret at the active segment — all js/date-segments.js
+  // needs to draw it. A phone keyboard, which sends no usable keydown,
+  // comes through 'beforeinput' to the same functions.
+  const SEG_SLOTS = [[0, 1], [2, 3], [4, 5, 6, 7]];
+  const SEG_CARET = [8, 5, 0];              // where each segment sits in "YYYY/MM/DD"
+  const SEPARATORS = ['/', '.', '-', ' ', '،', ','];
+  api.seg = 0;                              // 0 day, 1 month, 2 year
+  api.typed = 0;                            // digits typed into it since it became active
 
-    if (slot <= 1) {
-      if (dayT !== null && !['0','1','2','3'].includes(dayT)) return false;
-      if (dayT !== null && dayO !== null) {
-        const n = parseInt(dayT + dayO, 10);
-        if (n < 1 || n > 31) return false;
-        const m = (monT !== null && monO !== null) ? parseInt(monT + monO, 10) : null;
-        const y = yr.every(x => x !== null) ? parseInt(yr.join(''), 10) : null;
-        if (m !== null && y !== null && m >= 1 && m <= 12 && n > daysInJalaliMonth(y, m)) return false;
-      }
-      return true;
+  const segDigits = (s) => SEG_SLOTS[s].map(i => api.slots[i]).filter(x => x !== null).join('');
+  function setSegDigits(s, str) {
+    const sl = SEG_SLOTS[s];
+    if (s === 2) {                          // the year fills from the left
+      sl.forEach((i, k) => { api.slots[i] = k < str.length ? str[k] : null; });
+    } else {                                // day / month: one digit sits in the units
+      api.slots[sl[0]] = str.length === 2 ? str[0] : null;
+      api.slots[sl[1]] = str.length ? str[str.length - 1] : null;
     }
-    if (slot <= 3) {
-      if (monT !== null && !['0','1'].includes(monT)) return false;
-      if (monT !== null && monO !== null) {
-        const n = parseInt(monT + monO, 10);
-        if (n < 1 || n > 12) return false;
-        if (dayT !== null && dayO !== null) {
-          const dn = parseInt(dayT + dayO, 10);
-          const y = yr.every(x => x !== null) ? parseInt(yr.join(''), 10) : null;
-          if (y !== null && dn > daysInJalaliMonth(y, n)) return false;
-        }
-      }
-      return true;
-    }
-    if (next[4] !== null && next[4] !== '1') return false;
-    if (next[5] !== null && !['3','4','5'].includes(next[5])) return false;
-    if (yr.every(x => x !== null)) {
-      const y = parseInt(yr.join(''), 10);
-      if (y < 1300 || y > 1500) return false;
-      if (monT !== null && monO !== null && dayT !== null && dayO !== null) {
-        const m = parseInt(monT + monO, 10);
-        const dn = parseInt(dayT + dayO, 10);
-        if (m >= 1 && m <= 12 && dn > daysInJalaliMonth(y, m)) return false;
-      }
-    }
-    return true;
   }
-
-  function slotAtCaret(pos) {
-    const p = Math.max(0, Math.min(10, pos));
-    if (p >= 10) return 1;
-    const direct = IDX_TO_SLOT[p];
-    if (direct !== null && direct !== undefined) return direct;
-    return IDX_TO_SLOT[p + 1];
+  function settleSeg(s) {
+    if (s === 2) return;
+    const cur = segDigits(s);
+    if (cur.length === 1) setSegDigits(s, cur === '0' ? '' : '0' + cur);
   }
-
-  function placeCaretAtEnd() {
+  function placeCaret() {
+    if (document.activeElement !== api.input || !api.input.value) return;
+    const pos = SEG_CARET[api.seg];
+    try { api.input.setSelectionRange(pos, pos); } catch (err) { /* not focusable */ }
+  }
+  api.selectSeg = (s) => {
+    s = Math.max(0, Math.min(2, s));
+    if (s !== api.seg) settleSeg(api.seg);
+    api.seg = s;
+    api.typed = 0;
     api.render();
-    const len = api.input.value.length;
-    api.input.setSelectionRange(len, len);
+  };
+  function changed() {
+    api.render();
+    api.field.classList.remove('error');
+    saveDraft();
+  }
+
+  function typeDigit(d) {
+    const s = api.seg;
+    const prev = api.typed ? segDigits(s) : '';
+    if (s === 2) {
+      const str = (prev + d).slice(0, 4);
+      setSegDigits(2, str);
+      api.typed = str.length === 4 ? 0 : str.length;   // a full year: the next digit starts over
+      return;
+    }
+    const max = s === 0 ? 31 : 12;
+    let str = prev + d;
+    const n = parseInt(str, 10);
+    if (prev && (n > max || n === 0)) str = d;          // can't carry on: start over from this digit
+    if (str.length === 2) {
+      setSegDigits(s, str);
+      api.selectSeg(s + 1);
+    } else if (parseInt(str, 10) * 10 > max) {          // no second digit could follow
+      setSegDigits(s, '0' + str);
+      api.selectSeg(s + 1);
+    } else {
+      setSegDigits(s, str);
+      api.typed = 1;
+    }
+  }
+  function backspace() {
+    const cur = segDigits(api.seg);
+    if (!cur) {
+      if (api.seg > 0) api.selectSeg(api.seg - 1);
+      return;
+    }
+    const next = cur.slice(0, -1);
+    setSegDigits(api.seg, next);
+    api.typed = next.length;
+  }
+  function clearSeg() {
+    setSegDigits(api.seg, '');
+    api.typed = 0;
+  }
+  function step(dir) {
+    const s = api.seg;
+    const [ty, tm, td] = todayJalali();
+    const cur = parseInt(segDigits(s), 10);
+    if (s === 2) {
+      const full = segDigits(2).length === 4;
+      setSegDigits(2, String(full ? Math.max(1300, Math.min(1500, cur + dir)) : ty));
+    } else {
+      const m = parseInt(api.monthStr(), 10);
+      const y = parseInt(api.yearStr(), 10);
+      const max = s === 1 ? 12 : (m >= 1 && m <= 12 && y >= 1300 && y <= 1500 ? daysInJalaliMonth(y, m) : 31);
+      const v = !cur ? (s === 1 ? tm : td) : ((cur - 1 + dir + max) % max) + 1;
+      setSegDigits(s, pad2(v));
+    }
+    api.typed = 0;
   }
 
   api.input.addEventListener('focus', () => {
@@ -916,29 +992,27 @@ function createDateField(cfg) {
         const [jy] = todayJalali();          // the system fills in the year
         String(jy).split('').forEach((c, i) => { api.slots[4 + i] = c; });
       }
-      api.render(0);
-    } else {
-      // A filled field should behave like any normal input: cursor lands at
-      // the end, so backspace deletes from there — which, because the day
-      // sits last in the displayed YYYY/MM/DD string, means backspace
-      // clears the day first, exactly as expected.
-      placeCaretAtEnd();
     }
     // The calendar opens only from the field's own calendar button: focusing
-    // a date field (to type it) no longer pops it open.
+    // a date field (to type it) doesn't pop it open.
+    api.seg = 0;
+    api.typed = 0;
+    api.render();
   });
+  // Pressing a segment (js/date-segments.js) makes it the active one
+  api.input.addEventListener('dseg-select', (e) => api.selectSeg(e.detail));
+  // A press on the field but off the segments picks the one nearest the
+  // caret the browser put down
   api.input.addEventListener('mouseup', () => {
-    // Clicking on empty space inside the field (not directly on a typed
-    // digit) should land at the end too, for the same reason as above.
     setTimeout(() => {
       if (document.activeElement !== api.input) return;
-      const pos = api.input.selectionStart;
-      const len = api.input.value.length;
-      if (pos === 0 || pos === len) placeCaretAtEnd();
+      const pos = api.input.selectionStart ?? 10;
+      api.selectSeg(pos <= 4 ? 2 : pos <= 7 ? 1 : 0);
     }, 0);
   });
 
   api.input.addEventListener('blur', () => {
+    settleSeg(api.seg);
     // Focusing the field auto-fills the year. If the user tabbed through without
     // typing a day or month, treat it as never touched instead of "incomplete".
     const noDayOrMonth = api.slots.slice(0, 4).every(x => x === null);
@@ -954,79 +1028,66 @@ function createDateField(cfg) {
   });
 
   api.input.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Tab') {
       // A mobile keyboard's own "Next" action often behaves like a native
       // Tab press rather than firing a synthetic Enter, and browsers'
       // built-in tab order sometimes skips right over a non-input "next"
-      // element like the channels button — so once the date is complete,
-      // send it there explicitly instead of trusting native traversal.
+      // element — so once the date is complete, send it there explicitly
+      // instead of trusting native traversal.
       if (!e.shiftKey && api.slots.every(x => x !== null) && cfg.nextEl) {
         e.preventDefault();
         cfg.nextEl.focus();
       }
       return;
     }
-    if (['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
-
-    const selStart = api.input.selectionStart ?? 0;
-    const selEnd = api.input.selectionEnd ?? selStart;
-
-    if (/^[0-9]$/.test(e.key)) {
+    if (e.key === 'Unidentified' || e.isComposing) return;   // a phone keyboard: 'beforeinput' handles it
+    const k = toEnDigits(e.key);
+    if (/^[0-9]$/.test(k)) typeDigit(k);
+    else if (e.key === 'Backspace') backspace();
+    else if (e.key === 'Delete') clearSeg();
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') step(e.key === 'ArrowUp' ? 1 : -1);
+    else if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) || SEPARATORS.includes(e.key)) {
       e.preventDefault();
-      if (selEnd > selStart) {
-        for (let i = selStart; i < selEnd; i++) {
-          const sl = IDX_TO_SLOT[i];
-          if (sl !== null && sl !== undefined) api.slots[sl] = null;
-        }
-      }
-      const slot = slotAtCaret(selStart);
-      if (slot === 0 && ['4','5','6','7','8','9'].includes(e.key)) {
-        api.slots[0] = '0'; api.slots[1] = e.key;
-        api.render(2);
-      } else if (slot === 2 && ['2','3','4','5','6','7','8','9'].includes(e.key)) {
-        api.slots[2] = '0'; api.slots[3] = e.key;
-        api.render(4);
-      } else if (accepts(slot, e.key)) {
-        api.slots[slot] = e.key;
-        api.render(slot + 1);
-      } else {
-        api.render(slot);
-      }
-    } else if (e.key === 'Backspace' || e.key === 'Delete') {
-      e.preventDefault();
-      if (selEnd > selStart) {
-        let first = null;
-        for (let i = selStart; i < selEnd; i++) {
-          const sl = IDX_TO_SLOT[i];
-          if (sl !== null && sl !== undefined) { api.slots[sl] = null; if (first === null) first = sl; }
-        }
-        api.render(first === null ? 0 : first);
-      } else {
-        let i = e.key === 'Backspace' ? selStart - 1 : selStart;
-        while (i >= 0 && i < 10 && IDX_TO_SLOT[i] === null) i += (e.key === 'Backspace' ? -1 : 1);
-        if (i >= 0 && i < 10) {
-          const sl = IDX_TO_SLOT[i];
-          api.slots[sl] = null;
-          api.render(sl);
-        }
-      }
+      const to = e.key === 'ArrowRight' ? api.seg - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? 2 : api.seg + 1;
+      api.selectSeg(to);
+      saveDraft();
+      return;
     } else if (e.key === 'Enter') {
       // On mobile, the "Next" key on the numeric keypad often fires this
-      // instead of moving focus itself (unlike a real Tab press) — with no
-      // handling at all here it just did nothing, most noticeably when the
-      // next field is a button (like the channels selector) rather than
-      // another text input a numeric keypad would naturally hand off to.
+      // instead of moving focus itself; the form's own Enter handler moves on.
       e.preventDefault();
+      settleSeg(api.seg);
+      api.render();
       if (api.slots.every(x => x !== null) && cfg.nextEl) cfg.nextEl.focus();
       return;
     } else {
-      e.preventDefault();
+      if (e.key.length === 1) e.preventDefault();   // no letters; Escape and the like pass
       return;
     }
-    api.field.classList.remove('error');
-    saveDraft();
+    e.preventDefault();
+    changed();
   });
+
+  // What a phone keyboard types or deletes arrives here instead of keydown
+  api.input.addEventListener('beforeinput', (e) => {
+    const t = e.inputType || '';
+    if (t === 'insertFromPaste' || t === 'insertFromDrop') return;   // the paste handler below reads it
+    e.preventDefault();
+    if (t.startsWith('insert')) {
+      for (const ch of toEnDigits(e.data || '')) {
+        if (/[0-9]/.test(ch)) typeDigit(ch);
+        else if (SEPARATORS.includes(ch)) api.selectSeg(api.seg + 1);
+      }
+    } else if (t === 'deleteContentBackward') {
+      backspace();
+    } else if (t.startsWith('delete')) {
+      clearSeg();
+    }
+    changed();
+  });
+  // Anything that still changed the text by itself (an undo) is put back
+  api.input.addEventListener('input', () => api.render());
 
   // Pasting used to just be swallowed outright — the field is a segmented
   // mask, so raw text genuinely can't be dropped in character-by-character,
@@ -2857,7 +2918,7 @@ function saveCheques() { return true; }
 function currentFormRecord() {
   return {
     serial: toEnDigits(serialInput.value),
-    sayad: toEnDigits(sayadInput.value),
+    sayad: toEnDigits(sayadDigits()),
     dueDate: dueDate.yearStr() + '/' + dueDate.monthStr() + '/' + dueDate.dayStr(),
     amount: amountRawDigits(),
     owner: ownerInput.value.trim(),
@@ -2904,7 +2965,7 @@ function hideFormAlert() { formAlert.classList.remove('show'); }
 
 // Live check while typing the sayad id, so a repeat is caught before submit.
 function checkSayadDuplicate() {
-  const raw = toEnDigits(sayadInput.value);
+  const raw = toEnDigits(sayadDigits());
   if (raw.length !== 16) return;
   const hit = loadCheques().find(c => c.sayad === raw);
   if (hit) {
@@ -3238,7 +3299,7 @@ function faDate(str) { return str ? toFa(str) : '—'; }
 function faAmount(raw) { return raw ? toFa(groupDigits(raw)) : '—'; }
 // Cards and anywhere else a figure stands alone need the unit spelled out —
 // an unlabelled number on a cheque card is ambiguous by itself.
-function faAmountRial(raw) { return raw ? `${toFa(groupDigits(raw))} ریال` : '—'; }
+function faAmountRial(raw) { return raw ? `${toFa(groupDigits(raw))} ﷼` : '—'; }   // ﷼: IRANSansX draws the rial sign as its «ریال» logotype
 
 
 function statusButtonHtml(c, st) {

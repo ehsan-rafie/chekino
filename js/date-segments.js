@@ -3,23 +3,22 @@
 // until it holds digits, and while the field has focus the segment the
 // next digit will land in is highlighted.
 //
-// Presentation only, like cheque-form.js. Typing, validation, paste and
-// the calendar all stay in createDateField (dashboard.js), which keeps
-// working on the real <input> underneath; this layer reads that input's
+// Presentation only, like cheque-form.js. Typing, the active segment,
+// validation, paste and the calendar all stay in createDateField
+// (dashboard.js), which keeps working on the real <input> underneath and
+// keeps its caret at the active segment; this layer reads that input's
 // value ("YYYY/MM/DD", '_' for an empty digit) and caret, and redraws
-// three spans over it. Pressing a segment moves the input's caret into
-// that segment, so the next digit goes where the highlight is.
+// three spans over it. Pressing a segment asks the field to make it the
+// active one (a 'dseg-select' event on the input).
 (function () {
   const IDS = ['dueDateInput', 'spendDateInput', 'sendDateInput'];
-  // Digit slots as dashboard.js numbers them: 0–1 day, 2–3 month, 4–7 year.
-  // SLOT_IDX maps a slot to its caret index in the "YYYY/MM/DD" string.
-  const SLOT_IDX = [8, 9, 5, 6, 0, 1, 2, 3];
   // In reading order for an RTL line: day on the right, year on the left —
-  // the same order the digits sit in the input itself.
+  // the same order (0 day, 1 month, 2 year) createDateField numbers them;
+  // from / to is where each sits in the "YYYY/MM/DD" string.
   const SEGS = [
-    { key: 'day',   ph: 'روز', slots: [0, 1],       from: 8, to: 10 },
-    { key: 'month', ph: 'ماه', slots: [2, 3],       from: 5, to: 7 },
-    { key: 'year',  ph: 'سال', slots: [4, 5, 6, 7], from: 0, to: 4 },
+    { key: 'day',   ph: 'روز', from: 8, to: 10 },
+    { key: 'month', ph: 'ماه', from: 5, to: 7 },
+    { key: 'year',  ph: 'سال', from: 0, to: 4 },
   ];
 
   // Which segment the caret is in (the one the next digit fills)
@@ -51,15 +50,11 @@
       parts[seg.key] = part;
 
       // Pressing a segment: focus the field (its own focus handler still
-      // runs), then put the caret on the first empty digit of this segment.
+      // runs), then make this segment the active one.
       part.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (document.activeElement !== input) input.focus();
-        const value = input.value;
-        let slot = seg.slots.find((s) => value.charAt(SLOT_IDX[s]) === '_' || !value);
-        if (slot === undefined) slot = seg.slots[0];
-        const pos = SLOT_IDX[slot];
-        try { input.setSelectionRange(pos, pos); } catch (err) { /* not focusable */ }
+        input.dispatchEvent(new CustomEvent('dseg-select', { detail: i }));
         sync();
       });
     });

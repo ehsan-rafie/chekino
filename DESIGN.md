@@ -104,6 +104,16 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    wide, so single values (amounts, dates, serials on cards and on the
    cheque) use its proportional digits; only tables and the sayad id are
    tabular.
+   Of the font's extras two are used. **The rial sign ﷼ (U+FDFC)**, which
+   IRANSansX draws as its «ریال» logotype, stands for «ریال» wherever a unit
+   sits beside an amount in the interface — the amount field and filter,
+   the board's cards, the cheque's facts — and screen readers still say
+   "rial"; sentences, the printed report, the Excel file and the drawn
+   cheque keep the word. The admin's prices get the «تومان» logotype
+   (typed «تومانء», in an aria-hidden suffix). **ss04** sets digits a touch
+   lower, centred in a box: on fields holding digits alone (serial, sayad
+   id, national id, amount, the date segments, the amount filter). DOTS
+   (0–8) and the swash / alternate letters (ss05–ss07) are left off.
    The font is licensed for this site only. Its files are git-ignored: they
    sit in `fonts/` on the owner's PC and on the server, and must not be
    committed or copied anywhere public. A fresh clone falls back to Tahoma
@@ -231,21 +241,24 @@ used because the numeric inputs are `direction: ltr`.
 
 | Field | Prefix | Suffix |
 |---|---|---|
-| serial / sayad id | # / barcode icon, on the left (a left-to-right group) | running digit count on the right, green when complete |
-| amount | — (no icon, no «۰» placeholder) | «ریال» |
+| serial / sayad id | # / barcode icon, on the left (a left-to-right group) | — (the sayad id is shown in fours while typed: «۱۲۳۴ ۵۶۷۸ ۹۰۱۲ ۳۴۵۶») |
+| amount | — (no icon, no «۰» placeholder) | ﷼ |
 | owner / party / beneficiary | building / briefcase / person icon | arrow that opens the full list of names on file |
 | national id | id-card icon, on the left (left-to-right group) | «حقیقی» / «حقوقی» as a blue badge on the right |
 | dates | — | calendar button |
 | notes | — | character count at the end of the line, while focused |
 | board search | search icon | «/» key hint, clear button |
-| amount filter | «از» / «تا» | «ریال» |
+| amount filter | «از» / «تا» | ﷼ |
 | login / admin sign-in | person / lock icon | show-password toggle |
-| admin: company, plan, account fields | building / person / key / tag / people / cheque icons | «تومان» on prices; «تولید تصادفی» inside the new-password field; a copy button on the revealed password |
+| admin: company, plan, account fields | building / person / key / tag / people / cheque icons | the «تومان» logotype on prices; «تولید تصادفی» inside the new-password field; a copy button on the revealed password |
 
 Numbers, codes, usernames and passwords read left to right (`direction:
 ltr`, left-aligned). Serial, sayad id and national id are whole
 left-to-right groups (`.ig.is-ltr`): icon on the left where the number
-starts, count or badge on the right; the digit rule is in the label. The
+starts, the badge (national id) on the right; the digit rule is in the
+label. The sayad id's spaces are for the eye only — the digits alone are
+checked and saved — and Backspace beside a space takes the digit beyond
+it. The
 amount and the other numeric fields keep their suffix on the left, next
 to the digits; the search box turns left-to-right once something is
 typed. Generated passwords use a monospace face with Latin digits.
@@ -256,11 +269,26 @@ matched part in bold and a quiet tag, and «+ name / new» below a hairline.
 
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
-digits), and while the field has focus the segment the next digit goes
-into is highlighted in soft blue. The segments are drawn over the real input, which
-keeps the caret, the typing rules, paste and validation
-(`createDateField` in dashboard.js); pressing a segment moves the caret
-into it. The calendar button sits inside the field at the end, and it is
+digits), and while the field has focus one of them is active, in soft
+blue. Editing works a segment at a time (`createDateField` in
+dashboard.js):
+- digits (Persian or Latin): the first one replaces what the segment
+  held; a segment moves on by itself once complete — two digits, or one
+  that can't start a longer number («۴» → day ۰۴, «۲» → month ۰۲; «۳۵» is
+  ۰۵, since ۳۵ can't be a day). The year takes four; focusing an empty
+  field fills in this year.
+- Backspace takes off the last digit, as in any input; in an empty
+  segment it steps back to the one before. Delete clears the segment.
+- ← / → the next / previous segment (← is next in this right-to-left
+  line), Home / End the ends; «/», «.», «-» or a space move on too.
+  ↑ / ↓ step the value.
+- a lone day or month digit is padded («۳» → «۰۳») once its segment is
+  left.
+A phone keyboard, which sends no usable keydown, comes through
+`beforeinput` to the same code. The segments are drawn over the real
+input, whose caret sits at the active segment; pressing a segment makes it
+the active one. In an error the box alone carries the red ring — the bare
+input inside no longer gets its own pink one. The calendar button sits inside the field at the end, and it is
 the only way the calendar opens — focusing the field to type doesn't.
 The calendar stays inside the cheque form's box: under the field if it
 fits, above it if not, its right edge on the field's — or its left edge,

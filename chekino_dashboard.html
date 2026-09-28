@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260928o" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260928r" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260928o">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260928o">
-<link rel="stylesheet" href="/css/cheque.css?v=20260928o">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260928o">
+<link rel="stylesheet" href="/css/shared.css?v=20260928r">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260928r">
+<link rel="stylesheet" href="/css/cheque.css?v=20260928r">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260928r">
 </head>
 <body class="chekino-auth-pending">
 
@@ -147,12 +147,12 @@
       <div class="amount-filter-box ig has-pre has-suf">
         <span class="ig-pre" aria-hidden="true">از</span>
         <input type="text" id="filterAmountMin" inputmode="numeric" placeholder="۰" aria-label="حداقل مبلغ (ریال)">
-        <span class="ig-suf" aria-hidden="true">ریال</span>
+        <span class="ig-suf" aria-hidden="true">﷼</span>
       </div>
       <div class="amount-filter-box ig has-pre has-suf">
         <span class="ig-pre" aria-hidden="true">تا</span>
         <input type="text" id="filterAmountMax" inputmode="numeric" placeholder="بی‌سقف" aria-label="حداکثر مبلغ (ریال)">
-        <span class="ig-suf" aria-hidden="true">ریال</span>
+        <span class="ig-suf" aria-hidden="true">﷼</span>
       </div>
     </div>
     <div class="amount-presets">
@@ -455,20 +455,18 @@
             <div class="ve-fields-wrap" id="veFieldsWrapA">
               <div class="form-field cq-span-2" id="serialField">
                 <label for="serialInput">سریال <span class="hint">(۶ رقم)</span></label>
-                <div class="ig is-ltr has-pre has-suf">
+                <div class="ig is-ltr has-pre">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></span>
                   <input type="text" id="serialInput" aria-required="true" inputmode="numeric" maxlength="6" autocomplete="off" aria-describedby="serialMsg">
-                  <span class="ig-suf" aria-hidden="true"><span class="ig-count" data-count-for="serialInput"></span></span>
                 </div>
                 <div class="field-msg" id="serialMsg">سریال باید ۶ رقم باشد</div>
               </div>
             </div>
             <div class="form-field cq-span-4" id="sayadField">
               <label for="sayadInput">شناسه صیادی <span class="hint">(۱۶ رقم)</span></label>
-              <div class="ig is-ltr has-pre has-suf">
+              <div class="ig is-ltr has-pre">
                 <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7v10M12 7v10M16 7v10"/></svg></span>
-                <input type="text" id="sayadInput" aria-required="true" inputmode="numeric" maxlength="16" autocomplete="off" aria-describedby="sayadMsg">
-                <span class="ig-suf" aria-hidden="true"><span class="ig-count" data-count-for="sayadInput"></span></span>
+                <input type="text" id="sayadInput" aria-required="true" inputmode="numeric" maxlength="19" autocomplete="off" aria-describedby="sayadMsg">
               </div>
               <div class="sayad-static" id="sayadStatic"></div>
               <div class="field-msg" id="sayadMsg">شناسه صیادی باید ۱۶ رقم باشد</div>
@@ -479,7 +477,7 @@
                 <label for="amountInput">مبلغ</label>
                 <div class="amount-box" id="amountBox">
                   <input type="text" id="amountInput" aria-required="true" class="amount-input" inputmode="numeric" autocomplete="off" aria-describedby="amountMsg">
-                  <span class="amount-unit">ریال</span>
+                  <span class="amount-unit" title="ریال">﷼</span>
                 </div>
                 <div class="amount-words" id="amountWords"></div>
                 <div class="field-msg" id="amountMsg">مبلغ را وارد کنید</div>
@@ -710,17 +708,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260928o"></script>
-<script src="/js/shared.js?v=20260928o"></script>
-<script src="/js/palette.js?v=20260928o"></script>
-<script src="/js/dashboard.js?v=20260928o"></script>
-<script src="/js/print.js?v=20260928o"></script>
-<script src="/js/cheque-form.js?v=20260928o"></script>
-<script src="/js/date-segments.js?v=20260928o"></script>
-<script src="/js/cal-picker.js?v=20260928o"></script>
-<script src="/js/field-addons.js?v=20260928o"></script>
-<script src="/js/shell.js?v=20260928o"></script>
-<script src="/js/theme-reveal.js?v=20260928o"></script>
+<script src="/js/icons.js?v=20260928r"></script>
+<script src="/js/shared.js?v=20260928r"></script>
+<script src="/js/palette.js?v=20260928r"></script>
+<script src="/js/dashboard.js?v=20260928r"></script>
+<script src="/js/print.js?v=20260928r"></script>
+<script src="/js/cheque-form.js?v=20260928r"></script>
+<script src="/js/date-segments.js?v=20260928r"></script>
+<script src="/js/cal-picker.js?v=20260928r"></script>
+<script src="/js/field-addons.js?v=20260928r"></script>
+<script src="/js/shell.js?v=20260928r"></script>
+<script src="/js/theme-reveal.js?v=20260928r"></script>
 
 </body>
 </html>

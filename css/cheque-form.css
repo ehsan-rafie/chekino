@@ -88,6 +88,11 @@
 }
 #serialInput, #sayadInput { letter-spacing: 0.03em; }
 #serialInput::placeholder, #sayadInput::placeholder, #nidInput::placeholder { letter-spacing: 0; text-align: left; }
+/* IRANSansX's ss04 sets digits a touch lower — centred in a box rather than
+   sitting on the text baseline. Only where a box holds digits alone: next
+   to Persian letters the lowered digits would look out of line. */
+#serialInput, #sayadInput, #nidInput, .amount-input, .dseg-part,
+#filterAmountMin, #filterAmountMax { font-feature-settings: 'ss04'; }
 
 /* Amount: same height as everything else, figures a touch heavier */
 #modalOverlay .amount-box { height: 38px; padding: 0 12px; gap: 8px; }

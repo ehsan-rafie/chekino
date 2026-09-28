@@ -2867,7 +2867,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px var(--accent-wash);
 }
-.form-field.error input:focus,
+/* not the bare inputs inside the date and amount boxes: the box carries
+   the ring, and a second one on the input showed as a pink frame inside */
+.form-field.error input:not(.amount-input):not(.date-mask-input):focus,
 .date-field.error .date-input-wrap:focus-within { box-shadow: 0 0 0 3px var(--state-bad-bg); }
 
 /* ── 10 · Overlays match the command palette's own treatment ──

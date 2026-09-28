@@ -680,9 +680,6 @@ kbd {
 }
 .ig-badge:empty { display: none; }
 
-/* A running count ("۳ / ۶"), green once the field is complete */
-.ig-count { font-size: var(--t-micro); font-variation-settings: var(--f-num); direction: rtl; }
-.ig-count.is-full { color: var(--state-ok-text); }
 
 /* A key hint, gone once the field has focus or text */
 .ig-kbd { min-width: 20px; height: 20px; font-size: 11px; }
