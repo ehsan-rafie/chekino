@@ -122,13 +122,13 @@ the header already has one.
 «افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
 (unrolls into PDF / Excel) and «مدیریت اشخاص» sit at the other end.
 The add button is Magic UI's Shimmer Button (@dillionverma), ported class
-for class (`.shimmer-btn`): black, a 1px white/10 border, px-6 py-3, a
-14px label (18px from 1024px up), shadow-2xl, a blurred spark sliding
-end to end (3s, alternate) while spinning (6s), a 0.05em lit edge, a
-soft light rising from the bottom. The only departure is the corner:
-the theme's 12px instead of the component's 100px — the owner chose it
-knowing the light fades a little on the climb up the short left side,
-as it does in the component itself with small corners.
+for class (`.shimmer-btn`): black, a 1px white/10 border, shadow-2xl,
+a blurred spark sliding end to end (3s, alternate) while spinning (6s),
+a 0.05em lit edge, a soft light rising from the bottom. Two departures:
+the theme's 12px corner instead of 100px (the owner's choice, knowing
+the light fades a little on the climb up the short left side), and its
+size — 36px high with a 14px label and a plus in front, like the buttons
+beside it (40px on phones).
 
 **Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
 «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when
