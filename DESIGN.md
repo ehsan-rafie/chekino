@@ -180,12 +180,13 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   error lines included, and the last rows end level. Enter / Tab run
   down the right column before the left. Narrower screens keep the
   stacked layout described here.
-  **In every pair the short field sits at the end** (the left): sayad id
-  | serial, amount | due date, owner | send date, party | spend date. So
-  the sayad id — the cheque's main number — comes first, and the form
-  opens with the caret in it. «مشخصات چک»: sayad id | serial, amount |
-  due date, then the photo | the note side by side at one field's
-  height. **The amount in words** sits on the amount label's own line,
+  **The short fields sit at the outer edges**: in the cheque section
+  they come first (on the right) — serial | sayad id, due date | amount —
+  and in the people section last (on the left) — owner | send date, party
+  | spend date — so side by side the wide fields meet in the middle. The
+  form opens with the caret in the serial. «مشخصات چک»: serial | sayad
+  id, due date | amount, then the photo | the note side by side at one
+  field's height. **The amount in words** sits on the amount label's own line,
   at its far end (like the «(۶ رقم)» hints), so it appears without moving
   anything; one line, a long one ending in «…» with the whole of it on
   hover. The photo is one slim row (an image icon, small

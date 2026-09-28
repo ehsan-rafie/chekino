@@ -452,7 +452,7 @@ function openModal() {
   document.body.style.overflow = 'hidden';
   modalBody.scrollTop = 0;
   lastFocusedFormField = null;   // don't let the mobile scroll-assist jump to where we left off last time
-  setTimeout(() => sayadInput.focus(), 50);   // the first field
+  setTimeout(() => serialInput.focus(), 50);   // the first field
 }
 
 let stickyFieldsUntouched = false;
@@ -3055,7 +3055,7 @@ submitCheckBtn.addEventListener('click', async () => {
     addCheckBtn.classList.add('just-saved');
     setTimeout(() => addCheckBtn.classList.remove('just-saved'), 700);
     showFormAlert('success', `چک با شماره سریال ${savedSerial} با موفقیت ثبت شد`);
-    sayadInput.focus();
+    serialInput.focus();
   } catch (e) {
     showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
   } finally {
@@ -3250,7 +3250,7 @@ clearFormBtn.addEventListener('click', async () => {
   clearFormBtn.title = 'پاک کردن فرم';
   clearFormBtn.style.borderColor = '';
   clearFormBtn.style.color = '';
-  sayadInput.focus();
+  serialInput.focus();
 });
 
 // =========================================================
