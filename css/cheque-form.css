@@ -1,8 +1,7 @@
 /* ===== Cheque modal: one window, two faces =====
-   Add / edit: the modal body is a faint grey; the form sits on it as two
-   bordered white cards — «مشخصات چک» and «مشخصات اشخاص» — each with a
-   header strip over its fields (Magic UI's card: title, hairline, body),
-   then a free note.
+   Add / edit: two sections, «مشخصات چک» and «مشخصات اشخاص», on a plain
+   white body — the card chrome below is stripped by «Fields first» at the
+   end of this file.
    View: the cheque itself (css/cheque.css), drawn from the same fields,
    with what the cheque doesn't carry in a bordered card underneath.
 
@@ -244,3 +243,86 @@
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }
   #modalOverlay .modal-footer .btn-clear { width: 44px; height: 44px; }
 }
+
+/* ═══ Fields first (2026-09-28) ═══
+   The form reads as fields, not boxes: the body is plain white, the two
+   sections lose their border, shadow and header strip, and each title is a
+   quiet caption over its fields. A hairline alone parts the sections.
+
+   Required fields carry a small blue dot after their label (the
+   Linear / Vercel way) instead of a red asterisk; nothing is written on
+   the optional ones. The first caption holds a one-line key for the dot.
+   The dot turns red while its field shows an error. */
+.cq-body.modal-body:not(.ve-locked) { background: var(--surface); }
+.cq-form { gap: 0; padding: 16px 20px 20px; }
+.cq-card {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.cq-card + .cq-card { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+.cq-card-title {
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 10px;
+  border: 0;
+  font-size: var(--t-cap);
+  color: var(--muted);
+  font-variation-settings: 'wght' 560;
+}
+.cq-card-title svg { display: none; }
+.cq-card > .cq-grid { padding: 0; }
+.cq-grid { gap: 12px 12px; }
+#veFieldsWrapC:empty { display: none; }
+
+.form-field.is-req > label::after,
+.cq-req-legend::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: var(--hl);
+  vertical-align: middle;
+  transform: translateY(-1px);
+  transition: background var(--dur-1) var(--ease);
+}
+.form-field.is-req.error > label::after { background: var(--error); }
+.cq-req-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-body);
+}
+.cq-req-legend::before { margin: 0; transform: none; }
+
+/* Notes: a single-line field beside the photo that grows as it's typed
+   into; the count sits at the far end of the line while focused */
+#modalOverlay .cq-note .notes-input,
+#modalOverlay .ig-area .notes-input {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  max-height: 120px;
+  padding: 8px 12px;
+  padding-left: 12px;
+  line-height: 20px;
+}
+#modalOverlay .ig-area:has(.notes-count:not(:empty)) .notes-input { padding-left: 64px; }
+#modalOverlay .ig-area .notes-count { bottom: 10px; line-height: 16px; }
+#modalOverlay .cq-note label { padding-inline-start: 0; }
+
+/* Photo at half width: the drop hint gives way before the button does */
+#fileField .file-hint { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+@media (max-width: 600px) {
+  .cq-form { padding: 14px; }
+  .cq-card + .cq-card { margin-top: 16px; padding-top: 14px; }
+  #notesField { grid-column: 1 / -1; }
+}
+/* the photo row is exactly as tall as the note beside it */
+#fileField .file-box { min-height: 38px; padding-block: 3px; }

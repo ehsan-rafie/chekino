@@ -148,18 +148,27 @@ screens the lanes become segmented tabs.
 two faces, switched by the `.ve-locked` class dashboard.js puts on
 `#modalBody`:
 
-- *Add / edit — two cards on a faint grey body.* Each card has a header
-  strip (an outlined icon tile and the title) over a hairline, then its
-  fields. «مشخصات چک»: serial | sayad id, amount (with the amount in
-  words) | due date, then the photo (optional) as one slim row the height
-  of a field — an image icon, small thumbnails once added (a drop hint
-  until then), «انتخاب فایل» at the end (after 21st.dev's File Upload).
-  «مشخصات اشخاص», each person beside the date that belongs to them:
-  owner | send date, party | spend date (optional), beneficiary | their
-  national id, then the channels it was sent through across the card.
-  A free note (optional) sits under the cards. Labels are short; there are no hints or side
-  descriptions. The save button is compact and sits at the end of the
-  footer; saving an edit asks for a one-tap confirmation in place.
+- *Add / edit — fields first, on a plain white body.* The two sections
+  have no border, shadow or header strip: each title is a small grey
+  caption over its fields, and a hairline alone parts the sections, so
+  the fields themselves are what the eye lands on. «مشخصات چک»: serial |
+  sayad id, amount (with the amount in words) | due date, then the photo |
+  the note side by side at one field's height. The photo is one slim row
+  (an image icon, small thumbnails once added, a drop hint until then,
+  «انتخاب فایل» at the end, after 21st.dev's File Upload); the note is a
+  single line that grows as it is typed into (up to 120px), its count at
+  the end of the line while focused. «مشخصات اشخاص», each person beside
+  the date that belongs to them: owner | send date, party | spend date,
+  beneficiary | their national id, then the channels across the section.
+  **Required fields** (serial, sayad id, amount, due date, owner, send
+  date, party, beneficiary, national id, channels) carry a small HeroUI-blue
+  dot after the label (`.form-field.is-req`, plus `aria-required` on the
+  input), red while the field shows an error; the first caption carries a
+  one-line key «● فیلدهای لازم». Optional fields (photo, spend date, note)
+  carry nothing — no «اختیاری», no red asterisks. Labels are short; there
+  are no hints or side descriptions. The save button is compact and sits
+  at the end of the footer; saving an edit asks for a one-tap
+  confirmation in place.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
   its stamp, then a bordered card with only what the cheque doesn't carry
   (party, send date, channels, spend date, notes, photos, sayad id with a
@@ -185,7 +194,7 @@ used because the numeric inputs are `direction: ltr`.
 | owner / party / beneficiary | building / briefcase / person icon | arrow that opens the full list of names on file |
 | national id | id-card icon, on the left (left-to-right group) | «حقیقی» / «حقوقی» as a blue badge on the right |
 | dates | — | calendar button |
-| notes | — | character count inside, bottom corner |
+| notes | — | character count at the end of the line, while focused |
 | board search | search icon | «/» key hint, clear button |
 | amount filter | «از» / «تا» | «ریال» |
 | login / admin sign-in | person / lock icon | show-password toggle |
