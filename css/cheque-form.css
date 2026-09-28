@@ -447,7 +447,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: auto repeat(4, auto);   /* the titles, then four rows of fields */
     align-items: start;
-    gap: 12px 36px;
+    gap: 12px 48px;
   }
   .cq-card {
     display: grid;
@@ -466,4 +466,17 @@
   #channelField > .field-msg { margin-top: 5px; }
   #channelField .ch-tag,
   #channelField .ch-other { height: 38px; }
+  /* A hairline down the middle of the gap, from the first row of fields to
+     the last: side by side, the two sections' wide fields meet in the
+     middle and would otherwise read as one row of four */
+  .cq-card + .cq-card > .cq-grid { position: relative; }
+  .cq-card + .cq-card > .cq-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: -24px;
+    width: 1px;
+    background: var(--border-subtle);
+  }
 }

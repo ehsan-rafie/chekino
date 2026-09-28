@@ -1118,7 +1118,7 @@ function createDateField(cfg) {
     }
     if (!api.isFilled()) {
       api.field.classList.add('error');
-      api.msg.textContent = 'تاریخ ناقص است — روز، ماه و سال را کامل کنید';
+      api.msg.textContent = 'تاریخ ناقص است';   // short: the date fields are narrow, and the empty segment shows what's missing
       return false;
     }
     const y = parseInt(api.yearStr(), 10);
@@ -2656,10 +2656,20 @@ function openRangeCalendar() {
 function closeCalendar() {
   // Any picks made but never confirmed with "ثبت" are discarded here.
   if (calendarMode === 'range') { draftRangeFrom = rangeFrom; draftRangeTo = rangeTo; }
+  const field = activeDateField;
+  const was = document.activeElement;
   dueDateCal.classList.remove('show');
   calBackdrop.classList.remove('show');
   activeDateField = null;
   calendarAnchorEl = null;
+  // The calendar button isn't a stop of its own (tabindex -1). If the
+  // calendar closes with focus still on it — Escape after opening it with
+  // the mouse — the caret goes back into its field, rather than a keyboard
+  // focus ring appearing round the button.
+  if (was && was.classList && was.classList.contains('date-cal-btn')) {
+    if (field) field.input.focus();
+    else was.blur();
+  }
 }
 
 // Enter confirms the range picker's "ثبت" button — this covers the filter's

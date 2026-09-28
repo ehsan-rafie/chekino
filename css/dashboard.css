@@ -4557,7 +4557,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
    what you picked". Fields get it through --focus-edge / --ring
    (shared.css); the rest is here. Buttons stay ink. */
 :root, :root[data-theme="dark"] { --seg-active: var(--hl-soft); }
-.dseg-part.is-active { color: var(--hl-text); }
+/* The active date segment is marked by its text alone — «روز» or «۱۲» in
+   blue — with no box round it */
+.dseg-part.is-active { background: none; color: var(--hl-text); }
 
 /* In the calendar only the chosen day (or range) is blue: the arrows are
    grey like every other icon button, and today is a thin grey ring */
@@ -5005,3 +5007,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .cal-pick { height: 32px; font-size: var(--t-cap); }
   .cal-picker.is-months .cal-pick { height: 40px; }
 }
+/* the calendar buttons are out of the Tab order (tabindex -1): no keyboard
+   ring on them — focus goes back to the field when the calendar closes */
+.date-cal-btn:focus-visible { outline: none; }

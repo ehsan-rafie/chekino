@@ -177,7 +177,10 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   the note each take a full row, and the channel tags sit under their
   label at a field's height (all five on one line). The two columns
   share their rows (CSS subgrid), so each row lines up across the form,
-  error lines included, and the last rows end level. Enter / Tab run
+  error lines included, and the last rows end level. A hairline runs
+  down the middle of the 48px gap, from the first row of fields to the
+  last — without it the two sections' wide fields, meeting in the
+  middle, read as one row of four. Enter / Tab run
   down the right column before the left. Narrower screens keep the
   stacked layout described here.
   **The short fields sit at the outer edges**: in the cheque section
@@ -286,9 +289,11 @@ matched part in bold and a quiet tag, and «+ name / new» below a hairline.
 
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
-digits), and while the field has focus one of them is active, in soft
-blue. Editing works a segment at a time (`createDateField` in
-dashboard.js):
+digits), and while the field has focus one of them is active — its
+text turns blue («روز» or «۱۲»), with no box round it. Escape on an open
+calendar puts the caret back in the field (the calendar button, out of
+the Tab order, never shows a focus ring). Editing works a segment at a
+time (`createDateField` in dashboard.js):
 - digits (Persian or Latin): the first one replaces what the segment
   held; a segment moves on by itself once complete — two digits, or one
   that can't start a longer number («۴» → day ۰۴, «۲» → month ۰۲; «۳۵» is
