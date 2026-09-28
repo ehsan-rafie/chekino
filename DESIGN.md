@@ -86,11 +86,11 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 4. **Fields are outlined.** White, 38px, `--field-border`, radius 12. Hover
    darkens the edge; focus turns it blue (`--focus-edge` + `--ring`); an
    error turns the edge red with a red ring.
-   **The pointer stays an arrow** everywhere — buttons, icons, cards,
-   menus — and turns into a text cursor only where something can be typed
-   (inputs, the note, the date segments); the photo editor's crop box
-   keeps its move / resize cursors. The icons and suffixes inside a field
-   catch the pointer, and pressing one puts the caret in the field
+   **Cursors are the usual ones** — a hand on what can be pressed, a text
+   cursor where something is typed — with one exception: a field's own
+   icons and suffix text (input-group add-ons, «ریال», the search icon)
+   show the arrow instead of the text cursor of the input under them.
+   They catch the pointer, and pressing one puts the caret in the field
    (`js/field-addons.js`). Buttons press in slightly (scale .97); the
    controls that belong to a field — the channel tags, a field's
    calendar / list / copy button, the photo row's button — don't.
@@ -172,13 +172,20 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   national id, then the channels across the section. On phones every
   cheque field is full width; the people keep their pairs.
   **The channels are toggle tags**, not a dropdown (HeroUI's TagGroup,
-  selection «multiple»): seven options are too few to hide behind a
-  list. Seven equal tiles, a field's height, in one row (four and three
-  on a phone); each holds a logo and the name. The five messengers carry
-  their official marks in their brand colours, taken from their own
-  sites (telegram.org, whatsapp.com, eitaa.com, bale.ai, rubika.ir) and
-  inlined with fill attributes, never classes, so nothing leaks into the
-  page; call and SMS get line icons. The tiles themselves are the
+  selection «multiple»): five options are too few to hide behind a
+  list. Equal tiles, a field's height, in one row (the four messengers,
+  then «سایر» on its own row on a phone); each holds a logo and the name.
+  The four messengers — روبیکا، واتس‌اپ، ایتا، تلگرام — carry their
+  official marks in their brand colours, taken from their own sites
+  (rubika.ir, whatsapp.com, eitaa.com, telegram.org) and inlined with
+  fill attributes, never classes, so nothing leaks into the page.
+  «سایر» is "Other (please specify)": pressing it opens a text field
+  beside it in the same row, with the caret in it; the text is saved as
+  one more entry in the channels array and shown as written. Saving with
+  «سایر» on and nothing written asks for it. Entries that aren't one of
+  the four — that text, or «بله» / «تماس» / «پیامک» from records made
+  before those left the list — load back into the «سایر» field, so
+  nothing is dropped. The tiles themselves are the
   theme's — outlined like a field — and a chosen one takes the selection
   blue (blue edge, faint blue wash). One tab stop for the group; the
   arrow keys walk it, Space / Enter toggles.

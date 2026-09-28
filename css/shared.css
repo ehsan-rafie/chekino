@@ -336,7 +336,8 @@ body, button, input, textarea, select {
 /* A press should register before the network does. 90ms, transform only —
    never a property that forces layout. */
 button:not(:disabled):active { transform: scale(0.97); }
-button { transition: transform var(--dur-1) var(--ease); }
+button { transition: transform var(--dur-1) var(--ease); cursor: pointer; }
+button:disabled { cursor: not-allowed; }
 /* …except the controls that belong to a field — the channel tags, a
    field's calendar / list / copy / show-password button, the photo row's
    buttons. A field stays still under the pointer. */
@@ -346,19 +347,13 @@ button { transition: transform var(--dur-1) var(--ease); }
 .file-add:active,
 .file-remove:active { transform: none !important; }
 
-/* The pointer stays an arrow everywhere — buttons, icons, cards, menus —
-   and becomes a text cursor only where something can be typed. The photo
-   editor's crop box keeps its move / resize cursors (dashboard.css): there
-   the cursor is the only sign of what a drag will do. */
-*, *::before, *::after { cursor: default !important; }
-input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([readonly]):not(:disabled),
-textarea:not([readonly]):not(:disabled),
-[contenteditable=""],
-[contenteditable="true"],
-.dseg-part { cursor: text !important; }
-.pe-crop-box { cursor: move !important; }
-.pe-h-tl, .pe-h-br { cursor: nwse-resize !important; }
-.pe-h-tr, .pe-h-bl { cursor: nesw-resize !important; }
+/* A field's own icons and suffix text — the input group's add-ons, the
+   amount's «ریال», the search box's icon and key hint — show the arrow,
+   not the text cursor of the input beneath them; pressing one still puts
+   the caret in the field (js/field-addons.js). Everything else keeps the
+   usual cursors: a hand on what can be pressed, a text cursor where
+   something is typed. (A button inside an add-on keeps its hand.) */
+.ig-pre, .ig-suf, .amount-unit, .search-icon, .search-kbd { cursor: default; }
 
 /* The cheque form's scroll area is focusable so the keyboard can scroll
    it, but a ring round the whole body says nothing — and clipped by the
