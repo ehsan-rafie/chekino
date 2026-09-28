@@ -674,12 +674,27 @@ modalClose.addEventListener('click', () => closeModal(false));
 modalOverlay.addEventListener('click', (e) => {
   if (e.target === modalOverlay) closeModal(false);
 });
-// Enter moves to the next field, like Tab — it only acts as "ثبت چک" on the
-// very last field. Shift+Enter still breaks a line in the notes box, Enter
-// inside an open dropdown/calendar picks the highlighted row/date, and a
-// button (file-add, calendar-icon, etc.) still responds to Enter natively.
+// Enter moves on to the next field in the same order as Tab. It passes
+// over the photo button (Enter there is left inert, see fileAddBtn) and,
+// after the national id, lands on the channel tags; on a button — a
+// channel tag, a calendar icon — Enter presses it as usual. Ctrl+Enter
+// saves from anywhere in the form. Shift+Enter still breaks a line in the
+// notes box, and Enter inside an open list or calendar picks the
+// highlighted row / date (a picked name then moves on too).
+function focusNextField(from) {
+  const stops = Array.from(modalBody.querySelectorAll('input:not([type="file"]), textarea, .ch-tag[tabindex="0"]'))
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  const idx = stops.indexOf(from);
+  if (idx === -1 || idx === stops.length - 1) submitCheckBtn.click();
+  else stops[idx + 1].focus();
+}
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' || !modalOverlay.classList.contains('show')) return;
+  if ((e.ctrlKey || e.metaKey) && !modalBody.classList.contains('ve-locked')) {
+    e.preventDefault();
+    submitCheckBtn.click();
+    return;
+  }
   if (e.shiftKey) return;
   const t = e.target;
   if (t === notesInput) return;
@@ -696,14 +711,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (t === submitCheckBtn) { submitCheckBtn.click(); return; }
 
-  const fields = Array.from(modalBody.querySelectorAll('input, textarea'))
-    .filter(el => !el.disabled && el.offsetParent !== null);
-  const idx = fields.indexOf(t);
-  if (idx === -1 || idx === fields.length - 1) {
-    submitCheckBtn.click();
-  } else {
-    fields[idx + 1].focus();
-  }
+  focusNextField(t);
 });
 
 
@@ -1882,6 +1890,7 @@ function createAutocomplete(cfg) {
       }
       close();
       saveDraft();
+      if (modalBody.contains(cfg.input)) focusNextField(cfg.input);   // then on, as Enter does everywhere else
     } else if (e.key === 'Escape') close();
   });
 
@@ -2116,7 +2125,7 @@ function updateNotesCount() {
 // instead of inserting a newline — matching the "next"-labeled key the
 // enterkeyhint asks mobile keyboards to show. Shift+Enter still breaks a line.
 notesInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ownerInput.focus(); }
+  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); focusNextField(notesInput); }
 });
 notesInput.addEventListener('input', () => {
   updateNotesCount();
@@ -2134,17 +2143,20 @@ notesInput.addEventListener('input', () => {
 // Colours are fill attributes, never classes or <style>, so nothing leaks
 // into the page.
 //
-// «سایر» is the "Other (please specify)" of a form: pressing it opens a
-// text field beside it, and what's typed there is saved as it is, as one
-// more entry in the channels array (the server takes any strings). A
-// record's entries that aren't one of the four — the text typed here, or
-// «بله» / «تماس» / «پیامک» from before those left the list — come back
-// into that field when the cheque is opened, so nothing is lost or hidden.
+// «سایر» adds a way of the user's own: pressing it slides it open into a
+// small text field; Enter (or leaving the field) adds what was written as
+// one more tag — chosen, with an × to take it off — and folds the field
+// back into «سایر», ready for another. Escape folds it without adding.
+// Each such entry is saved as it is, as one more string in the channels
+// array (the server takes any strings). A record's entries that aren't
+// one of the four — typed ones, or «بله» / «تماس» / «پیامک» from before
+// those left the list — come back as such tags, so nothing is lost.
 const LOGO_TELEGRAM = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="chTgGrad" x1="50%" x2="50%" y1="0%" y2="99.258%"><stop offset="0%" stop-color="#2AABEE"/><stop offset="100%" stop-color="#229ED9"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><circle cx="64" cy="64" r="64" fill="url(#chTgGrad)" fill-rule="nonzero"/><path fill="#FFF" fill-rule="nonzero" d="M28.9700376,63.3244248 C47.6273373,55.1957357 60.0684594,49.8368063 66.2934036,47.2476366 C84.0668845,39.855031 87.7600616,38.5708563 90.1672227,38.528 C90.6966555,38.5191258 91.8804274,38.6503351 92.6472251,39.2725385 C93.294694,39.7979149 93.4728387,40.5076237 93.5580865,41.0057381 C93.6433345,41.5038525 93.7494885,42.63857 93.6651041,43.5252052 C92.7019529,53.6451182 88.5344133,78.2034783 86.4142057,89.5379542 C85.5170662,94.3339958 83.750571,95.9420841 82.0403991,96.0994568 C78.3237996,96.4414641 75.5015827,93.6432685 71.9018743,91.2836143 C66.2690414,87.5912212 63.0868492,85.2926952 57.6192095,81.6896017 C51.3004058,77.5256038 55.3966232,75.2369981 58.9976911,71.4967761 C59.9401076,70.5179421 76.3155302,55.6232293 76.6324771,54.2720454 C76.6721165,54.1030573 76.7089039,53.4731496 76.3346867,53.1405352 C75.9604695,52.8079208 75.4081573,52.921662 75.0095933,53.0121213 C74.444641,53.1403447 65.4461175,59.0880351 48.0140228,70.8551922 C45.4598218,72.6091037 43.1463059,73.4636682 41.0734751,73.4188859 C38.7883453,73.3695169 34.3926725,72.1268388 31.1249416,71.0646282 C27.1169366,69.7617838 23.931454,69.0729605 24.208838,66.8603276 C24.3533167,65.7078514 25.9403832,64.5292172 28.9700376,63.3244248 Z"/></g></svg>';
 const LOGO_WHATSAPP = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720"><path fill="#25D366" d="M360,0C161.18,0,0,161.18,0,360c0,65.41,17.45,126.75,47.94,179.61L0,720l187.02-44.21c51.34,28.18,110.28,44.21,172.98,44.21,198.82,0,360-161.18,360-360S558.82,0,360,0ZM360,655.52c-60.17,0-116.13-17.98-162.82-48.87l-110.49,28.14,30.99-105.61c-33.53-47.93-53.2-106.26-53.2-169.19,0-163.21,132.31-295.52,295.52-295.52s295.52,132.31,295.52,295.52-132.31,295.52-295.52,295.52Z"/><path fill="#25D366" d="M444.35,407.52l87.1,41.06c4,1.88,6.56,5.94,6.2,10.34-.94,11.46-5.54,34.43-26.13,55.02-58.12,58.12-162.49-7.64-166.74-10.18-25.67-13.79-50.06-32.24-73.19-55.36-23.12-23.12-41.58-47.52-55.37-73.19-2.55-4.24-68.31-108.61-10.18-166.74,20.59-20.59,43.56-25.19,55.02-26.13,4.41-.36,8.46,2.2,10.34,6.2l41.07,87.1c1.94,4.12,1.09,9.02-2.13,12.24l-30.61,30.61c-6.62,6.62-8.56,16.93-4,25.11,11.17,20.03,26.19,39.32,43.59,57.07,17.75,17.4,37.04,32.43,57.07,43.59,8.18,4.56,18.48,2.62,25.11-4l30.61-30.61c3.22-3.22,8.12-4.08,12.24-2.13Z"/></svg>';
 const LOGO_EITAA    = '<svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 4196.7 4300.97"><g><rect width="4196.7" height="4300.97" fill="#FFFFFF" rx="1300" ry="1400"/><path fill="#EF7F1A" d="M1199.06 0l1798.58 0c659.49,0 1199.06,538.75 1199.06,1198.23l0 578.29c-591.21,265.82 -1187.67,1578.34 -2056.97,1293.13 -71.6,50.88 -236.63,260.56 -248.25,419.65 -301.01,-40.09 -648.04,-385.06 -606.4,-757.05 -500.94,-362.4 -87.24,-1031.4 310.07,-1300.67 851.52,-577.12 2033.69,-80.77 1376.12,331.87 -399.85,250.9 -1254.9,416.65 -1166,-199.33 -234.55,67.66 -384.69,505.01 -102.28,732.89 -261.61,257.03 -211.32,729.47 68.32,884.6 282.81,-732.75 1267.14,-636.99 1664.89,-1511.71 299.22,-658.01 -144.4,-1407.7 -1031.35,-1292.51 -669.43,86.94 -1296.86,651.59 -1610.65,1321.28 -318.39,679.51 -271.01,1589.34 382.76,2047.9 769.36,539.64 1588.48,39.96 2084.59,-613.11 292.41,-384.93 547.93,-811.4 935.15,-1057.64l0 1025.27c0,659.47 -539.58,1199.88 -1199.06,1199.88l-1798.58 0c-659.49,0 -1199.06,-539.58 -1199.06,-1199.07l0 -1902.84c0,-659.49 539.57,-1199.06 1199.06,-1199.06z"/></g></svg>';
 const LOGO_RUBIKA   = '<svg viewBox="0 0 495.37 543.04" xmlns="http://www.w3.org/2000/svg"><path d="M246.07,0h1.76c.48,42.73-.25,128.44-.25,128.44-40.86-22.92-82-45.3-122.84-68.29q40.13-22.81,80.32-45.51c12.69-7.16,26.33-13.31,41-14.64Z" fill="#b8ce01"/><path d="M247.73,0h3C266.62,1.43,281,9,294.67,16.68Q332.91,38.25,371.05,60c-41,22.73-82.45,45.82-123.51,68.48-.35-42.73.63-85.77.15-128.5Z" fill="#7db425"/><path d="M124.77,60.11,247.61,128.4,123.92,200.66s-.06-45.85.08-68.71C123.89,108.21,124.77,60.11,124.77,60.11Z" fill="#f6a925"/><path d="M371.19,60l.35.19c-.1,42.59,0,85.18,0,127.77-.07,4.17-.11,12.77-.11,12.77L247.62,128.45S330.2,82.76,371.23,60Z" fill="#35ac9d"/><path d="M371.44,60.21c27.28,15.51,54.37,31.36,81.47,47.17,13.11,7.36,27,15.52,34.16,29.39-38.38,21.25-115.68,64-115.68,64s-.06-8.61,0-12.78q0-63.89,0-127.77Z" fill="#59d6bd"/><path d="M46.5,105c25.65-15,78.19-44.88,78.19-44.88L124,200.66S47,158.21,8.71,137C17.05,122.13,32.11,113.12,46.5,105Z" fill="#ef7414"/><path d="M247.5,128.44l123.81,72.3s-39.84,22-59.62,32.64c-21.14,12-64.09,35.82-64.09,35.82L123.94,200.66Z" fill="#fff"/><path d="M0,193C.11,174.17-.23,154.15,8.66,137,47,158.21,123.92,200.66,123.92,200.66,82.55,224.58,41.38,248.86,0,272.81,0,246.21,0,219.62,0,193Z" fill="#e74b50"/><path d="M487.07,136.77c7.54,14.1,8.64,30.5,8.22,46.19v90.11L371.41,200.76S448.69,158,487.07,136.77Z" fill="#794387"/><path d="M123.92,200.66c.19-.08,123.66,68.54,123.66,68.54s0,71.69.07,106.76c.2,11.29-.07,34.11-.07,34.11-41.27-22.78-82.32-45.76-123.6-68.54l-.07-.31V200.66Z" fill="#e4e4e4"/><path d="M0,272.81c41.35-24,82.52-48.23,123.89-72.15q-.06,70.29,0,140.56c-6.35-2.65-12.13-6.43-18.19-9.64C70.5,312.21,35.38,292.39,0,273.21v-.4Z" fill="#794387"/><path d="M371.39,200.76v86.18c-.13,18.27.46,36.47,0,54.73-41.21,22.4-123.82,68.4-123.82,68.4s.27-22.82.07-34.11c0-35.07-.07-106.76-.07-106.76Z" fill="#f1f1f1"/><path d="M371.39,200.76s123.88,72.14,123.88,72.31c-41.17,22.82-123.87,68.6-123.87,68.6h0c.46-18.26-.13-36.46,0-54.73V200.76Z" fill="#4c3683"/><path d="M0,273.21c35.36,19.21,70.43,39,105.7,58.4,6.06,3.21,11.84,7,18.19,9.64l.07.31Q67,374.79,10,408.05C6,402,4,394.86,2.53,387.8.14,376,0,364,0,352v-78.8Z" fill="#4c3683"/><path d="M495.27,273.07c.06,27.65,0,55.3,0,82.95.4,17.73-.12,36.62-9.57,52.25-34.2-20-114.33-66.6-114.33-66.6S454.1,295.89,495.27,273.07Z" fill="#e74b50"/><path d="M10,408Q67,374.72,124,341.53c-.25,46.83.08,93.67-.16,140.49q-40.35-22.75-80.49-45.86C30.82,428.76,18,420.53,10,408Z" fill="#0f68a0"/><path d="M124,341.53c41.28,22.78,82.33,45.76,123.6,68.54-41.2,24-123.7,72-123.76,71.95.24-46.82-.09-93.66.16-140.49Z" fill="#49bdca"/><path d="M371.2,341.76l.2-.09c.12,46.84-.25,93.69.19,140.53l-.31.15c-32.66-19.51-65.71-38.4-98.52-57.68-8.26-4.7-25.18-14.6-25.18-14.6S330,364.21,371.2,341.76Z" fill="#f6a925"/><path d="M371.4,341.67h0c3.65,2.49,80.13,46.62,114.33,66.6-4.86,8.3-12.56,14.39-20.32,19.84-12.52,8.42-25.88,15.47-38.9,23.05-18.31,10.35-36.5,20.91-54.92,31-.44-46.84-.07-93.69-.19-140.53Z" fill="#ef7414"/><path d="M247.58,410.07V543c-10.25-1.51-21.42-3.87-30.5-9.08C186,516.66,154.81,499.5,123.82,482,165,458,206.38,434.12,247.58,410.07Z" fill="#7db425"/><path d="M247.58,410.07s16.92,9.9,25.18,14.6c32.81,19.28,65.86,38.17,98.52,57.68q-47.79,26.44-95.57,53A62.47,62.47,0,0,1,249.84,543h-2.26Z" fill="#b8ce01"/><path d="M602.83,233.66" fill="#f1f1f1"/></svg>';
-const ICON_OTHER    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+const ICON_PLUS     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14"/><path d="M5 12h14"/></svg>';
+const ICON_X        = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
 const CHANNELS = [
   { id: 'rubika',   name: 'روبیکا',  icon: LOGO_RUBIKA },
@@ -2154,128 +2166,190 @@ const CHANNELS = [
 ];
 const LEGACY_CHANNEL_NAMES = { bale: 'بله', call: 'تماس', sms: 'پیامک' };
 // An entry that is one of the four by id or by name («تلگرام», «واتساپ»
-// with or without the half-space) counts as that channel, not as «سایر».
+// with or without the half-space) counts as that channel, not as its own.
 const bareName = (s) => s.replace(/‌/g, '').trim();
 const channelIdOf = (x) => (CHANNELS.find(c => c.id === x || bareName(c.name) === bareName(x)) || {}).id;
 
 let selectedChannels = [];   // ids from CHANNELS
-let channelOtherOn = false;  // «سایر» pressed; its text is in channelOther
+let customChannels = [];     // the user's own, as written
 
 channelGroup.innerHTML = CHANNELS.map((c, i) => `
   <button type="button" class="ch-tag" data-id="${c.id}" aria-pressed="false" tabindex="${i === 0 ? 0 : -1}">
     <span class="ch-logo" aria-hidden="true">${c.icon}</span>
     <span class="ch-name">${c.name}</span>
   </button>`).join('') + `
-  <button type="button" class="ch-tag ch-tag-other" data-id="other" aria-pressed="false" aria-controls="channelOther" tabindex="-1">
-    <span class="ch-logo" aria-hidden="true">${ICON_OTHER}</span>
+  <span class="ch-customs" id="channelCustoms"></span>
+  <button type="button" class="ch-tag ch-add" id="channelAddBtn" aria-controls="channelOther" tabindex="-1">
+    <span class="ch-logo" aria-hidden="true">${ICON_PLUS}</span>
     <span class="ch-name">سایر</span>
   </button>
-  <input type="text" id="channelOther" class="ch-other" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="مثلاً پیامک یا تماس" aria-label="روش ارسال دیگر" hidden>`;
-const channelTags = [...channelGroup.querySelectorAll('.ch-tag')];
-const channelOtherTag = channelGroup.querySelector('.ch-tag-other');
+  <input type="text" id="channelOther" class="ch-other" maxlength="30" autocomplete="off" enterkeyhint="done" placeholder="مثلاً پیامک" aria-label="روش ارسال دیگر" hidden>`;
+const channelCustoms = document.getElementById('channelCustoms');
+const channelAddBtn = document.getElementById('channelAddBtn');
 const channelOther = document.getElementById('channelOther');
+const channelTagsNow = () => [...channelGroup.querySelectorAll('.ch-tag:not([hidden])')];
 
 // One tab stop for the tags (the one last pressed or moved to); the arrow
 // keys walk them — in a right-to-left row, ArrowLeft is the next one —
-// and Home / End jump to the ends. Space or Enter toggles, as on any
-// button. The «سایر» text field is its own tab stop after them.
+// and Home / End jump to the ends. Space or Enter presses, as on any
+// button.
 function setChannelTabStop(tag) {
-  channelTags.forEach(t => { t.tabIndex = t === tag ? 0 : -1; });
+  channelTagsNow().forEach(t => { t.tabIndex = t === tag ? 0 : -1; });
 }
 function channelTabStop() {
-  return channelTags.find(t => t.tabIndex === 0) || channelTags[0];
+  const tags = channelTagsNow();
+  return tags.find(t => t.tabIndex === 0) || tags[0];
 }
 channelGroup.addEventListener('click', (e) => {
   const tag = e.target.closest('.ch-tag');
   if (!tag) return;
+  if (tag === channelAddBtn) { openChannelOther(); return; }
+  if (tag.dataset.custom !== undefined) { removeCustomChannel(tag); return; }
   setChannelTabStop(tag);
   toggleChannel(tag.dataset.id);
 });
 channelGroup.addEventListener('keydown', (e) => {
-  const i = channelTags.indexOf(document.activeElement);
+  const tags = channelTagsNow();
+  const i = tags.indexOf(document.activeElement);
   if (i < 0) return;
   let next = -1;
-  if (e.key === 'ArrowLeft') next = Math.min(i + 1, channelTags.length - 1);
+  if (e.key === 'ArrowLeft') next = Math.min(i + 1, tags.length - 1);
   else if (e.key === 'ArrowRight') next = Math.max(i - 1, 0);
   else if (e.key === 'Home') next = 0;
-  else if (e.key === 'End') next = channelTags.length - 1;
+  else if (e.key === 'End') next = tags.length - 1;
   if (next < 0) return;
   e.preventDefault();
-  setChannelTabStop(channelTags[next]);
-  channelTags[next].focus();
-});
-channelOther.addEventListener('input', () => {
-  channelField.classList.remove('error', 'other-missing');
-  saveDraft();
+  setChannelTabStop(tags[next]);
+  tags[next].focus();
 });
 
-function toggleChannel(id) {
-  if (id === 'other') {
-    channelOtherOn = !channelOtherOn;
-    renderChannelChips();
-    if (channelOtherOn) channelOther.focus();
-  } else {
-    const i = selectedChannels.indexOf(id);
-    if (i >= 0) selectedChannels.splice(i, 1);
-    else selectedChannels.push(id);
-    renderChannelChips();
+// «سایر» → a text field in its place, and back
+function openChannelOther() {
+  channelAddBtn.hidden = true;
+  channelOther.hidden = false;
+  channelOther.value = '';
+  channelOther.focus();
+}
+function closeChannelOther(add) {
+  if (channelOther.hidden) return;
+  const text = channelOther.value.trim();
+  channelOther.hidden = true;
+  channelAddBtn.hidden = false;
+  channelOther.value = '';
+  if (add && text) addCustomChannel(text);
+  setChannelTabStop(channelAddBtn);
+}
+channelOther.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();   // adds the entry; it doesn't move on or submit
+    closeChannelOther(true);
+    channelAddBtn.focus();
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();   // folds the field, not the whole form
+    closeChannelOther(false);
+    channelAddBtn.focus();
   }
-  channelField.classList.remove('error', 'other-missing');
+});
+channelOther.addEventListener('blur', () => closeChannelOther(true));
+
+function addCustomChannel(text) {
+  const id = channelIdOf(text);
+  if (id) {                        // «تلگرام» typed by hand: that's the tag
+    if (!selectedChannels.includes(id)) selectedChannels.push(id);
+  } else if (!customChannels.some(c => bareName(c) === bareName(text))) {
+    customChannels.push(text);
+  }
+  renderChannelChips();
+  channelField.classList.remove('error');
+  saveDraft();
+}
+function removeCustomChannel(tag) {
+  const tags = channelTagsNow();
+  const i = tags.indexOf(tag);
+  customChannels = customChannels.filter(c => c !== tag.dataset.custom);
+  renderChannelChips();
+  const after = channelTagsNow();
+  const next = after[Math.min(i, after.length - 1)];
+  setChannelTabStop(next);
+  if (document.activeElement === document.body || !document.activeElement) next.focus();
   saveDraft();
 }
 
-// What gets saved: the pressed ids, then the «سایر» text if it's on.
+function toggleChannel(id) {
+  const i = selectedChannels.indexOf(id);
+  if (i >= 0) selectedChannels.splice(i, 1);
+  else selectedChannels.push(id);
+  renderChannelChips();
+  channelField.classList.remove('error');
+  saveDraft();
+}
+
+// What gets saved: the pressed ids, then the user's own entries.
 function channelsValue() {
-  const other = channelOtherOn ? channelOther.value.trim() : '';
-  return other ? [...selectedChannels, other] : selectedChannels.slice();
+  return [...selectedChannels, ...customChannels];
 }
 
 // Loads a record's (or a draft's) channels into the tags.
 function setChannels(list) {
   const all = Array.isArray(list) ? list.filter(x => typeof x === 'string' && x.trim()) : [];
   selectedChannels = [...new Set(all.map(channelIdOf).filter(Boolean))];
-  const rest = all.filter(x => !channelIdOf(x)).map(x => LEGACY_CHANNEL_NAMES[x] || x);
-  channelOtherOn = rest.length > 0;
-  channelOther.value = rest.join('، ');
+  customChannels = [...new Set(all.filter(x => !channelIdOf(x)).map(x => LEGACY_CHANNEL_NAMES[x] || x.trim()))];
+  closeChannelOther(false);
   renderChannelChips();
 }
 
-// Paints the tags (and shows or hides the «سایر» field) from the state.
+// Paints the tags from the state: the four pressed or not, and one chosen
+// tag with an × for each of the user's own entries.
 function renderChannelChips() {
-  channelTags.forEach(t => {
-    const on = t === channelOtherTag ? channelOtherOn : selectedChannels.includes(t.dataset.id);
-    t.setAttribute('aria-pressed', String(on));
+  channelGroup.querySelectorAll('.ch-tag[data-id]').forEach(t => {
+    t.setAttribute('aria-pressed', String(selectedChannels.includes(t.dataset.id)));
   });
-  channelOther.hidden = !channelOtherOn;
+  channelCustoms.textContent = '';
+  customChannels.forEach(text => {
+    const tag = document.createElement('button');
+    tag.type = 'button';
+    tag.className = 'ch-tag ch-tag-custom';
+    tag.dataset.custom = text;
+    tag.tabIndex = -1;
+    tag.setAttribute('aria-pressed', 'true');
+    tag.setAttribute('aria-label', `${text}، حذف`);
+    const name = document.createElement('span');
+    name.className = 'ch-name';
+    name.textContent = text;
+    const x = document.createElement('span');
+    x.className = 'ch-x';
+    x.setAttribute('aria-hidden', 'true');
+    x.innerHTML = ICON_X;
+    tag.append(name, x);
+    channelCustoms.appendChild(tag);
+  });
+  if (!channelTagsNow().some(t => t.tabIndex === 0)) setChannelTabStop(channelTagsNow()[0]);
 }
 
 function clearChannels() {
   selectedChannels = [];
-  channelOtherOn = false;
-  channelOther.value = '';
+  customChannels = [];
+  closeChannelOther(false);
   renderChannelChips();
-  setChannelTabStop(channelTags[0]);
-  channelField.classList.remove('error', 'other-missing');
+  setChannelTabStop(channelTagsNow()[0]);
+  channelField.classList.remove('error');
 }
 
 function validateChannels() {
-  if (channelOtherOn && !channelOther.value.trim()) {
-    channelField.classList.add('error', 'other-missing');
-    channelMsg.textContent = 'روش ارسال را بنویسید';
-    return false;
-  }
-  if (selectedChannels.length === 0 && !channelOtherOn) {
+  closeChannelOther(true);         // something still in the field counts
+  if (channelsValue().length === 0) {
     channelField.classList.add('error');
-    channelField.classList.remove('other-missing');
     channelMsg.textContent = 'حداقل یک روش ارسال را انتخاب کنید';
     return false;
   }
-  channelField.classList.remove('error', 'other-missing');
+  channelField.classList.remove('error');
   return true;
 }
 // Where saving sends the caret when the channels are what's wrong
 function channelFocusTarget() {
-  return channelField.classList.contains('other-missing') ? channelOther : channelTabStop();
+  return channelTabStop();
 }
 
 renderChannelChips();
@@ -2453,10 +2527,22 @@ function positionCalendar() {
   const r = calendarAnchorEl.getBoundingClientRect();
   const w = dueDateCal.offsetWidth || 300;
   const h = dueDateCal.offsetHeight || 360;
-  let left = r.right - w;                       // RTL: align right edges
-  left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-  let top = r.bottom + 8;
-  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  // Kept inside the cheque form's box when it opens from a form field
+  // (the date fields sit at the form's left, narrower than the calendar,
+  // so aligning right edges pushed it out past the form); inside the
+  // window otherwise (the board's date-range filter).
+  const box = calendarAnchorEl.closest('.modal-box');
+  const b = box ? box.getBoundingClientRect() : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+  const minL = Math.max(8, b.left + 8);
+  const maxL = Math.min(window.innerWidth - 8, b.right - 8) - w;
+  let left = r.right - w;                       // RTL: align right edges…
+  if (left < minL) left = r.left;               // …or left edges, when that would spill out
+  left = Math.max(minL, Math.min(left, maxL));
+  const minT = Math.max(8, b.top + 8);
+  const maxT = Math.min(window.innerHeight - 8, b.bottom - 8) - h;
+  let top = r.bottom + 6;                       // below the field if it fits…
+  if (top > maxT) top = r.top - h - 6;          // …above it if not…
+  top = Math.max(minT, Math.min(top, maxT));    // …and never out of the box
   dueDateCal.style.left = left + 'px';
   dueDateCal.style.top = top + 'px';
 }

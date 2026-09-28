@@ -236,6 +236,7 @@
   .cq-span-2, .cq-span-3 { grid-column: span 1; }
   .cq-span-4, .cq-span-6 { grid-column: 1 / -1; }
   #serialField, #sayadField, #amountField, #dueDateField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
+  #ownerField, #partyField { grid-column: span 1; }   /* each beside its date */
   .cq-view { padding: 14px; gap: 14px; }
   .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 14px 0; }
   .cq-view-facts .cq-narrow-only { display: flex; }
@@ -323,35 +324,43 @@
 #fileField .file-box { min-height: 38px; padding-block: 3px; }
 
 /* ---- «ارسال به صاحب چک از طریق»: toggle tags ----
-   HeroUI's TagGroup with multiple selection. All five are in view — a
-   list this short doesn't belong behind a dropdown — as equal tiles the
-   height of a field, so the row lines up with the fields above it; on a
-   phone the four messengers take a row and «سایر» the next. The tiles
-   follow the theme (outlined, like a field); the logos keep their brands'
-   own colours, which is how they are recognised at a glance. A chosen tag
-   takes the selection blue: a blue edge and a faint blue wash. No
-   press-in (shared.css).
-   «سایر» opens a text field beside it, in the same row: the tags narrow
-   to make room (never below their content) and the field takes twice a
-   tag's share. */
-.ch-group {
+   HeroUI's TagGroup with multiple selection. All in view — a list this
+   short doesn't belong behind a dropdown — as compact tags on the label's
+   own line; they wrap under each other, not under the label, and a phone
+   puts them on the line below it. The tags follow the theme (outlined,
+   like a field); the logos keep their brands' own colours, which is how
+   they are recognised at a glance. A chosen tag takes the selection blue:
+   a blue edge and a faint blue wash. No press-in (shared.css).
+   «سایر» has a dashed edge (it adds, it isn't a choice) and slides open,
+   in its own place, into a small text field; an entry added from it is a
+   chosen tag with an × to take it off. */
+#channelField {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 14px;
+}
+#channelField > label { flex: 0 0 auto; margin: 0; line-height: 32px; }   /* level with the first row of tags */
+#channelField > .field-msg { flex-basis: 100%; margin-top: -2px; }
+.ch-group {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
+.ch-customs { display: contents; }
 .ch-tag {
-  flex: 1 1 0;
-  min-width: max-content;
-  display: flex;
+  flex: 0 0 auto;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-width: 0;
-  height: 38px;
+  gap: 6px;
+  height: 32px;
   margin: 0;
-  padding: 0 8px;
+  padding: 0 9px;
   border: 1px solid var(--field-border);
-  border-radius: var(--rad-ctl);
+  border-radius: 10px;
   background: var(--field-bg);
   box-shadow: var(--field-shadow);
   color: var(--ink-2);
@@ -361,10 +370,10 @@
   white-space: nowrap;
   transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
+.ch-tag[hidden] { display: none; }
 .ch-tag:hover { border-color: var(--field-border-hover); }
-.ch-logo { display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0; }
-.ch-logo svg { display: block; width: 18px; height: 18px; }
-.ch-name { overflow: hidden; text-overflow: ellipsis; }
+.ch-logo { display: grid; place-items: center; width: 16px; height: 16px; flex-shrink: 0; }
+.ch-logo svg { display: block; width: 16px; height: 16px; }
 .ch-tag[aria-pressed="true"] {
   border-color: var(--hl);
   background: var(--hl-soft);
@@ -372,18 +381,23 @@
   box-shadow: inset 0 0 0 0.5px var(--hl);
   color: var(--ink);
 }
-.ch-tag-other .ch-logo { color: var(--muted); }
-.ch-tag-other[aria-pressed="true"] .ch-logo { color: var(--ink); }
-/* no tag chosen: the tags go red; «سایر» on but empty: only its field
-   does (the field-error rule in dashboard.css) */
-.ch-field.error:not(.other-missing) .ch-tag { border-color: var(--state-bad); }
-.ch-other {
-  flex: 2 1 0;
-  min-width: 140px;
-  animation: chOtherIn var(--dur-2) var(--ease-out);
+.ch-add { border-style: dashed; color: var(--muted); }
+.ch-add:hover { color: var(--ink); }
+.ch-x { display: grid; place-items: center; width: 14px; height: 14px; margin-inline-start: 1px; color: var(--muted); }
+.ch-x svg { width: 12px; height: 12px; }
+.ch-tag-custom:hover .ch-x { color: var(--ink); }
+#channelField.error .ch-tag { border-color: var(--state-bad); }
+#channelField .ch-other {
+  flex: 0 0 auto;
+  width: 132px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: var(--t-cap);
+  animation: chOtherOpen var(--dur-2) var(--ease-out);
 }
-.ch-other[hidden] { display: none; }
-@keyframes chOtherIn { from { opacity: 0; } }
+#channelField .ch-other[hidden] { display: none; }
+@keyframes chOtherOpen { from { width: 64px; opacity: 0.4; } }
 @media (max-width: 600px) {
-  .ch-tag { flex-basis: calc(25% - 6px); gap: 5px; padding: 0 5px; }
+  .ch-group { flex-basis: 100%; }
 }

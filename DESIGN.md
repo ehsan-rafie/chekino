@@ -166,29 +166,39 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   thumbnails once added, a drop hint until then, «انتخاب فایل» at the
   end, after 21st.dev's File Upload); the note is a single line that
   grows as it is typed into (up to 120px), its count at the end of the
-  line while focused; Enter moves on to the owner, Shift+Enter breaks a
-  line. «مشخصات اشخاص», each person beside the date that belongs to
-  them: owner | send date, party | spend date, beneficiary | their
-  national id, then the channels across the section. On phones every
-  cheque field is full width; the people keep their pairs.
+  line while focused; Shift+Enter breaks a line. «مشخصات اشخاص», each
+  person beside the date that belongs to them: owner | send date, party
+  | spend date (names 4 columns, the dates 2 — as wide as the due date,
+  in the same column), beneficiary | their national id (3 | 3), then the
+  channels. On phones every cheque field is full width; the people keep
+  their pairs.
+  **Enter moves on in the same order as Tab** (`focusNextField`): it
+  passes over the photo button (Enter there is inert), a name picked from
+  a list with Enter moves on too, and after the national id it lands on
+  the channel tags, where Enter presses the tag. Ctrl+Enter saves from
+  anywhere in the form.
   **The channels are toggle tags**, not a dropdown (HeroUI's TagGroup,
-  selection «multiple»): five options are too few to hide behind a
-  list. Equal tiles, a field's height, in one row (the four messengers,
-  then «سایر» on its own row on a phone); each holds a logo and the name.
-  The four messengers — روبیکا، واتس‌اپ، ایتا، تلگرام — carry their
-  official marks in their brand colours, taken from their own sites
-  (rubika.ir, whatsapp.com, eitaa.com, telegram.org) and inlined with
-  fill attributes, never classes, so nothing leaks into the page.
-  «سایر» is "Other (please specify)": pressing it opens a text field
-  beside it in the same row, with the caret in it; the text is saved as
-  one more entry in the channels array and shown as written. Saving with
-  «سایر» on and nothing written asks for it. Entries that aren't one of
-  the four — that text, or «بله» / «تماس» / «پیامک» from records made
-  before those left the list — load back into the «سایر» field, so
-  nothing is dropped. The tiles themselves are the
+  selection «multiple»): the options are too few to hide behind a list.
+  Compact tags (32px, radius 10) on the label's own line; they wrap
+  under each other, not under the label (on a phone they start on the
+  line below it). Each holds a logo and the name. The four messengers —
+  روبیکا، واتس‌اپ، ایتا، تلگرام — carry their official marks in their
+  brand colours, taken from their own sites (rubika.ir, whatsapp.com,
+  eitaa.com, telegram.org) and inlined with fill attributes, never
+  classes, so nothing leaks into the page. The tags themselves are the
   theme's — outlined like a field — and a chosen one takes the selection
   blue (blue edge, faint blue wash). One tab stop for the group; the
-  arrow keys walk it, Space / Enter toggles.
+  arrow keys walk it, Space / Enter presses.
+  **«سایر»** (dashed edge, a plus: it adds, it isn't a choice) slides
+  open in its own place into a small text field with the caret in it.
+  Enter — or leaving the field — adds what was written as one more tag,
+  chosen, with an × to take it off, and folds the field back into
+  «سایر», ready for another; Escape folds it without adding. Typing the
+  name of one of the four («واتساپ») picks that tag instead. Each entry
+  is saved as written, as one more string in the channels array. A
+  record's entries that aren't one of the four — typed ones, or «بله» /
+  «تماس» / «پیامک» from records made before those left the list — come
+  back as such tags, so nothing is dropped.
   **Nothing marks required or optional** — no «اختیاری», no asterisk, no
   dot. All but the photo, spend date and note are required
   (`aria-required` on the inputs); saving focuses the first field that
@@ -252,6 +262,10 @@ keeps the caret, the typing rules, paste and validation
 (`createDateField` in dashboard.js); pressing a segment moves the caret
 into it. The calendar button sits inside the field at the end, and it is
 the only way the calendar opens — focusing the field to type doesn't.
+The calendar stays inside the cheque form's box: under the field if it
+fits, above it if not, its right edge on the field's — or its left edge,
+when the right would push it out past the form (the dates sit at the
+form's left and are narrower than the calendar).
 
 **Calendar** (Jalali). HeroUI's: a white popover (radius 20, ring + drop)
 with one «مهر ۱۴۰۵ ⌄» button at the start and two blue arrows at the end.

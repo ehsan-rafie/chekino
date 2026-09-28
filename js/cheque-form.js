@@ -125,14 +125,10 @@
       el.classList.add('ink-in');
     }
   }
-  // The pressed messengers by name, then whatever was written under «سایر»
+  // The chosen tags by name: the messengers, then the user's own entries
   function channelNames() {
     const group = $('channelGroup');
-    if (!group) return [];
-    const names = [...group.querySelectorAll('.ch-tag[aria-pressed="true"]:not(.ch-tag-other) .ch-name')].map((c) => c.textContent.trim());
-    const other = $('channelOther');
-    if (other && !other.hidden && other.value.trim()) names.push(other.value.trim());
-    return names.filter(Boolean);
+    return group ? [...group.querySelectorAll('.ch-tag[aria-pressed="true"] .ch-name')].map((c) => c.textContent.trim()).filter(Boolean) : [];
   }
 
   // ---- fields whose error state the view reacts to ---------------------------
