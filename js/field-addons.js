@@ -3,6 +3,7 @@
 //   [data-focus="id"]      a suffix arrow that puts the cursor in the field
 //                          and opens its full list of names (ac-browse)
 //   [data-copy-from="id"]  a suffix button that copies the field's value
+//   .ig-pre / .ig-suf       pressing an icon or suffix text focuses the field
 //
 // Presentation only: none of these change a field's value. The counts are
 // refreshed on input and on a light interval, since forms are also filled
@@ -31,6 +32,19 @@
     setInterval(countAll, 250);
     countAll();
   }
+
+  // Pressing an icon or a suffix's text (not one of its buttons) puts the
+  // caret in the field, as pressing the field itself would. The add-ons
+  // catch the pointer so the cursor stays an arrow over them.
+  document.addEventListener('mousedown', (e) => {
+    const addon = e.target.closest && e.target.closest('.ig-pre, .ig-suf, .amount-unit, .search-icon, .search-kbd');
+    if (!addon || e.target.closest('button')) return;
+    const box = addon.closest('.ig, .amount-box, .search-box');
+    const input = box && box.querySelector('input, textarea');
+    if (!input || input.disabled || input.readOnly) return;
+    e.preventDefault();
+    input.focus();
+  });
 
   // The arrow never takes focus from its field, so the field's own blur
   // handling (closing its list, checking its value) doesn't run on the way.

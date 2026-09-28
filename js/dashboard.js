@@ -2113,27 +2113,17 @@ modalBody.addEventListener('focusin', (e) => {
 });
 
 // ---- Notes ----
-// Mobile "Next" traversal only considers text-enterable fields, so from
-// sendDateInput it jumps straight past channelBox (a <button>, not a text
-// input) to notesInput — tracking the previously-focused field lets that
-// specific jump be caught and redirected back to the channels field.
-let lastFocusedField = null;
-document.addEventListener('focusin', (e) => { lastFocusedField = e.target; });
-notesInput.addEventListener('focus', () => {
-  if (lastFocusedField === sendDateInput && !selectedChannels.length) {
-    channelBox.focus();
-  }
-});
+// A single line beside the photo (it grows as it fills); the channels field
+// comes after it now, so nothing needs redirecting on the way in.
 function updateNotesCount() {
   const n = notesInput.value.length;
   notesCount.textContent = n === 0 ? '' : `${toFa(n)} / ${toFa(500)}`;
 }
-// Enter here moves on to the next field instead of inserting a newline —
-// matching the "next"-labeled key the enterkeyhint above asks mobile
-// keyboards to show, rather than the multi-line "return" a plain textarea
-// normally gets.
+// Enter moves on to the next field (the owner, first of the people)
+// instead of inserting a newline — matching the "next"-labeled key the
+// enterkeyhint asks mobile keyboards to show. Shift+Enter still breaks a line.
 notesInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); fileAddBtn.focus(); }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ownerInput.focus(); }
 });
 notesInput.addEventListener('input', () => {
   updateNotesCount();

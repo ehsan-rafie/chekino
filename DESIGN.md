@@ -86,6 +86,14 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 4. **Fields are outlined.** White, 38px, `--field-border`, radius 12. Hover
    darkens the edge; focus turns it blue (`--focus-edge` + `--ring`); an
    error turns the edge red with a red ring.
+   **The pointer stays an arrow** everywhere — buttons, icons, cards,
+   menus — and turns into a text cursor only where something can be typed
+   (inputs, the note, the date segments); the photo editor's crop box
+   keeps its move / resize cursors. The icons and suffixes inside a field
+   catch the pointer, and pressing one puts the caret in the field
+   (`js/field-addons.js`). Buttons press in slightly (scale .97); the
+   controls that belong to a field — the channel picker, a field's
+   calendar / list / copy button, the photo row's button — don't.
 5. **Colour means status.** Pending is ink; registered green, problem red,
    due-soon amber — always a small dot plus the Persian label. Besides the
    focus blue, the drawn cheque's own blue print is the only other colour
@@ -150,25 +158,31 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
 
 - *Add / edit — fields first, on a plain white body.* The two sections
   have no border, shadow or header strip: each title is a small grey
-  caption over its fields, and a hairline alone parts the sections, so
-  the fields themselves are what the eye lands on. «مشخصات چک»: serial |
-  sayad id, amount (with the amount in words) | due date, then the photo |
-  the note side by side at one field's height. The photo is one slim row
-  (an image icon, small thumbnails once added, a drop hint until then,
-  «انتخاب فایل» at the end, after 21st.dev's File Upload); the note is a
-  single line that grows as it is typed into (up to 120px), its count at
-  the end of the line while focused. «مشخصات اشخاص», each person beside
-  the date that belongs to them: owner | send date, party | spend date,
-  beneficiary | their national id, then the channels across the section.
-  **Required fields** (serial, sayad id, amount, due date, owner, send
-  date, party, beneficiary, national id, channels) carry a small HeroUI-blue
-  dot after the label (`.form-field.is-req`, plus `aria-required` on the
-  input), red while the field shows an error; the first caption carries a
-  one-line key «● فیلدهای لازم». Optional fields (photo, spend date, note)
-  carry nothing — no «اختیاری», no red asterisks. Labels are short; there
-  are no hints or side descriptions. The save button is compact and sits
-  at the end of the footer; saving an edit asks for a one-tap
-  confirmation in place.
+  caption centred on a hairline (── مشخصات چک ──), and that line is the
+  only thing parting the sections, so the fields themselves are what the
+  eye lands on. «مشخصات چک»: serial | sayad id, amount (with the amount in
+  words) | due date, then the photo | the note side by side at one
+  field's height. The photo is one slim row (an image icon, small
+  thumbnails once added, a drop hint until then, «انتخاب فایل» at the
+  end, after 21st.dev's File Upload); the note is a single line that
+  grows as it is typed into (up to 120px), its count at the end of the
+  line while focused; Enter moves on to the owner, Shift+Enter breaks a
+  line. «مشخصات اشخاص», each person beside the date that belongs to
+  them: owner | send date, party | spend date, beneficiary | their
+  national id, then the channels across the section. On phones every
+  cheque field is full width; the people keep their pairs.
+  **Nothing marks required or optional** — no «اختیاری», no asterisk, no
+  dot. All but the photo, spend date and note are required
+  (`aria-required` on the inputs); saving focuses the first field that
+  is missing or wrong, and each shows a red edge and a line under it (no
+  shake). A field's format rule is a quiet hint in brackets after its
+  label — «سریال (۶ رقم)», «شناسه صیادی (۱۶ رقم)», «کد / شناسه ملی ذینفع
+  (۱۰ یا ۱۱ رقم)» — not a placeholder: it stays visible while typing, and
+  Persian placeholder text inside a left-to-right box came out reversed
+  («رقم ۶»). The name and channel pickers have no «انتخاب کنید»; their
+  icon and arrow say it. Placeholders left: the date segments and the
+  note's example. The save button is compact and sits at the end of the
+  footer; saving an edit asks for a one-tap confirmation in place.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
   its stamp, then a bordered card with only what the cheque doesn't carry
   (party, send date, channels, spend date, notes, photos, sayad id with a
@@ -203,7 +217,7 @@ used because the numeric inputs are `direction: ltr`.
 Numbers, codes, usernames and passwords read left to right (`direction:
 ltr`, left-aligned). Serial, sayad id and national id are whole
 left-to-right groups (`.ig.is-ltr`): icon on the left where the number
-starts, count or badge on the right, placeholder next to the icon. The
+starts, count or badge on the right; the digit rule is in the label. The
 amount and the other numeric fields keep their suffix on the left, next
 to the digits; the search box turns left-to-right once something is
 typed. Generated passwords use a monospace face with Latin digits.

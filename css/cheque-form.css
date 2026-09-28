@@ -235,7 +235,7 @@
   .cq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cq-span-2, .cq-span-3 { grid-column: span 1; }
   .cq-span-4, .cq-span-6 { grid-column: 1 / -1; }
-  #sayadField, #amountField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
+  #serialField, #sayadField, #amountField, #dueDateField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
   .cq-view { padding: 14px; gap: 14px; }
   .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 14px 0; }
   .cq-view-facts .cq-narrow-only { display: flex; }
@@ -246,59 +246,54 @@
 
 /* ═══ Fields first (2026-09-28) ═══
    The form reads as fields, not boxes: the body is plain white, the two
-   sections lose their border, shadow and header strip, and each title is a
-   quiet caption over its fields. A hairline alone parts the sections.
+   sections lose their border, shadow and header strip, and each title
+   sits in the middle of a hairline — the line is the only thing that
+   parts the sections.
 
-   Required fields carry a small blue dot after their label (the
-   Linear / Vercel way) instead of a red asterisk; nothing is written on
-   the optional ones. The first caption holds a one-line key for the dot.
-   The dot turns red while its field shows an error. */
+   Nothing marks a field as required or optional: every field but the
+   photo, the spend date and the note is required, and saving points at
+   whatever is missing. A field's format rule — «۶ رقم», «۱۰ یا ۱۱ رقم» —
+   is a quiet hint in brackets after its label rather than a placeholder,
+   so it stays in view while typing and never has to share a
+   left-to-right box with Persian text. */
 .cq-body.modal-body:not(.ve-locked) { background: var(--surface); }
-.cq-form { gap: 0; padding: 16px 20px 20px; }
+.cq-form { gap: 0; padding: 14px 20px 20px; }
 .cq-card {
   border: 0;
   border-radius: 0;
   background: none;
   box-shadow: none;
 }
-.cq-card + .cq-card { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+.cq-card + .cq-card { margin-top: 20px; }
 .cq-card-title {
-  gap: 8px;
+  justify-content: center;
+  gap: 12px;
   padding: 0;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   border: 0;
   font-size: var(--t-cap);
   color: var(--muted);
   font-variation-settings: 'wght' 560;
+  white-space: nowrap;
+}
+.cq-card-title::before,
+.cq-card-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
 }
 .cq-card-title svg { display: none; }
 .cq-card > .cq-grid { padding: 0; }
 .cq-grid { gap: 12px 12px; }
 #veFieldsWrapC:empty { display: none; }
 
-.form-field.is-req > label::after,
-.cq-req-legend::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin-inline-start: 6px;
-  border-radius: 50%;
-  background: var(--hl);
-  vertical-align: middle;
-  transform: translateY(-1px);
-  transition: background var(--dur-1) var(--ease);
-}
-.form-field.is-req.error > label::after { background: var(--error); }
-.cq-req-legend {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-inline-start: auto;
+.form-field label .hint {
+  margin-inline-start: 3px;
+  color: var(--muted);
   font-size: var(--t-micro);
   font-variation-settings: var(--f-body);
 }
-.cq-req-legend::before { margin: 0; transform: none; }
 
 /* Notes: a single-line field beside the photo that grows as it's typed
    into; the count sits at the far end of the line while focused */
@@ -317,11 +312,11 @@
 #modalOverlay .cq-note label { padding-inline-start: 0; }
 
 /* Photo at half width: the drop hint gives way before the button does */
-#fileField .file-hint { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#fileField .file-hint { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 20px; margin: 0; }
 
 @media (max-width: 600px) {
   .cq-form { padding: 14px; }
-  .cq-card + .cq-card { margin-top: 16px; padding-top: 14px; }
+  .cq-card + .cq-card { margin-top: 16px; }
   #notesField { grid-column: 1 / -1; }
 }
 /* the photo row is exactly as tall as the note beside it */

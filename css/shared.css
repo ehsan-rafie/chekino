@@ -336,8 +336,34 @@ body, button, input, textarea, select {
 /* A press should register before the network does. 90ms, transform only —
    never a property that forces layout. */
 button:not(:disabled):active { transform: scale(0.97); }
-button { transition: transform var(--dur-1) var(--ease); cursor: pointer; }
-button:disabled { cursor: not-allowed; }
+button { transition: transform var(--dur-1) var(--ease); }
+/* …except the controls that belong to a field — the channel picker, a
+   field's calendar / list / copy / show-password button, the photo row's
+   buttons. A field stays still under the pointer. */
+.ms-box:active,
+.ig-btn:active,
+.date-cal-btn:active,
+.file-add:active,
+.file-remove:active { transform: none !important; }
+
+/* The pointer stays an arrow everywhere — buttons, icons, cards, menus —
+   and becomes a text cursor only where something can be typed. The photo
+   editor's crop box keeps its move / resize cursors (dashboard.css): there
+   the cursor is the only sign of what a drag will do. */
+*, *::before, *::after { cursor: default !important; }
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([readonly]):not(:disabled),
+textarea:not([readonly]):not(:disabled),
+[contenteditable=""],
+[contenteditable="true"],
+.dseg-part { cursor: text !important; }
+.pe-crop-box { cursor: move !important; }
+.pe-h-tl, .pe-h-br { cursor: nwse-resize !important; }
+.pe-h-tr, .pe-h-bl { cursor: nesw-resize !important; }
+
+/* The cheque form's scroll area is focusable so the keyboard can scroll
+   it, but a ring round the whole body says nothing — and clipped by the
+   header and footer it showed only as four blue specks at its corners. */
+.modal-body[tabindex]:focus-visible { outline: none; }
 
 /* Every element that behaves like a control looks like one. A div wired up
    with a click handler is still a button as far as the pointer is concerned. */
@@ -616,7 +642,9 @@ kbd {
   font-variation-settings: var(--f-body);
   line-height: 1;
   white-space: nowrap;
-  pointer-events: none;
+  /* the add-ons catch the pointer (an arrow, not a text cursor, over an
+     icon); js/field-addons.js puts the caret in the field on a press */
+  pointer-events: auto;
 }
 .ig-pre { right: 0; }
 .ig-suf { left: 0; }

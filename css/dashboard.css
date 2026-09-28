@@ -4314,12 +4314,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .amount-field.error .amount-box:focus-within { background: var(--field-bg) !important; border-color: var(--state-bad) !important; box-shadow: var(--ring-bad) !important; }
 .form-field.error label { color: var(--state-bad-text); }
 .field-msg { font-size: var(--t-micro); color: var(--state-bad-text); margin-top: 5px; }
-.form-field.error { animation: fieldNudge 0.3s var(--ease) 1; }
-@keyframes fieldNudge {
-  25% { transform: translateX(-3px); }
-  55% { transform: translateX(3px); }
-  80% { transform: translateX(-1px); }
-}
+/* No shake on error: with several fields missing at once it was noise.
+   The red edge and the message under the field say it. */
 .date-input-wrap { padding: 0 12px 0 4px; }
 .date-input-wrap input, .amount-box input { background: transparent; font-size: var(--t-body); }
 .date-cal-btn { width: 30px; height: 30px; border-radius: 10px; color: var(--muted); }
