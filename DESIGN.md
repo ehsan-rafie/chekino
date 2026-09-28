@@ -170,7 +170,14 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   have no border, shadow or header strip: each title is a small grey
   caption centred on a hairline (── مشخصات چک ──), and that line is the
   only thing parting the sections, so the fields themselves are what the
-  eye lands on. «مشخصات چک»: serial | sayad id, amount (with the amount in
+  eye lands on. **From 1100px across the sections stand side by side**
+  in a 1040px window — the cheque on the right (read first), the people
+  on the left — so the form is about half as tall (no scroll at 1280×720)
+  and each field nearer the size of what goes in it; there the photo and
+  the note each take a full row, and the channel tags sit under their
+  label (all five on one line). Enter / Tab run down the right column
+  before the left. Narrower screens keep the stacked layout described
+  here. «مشخصات چک»: serial | sayad id, amount (with the amount in
   words) | due date, then the photo | the note side by side at one
   field's height. The photo is one slim row (an image icon, small
   thumbnails once added, a drop hint until then, «انتخاب فایل» at the
