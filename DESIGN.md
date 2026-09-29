@@ -149,10 +149,14 @@ The add button is Magic UI's Shimmer Button (@dillionverma), ported class
 for class (`.shimmer-btn`): black, a 1px white/10 border, shadow-2xl,
 a blurred spark sliding end to end (3s, alternate) while spinning (6s),
 a 0.05em lit edge, a soft light rising from the bottom. Two departures:
-the theme's 12px corner instead of 100px (the owner's choice, knowing
-the light fades a little on the climb up the short left side), and its
+the theme's 12px corner instead of 100px (the owner's choice), and its
 size — 36px high with a 14px label and a plus in front, like the buttons
-beside it (40px on phones).
+beside it (40px on phones). The button is kept on whole device pixels
+(`snapAddCheckBtn`: width rounded up, nudged ≤ half a pixel, redone on
+any layout change): the lit edge is under a pixel thick, and with the
+label's fractional width (120.36px) one end sat between two pixels, so
+the spark faded and smeared there — on the climb up the left side, never
+on the right. It wasn't the corner.
 
 **Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
 «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when

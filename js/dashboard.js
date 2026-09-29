@@ -654,6 +654,34 @@ function closeModal(force) {
 const addCheckBtn = document.getElementById('addCheckBtn');
 addCheckBtn.addEventListener('click', openModal);
 
+// «افزودن چک» on whole device pixels. Its shimmer is a ring under 1px
+// thick just inside the edge; the label makes the button a fractional width
+// (120.36px), so one end sat between two pixels and the spark there came out
+// faint and smeared — only on the left, where it runs up. The width is
+// rounded up to whole pixels and the button nudged (≤ half a pixel) so its
+// left edge lands on one; redone whenever the layout can have moved it
+// (resize, zoom, the scrollbar appearing, the font arriving).
+(function snapAddCheckBtn() {
+  const snap = () => {
+    const d = window.devicePixelRatio || 1;
+    addCheckBtn.style.width = '';
+    addCheckBtn.style.translate = '';
+    const w = addCheckBtn.getBoundingClientRect().width;
+    if (!w) return;   // hidden
+    addCheckBtn.style.width = Math.ceil(w * d - 0.01) / d + 'px';
+    const r = addCheckBtn.getBoundingClientRect();
+    const dx = (Math.round(r.left * d) - r.left * d) / d;
+    const dy = (Math.round(r.top * d) - r.top * d) / d;
+    if (Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001) addCheckBtn.style.translate = `${dx}px ${dy}px`;
+  };
+  let queued = false;
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; snap(); }); } };
+  new ResizeObserver(later).observe(document.documentElement);
+  window.addEventListener('resize', later);
+  if (document.fonts) document.fonts.ready.then(later);
+  later();
+})();
+
 // Insert opens the add-cheque form from anywhere on the dashboard.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Insert') return;
