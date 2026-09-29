@@ -75,6 +75,7 @@
       const digits = value ? value.slice(seg.from, seg.to).replace(/_/g, '') : '';
       const part = f.parts[seg.key];
       part.textContent = digits || seg.ph;
+      part.dataset.text = part.textContent;   // an invisible bold copy reserves its width (CSS)
       part.classList.toggle('is-ph', !digits);
       part.classList.toggle('is-active', seg.key === active);
     });

@@ -4554,7 +4554,20 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 :root, :root[data-theme="dark"] { --seg-active: var(--hl-soft); }
 /* The active date segment is marked by its text alone — «روز» or «۱۲» in
    blue — with no box round it */
-.dseg-part.is-active { background: none; color: var(--hl-text); }
+.dseg-part.is-active { background: none; color: var(--hl-text); font-variation-settings: 'wght' 700; }
+/* The active segment is heavier as well as blue, and a variable font's bold
+   is a touch wider — so every segment reserves the width of its own bold
+   self with an invisible copy of its text (::after, height 0). Moving
+   between day, month and year then never nudges the date sideways. */
+.dseg-part { display: inline-flex; flex-direction: column; align-items: center; }
+.dseg-part::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-variation-settings: 'wght' 700;
+  pointer-events: none;
+}
 
 /* In the calendar only the chosen day (or range) is blue: the arrows are
    grey like every other icon button, and today is a thin grey ring */
@@ -4803,17 +4816,34 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .file-box.dragging { border-style: dashed; border-color: var(--hl); background: var(--hl-soft); }
 .file-lead { display: flex; flex-shrink: 0; color: var(--muted); }
 .file-lead svg { width: 16px; height: 16px; }
+/* The hint is also the paste target (#filePaste, contenteditable so the
+   context menu offers Paste). Its words are generated from data-ph, so the
+   element itself stays empty; it keeps filling the free width after the
+   thumbnails, silently, so there's always somewhere to right-click. No
+   caret, no typing cursor: nothing can be typed here. Focused, the box
+   takes the blue "where you type" edge like any field. */
 .file-hint {
   flex: 1;
   min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
   color: var(--muted);
   font-size: var(--t-cap);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  caret-color: transparent;
+  cursor: default;
+  outline: none;
 }
-.file-chips:not(:empty) { flex: 1; gap: 6px; }
-.file-chips:not(:empty) ~ .file-hint { display: none; }
+.file-hint:focus-visible { outline: none; }   /* the box's edge shows it, not a ring of its own */
+.file-hint::before { content: attr(data-ph); overflow: hidden; text-overflow: ellipsis; }
+.file-chips:not(:empty) { flex: 0 1 auto; gap: 6px; }
+.file-chips:not(:empty) ~ .file-hint::before { content: none; }
+.file-box:has(.file-hint:focus) { border-color: var(--focus-edge); box-shadow: var(--ring); }
+.form-field.error .file-box { border-color: var(--state-bad); }
+.form-field.error .file-box:has(.file-hint:focus) { box-shadow: var(--ring-bad); }
 .file-chip,
 .file-chip img,
 .file-chip .file-doc,
@@ -4840,7 +4870,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .file-add:hover { background: var(--field-bg-hover); color: var(--ink); box-shadow: inset 0 0 0 1px var(--border); }
 .file-add svg { width: 14px; height: 14px; }
-@media (hover: none) { .file-hint { visibility: hidden; } }
+/* Nothing is dragged on a phone: there the hint just offers the paste
+   (a long press on it brings up the system Paste) */
+@media (hover: none) { .file-hint::before { content: attr(data-ph-touch); } }
 .file-box .file-add { width: auto; flex: 0 0 auto; margin-top: 0; }
 @media (hover: hover) {
   .file-box .file-remove { opacity: 0; transition: opacity var(--dur-1) var(--ease); }

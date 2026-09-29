@@ -200,8 +200,19 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   anything; one line, a long one ending in «…» with the whole of it on
   hover. The photo is one slim row (an image icon, small
   thumbnails once added, a drop hint until then, «انتخاب فایل» at the
-  end, after 21st.dev's File Upload); the note is a single line that
-  grows as it is typed into (up to 120px), its count at the end of the
+  end, after 21st.dev's File Upload). **A copied photo or PDF pastes in**:
+  Ctrl+V anywhere in the open form, or right-click → Paste on the photo
+  row — a screenshot, an image copied from a page or chat, a file copied
+  in Explorer; an image goes through the crop editor like a picked one.
+  The row's empty part (`#filePaste`, «عکس یا PDF را رها یا پیست کنید»,
+  «…اینجا پیست کنید» on touch) is contenteditable only so the context
+  menu offers Paste: nothing types into it, no caret, no ring of its own —
+  focused, the row takes the blue field edge. It stays after the
+  thumbnails, wordless, so there's always somewhere to right-click. A text
+  field keeps an ordinary text paste (Word/Excel copy text and a picture
+  together); only text on the photo row says «عکس یا PDF کپی نشده» on the
+  label line. Nothing pastes while viewing, or with a dialog over the
+  form. The note is a single line that grows as it is typed into (up to 120px), its count at the end of the
   line while focused; Shift+Enter breaks a line. «مشخصات اشخاص», each
   person beside the date that belongs to them: owner | send date, party
   | spend date (names 4 columns, the dates 2 — as wide as the due date,
@@ -328,7 +339,11 @@ matched part in bold and a quiet tag, and «+ name / new» below a hairline.
 **Date fields** (`js/date-segments.js`). HeroUI's DateField: the day,
 month and year are three segments («روز» / «ماه» / «سال» until they hold
 digits), and while the field has focus one of them is active — its
-text turns blue («روز» or «۱۲»), with no box round it. Escape on an open
+text turns blue and bold («روز» or «۱۲»), with no box round it. Bold
+makes a variable-font word a touch wider, so every segment reserves the
+width of its own bold self (an invisible copy of its text, `::after`
+from `data-text`): moving between day, month and year never nudges the
+date sideways. Escape on an open
 calendar puts the caret back in the field (the calendar button, out of
 the Tab order, never shows a focus ring). Editing works a segment at a
 time (`createDateField` in dashboard.js):

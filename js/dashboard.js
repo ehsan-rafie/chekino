@@ -2567,6 +2567,65 @@ fileBox.addEventListener('drop', (e) => {
   if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
 });
 
+// ---- Pasting a copied photo or PDF ----
+// Ctrl+V anywhere in the open form, or right-click → Paste on the photo
+// field, attaches whatever image or PDF is on the clipboard: a screenshot,
+// an image copied from a page or a chat, a file copied in Explorer.
+// The empty part of the photo field (#filePaste) is contenteditable only so
+// the browser's own context menu offers "Paste" there; nothing can be typed
+// into it.
+const filePaste = document.getElementById('filePaste');
+
+function clipboardFiles(data) {
+  if (!data) return [];
+  let files = Array.from(data.files || []);
+  if (!files.length) {
+    files = Array.from(data.items || [])
+      .filter(it => it.kind === 'file')
+      .map(it => it.getAsFile())
+      .filter(Boolean);
+  }
+  // A screenshot arrives as "image.png" every time: give each paste a name
+  // of its own so the next one isn't taken for a duplicate of the last.
+  const stamp = new Date().toTimeString().slice(0, 8).replace(/:/g, '');
+  return files.map((f, i) => {
+    if (f.name && !/^image\.\w+$/i.test(f.name)) return f;
+    const ext = (f.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+    return new File([f], `pasted-${stamp}${i ? '-' + (i + 1) : ''}.${ext}`, { type: f.type, lastModified: Date.now() });
+  });
+}
+
+document.addEventListener('paste', (e) => {
+  if (!modalOverlay.classList.contains('show')) return;
+  if (modalBody.classList.contains('ve-locked')) return;          // viewing, not editing
+  // nor while something is open over the form
+  if ([photoEditorOverlay, lightboxOverlay, confirmOverlay, peopleModalOverlay]
+    .some(o => o.classList.contains('show'))) return;
+  const t = e.target;
+  const onHint = t === filePaste;
+  const files = clipboardFiles(e.clipboardData);
+  if (!files.length) {
+    if (onHint) {                        // only text on the clipboard
+      e.preventDefault();
+      fileField.classList.add('error');
+      fileMsg.textContent = 'عکس یا PDF کپی نشده';
+    }
+    return;
+  }
+  // A text field keeps an ordinary text paste (Word and Excel copy the text
+  // and a picture of it together); the file wins wherever there's no text.
+  const inText = t.closest && t.closest('input:not([type=file]), textarea');
+  if (inText && e.clipboardData.getData('text/plain').trim()) return;
+  e.preventDefault();
+  addFiles(files);
+  fileField.scrollIntoView({ block: 'nearest' });
+});
+filePaste.addEventListener('beforeinput', (e) => e.preventDefault());
+filePaste.addEventListener('input', () => { filePaste.textContent = ''; });   // an undo that slipped through
+filePaste.addEventListener('blur', () => {
+  if (fileMsg.textContent === 'عکس یا PDF کپی نشده') { fileMsg.textContent = ''; fileField.classList.remove('error'); }
+});
+
 // ---- Calendar popup (shared by every date field) ----
 let calViewYear, calViewMonth;
 let activeDateField = null;
