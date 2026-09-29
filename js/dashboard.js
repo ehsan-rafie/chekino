@@ -3132,8 +3132,6 @@ submitCheckBtn.addEventListener('click', async () => {
     resetAllFields({ keepParty: true });
     stickyFieldsUntouched = true;
     renderTable();
-    addCheckBtn.classList.add('just-saved');
-    setTimeout(() => addCheckBtn.classList.remove('just-saved'), 700);
     showFormAlert('success', `چک ${savedSerial} ثبت شد`);
     serialInput.focus();
   } catch (e) {
