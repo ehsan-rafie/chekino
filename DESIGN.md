@@ -211,8 +211,8 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   **Enter moves on in the same order as Tab** (`focusNextField`): it
   passes over the photo button (Enter there is inert), a name picked from
   a list with Enter moves on too, and after the national id it lands on
-  the channel tags, where Enter presses the tag. Ctrl+Enter saves from
-  anywhere in the form.
+  the channel tags, where Space picks and Enter saves. Ctrl+Enter saves
+  from anywhere in the form.
   **The channels are toggle tags**, not a dropdown (HeroUI's TagGroup,
   selection «multiple»): the options are too few to hide behind a list.
   Compact tags (36px — 42px side by side — radius 10) on the label's own line; they wrap
@@ -224,7 +224,9 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   classes, so nothing leaks into the page. The tags themselves are the
   theme's — outlined like a field — and a chosen one takes the selection
   blue (blue edge, faint blue wash). One tab stop for the group; the
-  arrow keys walk it, Space / Enter presses.
+  arrow keys walk it and Space presses a tag — Enter does not: as with
+  checkboxes in a form, Enter means "done", and the channels being the
+  last stop, it saves the cheque (editing: asks to confirm).
   **«سایر»** (dashed edge, a plus: it adds, it isn't a choice) slides
   open in its own place into a small text field with the caret in it.
   Enter — or leaving the field — adds what was written as one more tag,

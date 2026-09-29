@@ -685,11 +685,15 @@ modalOverlay.addEventListener('click', (e) => {
 });
 // Enter moves on to the next field in the same order as Tab. It passes
 // over the photo button (Enter there is left inert, see fileAddBtn) and,
-// after the national id, lands on the channel tags; on a button — a
-// channel tag, a calendar icon — Enter presses it as usual. Ctrl+Enter
-// saves from anywhere in the form. Shift+Enter still breaks a line in the
-// notes box, and Enter inside an open list or calendar picks the
-// highlighted row / date (a picked name then moves on too).
+// after the national id, lands on the channel tags. The tags answer to
+// Enter the way checkboxes in a form do: Space presses a tag, Enter means
+// "done" — and since the channels are the form's last stop, Enter there
+// saves (or, editing, asks to confirm). Enter was pressing the tag, which
+// left no way to finish the form from the keyboard. Any other button (a
+// calendar icon) still takes Enter as a press. Ctrl+Enter saves from
+// anywhere in the form. Shift+Enter still breaks a line in the notes box,
+// and Enter inside an open list or calendar picks the highlighted row /
+// date (a picked name then moves on too).
 function focusNextField(from) {
   const stops = Array.from(modalBody.querySelectorAll('input:not([type="file"]), textarea, .ch-tag[tabindex="0"]'))
     .filter(el => !el.disabled && el.offsetParent !== null);
@@ -710,9 +714,9 @@ document.addEventListener('keydown', (e) => {
   if (dueDateCal.classList.contains('show')) return;
   const openList = document.querySelector('.ac-list.show');
   if (openList && openList.querySelector('.ac-item.active')) return;
-  if (t.tagName === 'BUTTON' && t !== submitCheckBtn) return;
+  if (t.tagName === 'BUTTON' && t !== submitCheckBtn && !t.classList.contains('ch-tag')) return;
 
-  e.preventDefault();
+  e.preventDefault();   // on a channel tag this also keeps Enter from pressing it
 
   if (submitCheckBtn.classList.contains('pending-confirm')) {
     saveConfirmSlideBtn.click();
@@ -2270,8 +2274,8 @@ const channelTagsNow = () => [...channelGroup.querySelectorAll('.ch-tag:not([hid
 
 // One tab stop for the tags (the one last pressed or moved to); the arrow
 // keys walk them — in a right-to-left row, ArrowLeft is the next one —
-// and Home / End jump to the ends. Space or Enter presses, as on any
-// button.
+// and Home / End jump to the ends. Space presses a tag; Enter is the
+// form's — it saves, like a checkbox in a form (see the Enter handler).
 function setChannelTabStop(tag) {
   channelTagsNow().forEach(t => { t.tabIndex = t === tag ? 0 : -1; });
 }
@@ -3011,9 +3015,13 @@ function hideFormAlert() {
   clearTimeout(hideFormAlert._t);
   hideFormAlert._t = setTimeout(() => { formNotice.hidden = true; formNotice.classList.remove('leaving'); }, 180);
 }
-// An error notice has done its job once the user starts fixing things
+// An error notice has done its job once the user starts fixing things —
+// typing in a field, or pressing a channel tag (which fires no 'input')
 modalBody.addEventListener('input', () => {
   if (formNotice.classList.contains('is-error')) hideFormAlert();
+});
+modalBody.addEventListener('click', (e) => {
+  if (e.target.closest && e.target.closest('.ch-tag') && formNotice.classList.contains('is-error')) hideFormAlert();
 });
 // Pressing an error notice goes to the first field that still needs fixing
 formNotice.addEventListener('click', () => {
