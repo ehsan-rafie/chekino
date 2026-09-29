@@ -2501,6 +2501,7 @@ function readFileAsDataUrl(file) {
 }
 
 let peQueue = [];   // image Files waiting their turn in the crop/rotate editor
+let peBatch = { done: 0, total: 0 };   // «۲ از ۳» in the editor when several photos arrive together
 
 async function addFiles(list) {
   const rejected = [];
@@ -2534,6 +2535,7 @@ async function addFiles(list) {
   }
   if (toEdit.length) {
     peQueue.push(...toEdit);
+    peBatch.total += toEdit.length;
     if (!photoEditorOverlay.classList.contains('show')) openNextInQueue();
   }
 }
@@ -2568,9 +2570,12 @@ fileBox.addEventListener('drop', (e) => {
 });
 
 // ---- Pasting a copied photo or PDF ----
-// Ctrl+V anywhere in the open form, or right-click → Paste on the photo
-// field, attaches whatever image or PDF is on the clipboard: a screenshot,
-// an image copied from a page or a chat, a file copied in Explorer.
+// Ctrl+V in the open form while no field has the caret, or on the photo
+// field itself (click it, or right-click → Paste there), attaches whatever
+// image or PDF is on the clipboard: a screenshot, an image copied from a
+// page or a chat, a file copied in Explorer. Inside any other field Ctrl+V
+// is that field's own paste and never picks up a file — a copied sayad id
+// goes where the caret is, and nothing is attached behind your back.
 // The empty part of the photo field (#filePaste) is contenteditable only so
 // the browser's own context menu offers "Paste" there; nothing can be typed
 // into it.
@@ -2603,6 +2608,8 @@ document.addEventListener('paste', (e) => {
     .some(o => o.classList.contains('show'))) return;
   const t = e.target;
   const onHint = t === filePaste;
+  // the caret is in some other field: its paste, not ours
+  if (!onHint && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
   const files = clipboardFiles(e.clipboardData);
   if (!files.length) {
     if (onHint) {                        // only text on the clipboard
@@ -2612,10 +2619,6 @@ document.addEventListener('paste', (e) => {
     }
     return;
   }
-  // A text field keeps an ordinary text paste (Word and Excel copy the text
-  // and a picture of it together); the file wins wherever there's no text.
-  const inText = t.closest && t.closest('input:not([type=file]), textarea');
-  if (inText && e.clipboardData.getData('text/plain').trim()) return;
   e.preventDefault();
   addFiles(files);
   fileField.scrollIntoView({ block: 'nearest' });
@@ -4828,29 +4831,43 @@ toTopBtn.addEventListener('click', () => {
 
 
 // =========================================================
-// ---- Photo editor: crop + rotate, redesigned flow ----
+// ---- Photo editor: crop + rotate ----
 // =========================================================
+// Non-destructive until «افزودن عکس»: the pristine photo is kept, turning
+// it rebuilds the view from that photo and carries the crop round with it
+// (rather than baking the crop in first), and «بازنشانی» goes back to the
+// photo as it came. Only the final press cuts and compresses.
 let peCurrentFile = null;
 let peOriginalCanvas = null;   // pristine — never mutated after first load
-let peWorkingCanvas = null;    // current baked state (post rotate/crop)
+let peWorkingCanvas = null;    // the original turned by peTurns quarter turns
+let peTurns = 0;               // clockwise quarter turns, 0–3
 let peCrop = { x: 0, y: 0, w: 1, h: 1 };
 let peDrag = null;
 const peSourceImg = new Image();
+const peBody = document.getElementById('peBody');
+const peCount = document.getElementById('peCount');
 const peShadeT = document.querySelector('.pe-shade-t');
 const peShadeB = document.querySelector('.pe-shade-b');
 const peShadeL = document.querySelector('.pe-shade-l');
 const peShadeR = document.querySelector('.pe-shade-r');
 const peShades = [peShadeT, peShadeB, peShadeL, peShadeR];
 const peRotateBtn = document.getElementById('peRotateBtn');
+const peRotateLeftBtn = document.getElementById('peRotateLeftBtn');
+const peResetBtn = document.getElementById('peResetBtn');
 const PE_MIN_CROP = 0.12;
 
 function peClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
+// A transparent PNG (a logo, a copied web image) would come out black once
+// saved as JPEG, so the photo is laid on white first.
 function imageToCanvas(img) {
   const c = document.createElement('canvas');
   c.width = img.naturalWidth;
   c.height = img.naturalHeight;
-  c.getContext('2d').drawImage(img, 0, 0);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0);
   return c;
 }
 function cloneCanvas(src) {
@@ -4860,13 +4877,17 @@ function cloneCanvas(src) {
   c.getContext('2d').drawImage(src, 0, 0);
   return c;
 }
-function rotateCanvas90(src) {
+// The source turned by `turns` clockwise quarter turns
+function turnCanvas(src, turns) {
+  turns = ((turns % 4) + 4) % 4;
+  if (!turns) return cloneCanvas(src);
   const c = document.createElement('canvas');
-  c.width = src.height;
-  c.height = src.width;
+  const side = turns % 2 === 1;
+  c.width = side ? src.height : src.width;
+  c.height = side ? src.width : src.height;
   const ctx = c.getContext('2d');
   ctx.translate(c.width / 2, c.height / 2);
-  ctx.rotate(Math.PI / 2);
+  ctx.rotate(turns * Math.PI / 2);
   ctx.drawImage(src, -src.width / 2, -src.height / 2);
   return c;
 }
@@ -4880,8 +4901,17 @@ function resizeCanvasIfNeeded(src, maxDim) {
   return c;
 }
 
+// Focus goes back where it was once the last photo of a batch is done
+let peReturnFocus = null;
 function openNextInQueue() {
-  if (peQueue.length === 0) return;
+  if (peQueue.length === 0) {
+    peBatch = { done: 0, total: 0 };
+    const back = peReturnFocus;
+    peReturnFocus = null;
+    if (back && back.isConnected && back !== document.body && modalOverlay.classList.contains('show')) back.focus({ preventScroll: true });
+    return;
+  }
+  if (!peReturnFocus) peReturnFocus = document.activeElement;
   openPhotoEditor(peQueue.shift());
 }
 
@@ -4892,45 +4922,60 @@ function openPhotoEditor(file) {
     URL.revokeObjectURL(url);
     peOriginalCanvas = imageToCanvas(peSourceImg);
     peWorkingCanvas = cloneCanvas(peOriginalCanvas);
+    peTurns = 0;
+    peCrop = { x: 0, y: 0, w: 1, h: 1 };
+    peCount.textContent = peBatch.total > 1 ? `${toFa(peBatch.done + 1)} از ${toFa(peBatch.total)}` : '';
     // Show the overlay BEFORE measuring the stage — measuring while it's still
     // display:none would read 0×0 and place the crop handles on top of each other.
     photoEditorOverlay.classList.add('show');
     document.body.style.overflow = 'hidden';
-    updatePeView();
+    showWorkingCanvas(false);
     // The editor opens programmatically (not from a click inside it), so
     // nothing has focus yet — without this, Enter would still hit whatever
-    // had focus before (usually the "افزودن عکس" button), reopening the
+    // had focus before (usually the "انتخاب فایل" button), reopening the
     // file picker instead of doing anything in the editor. Focusing the
-    // primary action means Enter does the standard thing: confirm/submit.
+    // primary action means Enter does the standard thing: confirm.
     peSendBtn.focus();
+  };
+  peSourceImg.onerror = () => {
+    URL.revokeObjectURL(url);
+    fileField.classList.add('error');
+    fileMsg.textContent = `عکس باز نشد: ${file.name}`;
+    peBatch.done++;
+    openNextInQueue();
   };
   peSourceImg.src = url;
 }
 
 function closePhotoEditor() {
   photoEditorOverlay.classList.remove('show');
+  peStage.classList.remove('dragging', 'turned');
+  peBatch.done++;
   document.body.style.overflow = modalOverlay.classList.contains('show') ? 'hidden' : '';
 }
 
+// The well has a fixed size; the photo is fitted inside its padding (small
+// ones are enlarged up to 2×, so a tight screenshot is still easy to crop).
 function fitStageToImage(w, h) {
-  const cardW = window.innerWidth <= 600 ? window.innerWidth : Math.min(window.innerWidth * 0.86, 620);
-  const maxW = Math.min(cardW - 32, 560);
-  const maxH = Math.min(window.innerHeight * 0.55, 460);
-  const scale = Math.min(maxW / w, maxH / h, 1);
-  peStage.style.width = Math.round(w * scale) + 'px';
-  peStage.style.height = Math.round(h * scale) + 'px';
+  const cs = getComputedStyle(peBody);
+  const maxW = peBody.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const maxH = peBody.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const scale = Math.min(maxW / w, maxH / h, 2);
+  peStage.style.width = Math.max(1, Math.round(w * scale)) + 'px';
+  peStage.style.height = Math.max(1, Math.round(h * scale)) + 'px';
 }
 
-function updatePeView() {
+function showWorkingCanvas(animate) {
   peImg.src = peWorkingCanvas.toDataURL('image/jpeg', 0.92);
   fitStageToImage(peWorkingCanvas.width, peWorkingCanvas.height);
-
-  // The crop box is available the instant an image loads — no extra step
-  // to turn it on first.
   peCropBox.classList.add('active');
   peShades.forEach(s => s.classList.add('active'));
-  peCrop = { x: 0, y: 0, w: 1, h: 1 };
   renderCropBox();
+  if (animate) {
+    peStage.classList.remove('turned');
+    void peStage.offsetWidth;   // restart the animation
+    peStage.classList.add('turned');
+  }
 }
 
 function renderCropBox() {
@@ -4939,18 +4984,26 @@ function renderCropBox() {
   peCropBox.style.top = (peCrop.y * sh) + 'px';
   peCropBox.style.width = (peCrop.w * sw) + 'px';
   peCropBox.style.height = (peCrop.h * sh) + 'px';
-  peShadeT.style.cssText = `left:0; top:0; width:100%; height:${peCrop.y * sh}px;`;
-  peShadeB.style.cssText = `left:0; top:${(peCrop.y + peCrop.h) * sh}px; width:100%; height:${sh - (peCrop.y + peCrop.h) * sh}px;`;
-  peShadeL.style.cssText = `left:0; top:${peCrop.y * sh}px; width:${peCrop.x * sw}px; height:${peCrop.h * sh}px;`;
-  peShadeR.style.cssText = `left:${(peCrop.x + peCrop.w) * sw}px; top:${peCrop.y * sh}px; width:${sw - (peCrop.x + peCrop.w) * sw}px; height:${peCrop.h * sh}px;`;
+  // The shades reach 1px past the photo onto the dark well, where it can't
+  // be seen: the photo snaps to whole pixels, and a stage centred on a half
+  // pixel otherwise left a bright hairline at its edge.
+  peShadeT.style.cssText = `left:-1px; right:-1px; top:-1px; height:${peCrop.y * sh + 1}px;`;
+  peShadeB.style.cssText = `left:-1px; right:-1px; bottom:-1px; top:${(peCrop.y + peCrop.h) * sh}px;`;
+  peShadeL.style.cssText = `left:-1px; top:${peCrop.y * sh}px; width:${peCrop.x * sw + 1}px; height:${peCrop.h * sh}px;`;
+  peShadeR.style.cssText = `right:-1px; left:${(peCrop.x + peCrop.w) * sw}px; top:${peCrop.y * sh}px; height:${peCrop.h * sh}px;`;
+  const whole = peCrop.x < 0.001 && peCrop.y < 0.001 && peCrop.w > 0.999 && peCrop.h > 0.999;
+  peResetBtn.disabled = peTurns === 0 && whole;
 }
 
 function pePointerDown(e, mode) {
+  if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
   peDrag = { mode, startX: e.clientX, startY: e.clientY, startCrop: { ...peCrop } };
+  peStage.classList.add('dragging');
   document.addEventListener('pointermove', pePointerMove);
   document.addEventListener('pointerup', pePointerUp);
+  document.addEventListener('pointercancel', pePointerUp);
 }
 function pePointerMove(e) {
   if (!peDrag) return;
@@ -4972,8 +5025,10 @@ function pePointerMove(e) {
 }
 function pePointerUp() {
   peDrag = null;
+  peStage.classList.remove('dragging');
   document.removeEventListener('pointermove', pePointerMove);
   document.removeEventListener('pointerup', pePointerUp);
+  document.removeEventListener('pointercancel', pePointerUp);
 }
 peCropBox.addEventListener('pointerdown', (e) => {
   if (e.target.closest('.pe-handle')) return;
@@ -4983,32 +5038,52 @@ document.querySelectorAll('.pe-handle').forEach(h => {
   h.addEventListener('pointerdown', (e) => pePointerDown(e, h.dataset.h));
 });
 
-// Bakes the current crop selection into the working canvas.
-function applyPendingCrop() {
+// Turning carries the crop round with the photo: a point (x, y) of the
+// photo lands on (1 − y, x) after a clockwise quarter turn, (y, 1 − x)
+// after an anticlockwise one.
+function peTurn(dir) {
+  const { x, y, w, h } = peCrop;
+  peCrop = dir > 0 ? { x: 1 - y - h, y: x, w: h, h: w } : { x: y, y: 1 - x - w, w: h, h: w };
+  peTurns = (peTurns + dir + 4) % 4;
+  peWorkingCanvas = turnCanvas(peOriginalCanvas, peTurns);
+  showWorkingCanvas(true);
+}
+peRotateBtn.addEventListener('click', () => peTurn(1));
+peRotateLeftBtn.addEventListener('click', () => peTurn(-1));
+peResetBtn.addEventListener('click', () => {
+  peTurns = 0;
+  peCrop = { x: 0, y: 0, w: 1, h: 1 };
+  peWorkingCanvas = cloneCanvas(peOriginalCanvas);
+  showWorkingCanvas(true);
+  peSendBtn.focus();   // the reset button hides itself once there's nothing to undo
+});
+
+// The well follows the window (a phone turned sideways, a resized window)
+window.addEventListener('resize', () => {
+  if (!photoEditorOverlay.classList.contains('show') || !peWorkingCanvas) return;
+  fitStageToImage(peWorkingCanvas.width, peWorkingCanvas.height);
+  renderCropBox();
+});
+
+// The crop drawn on the turned photo, cut out
+function croppedCanvas() {
   const sw = peWorkingCanvas.width, sh = peWorkingCanvas.height;
   const sx = peCrop.x * sw, sy = peCrop.y * sh, cw = peCrop.w * sw, ch = peCrop.h * sh;
   const out = document.createElement('canvas');
   out.width = Math.max(1, Math.round(cw));
   out.height = Math.max(1, Math.round(ch));
   out.getContext('2d').drawImage(peWorkingCanvas, sx, sy, cw, ch, 0, 0, out.width, out.height);
-  peWorkingCanvas = out;
+  return out;
 }
-
-peRotateBtn.addEventListener('click', () => {
-  applyPendingCrop();   // whatever crop is currently drawn is baked in before rotating
-  peWorkingCanvas = rotateCanvas90(peWorkingCanvas);
-  updatePeView();
-});
 
 peCancelBtn.addEventListener('click', () => { closePhotoEditor(); openNextInQueue(); });
 
 peSendBtn.addEventListener('click', () => {
-  applyPendingCrop();   // the crop box is always live, so it's always applied on send
   // A phone photo can be several thousand pixels wide — re-encoding it at
   // full resolution is what was blowing past the size limit even for a
   // "only 5MB" original. Capping the longest side first keeps the actual
   // stored file small regardless of how big the source photo was.
-  const exportCanvas = resizeCanvasIfNeeded(peWorkingCanvas, 1600);
+  const exportCanvas = resizeCanvasIfNeeded(croppedCanvas(), 1600);
   let quality = 0.85;
   let dataUrl = exportCanvas.toDataURL('image/jpeg', quality);
   let approxSize = Math.round(dataUrl.length * 0.75);
@@ -5257,7 +5332,8 @@ window.addEventListener('popstate', () => {
 // whichever overlay is currently open, and Shift+Tab wraps the other way.
 // =========================================================
 (function trapDialogFocus() {
-  const OVERLAYS = ['modalOverlay', 'peopleModalOverlay', 'confirmOverlay', 'lightboxOverlay', 'personEditOverlay'];
+  // topmost first: the one on top is the one Tab stays inside
+  const OVERLAYS = ['confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

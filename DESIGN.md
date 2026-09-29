@@ -201,18 +201,38 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   hover. The photo is one slim row (an image icon, small
   thumbnails once added, a drop hint until then, «انتخاب فایل» at the
   end, after 21st.dev's File Upload). **A copied photo or PDF pastes in**:
-  Ctrl+V anywhere in the open form, or right-click → Paste on the photo
-  row — a screenshot, an image copied from a page or chat, a file copied
-  in Explorer; an image goes through the crop editor like a picked one.
+  Ctrl+V in the open form while no field has the caret (after clicking
+  an empty spot, or on a button), or on the photo row itself (click it,
+  or right-click → Paste there) — a screenshot, an image copied from a
+  page or chat, a file copied in Explorer; an image goes through the crop
+  editor like a picked one. **Inside any other field Ctrl+V is only that
+  field's paste**, never a file: a copied sayad id goes where the caret
+  is, and nothing gets attached behind the user's back.
   The row's empty part (`#filePaste`, «عکس یا PDF را رها یا پیست کنید»,
   «…اینجا پیست کنید» on touch) is contenteditable only so the context
   menu offers Paste: nothing types into it, no caret, no ring of its own —
   focused, the row takes the blue field edge. It stays after the
-  thumbnails, wordless, so there's always somewhere to right-click. A text
-  field keeps an ordinary text paste (Word/Excel copy text and a picture
-  together); only text on the photo row says «عکس یا PDF کپی نشده» on the
-  label line. Nothing pastes while viewing, or with a dialog over the
-  form. The note is a single line that grows as it is typed into (up to 120px), its count at the end of the
+  thumbnails, wordless, so there's always somewhere to right-click. Text
+  pasted on the photo row says «عکس یا PDF کپی نشده» on the label line. Nothing pastes while viewing, or with a dialog over the
+  form.
+  **Photo editor** (every image passes through it before it's attached).
+  The cheque form's own card — surface, radius 24, title «ویرایش عکس چک»
+  with the same close button, «۲ از ۳» beside it when several photos came
+  at once. The photo sits in a dark well (radius 16) in both themes, a
+  fixed size whatever the photo, so turning it never makes the card jump;
+  small images are enlarged up to 2× to be easy to crop. The crop: a thin
+  white frame, L-shaped corners and short edge bars, all draggable with
+  generous hit areas; outside it is dimmed; the thirds grid shows only
+  while dragging. Bottom bar in the form footer's order: rotate right /
+  rotate left (outlined icon buttons), «بازنشانی» (only once something
+  changed), and the black «افزودن عکس» at the end (full width on phones,
+  where the editor takes the whole screen). Non-destructive until the
+  final press: turning carries the crop round with the photo, and reset
+  goes back to the photo as it came. Enter adds (focus starts on the
+  action), Escape cancels, Tab stays inside, and focus returns to where it
+  was when the last photo is done. A transparent image is laid on white
+  so it can't come out black as JPEG.
+  The note is a single line that grows as it is typed into (up to 120px), its count at the end of the
   line while focused; Shift+Enter breaks a line. «مشخصات اشخاص», each
   person beside the date that belongs to them: owner | send date, party
   | spend date (names 4 columns, the dates 2 — as wide as the due date,

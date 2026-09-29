@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260929k" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260929l" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260929k">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260929k">
-<link rel="stylesheet" href="/css/cheque.css?v=20260929k">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260929k">
+<link rel="stylesheet" href="/css/shared.css?v=20260929l">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260929l">
+<link rel="stylesheet" href="/css/cheque.css?v=20260929l">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260929l">
 </head>
 <body class="chekino-auth-pending">
 
@@ -649,16 +649,19 @@
   </div>
 </div>
 
+<!-- Photo editor: a cheque photo is cropped and turned before it's attached.
+     Same card as the cheque form (surface, header, close, black primary);
+     the photo sits in a dark well, where a photo reads best. -->
 <div class="photo-editor-overlay" id="photoEditorOverlay">
   <div class="pe-card" role="dialog" aria-modal="true" aria-labelledby="peTitle">
-    <div class="pe-topbar">
-      <button class="pe-icon-btn pe-close" id="peCancelBtn" title="انصراف" aria-label="انصراف از ویرایش عکس">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div class="pe-head">
+      <h2 class="pe-title" id="peTitle">ویرایش عکس چک</h2>
+      <span class="pe-count" id="peCount"></span>
+      <button type="button" class="modal-close pe-close" id="peCancelBtn" title="انصراف" aria-label="انصراف از ویرایش عکس">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <span class="pe-title" id="peTitle">ویرایش عکس</span>
-      <span class="pe-topbar-spacer"></span>
     </div>
-    <div class="pe-body">
+    <div class="pe-body" id="peBody">
       <div class="pe-stage" id="peStage">
         <img id="peImg" src="" alt="پیش‌نمایش عکس چک در حال ویرایش" draggable="false">
         <div class="pe-shade pe-shade-t"></div>
@@ -667,21 +670,28 @@
         <div class="pe-shade pe-shade-r"></div>
         <div class="pe-crop-box" id="peCropBox">
           <div class="pe-grid"><span></span><span></span><span></span><span></span></div>
-          <div class="pe-handle pe-h-tl" data-h="tl"></div>
-          <div class="pe-handle pe-h-tr" data-h="tr"></div>
-          <div class="pe-handle pe-h-bl" data-h="bl"></div>
-          <div class="pe-handle pe-h-br" data-h="br"></div>
+          <div class="pe-handle pe-edge pe-h-t" data-h="t"></div>
+          <div class="pe-handle pe-edge pe-h-b" data-h="b"></div>
+          <div class="pe-handle pe-edge pe-h-l" data-h="l"></div>
+          <div class="pe-handle pe-edge pe-h-r" data-h="r"></div>
+          <div class="pe-handle pe-corner pe-h-tl" data-h="tl"></div>
+          <div class="pe-handle pe-corner pe-h-tr" data-h="tr"></div>
+          <div class="pe-handle pe-corner pe-h-bl" data-h="bl"></div>
+          <div class="pe-handle pe-corner pe-h-br" data-h="br"></div>
         </div>
       </div>
     </div>
-    <div class="pe-controls">
-      <button class="pe-ctrl-btn" id="peRotateBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.4 13.4A9 9 0 1 1 18 5.5L21.5 8"/></svg>
-        <span>چرخش</span>
-      </button>
-    </div>
-    <div class="pe-footer">
-      <button class="pe-send-btn" id="peSendBtn">ارسال</button>
+    <div class="pe-bar">
+      <div class="pe-tools" role="toolbar" aria-label="چرخش عکس">
+        <button type="button" class="pe-tool" id="peRotateBtn" title="چرخش به راست" aria-label="چرخش به راست">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+        <button type="button" class="pe-tool" id="peRotateLeftBtn" title="چرخش به چپ" aria-label="چرخش به چپ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div>
+      <button type="button" class="pe-reset" id="peResetBtn" disabled>بازنشانی</button>
+      <button type="button" class="btn-submit pe-done" id="peSendBtn">افزودن عکس</button>
     </div>
   </div>
 </div>
@@ -734,17 +744,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260929k"></script>
-<script src="/js/shared.js?v=20260929k"></script>
-<script src="/js/palette.js?v=20260929k"></script>
-<script src="/js/dashboard.js?v=20260929k"></script>
-<script src="/js/print.js?v=20260929k"></script>
-<script src="/js/cheque-form.js?v=20260929k"></script>
-<script src="/js/date-segments.js?v=20260929k"></script>
-<script src="/js/cal-picker.js?v=20260929k"></script>
-<script src="/js/field-addons.js?v=20260929k"></script>
-<script src="/js/shell.js?v=20260929k"></script>
-<script src="/js/theme-reveal.js?v=20260929k"></script>
+<script src="/js/icons.js?v=20260929l"></script>
+<script src="/js/shared.js?v=20260929l"></script>
+<script src="/js/palette.js?v=20260929l"></script>
+<script src="/js/dashboard.js?v=20260929l"></script>
+<script src="/js/print.js?v=20260929l"></script>
+<script src="/js/cheque-form.js?v=20260929l"></script>
+<script src="/js/date-segments.js?v=20260929l"></script>
+<script src="/js/cal-picker.js?v=20260929l"></script>
+<script src="/js/field-addons.js?v=20260929l"></script>
+<script src="/js/shell.js?v=20260929l"></script>
+<script src="/js/theme-reveal.js?v=20260929l"></script>
 
 </body>
 </html>
