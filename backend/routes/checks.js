@@ -35,6 +35,18 @@ async function ensureOwnedPeople(companyId, ids) {
 
 const idParamValidation = [param('id').isInt().withMessage('شناسه نامعتبر است')];
 
+// The receipt is stored as a base64 data URL and rendered back in an <img> /
+// object on the dashboard. The frontend only ever sends a photo or a PDF, so
+// require exactly that shape and cap the size — this keeps the column from
+// being used to stash arbitrary large blobs or non-image URIs (the express
+// body limit alone would allow ~15MB of anything here).
+const RECEIPT_MAX = 14 * 1024 * 1024; // chars of base64 (~10MB binary)
+const RECEIPT_RE = /^data:(image\/(png|jpe?g|webp|gif)|application\/pdf);base64,[A-Za-z0-9+/=]+$/;
+const receiptImageValidator = (name) =>
+  body(name).optional({ values: 'falsy' }).isString()
+    .bail().isLength({ max: RECEIPT_MAX }).withMessage('حجم تصویر رسید بیش از حد مجاز است')
+    .bail().matches(RECEIPT_RE).withMessage('فرمت تصویر رسید نامعتبر است (فقط عکس یا PDF)');
+
 const STATUS_VALUES = ['pending', 'done', 'problem'];
 
 const createValidation = [
@@ -48,7 +60,7 @@ const createValidation = [
   body('party_id').notEmpty().withMessage('party_id الزامی است').isInt().withMessage('party_id نامعتبر است'),
   body('beneficiary_id').notEmpty().withMessage('beneficiary_id الزامی است').isInt().withMessage('beneficiary_id نامعتبر است'),
   body('notes').optional({ values: 'falsy' }).isString().isLength({ max: 2000 }),
-  body('receipt_image').optional({ values: 'falsy' }).isString(),
+  receiptImageValidator('receipt_image'),
   body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
   body('status').optional({ values: 'falsy' }).isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
 ];
@@ -64,7 +76,7 @@ const updateValidation = [
   body('party_id').optional({ values: 'falsy' }).isInt().withMessage('party_id نامعتبر است'),
   body('beneficiary_id').optional({ values: 'falsy' }).isInt().withMessage('beneficiary_id نامعتبر است'),
   body('notes').optional({ values: 'falsy' }).isString().isLength({ max: 2000 }),
-  body('receipt_image').optional({ values: 'falsy' }).isString(),
+  receiptImageValidator('receipt_image'),
   body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
   body('status').optional({ values: 'falsy' }).isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
   body('status_reason').optional({ values: 'falsy' }).isString().isLength({ max: 500 }),

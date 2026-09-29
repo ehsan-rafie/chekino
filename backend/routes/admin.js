@@ -9,6 +9,12 @@ const validate = require('../middleware/validate');
 
 const router = express.Router();
 
+// Compared against when the admin username doesn't exist, so a missing user
+// and a wrong password take the same time — the unknown-username path would
+// otherwise return before any bcrypt work and leak, by timing, whether an
+// admin username is valid. Mirrors the company login in routes/auth.js.
+const DUMMY_HASH = bcrypt.hashSync('chekino-invalid-admin-placeholder', 10);
+
 function signAdminToken(admin) {
   return jwt.sign(
     { role: 'admin', admin_id: admin.id, username: admin.username },
@@ -34,6 +40,7 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
     );
 
     if (result.rows.length === 0) {
+      await bcrypt.compare(password, DUMMY_HASH);   // keep both paths equally slow
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
 

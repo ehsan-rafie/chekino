@@ -15,18 +15,17 @@ const PORT = process.env.PORT || 3000;
 // (X-Forwarded-For) instead of always seeing 127.0.0.1.
 app.set('trust proxy', 1);
 
-// This app only ever serves JSON to the two chekino frontends — no HTML,
-// no inline scripts to allow — so helmet's defaults apply cleanly with no
-// CSP exceptions needed. frameguard and hsts are left to Nginx, which
-// already sets X-Frame-Options and Strict-Transport-Security across both
-// the static pages and this API — keeping each header in one place avoids
-// duplicate/conflicting values on the same response.
-// frameguard/hsts/noSniff/referrerPolicy/xssFilter are all left to Nginx,
-// which already sets these same headers across both the static pages and
-// this API — Helmet's defaults for these conflicted with Nginx's chosen
-// values (e.g. Referrer-Policy: no-referrer vs strict-origin-when-cross-origin),
-// producing duplicate headers with different values on the same response.
+// Nginx owns every header it and Helmet both know how to set, so each is
+// emitted once with one agreed value across the static pages and this API
+// (the /api location inherits the server-level add_header directives).
+// Helmet's versions are turned off to avoid a second, conflicting copy on
+// the same response — CSP included: leaving Helmet's default CSP on put a
+// second Content-Security-Policy on API responses (browsers then enforce
+// the intersection, and scanners flag the duplicate). Helmet still adds the
+// headers Nginx doesn't (COOP, CORP, Origin-Agent-Cluster,
+// X-Permitted-Cross-Domain-Policies, X-DNS-Prefetch-Control, …).
 app.use(helmet({
+  contentSecurityPolicy: false,
   frameguard: false,
   hsts: false,
   noSniff: false,
@@ -60,6 +59,11 @@ app.use('/api/people', peopleRoutes);
 app.use('/api/checks', checksRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Chekino server listening on port ${PORT}`);
+// Bind to loopback only: Nginx reverse-proxies to 127.0.0.1:3000 on the same
+// host, so the API never needs a public interface. ufw already blocks 3000
+// from outside; binding here means the DB-backed API stays unreachable even
+// if the firewall is ever changed or fails.
+const HOST = process.env.HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  console.log(`Chekino server listening on ${HOST}:${PORT}`);
 });
