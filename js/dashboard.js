@@ -340,6 +340,14 @@ function lockFormFields(locked) {
   sayadInput.readOnly = locked;
 }
 
+// A form always opens with its buttons live. The save / delete round trips
+// switch them off while a request is in flight; whichever way that request
+// ended, a new form must not inherit a dead button.
+function enableFormButtons() {
+  submitCheckBtn.disabled = false;
+  clearFormBtn.disabled = false;
+}
+
 function openModalForView(id) {
   const c = loadCheques().find(x => x.id === id);
   if (!c) return;
@@ -353,6 +361,7 @@ function openModalForView(id) {
   editingChequeId = id;
   veHasEdited = false;
   modalTitle.textContent = 'مشاهده چک';
+  enableFormButtons();
   hideFormAlert();
   const st = buildStatusSentence(c);
   veStatusBanner.className = 've-status-banner show ' + st.cls;
@@ -439,6 +448,7 @@ function openModal() {
   modalTitle.textContent = 'افزودن چک جدید';
   submitCheckBtn.textContent = 'ثبت چک';
   submitCheckBtn.classList.remove('pending-confirm', 'delete-warning');
+  enableFormButtons();
   clearFormBtn.title = 'پاک کردن فرم';
   clearFormBtn.classList.remove('confirming-delete');
   veStatusBanner.classList.remove('show');
@@ -3138,7 +3148,11 @@ function cancelPendingSave() {
 async function commitSaveEdit() {
   saveConfirmSlideBtn.classList.remove('show');
   const rec = currentFormRecord();
-  const stored = loadCheques().find(x => x.id === editingChequeId);
+  // Taken once, before any await: if the modal is closed mid-save and another
+  // cheque opened, editingChequeId changes — reading it after the await sent
+  // the PUT to the wrong cheque and closed the other one's window.
+  const id = editingChequeId;
+  const stored = loadCheques().find(x => x.id === id);
   if (!stored) { closeModal(true); return; }
 
   // The checkmark hides the instant it's clicked, but nothing here used to
@@ -3151,7 +3165,7 @@ async function commitSaveEdit() {
   try {
     const [ownerId, partyId, benefId] = await ensurePeople(rec);
 
-    await apiJson(`/checks/${editingChequeId}`, {
+    await apiJson(`/checks/${id}`, {
       method: 'PUT',
       body: JSON.stringify({
         serial: rec.serial,
@@ -3172,12 +3186,18 @@ async function commitSaveEdit() {
     // the path between "saved" and the modal being done with. Awaiting a full
     // re-download of every cheque here is what made saving an edit feel slow.
     loadChecksFromApi().then(renderTable).catch(() => {});
-    closeModal(true);
+    // The button was disabled for the round trip; it has to come back on
+    // here too, not only on failure — the modal closed with it still off,
+    // and the next form opened (add, view or edit) inherited a dead button.
+    submitCheckBtn.disabled = false;
+    // Close only the window this save belongs to (see `id` above).
+    if (editingChequeId === id && modalOverlay.classList.contains('show')) closeModal(true);
   } catch (e) {
+    submitCheckBtn.disabled = false;
+    if (editingChequeId !== id) return;   // that window is gone; don't write into another cheque's
     showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
     // Failed — put the confirm step back so the user can just try again
     // instead of having to re-trigger "ذخیره تغییرات" from scratch.
-    submitCheckBtn.disabled = false;
     submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
     saveConfirmSlideBtn.classList.add('show');
   }
