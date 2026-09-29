@@ -58,7 +58,7 @@ typography:
   scale: [12, 13, 14, 15, 17, 22, 26, 32]
 
 radius: { badge: 8px, control: 12px, lane-card: 16px, menu: 16px, card: 20px, float: 20px, modal: 24px, calendar-day: circle }
-heights: { field: 38px, button: 36px, badge: 20–22px }
+heights: { field: 38px (42px in the cheque form), button: 36px, badge: 20–22px }
 motion: { press: 100ms, default: 180ms, enter: 280ms }
 ---
 
@@ -83,7 +83,8 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    typed, today / the chosen day / a range in the calendar, the chosen
    year and month in its picker, ticked boxes, an applied filter, a lane
    about to take a dragged card. No gradients.
-4. **Fields are outlined.** White, 38px, `--field-border`, radius 12. Hover
+4. **Fields are outlined.** White, 38px (42px in the cheque form, see
+   below), `--field-border`, radius 12. Hover
    darkens the edge; focus turns it blue (`--focus-edge` + `--ring`); an
    error turns the edge red with a red ring.
    **Cursors are the usual ones** — a hand on what can be pressed, a text
@@ -170,8 +171,8 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   have no border, shadow or header strip: each title is a small grey
   caption centred on a hairline (── مشخصات چک ──), and that line is the
   only thing parting the sections, so the fields themselves are what the
-  eye lands on. **From 1100px across the sections stand side by side**
-  in a 1040px window — the cheque on the right (read first), the people
+  eye lands on. **From 1160px across the sections stand side by side**
+  in a 1100px window — the cheque on the right (read first), the people
   on the left — so the form is about half as tall (no scroll at 1280×720)
   and each field nearer the size of what goes in it; there the photo and
   the note each take a full row, and the channel tags sit under their
@@ -209,7 +210,7 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   anywhere in the form.
   **The channels are toggle tags**, not a dropdown (HeroUI's TagGroup,
   selection «multiple»): the options are too few to hide behind a list.
-  Compact tags (32px, radius 10) on the label's own line; they wrap
+  Compact tags (36px — 42px side by side — radius 10) on the label's own line; they wrap
   under each other, not under the label (on a phone they start on the
   line below it). Each holds a logo and the name. The four messengers —
   روبیکا، واتس‌اپ، ایتا، تلگرام — carry their official marks in their
@@ -241,6 +242,15 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   arrow say it. Placeholders left: the date segments and the
   note's example. The save button is compact and sits at the end of the
   footer; saving an edit asks for a one-tap confirmation in place.
+- *Size.* The form reads at the size of the board's cards (whose
+  figures are 15–16px): what's typed is 15px, labels and section titles
+  14px (hints 13px), and fields, the date and amount boxes and the save
+  buttons 42px tall — about a tenth larger than the rest of the app's
+  controls. Type and heights only, not a zoom: icons, gaps and 1px lines
+  stay as they are, and the lists and the calendar, which open outside
+  the window, grow in step by their own rules. On a phone every field's
+  text is 16px, since below that Safari on iOS zooms the page when a
+  field is tapped.
 - *View — the cheque itself.* The status sentence, the drawn cheque with
   its stamp, then a bordered card with only what the cheque doesn't carry
   (party, send date, channels, spend date, notes, photos, sayad id with a
@@ -318,9 +328,9 @@ when the right would push it out past the form (the dates sit at the
 form's left and are narrower than the calendar).
 
 **Calendar** (Jalali). HeroUI's, sized to the form: a white popover
-(radius 20, ring + drop) 264px across, with one «مهر ۱۴۰۵ ⌄» button at the
-start and two grey arrows at the end. Day cells are 32px circles with
-13px figures (the labels' size), and the weeks are filled out with the
+(radius 20, ring + drop) 280px across, with one «مهر ۱۴۰۵ ⌄» button at the
+start and two grey arrows at the end. Day cells are 34px circles with
+14px figures (the labels' size), and the weeks are filled out with the
 neighbouring months' days, faded; Fridays are red, as the Persian
 calendar prints them. Blue is for the choice alone: the chosen day is a
 solid blue circle, a range has solid blue ends and a soft blue band;

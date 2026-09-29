@@ -4975,9 +4975,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 @media (max-width: 700px) { .add-check-btn.shimmer-btn { height: 40px; } }
 
 /* ═══ Calendar, sized to the form ═══
-   A 264px popover with 32px day circles and 13px figures — the labels'
-   size — instead of a 300px one that stood a size above the form it opens
-   from. «امروز» and the range buttons are small (30px, radius 10, like the
+   A 280px popover with 34px day circles and 14px figures — the labels'
+   size — in step with the form's 42px fields. «امروز» and the range buttons are small (30px, radius 10, like the
    channel tags); «امروز» sits at the start of the footer rather than
    running across it. The phone overlay keeps its larger, finger-sized
    cells. */
@@ -4994,18 +4993,18 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .cal-today-btn { flex: 0 0 auto; width: auto; padding: 0 12px; }
 @media (min-width: 601px) {
   .cal-popup,
-  .cal-popup.anchored { width: 264px; padding: 12px; }
+  .cal-popup.anchored { width: 280px; padding: 12px; }
   .cal-header { margin-bottom: 4px; }
-  .cal-title-btn { height: 28px; font-size: var(--t-cap); }
-  .cal-nav-btn { width: 28px; height: 28px; }
+  .cal-title-btn { height: 30px; font-size: var(--t-body); }
+  .cal-nav-btn { width: 30px; height: 30px; }
   .cal-weekdays span { padding: 2px 0; }
-  .cal-day { width: 32px; height: 32px; font-size: var(--t-cap); }
-  .cal-day.range-start.range-end { width: 32px; }
-  .cal-day.range-start { border-radius: 0 16px 16px 0; }
-  .cal-day.range-end { border-radius: 16px 0 0 16px; }
-  .cal-picker { height: 232px; }
-  .cal-pick { height: 32px; font-size: var(--t-cap); }
-  .cal-picker.is-months .cal-pick { height: 40px; }
+  .cal-day { width: 34px; height: 34px; font-size: var(--t-body); }
+  .cal-day.range-start.range-end { width: 34px; }
+  .cal-day.range-start { border-radius: 0 17px 17px 0; }
+  .cal-day.range-end { border-radius: 17px 0 0 17px; }
+  .cal-picker { height: 248px; }
+  .cal-pick { height: 34px; font-size: var(--t-body); }
+  .cal-picker.is-months .cal-pick { height: 42px; }
 }
 /* the calendar buttons are out of the Tab order (tabindex -1): no keyboard
    ring on them — focus goes back to the field when the calendar closes */

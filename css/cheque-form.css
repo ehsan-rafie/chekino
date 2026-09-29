@@ -327,14 +327,14 @@
 #modalOverlay .ig-area .notes-input {
   display: block;
   width: 100%;
-  min-height: 38px;
+  min-height: 42px;
   max-height: 120px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   padding-left: 12px;
   line-height: 20px;
 }
 #modalOverlay .ig-area:has(.notes-count:not(:empty)) .notes-input { padding-left: 64px; }
-#modalOverlay .ig-area .notes-count { bottom: 10px; line-height: 16px; }
+#modalOverlay .ig-area .notes-count { bottom: 12px; line-height: 16px; }
 #modalOverlay .cq-note label { padding-inline-start: 0; }
 
 /* Photo at half width: the drop hint gives way before the button does */
@@ -346,7 +346,7 @@
   #notesField { grid-column: 1 / -1; }
 }
 /* the photo row is exactly as tall as the note beside it */
-#fileField .file-box { min-height: 38px; padding-block: 3px; }
+#fileField .file-box { min-height: 42px; padding-block: 5px; }
 
 /* ---- «ارسال به صاحب چک از طریق»: toggle tags ----
    HeroUI's TagGroup with multiple selection. All in view — a list this
@@ -365,7 +365,7 @@
   align-items: flex-start;
   gap: 8px 14px;
 }
-#channelField > label { flex: 0 0 auto; margin: 0; line-height: 32px; }   /* level with the first row of tags */
+#channelField > label { flex: 0 0 auto; margin: 0; line-height: 36px; }   /* level with the first row of tags */
 #channelField > .field-msg { flex-basis: 100%; margin-top: -2px; }
 .ch-group {
   flex: 1 1 0;
@@ -381,24 +381,24 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  height: 36px;
   margin: 0;
-  padding: 0 9px;
+  padding: 0 10px;
   border: 1px solid var(--field-border);
   border-radius: 10px;
   background: var(--field-bg);
   box-shadow: var(--field-shadow);
   color: var(--ink-2);
   font: inherit;
-  font-size: var(--t-cap);
+  font-size: var(--t-body);
   font-variation-settings: var(--f-body);
   white-space: nowrap;
   transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
 .ch-tag[hidden] { display: none; }
 .ch-tag:hover { border-color: var(--field-border-hover); }
-.ch-logo { display: grid; place-items: center; width: 16px; height: 16px; flex-shrink: 0; }
-.ch-logo svg { display: block; width: 16px; height: 16px; }
+.ch-logo { display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0; }
+.ch-logo svg { display: block; width: 18px; height: 18px; }
 .ch-tag[aria-pressed="true"] {
   border-color: var(--hl);
   background: var(--hl-soft);
@@ -414,11 +414,11 @@
 #channelField.error .ch-tag { border-color: var(--state-bad); }
 #channelField .ch-other {
   flex: 0 0 auto;
-  width: 132px;
-  height: 32px;
+  width: 140px;
+  height: 36px;
   padding: 0 10px;
   border-radius: 10px;
-  font-size: var(--t-cap);
+  font-size: var(--t-body);
   animation: chOtherOpen var(--dur-2) var(--ease-out);
 }
 #channelField .ch-other[hidden] { display: none; }
@@ -428,20 +428,20 @@
 }
 
 /* ═══ Wide screens: the two sections side by side ═══
-   From 1100px across, «مشخصات چک» and «مشخصات اشخاص» stand next to each
+   From 1160px across, «مشخصات چک» and «مشخصات اشخاص» stand next to each
    other in a wider window (cheque on the right, read first) instead of one
    under the other: the form is about half as tall, and each field is
    closer to the size of what goes in it. Each column is its own titled
    section, and Enter / Tab run down the right one before the left. Below
-   1100px (tablets, phones) the stacked layout above stays. The photo and
+   1160px (tablets, phones) the stacked layout above stays. The photo and
    the note each take a full row, so the columns come out four rows each;
    the channel tags go under their label, where all five fit on one line.
    The two columns share their rows (subgrid, down through each section
    to its fields): a row is as tall as the taller side, so the rows line
    up across the form even when an error line opens under one field. The
    tags are a field's height here, so the last rows end level too. */
-@media (min-width: 1100px) {
-  #modalOverlay .modal-box { max-width: 1040px; }
+@media (min-width: 1160px) {
+  #modalOverlay .modal-box { max-width: 1100px; }
   .cq-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -465,7 +465,7 @@
   #channelField > label { display: block; margin: 0 0 6px; line-height: inherit; }
   #channelField > .field-msg { margin-top: 5px; }
   #channelField .ch-tag,
-  #channelField .ch-other { height: 38px; }
+  #channelField .ch-other { height: 42px; }
   /* A hairline down the middle of the gap, from the first row of fields to
      the last: side by side, the two sections' wide fields meet in the
      middle and would otherwise read as one row of four */
@@ -479,4 +479,37 @@
     width: 1px;
     background: var(--border-subtle);
   }
+}
+
+/* ═══ Form size ═══
+   The form reads at the size of the board's cards (whose figures are
+   15–16px): what's typed is 15px, labels and section titles 14px, and the
+   fields — inputs, the date and amount boxes, the save buttons — 42px tall,
+   about a tenth larger than before. Type and heights only: a uniform zoom
+   would also swell icons, gaps and 1px lines, and miss the lists and the
+   calendar, which open outside the window. The note, the photo row, the
+   channel tags and the calendar follow above. On a phone every field's
+   text is 16px: below that, Safari on iOS zooms the page whenever a field
+   is tapped. */
+#modalOverlay .form-field label { font-size: var(--t-body); }
+#modalOverlay .form-field label .hint { font-size: var(--t-cap); }
+#modalOverlay .cq-card-title { font-size: var(--t-body); }
+#modalOverlay .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+#modalOverlay .form-field textarea { font-size: var(--t-value); }
+#modalOverlay .form-field input::placeholder,
+#modalOverlay .form-field textarea::placeholder { font-size: var(--t-body); }
+#modalOverlay .dseg-part { font-size: var(--t-value); }
+#modalOverlay .form-field .ig > input,
+#modalOverlay .form-field input:not(.amount-input):not(.date-mask-input):not(.ch-other):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+#modalOverlay .date-input-wrap,
+#modalOverlay .amount-box { height: 42px; }
+#modalOverlay .modal-footer .btn-submit,
+#modalOverlay .modal-footer .btn-clear { height: 42px; }
+#modalOverlay .modal-footer .btn-clear { width: 42px; }
+@media (max-width: 600px) {
+  #modalOverlay .form-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  #modalOverlay .form-field textarea { font-size: 16px; }
+  #modalOverlay .modal-footer .btn-submit,
+  #modalOverlay .modal-footer .btn-clear { height: 44px; }
+  #modalOverlay .modal-footer .btn-clear { width: 44px; }
 }
