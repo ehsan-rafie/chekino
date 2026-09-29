@@ -21,7 +21,6 @@
 }
 
 .cq-body.modal-body { padding: 0; background: var(--surface-2); }
-.cq-body > .form-alert { margin: 16px 20px 0; }
 .modal-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 /* The header and footer frame the grey body as white bars */
 #modalOverlay .modal-header { box-shadow: 0 1px 0 var(--border); position: relative; z-index: 1; }
@@ -253,7 +252,6 @@
 
 /* ---- Narrow screens ---- */
 @media (max-width: 600px) {
-  .cq-body > .form-alert { margin: 12px 14px 0; }
   .cq-form { padding: 14px; gap: 12px; }
   .cq-card > .cq-grid { padding: 14px 14px 16px; }
   .cq-card-title { padding: 10px 14px; }
@@ -365,8 +363,8 @@
   align-items: flex-start;
   gap: 8px 14px;
 }
-#channelField > label { flex: 0 0 auto; margin: 0; line-height: 36px; }   /* level with the first row of tags */
-#channelField > .field-msg { flex-basis: 100%; margin-top: -2px; }
+#channelField > .field-head { flex: 0 0 auto; margin: 0; }
+#channelField > .field-head > label { line-height: 36px; }   /* level with the first row of tags */
 .ch-group {
   flex: 1 1 0;
   min-width: 0;
@@ -462,8 +460,8 @@
   }
   #fileField, #notesField { grid-column: 1 / -1; }
   #channelField { display: block; }
-  #channelField > label { display: block; margin: 0 0 6px; line-height: inherit; }
-  #channelField > .field-msg { margin-top: 5px; }
+  #channelField > .field-head { margin: 0 0 6px; }
+  #channelField > .field-head > label { line-height: inherit; }
   #channelField .ch-tag,
   #channelField .ch-other { height: 42px; }
   /* A hairline down the middle of the gap, from the first row of fields to
@@ -512,4 +510,107 @@
   #modalOverlay .modal-footer .btn-submit,
   #modalOverlay .modal-footer .btn-clear { height: 44px; }
   #modalOverlay .modal-footer .btn-clear { width: 44px; }
+}
+
+/* ═══ Errors and notices ═══
+   Nothing a message says may move the form. A field's error sits on its
+   label line, at the far end — where the amount in words and the «(۶ رقم)»
+   hints already sit — so a field in error is exactly as tall as before:
+   the rows stay put (and aligned across the two columns), and the save
+   button no longer slides away under the pointer the moment a field's
+   error appears on blur. The text is short (the label names the field; the
+   message says what's needed), gets a small icon so it doesn't rest on
+   colour alone, and runs to «…» with the whole text in its title if a
+   narrow field can't hold it. While a field is in error its format hint
+   steps aside (the message states the rule) and so does the amount in
+   words. */
+.field-head > label { flex: 0 0 auto; }
+.form-field .field-head .field-msg {
+  display: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  margin-inline-start: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-micro);
+  color: var(--state-bad-text);
+  font-variation-settings: var(--f-body);
+}
+.form-field.error .field-head .field-msg {
+  display: block;
+  animation: fieldMsgIn var(--dur-2) var(--ease-out) both;
+}
+.form-field .field-head .field-msg::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-inline-end: 4px;
+  vertical-align: -2px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9.5'/%3E%3Cline x1='12' y1='7.5' x2='12' y2='12.5'/%3E%3Cline x1='12' y1='16.2' x2='12' y2='16.3'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9.5'/%3E%3Cline x1='12' y1='7.5' x2='12' y2='12.5'/%3E%3Cline x1='12' y1='16.2' x2='12' y2='16.3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+@keyframes fieldMsgIn { from { opacity: 0; transform: translateX(-4px); } }
+.form-field.error .field-head label .hint,
+#amountField.error .amount-words { display: none; }
+/* The label keeps its colour: the red edge and the message already say it,
+   and nine red labels on an empty submit only made the form shout. */
+#modalOverlay .form-field.error .field-head label { color: var(--ink); }
+
+/* The form's own messages — "چک ۴۸۲۹۱۳ ثبت شد", "۳ مورد را اصلاح کنید", a
+   server error — sit in the footer, right beside the buttons, as a small
+   pill (Sonner's toast, set inline): no height anywhere changes, and the
+   message is where the eye already is after pressing «ثبت چک». It arrives
+   from the buttons' side with a little spring and leaves with a fade. An
+   error pill can be pressed to go to the first field to fix. On a phone,
+   where the buttons fill the footer, the same pill floats just above it. */
+#modalOverlay .modal-footer { position: relative; }
+.form-notice {
+  order: -2;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  margin-inline-end: 4px;
+  border-radius: 10px;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+  animation: noticeIn var(--dur-3) var(--ease-spring) both;
+}
+.form-notice[hidden] { display: none; }
+.form-notice.leaving { animation: noticeOut 160ms var(--ease) both; }
+.form-notice-icon { display: grid; place-items: center; flex-shrink: 0; }
+.form-notice-icon svg { width: 16px; height: 16px; }
+.form-notice-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.form-notice.is-success { background: var(--state-ok-bg); color: var(--state-ok-text); }
+.form-notice.is-error { background: var(--state-bad-bg); color: var(--state-bad-text); cursor: pointer; }
+@keyframes noticeIn { from { opacity: 0; transform: translateX(-10px) scale(0.97); } }
+@keyframes noticeOut { to { opacity: 0; transform: translateX(-6px); } }
+@media (max-width: 600px) {
+  .form-notice {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 14px;
+    right: 14px;
+    justify-content: center;
+    height: auto;
+    min-height: 40px;
+    padding: 9px 14px;
+    margin: 0;
+    white-space: normal;
+    text-align: center;
+    box-shadow: var(--shadow-2);
+    animation-name: noticeUp;
+  }
+  .form-notice-text { overflow: visible; }
+  .form-notice.leaving { animation-name: noticeDown; }
+  @keyframes noticeUp { from { opacity: 0; transform: translateY(10px) scale(0.97); } }
+  @keyframes noticeDown { to { opacity: 0; transform: translateY(6px); } }
 }

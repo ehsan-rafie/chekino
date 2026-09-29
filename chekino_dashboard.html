@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260929b" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260929e" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260929b">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260929b">
-<link rel="stylesheet" href="/css/cheque.css?v=20260929b">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260929b">
+<link rel="stylesheet" href="/css/shared.css?v=20260929e">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260929e">
+<link rel="stylesheet" href="/css/cheque.css?v=20260929e">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260929e">
 </head>
 <body class="chekino-auth-pending">
 
@@ -326,10 +326,6 @@
     </div>
 
     <div class="modal-body cq-body" id="modalBody" tabindex="0" role="group" aria-label="مشخصات چک">
-      <div class="form-alert" id="formAlert">
-        <svg id="formAlertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/></svg>
-        <span id="formAlertText"></span>
-      </div>
 
       <!-- ═══ VIEW: the cheque itself ═══
            Shown only in view mode (modal-body.ve-locked). The cheque is drawn
@@ -454,49 +450,58 @@
           <div class="cq-grid">
             <div class="ve-fields-wrap" id="veFieldsWrapA">
               <div class="form-field cq-span-2" id="serialField">
-                <label for="serialInput">سریال <span class="hint">(۶ رقم)</span></label>
+                <div class="field-head">
+                  <label for="serialInput">سریال <span class="hint">(۶ رقم)</span></label>
+                  <div class="field-msg" id="serialMsg"></div>
+                </div>
                 <div class="ig is-ltr has-pre">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></span>
                   <input type="text" id="serialInput" aria-required="true" inputmode="numeric" maxlength="6" autocomplete="off" aria-describedby="serialMsg">
                 </div>
-                <div class="field-msg" id="serialMsg">سریال باید ۶ رقم باشد</div>
               </div>
             </div>
             <div class="form-field cq-span-4" id="sayadField">
-              <label for="sayadInput">شناسه صیادی <span class="hint">(۱۶ رقم)</span></label>
+              <div class="field-head">
+                <label for="sayadInput">شناسه صیادی <span class="hint">(۱۶ رقم)</span></label>
+                <div class="field-msg" id="sayadMsg"></div>
+              </div>
               <div class="ig is-ltr has-pre">
                 <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7v10M12 7v10M16 7v10"/></svg></span>
                 <input type="text" id="sayadInput" aria-required="true" inputmode="numeric" maxlength="19" autocomplete="off" aria-describedby="sayadMsg">
               </div>
               <div class="sayad-static" id="sayadStatic"></div>
-              <div class="field-msg" id="sayadMsg">شناسه صیادی باید ۱۶ رقم باشد</div>
             </div>
 
             <div class="ve-fields-wrap" id="veFieldsWrapA2">
               <div class="form-field date-field cq-span-2" id="dueDateField">
-                <label for="dueDateInput">سررسید</label>
+                <div class="field-head">
+                  <label for="dueDateInput">سررسید</label>
+                  <div class="field-msg" id="dueDateMsg"></div>
+                </div>
                 <div class="date-input-wrap" id="dueDateRow">
                   <input type="text" id="dueDateInput" aria-required="true" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="dueDateMsg">
                   <button type="button" class="date-cal-btn" id="dueDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </button>
                 </div>
-                <div class="field-msg" id="dueDateMsg">تاریخ معتبر نیست</div>
               </div>
               <div class="form-field amount-field cq-span-4" id="amountField">
                 <div class="field-head">
                   <label for="amountInput">مبلغ</label>
                   <div class="amount-words" id="amountWords"></div>
+                  <div class="field-msg" id="amountMsg"></div>
                 </div>
                 <div class="amount-box" id="amountBox">
                   <input type="text" id="amountInput" aria-required="true" class="amount-input" inputmode="numeric" autocomplete="off" aria-describedby="amountMsg amountWords">
                   <span class="amount-unit" title="ریال">﷼</span>
                 </div>
-                <div class="field-msg" id="amountMsg">مبلغ را وارد کنید</div>
               </div>
 
               <div class="form-field file-field cq-span-3" id="fileField">
-                <label>عکس چک</label>
+                <div class="field-head">
+                  <label>عکس چک</label>
+                  <div class="field-msg" id="fileMsg"></div>
+                </div>
                 <!-- One slim row, the height of a field (after 21st.dev's
                      File Upload): an image icon, the thumbnails once there
                      are some (a hint to drop files until then), and a small
@@ -511,7 +516,6 @@
                   </button>
                   <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
                 </div>
-                <div class="field-msg" id="fileMsg"></div>
               </div>
               <div class="form-field notes-field cq-note cq-span-3" id="notesField">
                 <label for="notesInput">توضیحات</label>
@@ -532,65 +536,79 @@
           <div class="cq-grid">
             <div class="ve-fields-wrap" id="veFieldsWrapB">
               <div class="form-field ac-field cq-span-4" id="ownerField">
-                <label for="ownerInput">صاحب چک</label>
+                <div class="field-head">
+                  <label for="ownerInput">صاحب چک</label>
+                  <div class="field-msg" id="ownerMsg"></div>
+                </div>
                 <div class="ig has-pre has-suf">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span>
                   <input type="text" id="ownerInput" aria-required="true" class="ac-input" autocomplete="off" aria-describedby="ownerMsg">
                   <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="ownerInput" aria-label="نمایش فهرست صاحبان چک"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
                 </div>
-                <div class="field-msg" id="ownerMsg">نام صاحب چک را وارد کنید</div>
               </div>
               <div class="form-field date-field cq-span-2" id="sendDateField">
-                <label for="sendDateInput">تاریخ ارسال</label>
+                <div class="field-head">
+                  <label for="sendDateInput">تاریخ ارسال</label>
+                  <div class="field-msg" id="sendDateMsg"></div>
+                </div>
                 <div class="date-input-wrap">
                   <input type="text" id="sendDateInput" aria-required="true" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="sendDateMsg">
                   <button type="button" class="date-cal-btn" id="sendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </button>
                 </div>
-                <div class="field-msg" id="sendDateMsg">تاریخ معتبر نیست</div>
               </div>
               <div class="form-field ac-field cq-span-4" id="partyField">
-                <label for="partyInput">طرف حساب</label>
+                <div class="field-head">
+                  <label for="partyInput">طرف حساب</label>
+                  <div class="field-msg" id="partyMsg"></div>
+                </div>
                 <div class="ig has-pre has-suf">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
                   <input type="text" id="partyInput" aria-required="true" class="ac-input" autocomplete="off" aria-describedby="partyMsg">
                   <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="partyInput" aria-label="نمایش فهرست طرف‌های حساب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
                 </div>
-                <div class="field-msg" id="partyMsg">نام طرف حساب را وارد کنید</div>
               </div>
               <div class="form-field date-field cq-span-2" id="spendDateField">
-                <label for="spendDateInput">تاریخ خرج</label>
+                <div class="field-head">
+                  <label for="spendDateInput">تاریخ خرج</label>
+                  <div class="field-msg" id="spendDateMsg"></div>
+                </div>
                 <div class="date-input-wrap">
                   <input type="text" id="spendDateInput" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="spendDateMsg">
                   <button type="button" class="date-cal-btn" id="spendDateCalBtn" tabindex="-1" title="انتخاب از تقویم">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </button>
                 </div>
-                <div class="field-msg" id="spendDateMsg">تاریخ معتبر نیست</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="benefField">
-                <label for="benefInput">ذینفع</label>
+                <div class="field-head">
+                  <label for="benefInput">ذینفع</label>
+                  <div class="field-msg" id="benefMsg"></div>
+                </div>
                 <div class="ig has-pre has-suf">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                   <input type="text" id="benefInput" aria-required="true" class="ac-input" autocomplete="off" aria-describedby="benefMsg">
                   <span class="ig-suf has-btn"><button type="button" class="ig-btn" tabindex="-1" data-focus="benefInput" aria-label="نمایش فهرست ذینفعان"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
                 </div>
-                <div class="field-msg" id="benefMsg">نام ذینفع را وارد کنید</div>
               </div>
               <div class="form-field ac-field cq-span-3" id="nidField">
-                <label for="nidInput">کد / شناسه ملی ذینفع <span class="hint">(۱۰ یا ۱۱ رقم)</span></label>
+                <div class="field-head">
+                  <label for="nidInput">کد / شناسه ملی ذینفع <span class="hint">(۱۰ یا ۱۱ رقم)</span></label>
+                  <div class="field-msg" id="nidMsg"></div>
+                </div>
                 <div class="nid-box ig is-ltr has-pre has-suf" id="nidBox">
                   <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><path d="M16 10h2M16 14h2"/></svg></span>
                   <input type="text" id="nidInput" aria-required="true" class="ac-input" inputmode="numeric" autocomplete="off" aria-describedby="nidMsg">
                   <span class="ig-suf"><span class="nid-kind ig-badge" id="nidKind"></span></span>
                 </div>
-                <div class="field-msg" id="nidMsg">کد ملی ۱۰ رقم و شناسه ملی ۱۱ رقم است</div>
               </div>
               <div class="form-field ch-field cq-span-6" id="channelField">
-                <label id="channelLabel">ارسال به صاحب چک از طریق</label>
+                <div class="field-head">
+                  <label id="channelLabel">ارسال به صاحب چک از طریق</label>
+                  <div class="field-msg" id="channelMsg"></div>
+                </div>
                 <div class="ch-group" id="channelGroup" role="group" aria-labelledby="channelLabel" aria-describedby="channelMsg"></div>
-                <div class="field-msg" id="channelMsg">حداقل یک روش را انتخاب کنید</div>
               </div>
             </div>
           </div>
@@ -601,6 +619,10 @@
     </div>
 
     <div class="modal-footer" id="modalFooter">
+      <div class="form-notice" id="formNotice" role="status" aria-live="polite" hidden>
+        <span class="form-notice-icon" aria-hidden="true"></span>
+        <span class="form-notice-text" id="formNoticeText"></span>
+      </div>
       <div class="save-confirm-wrap">
         <button class="btn-submit" id="submitCheckBtn">ثبت چک</button>
         <button type="button" class="save-confirm-slide" id="saveConfirmSlideBtn" title="تأیید و ذخیره">
@@ -710,17 +732,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260929b"></script>
-<script src="/js/shared.js?v=20260929b"></script>
-<script src="/js/palette.js?v=20260929b"></script>
-<script src="/js/dashboard.js?v=20260929b"></script>
-<script src="/js/print.js?v=20260929b"></script>
-<script src="/js/cheque-form.js?v=20260929b"></script>
-<script src="/js/date-segments.js?v=20260929b"></script>
-<script src="/js/cal-picker.js?v=20260929b"></script>
-<script src="/js/field-addons.js?v=20260929b"></script>
-<script src="/js/shell.js?v=20260929b"></script>
-<script src="/js/theme-reveal.js?v=20260929b"></script>
+<script src="/js/icons.js?v=20260929e"></script>
+<script src="/js/shared.js?v=20260929e"></script>
+<script src="/js/palette.js?v=20260929e"></script>
+<script src="/js/dashboard.js?v=20260929e"></script>
+<script src="/js/print.js?v=20260929e"></script>
+<script src="/js/cheque-form.js?v=20260929e"></script>
+<script src="/js/date-segments.js?v=20260929e"></script>
+<script src="/js/cal-picker.js?v=20260929e"></script>
+<script src="/js/field-addons.js?v=20260929e"></script>
+<script src="/js/shell.js?v=20260929e"></script>
+<script src="/js/theme-reveal.js?v=20260929e"></script>
 
 </body>
 </html>

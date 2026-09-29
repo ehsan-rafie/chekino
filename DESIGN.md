@@ -233,8 +233,29 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   **Nothing marks required or optional** — no «اختیاری», no asterisk, no
   dot. All but the photo, spend date and note are required
   (`aria-required` on the inputs); saving focuses the first field that
-  is missing or wrong, and each shows a red edge and a line under it (no
-  shake). A field's format rule is a quiet hint in brackets after its
+  is missing or wrong.
+  **Errors never move the form.** A field in error gets a red edge and a
+  short message at the far end of its label line (where the hints and the
+  amount in words sit), with a small icon and a soft fade-in — never a
+  line under the field: that grew the form, knocked the rows across the
+  two columns out of line, and on blur slid the save button out from
+  under the pointer so the click was lost. The message says what's needed,
+  not the field's name again: «لازم است», «باید ۶ رقم باشد», «ناقص است»,
+  «مهر ۳۰ روزه است», «۱۰ یا ۱۱ رقم باشد», «قبلاً با سریال ۴۸۲۹۱۳ ثبت شده»,
+  «یکی را انتخاب کنید», «فقط عکس یا PDF: نام فایل». Too long for a
+  narrow field, it ends in «…» with the whole of it in its title. The
+  label keeps its colour, the format hint and the amount in words step
+  aside while the error shows, and the input carries `aria-invalid`.
+  **The form's own messages sit in the footer**, as a small pill beside
+  the buttons (Sonner's toast, set inline): «چک ۴۸۲۹۱۳ ثبت شد» (green,
+  leaves after ~4.5s), «۳ مورد را اصلاح کنید» (red; pressing it goes to the
+  first field to fix; it leaves once the user edits something), a
+  duplicate or a server error. A request that got no answer says
+  «ذخیره نشد — اتصال را بررسی کنید و دوباره بزنید» rather than the
+  browser's English «Failed to fetch». On a phone, where the buttons fill
+  the footer, the pill floats just above it. It replaced a banner at the
+  top of the form that pushed every field down and scrolled the form
+  back to the top. A field's format rule is a quiet hint in brackets after its
   label — «سریال (۶ رقم)», «شناسه صیادی (۱۶ رقم)», «کد / شناسه ملی ذینفع
   (۱۰ یا ۱۱ رقم)» — not a placeholder: it stays visible while typing, and
   Persian placeholder text inside a left-to-right box came out reversed

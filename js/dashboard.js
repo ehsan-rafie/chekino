@@ -267,9 +267,8 @@ const calConfirmRangeBtn = document.getElementById('calConfirmRangeBtn');
 const calClearRangeBtn = document.getElementById('calClearRangeBtn');
 const submitCheckBtn = document.getElementById('submitCheckBtn');
 const modalBody = document.getElementById('modalBody');
-const formAlert = document.getElementById('formAlert');
-const formAlertIcon = document.getElementById('formAlertIcon');
-const formAlertText = document.getElementById('formAlertText');
+const formNotice = document.getElementById('formNotice');
+const formNoticeText = document.getElementById('formNoticeText');
 const clearFormBtn = document.getElementById('clearFormBtn');
 
 const DRAFT_KEY = 'chekino_draft_v1';
@@ -780,12 +779,12 @@ function validateSerial() {
   const len = serialInput.value.length;
   if (len === 0) {
     serialField.classList.add('error');
-    serialMsg.textContent = 'شماره سریال چک را وارد کنید';
+    serialMsg.textContent = 'لازم است';
     return false;
   }
   if (len !== 6) {
     serialField.classList.add('error');
-    serialMsg.textContent = `شماره سریال باید ۶ رقم باشد (${toFa(len)} رقم وارد شده)`;
+    serialMsg.textContent = 'باید ۶ رقم باشد';
     return false;
   }
   serialField.classList.remove('error');
@@ -796,12 +795,12 @@ function validateSayad() {
   const len = sayadDigits().length;
   if (len === 0) {
     sayadField.classList.add('error');
-    sayadMsg.textContent = 'شناسه صیادی چک را وارد کنید';
+    sayadMsg.textContent = 'لازم است';
     return false;
   }
   if (len !== 16) {
     sayadField.classList.add('error');
-    sayadMsg.textContent = `شناسه صیادی باید ۱۶ رقم باشد (${toFa(len)} رقم وارد شده)`;
+    sayadMsg.textContent = 'باید ۱۶ رقم باشد';
     return false;
   }
   sayadField.classList.remove('error');
@@ -1123,12 +1122,12 @@ function createDateField(cfg) {
     if (!api.required && untouched) { api.field.classList.remove('error'); return true; }
     if (untouched) {
       api.field.classList.add('error');
-      api.msg.textContent = 'تاریخ را وارد کنید';
+      api.msg.textContent = 'لازم است';
       return false;
     }
     if (!api.isFilled()) {
       api.field.classList.add('error');
-      api.msg.textContent = 'تاریخ ناقص است';   // short: the date fields are narrow, and the empty segment shows what's missing
+      api.msg.textContent = 'ناقص است';   // the empty segment shows which part
       return false;
     }
     const y = parseInt(api.yearStr(), 10);
@@ -1136,18 +1135,18 @@ function createDateField(cfg) {
     const d = parseInt(api.dayStr(), 10);
     if (y < 1300 || y > 1500) {
       api.field.classList.add('error');
-      api.msg.textContent = 'سال باید بین ۱۳۰۰ تا ۱۵۰۰ باشد';
+      api.msg.textContent = 'سال ۱۳۰۰ تا ۱۵۰۰';
       return false;
     }
     if (m < 1 || m > 12) {
       api.field.classList.add('error');
-      api.msg.textContent = 'ماه نامعتبر است';
+      api.msg.textContent = 'ماه ۱ تا ۱۲';
       return false;
     }
     const maxDay = daysInJalaliMonth(y, m);
     if (d < 1 || d > maxDay) {
       api.field.classList.add('error');
-      api.msg.textContent = `روز نامعتبر است (حداکثر ${maxDay} روز در این ماه)`;
+      api.msg.textContent = d < 1 ? 'روز نامعتبر است' : `${jalaliMonthNames[m - 1]} ${toFa(maxDay)} روزه است`;
       return false;
     }
     api.field.classList.remove('error');
@@ -1309,12 +1308,12 @@ function validateAmount() {
   const raw = amountRawDigits();
   if (raw === '') {
     amountField.classList.add('error');
-    amountMsg.textContent = 'مبلغ چک را وارد کنید';
+    amountMsg.textContent = 'لازم است';
     return false;
   }
   if (parseInt(raw, 10) === 0) {
     amountField.classList.add('error');
-    amountMsg.textContent = 'مبلغ نمی‌تواند صفر باشد';
+    amountMsg.textContent = 'بیشتر از صفر باشد';
     return false;
   }
   amountField.classList.remove('error');
@@ -1347,6 +1346,14 @@ async function apiFetch(path, opts) {
     throw new Error('unauthorized');
   }
   return res;
+}
+
+// A failed request, in words the user can act on: the server's own message
+// when it sent one, otherwise (no answer at all — the connection dropped, the
+// browser's English "Failed to fetch") what didn't happen and what to do.
+function requestErrorText(e, what) {
+  if (e && e.status) return e.message || `${what} — خطای سرور، دوباره بزنید`;
+  return `${what} — اتصال را بررسی کنید و دوباره بزنید`;
 }
 
 async function apiJson(path, opts) {
@@ -2109,7 +2116,7 @@ const nidAC = createAutocomplete({
 function validateOwner() {
   if (ownerInput.value.trim() === '') {
     ownerField.classList.add('error');
-    ownerMsg.textContent = 'نام صاحب چک را وارد کنید';
+    ownerMsg.textContent = 'لازم است';
     return false;
   }
   ownerField.classList.remove('error');
@@ -2118,7 +2125,7 @@ function validateOwner() {
 function validateParty() {
   if (partyInput.value.trim() === '') {
     partyField.classList.add('error');
-    partyMsg.textContent = 'نام طرف حساب را وارد کنید';
+    partyMsg.textContent = 'لازم است';
     return false;
   }
   partyField.classList.remove('error');
@@ -2127,7 +2134,7 @@ function validateParty() {
 function validateBenef() {
   if (benefInput.value.trim() === '') {
     benefField.classList.add('error');
-    benefMsg.textContent = 'نام ذینفع را وارد کنید';
+    benefMsg.textContent = 'لازم است';
     return false;
   }
   benefField.classList.remove('error');
@@ -2144,18 +2151,18 @@ function validateNid() {
   const raw = toEnDigits(nidInput.value).replace(/[^0-9]/g, '');
   if (raw.length === 0) {
     nidField.classList.add('error');
-    nidMsg.textContent = 'کد یا شناسه ملی را وارد کنید';
+    nidMsg.textContent = 'لازم است';
     return false;
   }
   if (raw.length !== 10 && raw.length !== 11) {
     nidField.classList.add('error');
-    nidMsg.textContent = `باید ۱۰ رقم (حقیقی) یا ۱۱ رقم (حقوقی) باشد — ${toFa(raw.length)} رقم وارد شده`;
+    nidMsg.textContent = '۱۰ یا ۱۱ رقم باشد';   // fits the narrow column beside its label
     return false;
   }
   const conflict = findNidOwner(raw, benefInput.value.trim());
   if (conflict) {
     nidField.classList.add('error');
-    nidMsg.textContent = `این کد ملی قبلاً برای «${conflict.name}» ثبت شده`;
+    nidMsg.textContent = `برای «${conflict.name}» ثبت شده`;
     return false;
   }
   nidField.classList.remove('error');
@@ -2413,7 +2420,7 @@ function validateChannels() {
   closeChannelOther(true);         // something still in the field counts
   if (channelsValue().length === 0) {
     channelField.classList.add('error');
-    channelMsg.textContent = 'حداقل یک روش ارسال را انتخاب کنید';
+    channelMsg.textContent = 'یکی را انتخاب کنید';
     return false;
   }
   channelField.classList.remove('error');
@@ -2496,8 +2503,8 @@ async function addFiles(list) {
   const toEdit = [];
   for (const file of Array.from(list)) {
     const okType = file.type.startsWith('image/') || file.type === 'application/pdf';
-    if (!okType) { rejected.push(`${file.name} (فرمت پشتیبانی نمی‌شود)`); continue; }
-    if (file.size > MAX_FILE_BYTES) { rejected.push(`${file.name} (بیش از ۱۰ مگابایت)`); continue; }
+    if (!okType) { rejected.push({ name: file.name, why: 'فقط عکس یا PDF' }); continue; }
+    if (file.size > MAX_FILE_BYTES) { rejected.push({ name: file.name, why: 'بیشتر از ۱۰ مگابایت' }); continue; }
     const duplicate = attachedFiles.some(x => x.name === file.name && x.size === file.size);
     if (duplicate) continue;
     if (file.type === 'application/pdf') {
@@ -2505,7 +2512,7 @@ async function addFiles(list) {
         const dataUrl = await readFileAsDataUrl(file);
         attachedFiles.push({ name: file.name, type: file.type, size: file.size, dataUrl });
       } catch (e) {
-        rejected.push(`${file.name} (خطا در خواندن فایل)`);
+        rejected.push({ name: file.name, why: 'خوانده نشد' });
       }
     } else {
       toEdit.push(file);   // images go through the crop/rotate editor first
@@ -2514,7 +2521,9 @@ async function addFiles(list) {
   renderFileChips();
   if (rejected.length) {
     fileField.classList.add('error');
-    fileMsg.textContent = 'اضافه نشد: ' + rejected.join('، ');
+    fileMsg.textContent = rejected.length === 1
+      ? `${rejected[0].why}: ${rejected[0].name}`
+      : `${toFa(rejected.length)} فایل اضافه نشد: ` + rejected.map(r => `${r.name} (${r.why})`).join('، ');
   } else {
     fileField.classList.remove('error');
     fileMsg.textContent = '';
@@ -2969,20 +2978,71 @@ function findDuplicate(rec, excludeId) {
   return null;
 }
 
-const ALERT_ICON_WARN = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor" stroke="none"/>';
-const ALERT_ICON_CHECK = '<circle cx="12" cy="12" r="10"/><polyline points="8 12.5 10.8 15.5 16 9.5"/>';
+// ---- Form notice: the form's own messages, in the footer ----
+// What the whole form has to say — "saved", "3 fields need fixing", a server
+// error — sits in the footer beside the button that was just pressed (on a
+// phone, where the footer is full, it floats just above it). It used to be a
+// banner at the top of the form: it pushed every field down, scrolled the
+// form back to the top, and the save button moved away under the pointer.
+// A success leaves by itself; an error stays until the user edits something
+// (or a few seconds pass), and pressing it goes to the first field to fix.
+const NOTICE_ICONS = {
+  success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 10.8 15.5 16 9.5"/></svg>',
+  error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><circle cx="12" cy="16.2" r="0.6" fill="currentColor"/></svg>',
+};
+const NOTICE_TIME = { success: 4500, error: 8000 };
 
 function showFormAlert(kind, text) {
-  formAlertIcon.innerHTML = kind === 'success' ? ALERT_ICON_CHECK : ALERT_ICON_WARN;
-  formAlert.className = 'form-alert ' + kind + ' show';
-  formAlertText.textContent = text;
-  modalBody.scrollTop = 0;
-  if (kind === 'success') {
-    clearTimeout(showFormAlert._t);
-    showFormAlert._t = setTimeout(() => formAlert.classList.remove('show'), 6000);
-  }
+  clearTimeout(showFormAlert._t);
+  clearTimeout(hideFormAlert._t);
+  formNotice.querySelector('.form-notice-icon').innerHTML = NOTICE_ICONS[kind] || NOTICE_ICONS.error;
+  formNoticeText.textContent = text;
+  formNotice.className = 'form-notice is-' + kind;
+  formNotice.hidden = false;
+  void formNotice.offsetWidth;                 // restart the entrance for a repeat message
+  formNotice.classList.add('show');
+  showFormAlert._t = setTimeout(hideFormAlert, NOTICE_TIME[kind] || NOTICE_TIME.error);
 }
-function hideFormAlert() { formAlert.classList.remove('show'); }
+function hideFormAlert() {
+  clearTimeout(showFormAlert._t);
+  if (formNotice.hidden) return;
+  formNotice.classList.remove('show');
+  formNotice.classList.add('leaving');
+  clearTimeout(hideFormAlert._t);
+  hideFormAlert._t = setTimeout(() => { formNotice.hidden = true; formNotice.classList.remove('leaving'); }, 180);
+}
+// An error notice has done its job once the user starts fixing things
+modalBody.addEventListener('input', () => {
+  if (formNotice.classList.contains('is-error')) hideFormAlert();
+});
+// Pressing an error notice goes to the first field that still needs fixing
+formNotice.addEventListener('click', () => {
+  if (!formNotice.classList.contains('is-error')) return;
+  const field = modalBody.querySelector('.form-field.error');
+  if (!field) return;
+  const target = field.querySelector('input:not([type="file"]):not([hidden]), textarea, .ch-tag[tabindex="0"], button');
+  if (target) target.focus();
+});
+
+// A field's error sits on its label line and is cut with «…» when it runs
+// long, so the whole text is kept in its title; and a field in error marks
+// its input aria-invalid for screen readers.
+modalBody.querySelectorAll('.form-field').forEach((field) => {
+  const msg = field.querySelector('.field-msg');
+  if (msg) new MutationObserver(() => { msg.title = msg.textContent; })
+    .observe(msg, { childList: true, characterData: true, subtree: true });
+  new MutationObserver(() => {
+    const bad = field.classList.contains('error');
+    field.querySelectorAll('input:not([type="file"]), textarea').forEach((el) => {
+      if (bad) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+    });
+  }).observe(field, { attributes: true, attributeFilter: ['class'] });
+});
+
+// "n fields need fixing", for the notice
+function fixCountText(n) {
+  return n === 1 ? 'یک مورد را اصلاح کنید' : `${toFa(n)} مورد را اصلاح کنید`;
+}
 
 // Live check while typing the sayad id, so a repeat is caught before submit.
 function checkSayadDuplicate() {
@@ -2991,7 +3051,7 @@ function checkSayadDuplicate() {
   const hit = loadCheques().find(c => c.sayad === raw);
   if (hit) {
     sayadField.classList.add('error');
-    sayadMsg.textContent = `این چک قبلاً ثبت شده است (سریال ${toFa(hit.serial)})`;
+    sayadMsg.textContent = `قبلاً با سریال ${toFa(hit.serial)} ثبت شده`;
   }
 }
 
@@ -3018,7 +3078,7 @@ submitCheckBtn.addEventListener('click', async () => {
 
   const firstBad = checks.find(([ok]) => !ok);
   if (firstBad) {
-    showFormAlert('error', 'لطفاً فیلدهای مشخص‌شده را اصلاح کنید');
+    showFormAlert('error', fixCountText(checks.filter(([ok]) => !ok).length));
     firstBad[1].focus();
     return;
   }
@@ -3028,11 +3088,11 @@ submitCheckBtn.addEventListener('click', async () => {
   if (dup) {
     if (dup.reason === 'sayad') {
       sayadField.classList.add('error');
-      sayadMsg.textContent = 'این شناسه صیادی قبلاً ثبت شده است';
-      showFormAlert('error', 'چکی با این شناسه صیادی قبلاً در سیستم ثبت شده است');
+      sayadMsg.textContent = `قبلاً با سریال ${toFa(dup.cheque.serial)} ثبت شده`;
+      showFormAlert('error', 'این شناسه صیادی قبلاً ثبت شده است');
       sayadInput.focus();
     } else {
-      showFormAlert('error', `چکی با این مشخصات قبلاً در سیستم ثبت شده است (شناسه صیادی ${toFa(dup.cheque.sayad)})`);
+      showFormAlert('error', 'چکی با همین سریال، سررسید، مبلغ و صاحب قبلاً ثبت شده است');
     }
     return;
   }
@@ -3074,10 +3134,10 @@ submitCheckBtn.addEventListener('click', async () => {
     renderTable();
     addCheckBtn.classList.add('just-saved');
     setTimeout(() => addCheckBtn.classList.remove('just-saved'), 700);
-    showFormAlert('success', `چک با شماره سریال ${savedSerial} با موفقیت ثبت شد`);
+    showFormAlert('success', `چک ${savedSerial} ثبت شد`);
     serialInput.focus();
   } catch (e) {
-    showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
+    showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
   } finally {
     submitCheckBtn.disabled = false;
     submitCheckBtn.textContent = 'ثبت چک';   // this path only ever runs while adding, so the label is always this one
@@ -3106,7 +3166,7 @@ function handleSaveEdit() {
 
   const firstBad = checks.find(([ok]) => !ok);
   if (firstBad) {
-    showFormAlert('error', 'لطفاً فیلدهای مشخص‌شده را اصلاح کنید');
+    showFormAlert('error', fixCountText(checks.filter(([ok]) => !ok).length));
     firstBad[1].focus();
     return;
   }
@@ -3116,11 +3176,11 @@ function handleSaveEdit() {
   if (dup) {
     if (dup.reason === 'sayad') {
       sayadField.classList.add('error');
-      sayadMsg.textContent = 'این شناسه صیادی قبلاً برای چک دیگری ثبت شده است';
+      sayadMsg.textContent = `برای چک ${toFa(dup.cheque.serial)} ثبت شده`;
       showFormAlert('error', 'این شناسه صیادی قبلاً برای چک دیگری ثبت شده است');
       sayadInput.focus();
     } else {
-      showFormAlert('error', `چک دیگری با این مشخصات قبلاً در سیستم ثبت شده است (شناسه صیادی ${toFa(dup.cheque.sayad)})`);
+      showFormAlert('error', 'چک دیگری با همین سریال، سررسید، مبلغ و صاحب ثبت شده است');
     }
     return;
   }
@@ -3195,7 +3255,7 @@ async function commitSaveEdit() {
   } catch (e) {
     submitCheckBtn.disabled = false;
     if (editingChequeId !== id) return;   // that window is gone; don't write into another cheque's
-    showFormAlert('error', e.message || 'ذخیره در سرور ناموفق بود');
+    showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
     // Failed — put the confirm step back so the user can just try again
     // instead of having to re-trigger "ذخیره تغییرات" from scratch.
     submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
@@ -3252,7 +3312,7 @@ clearFormBtn.addEventListener('click', async () => {
       loadChecksFromApi().then(renderTable).catch(() => {});
       closeModal(true);
     } catch (e) {
-      showFormAlert('error', e.message || 'حذف در سرور ناموفق بود');
+      showFormAlert('error', requestErrorText(e, 'حذف نشد'));
     } finally {
       deleteInFlight = false;
       clearFormBtn.disabled = false;
@@ -4894,7 +4954,7 @@ peSendBtn.addEventListener('click', () => {
   }
   if (approxSize > MAX_FILE_BYTES) {
     fileField.classList.add('error');
-    fileMsg.textContent = `اضافه نشد: ${peCurrentFile.name} (حتی پس از فشرده‌سازی، حجمش بیش از حد مجاز است)`;
+    fileMsg.textContent = `حتی فشرده‌شده بیشتر از ۱۰ مگابایت است: ${peCurrentFile.name}`;
     closePhotoEditor();
     openNextInQueue();
     return;
