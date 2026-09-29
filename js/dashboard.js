@@ -2449,19 +2449,31 @@ function renderFileChips() {
     const chip = document.createElement('div');
     chip.className = 'file-chip';
 
+    // One small tile: a landscape thumbnail (a cheque's shape) and, beside
+    // it, its own always-visible × — nothing sits on the photo.
     const isImage = item.type.startsWith('image/');
     const thumb = isImage
-      ? `<img src="${item.dataUrl}" alt=""><span class="file-view-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>`
-      : `<span class="file-doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>`;
+      ? `<span class="file-thumb"><img src="${item.dataUrl}" alt=""><span class="file-view-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span></span>`
+      : `<span class="file-thumb file-doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>PDF</span></span>`;
 
     chip.title = item.name;
     chip.innerHTML = `
       ${thumb}
-      <button type="button" class="file-remove">
+      <button type="button" class="file-remove" title="حذف" aria-label="${isImage ? 'حذف عکس' : 'حذف PDF'}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>`;
 
-    chip.querySelector('.file-remove').addEventListener('click', (e) => { e.stopPropagation(); removeFile(i); });
+    const removeBtn = chip.querySelector('.file-remove');
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const fromKeyboard = e.detail === 0;   // Enter / Space, not a pointer
+      removeFile(i);
+      // Removed from the keyboard: stay on the next ×, or the picker if none is left
+      if (fromKeyboard) {
+        const rest = fileChips.querySelectorAll('.file-remove');
+        (rest[Math.min(i, rest.length - 1)] || fileAddBtn).focus();
+      }
+    });
     if (isImage) {
       chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name));
     }

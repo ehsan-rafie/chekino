@@ -4850,15 +4850,53 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .file-box:has(.file-hint:focus) { border-color: var(--focus-edge); box-shadow: var(--ring); }
 .form-field.error .file-box { border-color: var(--state-bad); }
 .form-field.error .file-box:has(.file-hint:focus) { box-shadow: var(--ring-bad); }
-.file-chip,
-.file-chip img,
-.file-chip .file-doc,
-.file-chip .file-view-overlay { width: 28px; height: 28px; border-radius: 7px; }
-.file-chip .file-doc { background: var(--surface-sunken); color: var(--ink-2); }
-.file-chip .file-doc svg { width: 15px; height: 15px; }
+/* An attached file is one small tile, as tall as «انتخاب فایل»: a landscape
+   thumbnail (a cheque's shape, not a square) and beside it its own ×,
+   always shown, behind a hairline — nothing sits on the photo, nothing
+   hangs off the field's edge. The × turns red under the pointer; the eye
+   shows only over the photo itself. A PDF gets its icon and «PDF». */
+.file-chip {
+  display: flex;
+  align-items: stretch;
+  width: auto;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.file-chip .file-thumb { position: relative; display: block; width: 46px; flex-shrink: 0; cursor: pointer; }
+.file-chip img { width: 100%; height: 100%; border: none; border-radius: 0; object-fit: cover; }
+.file-chip .file-view-overlay { inset: 0; width: auto; height: auto; border-radius: 0; background: rgba(0, 0, 0, 0.45); }
+.file-chip:hover .file-view-overlay { opacity: 0; }
+.file-chip .file-thumb:hover .file-view-overlay { opacity: 1; pointer-events: auto; }
 .file-chip .file-view-overlay svg { width: 14px; height: 14px; }
-.file-remove { top: -5px; left: -5px; width: 16px; height: 16px; background: var(--ink); color: var(--bg); box-shadow: none; }
-.file-remove svg { width: 9px; height: 9px; }
+.file-chip .file-doc {
+  width: 46px;
+  height: auto;
+  gap: 3px;
+  border-radius: 0;
+  background: var(--surface-sunken);
+  color: var(--ink-2);
+  cursor: default;
+}
+.file-chip .file-doc svg { width: 13px; height: 13px; position: relative; top: 1px; }
+.file-chip .file-doc span { position: relative; top: -1px; font-size: 10px; line-height: 1; font-variation-settings: 'wght' 650; letter-spacing: 0.02em; }   /* Latin caps sit low in this font */
+.file-remove {
+  position: static;
+  width: 24px;
+  height: auto;
+  flex-shrink: 0;
+  border: none;
+  border-inline-start: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-2);
+  box-shadow: none;
+}
+.file-remove:hover { transform: none; background: var(--state-bad-bg); color: var(--state-bad-text); }
+.file-remove svg { width: 12px; height: 12px; }
+.file-remove:focus-visible { outline-offset: -2px; border-radius: 6px; }
 .file-add {
   margin-inline-start: auto;
   flex-shrink: 0;
@@ -4880,11 +4918,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
    (a long press on it brings up the system Paste) */
 @media (hover: none) { .file-hint::before { content: attr(data-ph-touch); } }
 .file-box .file-add { width: auto; flex: 0 0 auto; margin-top: 0; }
-@media (hover: hover) {
-  .file-box .file-remove { opacity: 0; transition: opacity var(--dur-1) var(--ease); }
-  .file-box .file-chip:hover .file-remove,
-  .file-box .file-remove:focus-visible { opacity: 1; }
-}
 
 /* ═══ «افزودن چک» — Magic UI's Shimmer Button (@dillionverma) ═══
    A class-for-class port of the component: same variables and defaults,

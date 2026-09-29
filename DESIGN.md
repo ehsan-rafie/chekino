@@ -198,8 +198,11 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   field's height. **The amount in words** sits on the amount label's own line,
   at its far end (like the «(۶ رقم)» hints), so it appears without moving
   anything; one line, a long one ending in «…» with the whole of it on
-  hover. The photo is one slim row (an image icon, small
-  thumbnails once added, a drop hint until then, «انتخاب فایل» at the
+  hover. The photo is one slim row (an image icon, a tile per file once
+  added — a landscape thumbnail, a cheque's shape, with its own ×
+  beside it behind a hairline, always shown, red under the pointer;
+  «PDF» and its icon for a PDF; as tall as «انتخاب فایل», so the row never
+  grows — a drop hint until then, «انتخاب فایل» at the
   end, after 21st.dev's File Upload). **A copied photo or PDF pastes in**:
   Ctrl+V in the open form while no field has the caret (after clicking
   an empty spot, or on a button), or on the photo row itself (click it,
