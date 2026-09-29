@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20260929m" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20260929n" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20260929m">
-<link rel="stylesheet" href="/css/dashboard.css?v=20260929m">
-<link rel="stylesheet" href="/css/cheque.css?v=20260929m">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20260929m">
+<link rel="stylesheet" href="/css/shared.css?v=20260929n">
+<link rel="stylesheet" href="/css/dashboard.css?v=20260929n">
+<link rel="stylesheet" href="/css/cheque.css?v=20260929n">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20260929n">
 </head>
 <body class="chekino-auth-pending">
 
@@ -696,23 +696,33 @@
   </div>
 </div>
 
+<!-- Viewing an attached photo: the photo editor's card, the photo in the
+     same dark well, the actions below it. «ویرایش» opens the photo in the
+     editor again (shown only while the form can be edited). -->
 <div class="lightbox-overlay" id="lightboxOverlay">
-  <div class="lightbox-card" role="dialog" aria-modal="true" aria-label="نمایش تصویر رسید">
-    <div class="lightbox-topbar">
-      <button class="lightbox-btn" id="lightboxShareBtn" title="اشتراک‌گذاری عکس">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
-        <span>اشتراک‌گذاری</span>
-      </button>
-      <button class="lightbox-btn" id="lightboxDownloadBtn" title="دانلود عکس">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>دانلود</span>
-      </button>
-      <button class="lightbox-btn lightbox-close" id="lightboxCloseBtn" title="بستن" aria-label="بستن نمایش تصویر">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+    <div class="pe-head">
+      <h2 class="pe-title" id="lightboxTitle">عکس چک</h2>
+      <button type="button" class="modal-close pe-close" id="lightboxCloseBtn" title="بستن" aria-label="بستن نمایش تصویر">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="lightbox-body">
       <img id="lightboxImg" src="" alt="عکس چک">
+    </div>
+    <div class="pe-bar lightbox-bar">
+      <button type="button" class="lightbox-btn" id="lightboxEditBtn" title="برش و چرخش دوباره" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></svg>
+        <span>ویرایش</span>
+      </button>
+      <button type="button" class="lightbox-btn" id="lightboxShareBtn" title="اشتراک‌گذاری عکس">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+        <span>اشتراک‌گذاری</span>
+      </button>
+      <button type="button" class="lightbox-btn" id="lightboxDownloadBtn" title="دانلود عکس">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>دانلود</span>
+      </button>
     </div>
   </div>
 </div>
@@ -744,17 +754,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20260929m"></script>
-<script src="/js/shared.js?v=20260929m"></script>
-<script src="/js/palette.js?v=20260929m"></script>
-<script src="/js/dashboard.js?v=20260929m"></script>
-<script src="/js/print.js?v=20260929m"></script>
-<script src="/js/cheque-form.js?v=20260929m"></script>
-<script src="/js/date-segments.js?v=20260929m"></script>
-<script src="/js/cal-picker.js?v=20260929m"></script>
-<script src="/js/field-addons.js?v=20260929m"></script>
-<script src="/js/shell.js?v=20260929m"></script>
-<script src="/js/theme-reveal.js?v=20260929m"></script>
+<script src="/js/icons.js?v=20260929n"></script>
+<script src="/js/shared.js?v=20260929n"></script>
+<script src="/js/palette.js?v=20260929n"></script>
+<script src="/js/dashboard.js?v=20260929n"></script>
+<script src="/js/print.js?v=20260929n"></script>
+<script src="/js/cheque-form.js?v=20260929n"></script>
+<script src="/js/date-segments.js?v=20260929n"></script>
+<script src="/js/cal-picker.js?v=20260929n"></script>
+<script src="/js/field-addons.js?v=20260929n"></script>
+<script src="/js/shell.js?v=20260929n"></script>
+<script src="/js/theme-reveal.js?v=20260929n"></script>
 
 </body>
 </html>

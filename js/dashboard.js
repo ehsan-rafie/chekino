@@ -220,6 +220,7 @@ const fileMsg = document.getElementById('fileMsg');
 const lightboxOverlay = document.getElementById('lightboxOverlay');
 const lightboxImg = document.getElementById('lightboxImg');
 const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
+const lightboxEditBtn = document.getElementById('lightboxEditBtn');
 const lightboxShareBtn = document.getElementById('lightboxShareBtn');
 const lightboxDownloadBtn = document.getElementById('lightboxDownloadBtn');
 const photoEditorOverlay = document.getElementById('photoEditorOverlay');
@@ -2441,7 +2442,7 @@ renderChannelChips();
 // ---- Cheque image field: multiple images / PDFs ----
 // =========================================================
 const MAX_FILE_BYTES = 10 * 1024 * 1024;   // files are stored as base64 text in local storage
-let attachedFiles = [];                    // { name, type, size, dataUrl }
+let attachedFiles = [];                    // { name, type, size, dataUrl, [source, edit] } — see peSendBtn
 
 function renderFileChips() {
   fileChips.innerHTML = '';
@@ -2475,15 +2476,20 @@ function renderFileChips() {
       }
     });
     if (isImage) {
-      chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name));
+      chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name, i));
     }
     fileChips.appendChild(chip);
   });
 }
 
-function openLightbox(dataUrl, name) {
+// `index`: the attached photo being shown — «ویرایش» is offered for it
+// while the form can be edited (not while a saved cheque is only viewed).
+let lightboxIndex = null;
+function openLightbox(dataUrl, name, index) {
   lightboxImg.src = dataUrl;
   lightboxImg.dataset.filename = name || 'cheque-photo.jpg';
+  lightboxIndex = Number.isInteger(index) ? index : null;
+  lightboxEditBtn.hidden = lightboxIndex === null || modalBody.classList.contains('ve-locked');
   lightboxOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
   // Opened from a thumbnail click, so nothing inside the lightbox itself
@@ -4849,7 +4855,9 @@ toTopBtn.addEventListener('click', () => {
 // it rebuilds the view from that photo and carries the crop round with it
 // (rather than baking the crop in first), and «بازنشانی» goes back to the
 // photo as it came. Only the final press cuts and compresses.
-let peCurrentFile = null;
+let peSource = null;           // the photo as it came (File, or a data URL)
+let peName = '';
+let peReplaceIndex = null;     // re-editing attachedFiles[i] rather than adding
 let peOriginalCanvas = null;   // pristine — never mutated after first load
 let peWorkingCanvas = null;    // the original turned by peTurns quarter turns
 let peTurns = 0;               // clockwise quarter turns, 0–3
@@ -4927,16 +4935,24 @@ function openNextInQueue() {
   openPhotoEditor(peQueue.shift());
 }
 
-function openPhotoEditor(file) {
-  peCurrentFile = file;
-  const url = URL.createObjectURL(file);
+// `source` is the photo as it came — a File, or for a photo that came back
+// from the server only its data URL. `state` reopens an attached photo:
+// { replace: its index, turns, crop } — the editor starts where it was left
+// and «ذخیره» puts the result back in its place.
+function openPhotoEditor(source, state = {}) {
+  peSource = source;
+  peName = state.name || source.name || 'cheque-photo.jpg';
+  peReplaceIndex = Number.isInteger(state.replace) ? state.replace : null;
+  const owned = typeof source !== 'string';
+  const url = owned ? URL.createObjectURL(source) : source;
   peSourceImg.onload = () => {
-    URL.revokeObjectURL(url);
+    if (owned) URL.revokeObjectURL(url);
     peOriginalCanvas = imageToCanvas(peSourceImg);
-    peWorkingCanvas = cloneCanvas(peOriginalCanvas);
-    peTurns = 0;
-    peCrop = { x: 0, y: 0, w: 1, h: 1 };
+    peTurns = state.turns || 0;
+    peWorkingCanvas = turnCanvas(peOriginalCanvas, peTurns);
+    peCrop = state.crop ? { ...state.crop } : { x: 0, y: 0, w: 1, h: 1 };
     peCount.textContent = peBatch.total > 1 ? `${toFa(peBatch.done + 1)} از ${toFa(peBatch.total)}` : '';
+    peSendBtn.textContent = peReplaceIndex === null ? 'افزودن عکس' : 'ذخیره';
     // Show the overlay BEFORE measuring the stage — measuring while it's still
     // display:none would read 0×0 and place the crop handles on top of each other.
     photoEditorOverlay.classList.add('show');
@@ -4950,9 +4966,9 @@ function openPhotoEditor(file) {
     peSendBtn.focus();
   };
   peSourceImg.onerror = () => {
-    URL.revokeObjectURL(url);
+    if (owned) URL.revokeObjectURL(url);
     fileField.classList.add('error');
-    fileMsg.textContent = `عکس باز نشد: ${file.name}`;
+    fileMsg.textContent = `عکس باز نشد: ${peName}`;
     peBatch.done++;
     openNextInQueue();
   };
@@ -5106,14 +5122,20 @@ peSendBtn.addEventListener('click', () => {
   }
   if (approxSize > MAX_FILE_BYTES) {
     fileField.classList.add('error');
-    fileMsg.textContent = `حتی فشرده‌شده بیشتر از ۱۰ مگابایت است: ${peCurrentFile.name}`;
+    fileMsg.textContent = `حتی فشرده‌شده بیشتر از ۱۰ مگابایت است: ${peName}`;
     closePhotoEditor();
     openNextInQueue();
     return;
   }
-  const duplicate = attachedFiles.some(x => x.name === peCurrentFile.name && x.size === approxSize);
-  if (!duplicate) {
-    attachedFiles.push({ name: peCurrentFile.name, type: 'image/jpeg', size: approxSize, dataUrl });
+  // The source and how it was cropped stay with the photo, so «ویرایش»
+  // can reopen it later just as it was left (the uncropped parts included).
+  const item = { name: peName, type: 'image/jpeg', size: approxSize, dataUrl,
+    source: peSource, edit: { turns: peTurns, crop: { ...peCrop } } };
+  if (peReplaceIndex !== null && attachedFiles[peReplaceIndex]) {
+    attachedFiles[peReplaceIndex] = item;
+    renderFileChips();
+  } else if (!attachedFiles.some(x => x.name === peName && x.size === approxSize)) {
+    attachedFiles.push(item);
     renderFileChips();
   }
   closePhotoEditor();
@@ -5121,6 +5143,21 @@ peSendBtn.addEventListener('click', () => {
 });
 // ---- Image lightbox wiring ----
 lightboxCloseBtn.addEventListener('click', closeLightbox);
+// «ویرایش»: the photo goes back into the editor as it was left — its
+// original with the same turns and crop, so a crop can be widened again.
+// A photo that came back from the server has no original: it opens as it
+// is, uncropped.
+lightboxEditBtn.addEventListener('click', () => {
+  const item = attachedFiles[lightboxIndex];
+  closeLightbox();
+  if (!item) return;
+  const fromSource = item.source instanceof Blob || typeof item.source === 'string';
+  openPhotoEditor(fromSource ? item.source : item.dataUrl, {
+    replace: lightboxIndex,
+    name: item.name,
+    ...(fromSource && item.edit ? item.edit : {}),
+  });
+});
 lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
 function mimeOfDataUrl(dataUrl) {
   const m = /^data:([^;,]+)/.exec(dataUrl || '');

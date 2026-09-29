@@ -235,6 +235,15 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   action), Escape cancels, Tab stays inside, and focus returns to where it
   was when the last photo is done. A transparent image is laid on white
   so it can't come out black as JPEG.
+  **Viewing an attached photo** (the eye on its tile) opens the same card:
+  «عکس چک», the photo in the same dark well, and below it outlined
+  buttons — «ویرایش» (pencil), «اشتراک‌گذاری», «دانلود». «ویرایش» takes
+  the photo back into the editor as it was left: each attached photo keeps
+  its original and its turns and crop, so the crop comes back where it was
+  and can be widened again (the parts cut off aren't lost); the primary
+  then reads «ذخیره» and the result replaces the photo in place. A photo
+  that came back from the server has no original kept: it opens as it is.
+  «ویرایش» shows only while the form can be edited.
   The note is a single line that grows as it is typed into (up to 120px), its count at the end of the
   line while focused; Shift+Enter breaks a line. «مشخصات اشخاص», each
   person beside the date that belongs to them: owner | send date, party

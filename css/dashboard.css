@@ -1726,87 +1726,82 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .pe-tool { width: 44px; height: 44px; }
 }
 
-/* ===== Image lightbox ===== */
+/* ===== Image lightbox =====
+   Shares the photo editor's card, head and bar (.pe-head, .pe-bar above):
+   same surface and radius, the photo in the same dark well, the actions
+   below it as outlined buttons. «ویرایش» takes the photo back into the
+   editor. */
 .lightbox-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10,15,25,0.78);
   z-index: 800;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 24px;
 }
-.lightbox-overlay.show { display: flex; animation: riseIn 0.15s ease; }
+.lightbox-overlay.show { display: flex; }
 .lightbox-card {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 640px;
-  max-height: 78vh;
-  background: #14181f;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--rad-card);
+  max-width: 720px;
+  max-height: calc(100vh - 48px);
+  background: var(--surface);
+  border-radius: var(--rad-modal);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
   overflow: hidden;
 }
-.lightbox-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 14px;
-  flex-shrink: 0;
-}
-.lightbox-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: none;
-  border-radius: var(--rad-ctl);
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  font-family: inherit;
-  font-size: 13px;
-  font-variation-settings: var(--f-label);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.lightbox-btn:hover { background: rgba(255,255,255,0.22); }
-.lightbox-btn svg { width: 17px; height: 17px; }
-.lightbox-btn.lightbox-close { background: rgba(255,255,255,0.08); margin-left: auto; }
-.lightbox-btn.lightbox-close:hover { background: var(--error); }
+.lightbox-overlay.show .lightbox-card { animation: sheetIn var(--dur-3) var(--ease-out) both; }
 .lightbox-body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px 16px;
-  min-height: 0;
+  margin: 0 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #0C0C0D;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .lightbox-body img {
+  display: block;
   max-width: 100%;
-  /* An explicit viewport-relative cap (not just 100% of the flex parent) —
-     this is what keeps a very tall portrait photo from ballooning the whole
-     card up toward its own max-height, feeling like it takes over the
-     screen. The image is only ever displayed smaller here; the stored
-     data (and what gets downloaded) is untouched, so nothing about its
-     actual quality changes. */
-  max-height: 62vh;
+  /* A tall portrait photo mustn't balloon the card toward the screen's
+     height; only the view is capped, the stored photo is untouched. */
+  max-height: min(62vh, 520px);
   object-fit: contain;
-  border-radius: var(--rad-ctl);
+  border-radius: 2px;
 }
+.lightbox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-1);
+  font-family: inherit;
+  font-size: var(--t-body);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.lightbox-btn:hover { background: var(--accent-wash); color: var(--ink); }
+.lightbox-btn svg { width: 17px; height: 17px; }
+.lightbox-btn[hidden] { display: none; }
 @media (max-width: 600px) {
-  .lightbox-overlay { padding: 0; background: rgba(10,15,25,0.94); }
-  .lightbox-card { max-width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
-  .lightbox-btn span { display: none; }
-  .lightbox-btn { padding: 10px; }
+  .lightbox-overlay { padding: 0; }
+  .lightbox-card { max-width: none; max-height: none; height: 100%; border-radius: 0; }
+  .lightbox-body { margin: 0 10px; }
+  .lightbox-body img { max-height: 100%; }
+  .lightbox-bar .lightbox-btn { flex: 1 1 0; height: 44px; padding: 0 8px; }
   .ve-receipt-btn span { display: none; }
   .ve-receipt-btn { padding: 8px; }
-  /* The mobile card is deliberately full-screen, so the tighter desktop cap
-     that keeps a tall photo from taking over a floating card doesn't apply
-     here — let the image use the space it actually has. */
-  .lightbox-body img { max-height: 100%; }
 }
 .file-add {
   display: flex;
@@ -2726,8 +2721,7 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .cal-popup,
 .status-menu,
 .ac-list,
-.app-toast,
-.lightbox-card {
+.app-toast {
   border-radius: var(--rad-float);
 }
 /* Tooltips are chips, not floating panels: a 12px radius on a box barely
