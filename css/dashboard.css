@@ -18,7 +18,7 @@ button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible,
 .radio-opt:focus-visible {
-  outline: 2px solid var(--blue-600);
+  outline: 2px solid var(--focus-outline);
   outline-offset: 2px;
   border-radius: var(--rad-ctl);
 }
@@ -4590,7 +4590,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 
 /* A lane about to take the card being dragged */
 .board-column.drag-over { background: var(--hl-soft); border: 1px dashed var(--hl); }
-.check-card:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.check-card:focus-visible { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
 
 .file-add { color: var(--hl-text); }
 .file-box:hover { border-color: var(--hl); background: var(--hl-soft); }
@@ -4656,8 +4656,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .cal-popup.is-picking .cal-footer,
 .cal-popup.is-picking .cal-footer.show { display: none; }
 .cal-popup.is-picking .cal-nav-btn { visibility: hidden; }
-.account-btn:focus-visible { outline-color: var(--hl); }
-.board-status-tab:focus-visible { outline-color: var(--hl); }
+.account-btn:focus-visible { outline-color: var(--focus-outline); }
+.board-status-tab:focus-visible { outline-color: var(--focus-outline); }
 
 /* ═══ Input groups, field by field (HeroUI's InputGroup) ═══
    The component itself is in shared.css; here each field gets the add-ons

@@ -192,6 +192,7 @@
   --on-hl: #FFFFFF;
   /* Focus: a blue edge plus a 1px blue ring — a 2px blue line, as in HeroUI */
   --focus-edge: var(--hl);
+  --focus-outline: var(--ink);   /* keyboard ring on controls; see button:focus-visible */
   --ring: 0 0 0 1px var(--hl);
   --ring-bad: 0 0 0 3px rgba(220, 38, 38, 0.18);
 
@@ -278,6 +279,7 @@
   --hl-soft: rgba(26, 140, 255, 0.2);
   --on-hl: #FFFFFF;
   --focus-edge: var(--hl);
+  --focus-outline: var(--ink);   /* keyboard ring on controls; see button:focus-visible */
   --ring: 0 0 0 1px var(--hl);
   --ring-bad: 0 0 0 3px rgba(255, 125, 114, 0.2);
 
@@ -300,12 +302,17 @@
    the ascenders and descenders together. */
 body { line-height: 1.7; }
 
-/* Keyboard users get a visible, branded ring; pointer users never see it.
-   Inputs keep their own focus treatment and are left out. */
+/* Keyboard users get a visible ring; pointer users never see it. It is
+   ink — black, white in the dark theme — the colour of the buttons
+   themselves, set 2px off their edge (shadcn / Magic UI's ring): a blue
+   ring round a black button read as two colours at odds. Blue is kept for
+   the two things it means here — where you type (a field's focus edge)
+   and what you picked (a chosen day, a chosen channel). Inputs keep their
+   own focus treatment and are left out. */
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--hl);
+  outline: 2px solid var(--focus-outline);
   outline-offset: 2px;
 }
 

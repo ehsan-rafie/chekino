@@ -383,7 +383,7 @@ button.submit {
   .auth-art { border-radius: 20px; }
   .card { padding: 22px 18px 20px; }
 }
-button.submit:focus-visible { outline-color: var(--hl); }
+button.submit:focus-visible { outline-color: var(--focus-outline); }
 
 /* ═══ Fields as HeroUI's InputGroup ═══
    The label now sits above the field (it used to float inside it), the

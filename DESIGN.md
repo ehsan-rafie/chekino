@@ -78,11 +78,16 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    `--accent` (near-black; near-white in the dark theme, with dark text).
    Secondary buttons are outlined; facet filters have a dashed edge until
    they hold a value. Hover is a grey wash (`--accent-wash`). HeroUI's
-   blue (`--hl`) is kept for focus and selection only: a 2px blue line
-   round the focused field, keyboard focus rings, the date segment being
-   typed, today / the chosen day / a range in the calendar, the chosen
-   year and month in its picker, ticked boxes, an applied filter, a lane
-   about to take a dragged card. No gradients.
+   blue (`--hl`) means two things only — **where you type** and **what you
+   picked**: a 2px blue line round the focused field, the date segment
+   being typed, the chosen day / a range in the calendar, the chosen year
+   and month in its picker, a chosen channel, ticked boxes, an applied
+   filter, a lane about to take a dragged card. **Keyboard focus on a
+   control** (button, tag, card, link) is an ink ring instead — 2px, set
+   2px off the edge, black (white in the dark theme), `--focus-outline`,
+   the shadcn / Magic UI ring: a blue ring round a black button read as
+   two colours at odds, and the ink one is higher-contrast too. Pointer
+   users never see it (`:focus-visible`). No gradients.
 4. **Fields are outlined.** White, 38px (42px in the cheque form, see
    below), `--field-border`, radius 12. Hover
    darkens the edge; focus turns it blue (`--focus-edge` + `--ring`); an
