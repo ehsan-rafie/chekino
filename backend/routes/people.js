@@ -30,6 +30,22 @@ const personBodyValidationOptional = [
   body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
+// One person per national id, per company: a beneficiary paid by several
+// parties is still one record. Asked for a second, the route answers 409 and
+// sends back the person on file, so the client can use that one instead
+// (migration_006 backs this with a unique index).
+const digitsOnly = (v) => String(v || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '');
+async function personWithNid(companyId, nid, exceptId) {
+  const clean = digitsOnly(nid);
+  if (!clean) return null;
+  const result = await pool.query(
+    'SELECT id, full_name, national_id, phone, role, created_at FROM people WHERE company_id = $1 AND national_id = $2 AND ($3::int IS NULL OR id <> $3) LIMIT 1',
+    [companyId, clean, exceptId || null]
+  );
+  return result.rows[0] || null;
+}
+const nidTaken = (res, person) => res.status(409).json({ error: `این کد ملی قبلاً برای «${person.full_name}» ثبت شده`, person });
+
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
@@ -47,6 +63,9 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
   try {
     const { full_name, national_id, phone, role } = req.body;
 
+    const holder = await personWithNid(req.companyId, national_id);
+    if (holder) return nidTaken(res, holder);
+
     const planCheck = await pool.query(
       `SELECT p.max_people, (SELECT COUNT(*) FROM people WHERE company_id = $1) AS current_count
        FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
@@ -62,10 +81,14 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
 
     const result = await pool.query(
       'INSERT INTO people (company_id, full_name, national_id, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, national_id, phone, role, created_at',
-      [req.companyId, full_name, national_id || null, phone || null, roleOrNull(role)]
+      [req.companyId, full_name, digitsOnly(national_id) || null, phone || null, roleOrNull(role)]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    if (err.code === '23505') {                       // lost a race to the unique index
+      const holder = await personWithNid(req.companyId, req.body.national_id).catch(() => null);
+      if (holder) return nidTaken(res, holder);
+    }
     console.error('Create person error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }
@@ -85,12 +108,19 @@ router.put('/:id', idParamValidation, personBodyValidationOptional, validate, as
       return res.status(404).json({ error: 'شخص یافت نشد' });
     }
 
+    const holder = await personWithNid(req.companyId, national_id, Number(id));
+    if (holder) return nidTaken(res, holder);
+
     const result = await pool.query(
       'UPDATE people SET full_name = COALESCE($1, full_name), national_id = COALESCE($2, national_id), phone = COALESCE($3, phone), role = COALESCE($4, role) WHERE id = $5 AND company_id = $6 RETURNING id, full_name, national_id, phone, role, created_at',
-      [full_name || null, national_id || null, phone || null, roleOrNull(role), id, req.companyId]
+      [full_name || null, digitsOnly(national_id) || null, phone || null, roleOrNull(role), id, req.companyId]
     );
     res.json(result.rows[0]);
   } catch (err) {
+    if (err.code === '23505') {
+      const holder = await personWithNid(req.companyId, req.body.national_id, Number(req.params.id)).catch(() => null);
+      if (holder) return nidTaken(res, holder);
+    }
     console.error('Update person error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }

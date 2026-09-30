@@ -1427,19 +1427,36 @@ function findPersonByName(name) {
 function findPersonById(id) {
   return peopleCache.find(p => p.id === id) || null;
 }
+const nidDigits = (v) => toEnDigits(v || '').replace(/[^0-9]/g, '');
+function findPersonByNid(nid) {
+  const norm = nidDigits(nid);
+  if (!norm) return null;
+  return peopleCache.find(p => nidDigits(p.national_id) === norm) || null;
+}
 
-// Creates the person if the name is new, or updates their national ID if a
-// different one was typed for an existing match. Returns the person's id
-// (or null if the name was blank / the request failed). `role` only files a
-// brand-new person under a tab of the people panel until a cheque gives them
-// a real one — see personInRole below.
+// Finds the person before ever creating one, and returns their id (null if
+// the name was blank or the request failed). By national id first: the same
+// national id is the same person however the name was typed — which is what
+// lets one beneficiary serve several parties without a second record. Then
+// by name: a same-named person with no national id yet gains this one; a
+// same-named person holding a *different* one is someone else, a namesake,
+// and gets a record of their own rather than having their id overwritten.
+// The server refuses a second person with a national id already on file
+// (409, sending back the one it has), so even a race can't add a duplicate.
+// `role` only files a brand-new person under a tab of the people panel until
+// a cheque gives them a real one — see personInRole below.
 async function ensurePerson(name, nid, role) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) return null;
-  const cleanNid = nid ? toEnDigits(nid).replace(/[^0-9]/g, '') : null;
-  const existing = findPersonByName(trimmedName);
+  const cleanNid = nidDigits(nid);
+  if (cleanNid) {
+    const byNid = findPersonByNid(cleanNid);
+    if (byNid) return byNid.id;
+  }
+  const sameName = peopleCache.filter(p => normalizeName(p.full_name) === normalizeName(trimmedName));
+  const existing = cleanNid ? sameName.find(p => !nidDigits(p.national_id)) : sameName[0];
   if (existing) {
-    if (cleanNid && existing.national_id !== cleanNid) {
+    if (cleanNid) {
       try {
         await apiJson(`/people/${existing.id}`, { method: 'PUT', body: JSON.stringify({ national_id: cleanNid }) });
         // Patch the one row we just changed instead of re-downloading every
@@ -1447,18 +1464,22 @@ async function ensurePerson(name, nid, role) {
         // cheque actually being written.
         existing.national_id = cleanNid;
       } catch (e) {}
-      return existing.id;
     }
     return existing.id;
   }
   try {
     const created = await apiJson('/people', {
       method: 'POST',
-      body: JSON.stringify({ full_name: trimmedName, national_id: cleanNid, role: role || null }),
+      body: JSON.stringify({ full_name: trimmedName, national_id: cleanNid || null, role: role || null }),
     });
     peopleCache.push(created);
     return created.id;
   } catch (e) {
+    const known = e.status === 409 && e.data && e.data.person;
+    if (known) {
+      if (!findPersonById(known.id)) peopleCache.push(known);
+      return known.id;
+    }
     return null;
   }
 }
@@ -1568,6 +1589,27 @@ function beneficiariesForParty() {
   return [...seen.values()];
 }
 
+// A beneficiary is not tied to one party: the same person can be paid by
+// several. The list offers this party's own beneficiaries first — the ones
+// it has paid before — then every other beneficiary on file, so one shared
+// with another party, or added by hand in the people panel, is picked from
+// the list rather than typed in again as someone new.
+const benefChoiceKey = (p) => nidDigits(p.nid) || normalizeName(p.name);
+function beneficiaryChoices() {
+  const own = beneficiariesForParty().map(p => ({ ...p, own: true }));
+  const seen = new Set(own.map(benefChoiceKey));
+  const others = peopleInRole('benef')
+    .map(p => ({ name: p.full_name, nid: toFa(p.national_id || ''), own: false }))
+    .filter(p => !seen.has(benefChoiceKey(p)));
+  return [...own, ...others];
+}
+// Which parties a beneficiary has been paid by, read off the cheques
+function partiesOfBeneficiary(personId) {
+  const names = new Set();
+  loadCheques().forEach(c => { if (c.benefId === personId && c.party) names.add(c.party.trim()); });
+  return [...names];
+}
+
 // =========================================================
 // ---- People management panel (owners / parties / beneficiaries) ----
 // So typos don't quietly pile up as "new" people in the autocomplete lists,
@@ -1580,17 +1622,11 @@ const peopleMgmtBtn = document.getElementById('peopleMgmtBtn');
 const ownersListBox = document.getElementById('ownersListBox');
 const partiesListBox = document.getElementById('partiesListBox');
 const benefListBox = document.getElementById('benefListBox');
-const benefPartySelect = document.getElementById('benefPartySelect');
 const newOwnerInput = document.getElementById('newOwnerInput');
 const newPartyInput = document.getElementById('newPartyInput');
 const newBenefNameInput = document.getElementById('newBenefNameInput');
 const newBenefNidInput = document.getElementById('newBenefNidInput');
 
-// Beneficiaries used to be scoped to a selected party; the shared people
-// list drops that scoping, so the party picker above the beneficiary tab
-// is no longer needed.
-const benefPartySelectWrap = document.querySelector('.people-benef-party-select');
-if (benefPartySelectWrap) benefPartySelectWrap.style.display = 'none';
 
 // A role belongs to the *cheque* — who was picked into which field — not to
 // the person, so a person's categories are counted off the cheques that
@@ -1643,6 +1679,11 @@ function peopleItemHtml(person, count, showNid) {
   const nid = person.national_id;
   const hasNid = showNid && nid;
   const canDelete = count === 0;
+  // A beneficiary belongs to no one party: it lists every party that has paid it
+  const parties = showNid ? partiesOfBeneficiary(person.id) : null;
+  const partiesHtml = parties
+    ? `<span class="people-item-parties">${parties.length ? 'طرف حساب: ' + parties.map(escapeHtml).join('، ') : 'هنوز با طرف حسابی چک نداشته'}</span>`
+    : '';
   return `<div class="people-item" data-id="${person.id}" data-name="${escapeHtml(person.full_name)}" data-nid="${hasNid ? escapeHtml(nid) : ''}">
     <button type="button" class="people-item-edit" title="ویرایش">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
@@ -1656,6 +1697,7 @@ function peopleItemHtml(person, count, showNid) {
     <div class="people-item-display">
       <span class="people-item-name-text">${escapeHtml(person.full_name)}</span>
       ${hasNid ? `<span class="people-item-nid">${toFa(nid)}</span>` : ''}
+      ${partiesHtml}
     </div>
     <div class="people-item-edit-fields" style="display:none">
       <input type="text" class="people-item-name-input" value="${escapeHtml(person.full_name)}">
@@ -1790,10 +1832,11 @@ function wirePeopleItem(item, cfg) {
 async function addPersonToRole(role, name, nid) {
   const trimmed = (name || '').trim();
   if (!trimmed) return;
-  const existed = findPersonByName(trimmed);
+  const known = new Set(peopleCache.map(p => p.id));
   const id = await ensurePerson(trimmed, nid, role);
   if (id === null) { showToast('ثبت ناموفق بود'); return; }
-  if (!existed) return;                                   // brand new — already filed here
+  if (!known.has(id)) return;                             // brand new — already filed here
+  const existed = findPersonById(id);
   if (buildRoleIndex().has(id)) {
     showToast(`«${existed.full_name}» ثبت شده و دسته‌اش از روی چک‌هایش تعیین می‌شود`);
     return;
@@ -1931,7 +1974,13 @@ function createAutocomplete(cfg) {
     activeIdx = -1;
 
     let html = '';
+    // Optional group heads (cfg.groupOf), only when the list really has two
+    const groupOf = cfg.groupOf || (() => null);
+    const showGroups = new Set(matches.map(groupOf).filter(Boolean)).size > 1;
+    let lastGroup = null;
     matches.forEach((item, i) => {
+      const group = showGroups ? groupOf(item) : null;
+      if (group && group !== lastGroup) { html += `<div class="ac-group" aria-hidden="true">${escapeHtml(group)}</div>`; lastGroup = group; }
       const main = `<span class="ac-main">${highlightMatch(cfg.primary(item), query)}</span>`;
       const sub = cfg.secondary ? `<span class="ac-tag">${escapeHtml(cfg.secondary(item))}</span>` : '';
       html += `<div class="ac-item" data-idx="${i}">${main}${sub}</div>`;
@@ -2087,20 +2136,21 @@ function selectBeneficiary(p) {
 
 const benefAC = createAutocomplete({
   input: benefInput, list: benefList, field: benefField,
-  search: q => beneficiariesForParty().filter(p => normalizeName(p.name).includes(normalizeName(q))),
+  search: q => beneficiaryChoices().filter(p => normalizeName(p.name).includes(normalizeName(q))),
   primary: p => p.name,
   secondary: p => p.nid,
+  groupOf: p => (partyInput.value.trim() ? (p.own ? 'ذینفع‌های این طرف حساب' : 'سایر ذینفع‌ها') : null),
   allowNew: true, newLabel: newPersonLabel,
-  hasExact: q => beneficiariesForParty().some(p => normalizeName(p.name) === normalizeName(q)),
-  emptyText: 'برای این طرف حساب شخصی ثبت نشده',
+  hasExact: q => beneficiaryChoices().some(p => normalizeName(p.name) === normalizeName(q)),
+  emptyText: 'هنوز ذینفعی ثبت نشده',
   pick: selectBeneficiary,
   onBlur: () => {
     const typed = benefInput.value.trim();
     if (!typed) { benefField.classList.remove('error'); return; }
-    const hit = beneficiariesForParty().find(p => normalizeName(p.name) === normalizeName(typed));
+    const hit = beneficiaryChoices().find(p => normalizeName(p.name) === normalizeName(typed));
     if (hit) {
-      // Already a beneficiary of this party — same record, so take its
-      // spelling and its national id rather than treating it as a new person.
+      // Already a beneficiary on file — same record, so take its spelling
+      // and its national id rather than treating it as a new person.
       benefInput.value = hit.name;
       if (!nidInput.value.trim()) { nidInput.value = hit.nid; updateNidKind(); }
     } else {
@@ -2120,18 +2170,19 @@ const nidAC = createAutocomplete({
   input: nidInput, list: nidList, field: nidField,
   sanitize: v => toFa(toEnDigits(v).replace(/[^0-9]/g, '').slice(0, 11)),
   onType: () => updateNidKind(),
-  search: q => beneficiariesForParty().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
+  search: q => beneficiaryChoices().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
   primary: p => p.nid,
   secondary: p => p.name,
   allowNew: false,
-  hasExact: q => beneficiariesForParty().some(p => toEnDigits(p.nid) === toEnDigits(q)),
+  hasExact: q => beneficiaryChoices().some(p => toEnDigits(p.nid) === toEnDigits(q)),
   hideWhenEmpty: true,
   pick: selectBeneficiary,
   onBlur: () => {
     const typed = toEnDigits(nidInput.value).trim();
     if (!typed) { nidField.classList.remove('error'); return; }
-    const hit = beneficiariesForParty().find(p => toEnDigits(p.nid) === typed);
-    if (hit && !benefInput.value.trim()) benefInput.value = hit.name;
+    // A national id already on file names its person: fill the name in
+    const person = findPersonByNid(typed);
+    if (person && !benefInput.value.trim()) benefInput.value = person.full_name;
     validateNid();
   }
 });
@@ -4295,12 +4346,11 @@ const ICON_SERIAL = icon('serial');
 const ICON_AMOUNT = icon('amount');
 
 // The serial is what a person actually says out loud to mean this specific
-// cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight. Under it
-// the two people the cheque moves between: the owner — the customer it was
-// received from, the one to follow up with (not necessarily the account
-// holder: the name printed on the cheque goes in the notes) — beside the
-// amount, and the party it goes on to, on a small line of its own. The
-// beneficiary stays in the view.
+// cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight. Under it,
+// beside the amount, the owner — the customer it was received from, the one
+// to follow up with (not necessarily the account holder: the name printed on
+// the cheque goes in the notes). The party and the beneficiary stay in the
+// view.
 // Set for exactly one renderTable() call, by applyStatus — see there.
 let justChangedId = null;
 
@@ -4326,7 +4376,6 @@ function checkCardHtml(c) {
       <span class="chk-benef chk-owner" data-tip="صاحب چک">${ICON_PERSON}<span>${escapeHtml(c.owner || '—')}</span></span>
       <span class="chk-amount">${ICON_AMOUNT}${faAmountRial(c.amount)}</span>
     </div>
-    <div class="chk-party"><span class="chk-party-k">طرف حساب</span><span class="chk-party-v">${escapeHtml(c.party || '—')}</span></div>
     <div class="chk-row chk-row-bottom">
       <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">

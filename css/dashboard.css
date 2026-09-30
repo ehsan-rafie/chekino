@@ -2102,20 +2102,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .people-item-delete:hover { background: var(--error-bg); color: var(--error); }
 .people-item-delete svg { width: 15px; height: 15px; }
 .people-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
-.people-benef-party-select { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-.people-benef-party-select label { font-size: 13px; color: var(--muted); white-space: nowrap; }
-.people-benef-party-select select {
-  flex: 1;
-  height: var(--h-md);
-  padding: 0 10px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-ctl);
-  font-family: inherit;
-  font-size: 13px;
-  background: var(--surface);
-  color: var(--ink);
-  min-width: 0;
-}
 
 /* Read-only mode: the whole form is visible but inert until "ویرایش" is pressed */
 /* Locked (view-mode) fields look exactly like normal active fields — no grey
@@ -5295,18 +5281,41 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .filter-popover .mf-list.show { display: block; }
 
 /* ── Lanes carry their status ──
-   The page read as one white sheet. Each lane now takes a wash of its own
-   status colour — strongest at the head, fading within 200px to a hint —
-   with an edge of the same hue: grey for «منتظر ثبت» (waiting is the
-   neutral state, and blue is kept for focus and picks), green for «ثبت شد»,
-   red for «مشکل در ثبت». The cards stay white, so they read even more
-   clearly on it. The head is a small badge in the status colour. */
+   The page read as one white sheet. Each lane takes its status colour —
+   grey for «منتظر ثبت» (waiting is the neutral state, and blue is kept for
+   focus and picks), green for «ثبت شد», red for «مشکل در ثبت» — as a light
+   at its head: a thin line that fades out toward the corners, a soft glow
+   spreading down from it (90px), over a wash that thins to a hint by
+   220px, inside an edge of the same hue. On first load the line draws out
+   from the middle, with the cards' own blur-fade; nothing loops. The cards
+   stay white, so they read even more clearly on it. The head is a small
+   badge in the status colour. */
 .board-columns .board-column {
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--col-accent) 8%, var(--surface)) 0,
-    color-mix(in srgb, var(--col-accent) 3%, var(--surface)) 200px);
+  background:
+    radial-gradient(120% 90px at 50% 0, color-mix(in srgb, var(--col-accent) 16%, transparent), transparent),
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--col-accent) 5%, var(--surface)),
+      color-mix(in srgb, var(--col-accent) 2.5%, var(--surface)) 220px);
   border-color: color-mix(in srgb, var(--col-accent) 14%, var(--surface));
 }
+.board-columns .board-column::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  z-index: 2;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--col-accent) 75%, transparent) 30%,
+    color-mix(in srgb, var(--col-accent) 75%, transparent) 70%, transparent);
+  pointer-events: none;
+}
+.board-columns .board-column.drag-over::before { opacity: 0; }
+body.is-entering .board-columns .board-column::before { animation: laneLineIn 0.7s var(--ease-out) 0.1s both; }
+@keyframes laneLineIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { body.is-entering .board-columns .board-column::before { animation: none; } }
 .board-columns .board-column.drag-over { background: var(--hl-soft); border: 1px dashed var(--hl); }
 .board-col-badge {
   padding: 3px 9px 3px 8px;
@@ -5330,24 +5339,45 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   }
 }
 
-/* ── The card's two people ──
-   The owner (the customer the cheque came from) beside the amount, in ink;
-   the party it goes on to on a small line of its own, with its label. */
+/* The owner — the customer the cheque came from — beside the amount */
 .chk-owner { color: var(--ink-2); font-variation-settings: 'wght' 520; }
-.chk-party {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-  margin-top: 2px;
+
+/* ── Beneficiaries: one person, any number of parties ── */
+/* group heads in the beneficiary list: this party's own, then the rest */
+.ac-group {
+  padding: 8px 10px 4px;
+  color: var(--muted);
   font-size: var(--t-micro);
-  line-height: 1.7;
+  font-variation-settings: var(--f-label);
+  cursor: default;
 }
-.chk-party-k { flex-shrink: 0; color: var(--muted); }
-.chk-party-v {
+.ac-item + .ac-group { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border-subtle); }
+/* people panel: the parties a beneficiary has been paid by, under its name */
+.people-item-display { flex-wrap: wrap; row-gap: 2px; }
+.people-item-parties {
+  flex: 1 0 100%;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ink-2);
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: var(--t-micro);
 }
+/* the beneficiaries tab explains itself in one quiet line */
+.people-hint { margin: 0 2px 12px; color: var(--muted); font-size: var(--t-micro); line-height: 1.8; }
+
+/* ── The card: a body and a footer (HeroUI's Card) ──
+   The actions — status, the problem reason or the receipt, the eye — sit
+   in a thin footer under a hairline, on a faint band, so the card reads as
+   the cheque above and what to do with it below instead of one loose
+   stack. The 28px buttons keep their 44px tap area on touch screens. */
+.check-card { --card-pad: 16px; padding: 14px var(--card-pad) 0; }
+.chk-row-mid { margin-top: 8px; }
+.chk-row-bottom {
+  margin: 12px calc(var(--card-pad) * -1) 0;
+  padding: 7px 12px;
+  border-top: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+}
+.eye-btn, .receipt-btn, .status-dot-btn { width: 28px; height: 28px; border-radius: 8px !important; }
+.status-dot-btn svg { width: 14px; height: 14px; }
