@@ -173,9 +173,25 @@ applied filter with its value and its own × — an outlined badge (radius
 take a line of their own under the row. Below 860px, with no room left
 in the row, they wrap under it. On phones the three facet filters share
 their row evenly.
+**«اشخاص» takes several people per role.** Each field (صاحب چک، طرف
+حساب، ذینفع — the last also by national id) opens a checklist right under
+it, inside the popover (HeroUI's ListBox, multiple selection): a box that
+fills blue when ticked, the name, and how many cheques that person has;
+it stays open to tick more. The chosen people sit as outlined tags under
+the field, each with its own ×. A cheque passes when its owner is any of
+the chosen owners (and so on); the three roles narrow one another. The
+toolbar chip reads «صاحب چک: الف، ب و ۲ نفر دیگر». Keyboard: ↑ ↓, Enter
+ticks, Backspace in the empty field drops the last tag, Escape closes the
+list and then the popover.
 
-**Board.** Three lanes on `--surface-2` with a subtle edge. Each head is a
-status dot, the name in ink and a small outlined count badge (no totals).
+**Board.** Three lanes, each washed with its own status colour — strongest
+at the head (8%), fading within 200px to a hint (3%), with an edge of the
+same hue (14%): grey for «منتظر ثبت» (waiting is the neutral state; blue
+stays for focus and picks), green for «ثبت شد», red for «مشکل در ثبت».
+The white cards read clearly on it; a lane taking a dragged card turns
+the blue "pick" wash with a dashed edge. Each head is a small badge in
+the status colour — dot, name, and an outlined count (no totals). On the
+phone's lane tabs the chosen tab takes its lane's tint.
 Cards: white, 1px edge, radius 16; serial on top with the due date as an
 outlined badge (amber / red wash with a dot when due soon / overdue),
 payee and amount in the middle, borderless 30px icon buttons (a grey wash

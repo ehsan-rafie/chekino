@@ -5209,3 +5209,123 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   font-variation-settings: var(--f-label);
   cursor: default;
 }
+
+/* ── People filter: several people per role ──
+   The list is a checklist (HeroUI's ListBox, multiple selection): a box
+   that fills blue when ticked — "what you picked" — the name, and how
+   many cheques that person has. The chosen people sit as outlined tags
+   under their field. */
+.mf-item { gap: 10px; }
+.mf-check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface);
+  color: transparent;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.mf-check svg { width: 11px; height: 11px; }
+.mf-item[aria-selected="true"] .mf-check { background: var(--hl); border-color: var(--hl); color: #fff; }
+.mf-item[aria-selected="true"] .ac-main { font-variation-settings: var(--f-label); }
+.mf-count {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  color: var(--muted);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+.mf-empty { padding: 10px 12px; color: var(--muted); font-size: var(--t-cap); }
+.mf-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mf-tags[hidden] { display: none; }
+.mf-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  height: 26px;
+  padding-inline: 10px 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-xs);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+}
+.mf-tag button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.mf-tag button svg { width: 11px; height: 11px; }
+.mf-tag button:hover { background: var(--state-bad-bg); color: var(--state-bad-text); }
+/* in the popover's flow, under its field */
+.filter-popover .mf-list {
+  position: static;
+  display: none;
+  width: auto;
+  max-height: 196px;
+  margin-top: 6px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: none;
+  animation: none;
+}
+.filter-popover .mf-list.show { display: block; }
+
+/* ── Lanes carry their status ──
+   The page read as one white sheet. Each lane now takes a wash of its own
+   status colour — strongest at the head, fading within 200px to a hint —
+   with an edge of the same hue: grey for «منتظر ثبت» (waiting is the
+   neutral state, and blue is kept for focus and picks), green for «ثبت شد»,
+   red for «مشکل در ثبت». The cards stay white, so they read even more
+   clearly on it. The head is a small badge in the status colour. */
+.board-columns .board-column {
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--col-accent) 8%, var(--surface)) 0,
+    color-mix(in srgb, var(--col-accent) 3%, var(--surface)) 200px);
+  border-color: color-mix(in srgb, var(--col-accent) 14%, var(--surface));
+}
+.board-columns .board-column.drag-over { background: var(--hl-soft); border: 1px dashed var(--hl); }
+.board-col-badge {
+  padding: 3px 9px 3px 8px;
+  border-radius: var(--rad-xs);
+  background: color-mix(in srgb, var(--col-accent) 11%, var(--surface));
+  color: color-mix(in srgb, var(--col-accent) 82%, var(--ink));
+}
+.board-col-count {
+  border-color: color-mix(in srgb, var(--col-accent) 22%, var(--surface));
+  background: var(--surface);
+  color: color-mix(in srgb, var(--col-accent) 80%, var(--ink));
+}
+/* the phone's lane tabs: the chosen one takes its lane's tint */
+.board-status-tab[data-status-tab="pending"] { --tab-accent: var(--st-pending); }
+.board-status-tab[data-status-tab="done"]    { --tab-accent: var(--st-done); }
+.board-status-tab[data-status-tab="problem"] { --tab-accent: var(--st-problem); }
+@media (max-width: 860px) {
+  .board-status-tab.active {
+    background: color-mix(in srgb, var(--tab-accent) 9%, var(--surface));
+    color: color-mix(in srgb, var(--tab-accent) 82%, var(--ink));
+  }
+}

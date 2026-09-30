@@ -1527,11 +1527,6 @@ function peopleInRole(role) {
 }
 function allOwners() { return peopleInRole('owner').map(p => p.full_name); }
 function allParties() { return peopleInRole('party').map(p => p.full_name); }
-// Every beneficiary, ignoring which party they belong to — for the filter bar,
-// where there is no party to scope against.
-function allBeneficiaries() {
-  return peopleInRole('benef').map(p => ({ name: p.full_name, nid: toFa(p.national_id || '') }));
-}
 
 // A national ID has to belong to exactly one person across the whole shared
 // list — this returns who currently holds it, if anyone (other than
@@ -3663,19 +3658,15 @@ function getFilteredCheques() {
     });
   }
 
-  // people — only counts once an actual person has been selected from the
-  // dropdown, not while the user is still typing a partial name
-  const ownerQ = normalizeName(filterOwnerSelected);
-  if (ownerQ) list = list.filter(c => normalizeName(c.owner).includes(ownerQ));
-  const partyQ = normalizeName(filterPartySelected);
-  if (partyQ) list = list.filter(c => normalizeName(c.party).includes(partyQ));
-  const benefQ = filterBenefSelected.trim();
-  if (benefQ) {
-    const benefNorm = normalizeName(benefQ);
-    const benefDigits = toEnDigits(benefQ).replace(/[^0-9]/g, '');
-    list = list.filter(c =>
-      normalizeName(c.benef).includes(benefNorm) || (benefDigits && toEnDigits(c.nid).includes(benefDigits)));
-  }
+  // people — several can be chosen per role: a cheque passes when its
+  // owner is any of the chosen owners (and likewise party, beneficiary);
+  // the roles narrow one another. Only chosen people count, not a name
+  // still being typed.
+  Object.values(peopleFilter).forEach((f) => {
+    if (!f.sel.length) return;
+    const keys = new Set(f.sel.map(s => s.key));
+    list = list.filter(c => keys.has(f.chequeKey(c)));
+  });
 
   return list;
 }
@@ -3685,9 +3676,9 @@ function pillBtn(popId) { return document.querySelector(`.filter-pill-btn[data-p
 function updateFilterUI() {
   const dateOn = !!rangeFrom;
   const amountOn = filterAmountMin.value.trim() !== '' || filterAmountMax.value.trim() !== '';
-  const ownerOn = !!filterOwnerSelected.trim();
-  const partyOn = !!filterPartySelected.trim();
-  const benefOn = !!filterBenefSelected.trim();
+  const ownerOn = peopleFilter.owner.sel.length > 0;
+  const partyOn = peopleFilter.party.sel.length > 0;
+  const benefOn = peopleFilter.benef.sel.length > 0;
   const peopleOn = ownerOn || partyOn || benefOn;
 
   pillBtn('popDate').classList.toggle('active', dateOn);
@@ -3709,9 +3700,10 @@ function updateFilterUI() {
     const hiLabel = filterAmountMax.value.trim() || '۱۰,۰۰۰,۰۰۰,۰۰۰';
     chips.push({ key: 'amount', label: `مبلغ: ${loLabel} تا ${hiLabel} ریال` });
   }
-  if (ownerOn) chips.push({ key: 'owner', label: `صاحب چک: ${filterOwnerSelected.trim()}` });
-  if (partyOn) chips.push({ key: 'party', label: `طرف حساب: ${filterPartySelected.trim()}` });
-  if (benefOn) chips.push({ key: 'benef', label: `ذینفع: ${filterBenefSelected.trim()}` });
+  ['owner', 'party', 'benef'].forEach((role) => {
+    const f = peopleFilter[role];
+    if (f.sel.length) chips.push({ key: role, label: `${f.label}: ${peopleSummary(f.sel)}` });
+  });
   activeFiltersRow.innerHTML = chips.map(c => `
     <span class="active-chip" data-key="${c.key}">${c.html || escapeHtml(c.label)}
       <button type="button" data-clear="${c.key}" aria-label="حذف فیلتر ${escapeHtml(c.label.split(':')[0])}" title="حذف این فیلتر">
@@ -3727,9 +3719,7 @@ function updateFilterUI() {
 function clearOneFilter(key) {
   if (key === 'date') { rangeFrom = null; rangeTo = null; updateRangeDisplay(); filterRangeField.classList.remove('error'); }
   else if (key === 'amount') { filterAmountMin.value = ''; filterAmountMax.value = ''; setActivePreset(null); }
-  else if (key === 'owner') { filterOwnerInput.value = ''; filterOwnerSelected = ''; }
-  else if (key === 'party') { filterPartyInput.value = ''; filterPartySelected = ''; }
-  else if (key === 'benef') { filterBenefInput.value = ''; filterBenefSelected = ''; }
+  else if (peopleFilter[key]) clearPeopleFilter(key);
   refreshTable();
 }
 
@@ -3866,56 +3856,135 @@ document.querySelectorAll('.af-preset').forEach(btn => {
   });
 });
 
-// ---- people filters: only actually filter once a suggestion is picked ----
-let filterOwnerSelected = '';
-let filterPartySelected = '';
-let filterBenefSelected = '';
-function wireFilterAutocomplete(input, list, source, onSelect) {
-  // Renders and opens the dropdown for a given match set — shared by
-  // "focus, before anything is typed" (browse everyone) and "input"
-  // (narrow as you type), so both actually open the same list.
-  function showMatches(matches) {
-    if (matches.length === 0) { list.classList.remove('show'); return; }
-    list.innerHTML = matches.map(x => {
-      const name = typeof x === 'string' ? x : x.name;
-      const sub = typeof x === 'string' ? '' : `<span class="ac-tag">${escapeHtml(x.nid)}</span>`;
-      return `<div class="ac-item"><span class="ac-main">${escapeHtml(name)}</span>${sub}</div>`;
-    }).join('');
-    list.querySelectorAll('.ac-item').forEach((el, i) => {
-      el.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const x = matches[i];
-        const name = typeof x === 'string' ? x : x.name;
-        input.value = name;
-        list.classList.remove('show');
-        onSelect(name);
-        refreshTable();
-      });
-    });
-    list.classList.add('show');
-    positionDropdown(list, input);
-  }
-  input.addEventListener('input', () => {
-    const q = normalizeName(input.value);
-    if (!q) { onSelect(''); refreshTable(); showMatches(source().slice(0, 20)); return; }
-    showMatches(source().filter(x => normalizeName(typeof x === 'string' ? x : x.name).includes(q)).slice(0, 6));
-    // no refreshTable() here — typing a partial name only updates the
-    // suggestion list, it doesn't filter the table until one is picked
-  });
-  // The field's whole point is choosing from the people who already exist —
-  // opening on focus, with the field still empty, is what makes it browsable
-  // instead of a search box that only works if you already know the name.
-  input.addEventListener('focus', () => {
-    if (normalizeName(input.value)) return;   // typing already re-opens it
-    showMatches(source().slice(0, 20));
-  });
-  input.addEventListener('blur', () => setTimeout(() => list.classList.remove('show'), 120));
+// ---- people filters: several people per role ----
+// Each field searches its role's people and opens a checklist (HeroUI's
+// ListBox with multiple selection) right under it, inside the popover —
+// not floating over the fields below, which it would cover while open: a
+// tick for the chosen ones, how many cheques each has, pick as many as
+// needed — the list stays open. The chosen people sit as tags under it,
+// each with its own ×.
+// Keyboard: ↑ ↓ move, Enter ticks, Backspace in the empty field drops the
+// last tag, Escape closes the list (a second Escape closes the popover).
+const benefKey = (name, nid) => normalizeName(name) + '|' + toEnDigits(nid || '').replace(/[^0-9]/g, '');
+const peopleFilter = {
+  owner: { label: 'صاحب چک', input: filterOwnerInput, list: filterOwnerList, tags: document.getElementById('filterOwnerTags'),
+    source: () => allOwners().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.owner) },
+  party: { label: 'طرف حساب', input: filterPartyInput, list: filterPartyList, tags: document.getElementById('filterPartyTags'),
+    source: () => allParties().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.party) },
+  benef: { label: 'ذینفع', input: filterBenefInput, list: filterBenefList, tags: document.getElementById('filterBenefTags'),
+    source: () => peopleInRole('benef').map(p => ({ name: p.full_name, nid: p.national_id || '', key: benefKey(p.full_name, p.national_id) })),
+    chequeKey: c => benefKey(c.benef, c.nid) },
+};
+Object.values(peopleFilter).forEach(f => { f.sel = []; f.active = -1; f.shown = []; });
+
+// «الف، ب و ۲ نفر دیگر»
+function peopleSummary(sel) {
+  const names = sel.map(s => s.name);
+  if (names.length <= 2) return names.join('، ');
+  return `${names.slice(0, 2).join('، ')} و ${toFa(names.length - 2)} نفر دیگر`;
 }
-wireFilterAutocomplete(filterOwnerInput, filterOwnerList, allOwners, (name) => { filterOwnerSelected = name; });
-wireFilterAutocomplete(filterPartyInput, filterPartyList, allParties, (name) => { filterPartySelected = name; });
-// The filter bar has no party field to scope against, so it offers every
-// beneficiary rather than beneficiariesForParty()'s party-scoped subset.
-wireFilterAutocomplete(filterBenefInput, filterBenefList, allBeneficiaries, (name) => { filterBenefSelected = name; });
+
+function clearPeopleFilter(role) {
+  const f = peopleFilter[role];
+  f.sel = [];
+  f.input.value = '';
+  renderPeopleTags(role);
+  if (f.list.classList.contains('show')) renderPeopleList(role);
+}
+
+function renderPeopleTags(role) {
+  const f = peopleFilter[role];
+  f.tags.hidden = f.sel.length === 0;
+  f.tags.innerHTML = f.sel.map(s => `<span class="mf-tag">${escapeHtml(s.name)}<button type="button" data-key="${escapeHtml(s.key)}" aria-label="برداشتن ${escapeHtml(s.name)}" title="برداشتن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>`).join('');
+}
+
+function renderPeopleList(role) {
+  const f = peopleFilter[role];
+  const q = normalizeName(f.input.value);
+  const qDigits = toEnDigits(f.input.value).replace(/[^0-9]/g, '');
+  const counts = new Map();
+  loadCheques().forEach(c => { const k = f.chequeKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
+  let items = f.source();
+  if (q || qDigits) {
+    items = items.filter(x => (q && normalizeName(x.name).includes(q)) ||
+      (qDigits && toEnDigits(x.nid || '').replace(/[^0-9]/g, '').includes(qDigits)));
+  }
+  f.shown = items.slice(0, 60);
+  if (f.active >= f.shown.length) f.active = f.shown.length - 1;
+  const chosen = new Set(f.sel.map(s => s.key));
+  f.list.innerHTML = f.shown.length
+    ? f.shown.map((x, i) => `<div class="ac-item mf-item${i === f.active ? ' active' : ''}" role="option" id="${f.list.id}-o${i}" aria-selected="${chosen.has(x.key)}" data-i="${i}">
+        <span class="mf-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span class="ac-main">${escapeHtml(x.name)}</span>${x.nid ? `<span class="ac-tag">${toFa(x.nid)}</span>` : ''}
+        <span class="mf-count" title="تعداد چک">${toFa(counts.get(x.key) || 0)}</span>
+      </div>`).join('')
+    : `<div class="ac-empty mf-empty">کسی با این نام پیدا نشد</div>`;
+  f.input.setAttribute('aria-activedescendant', f.active >= 0 ? `${f.list.id}-o${f.active}` : '');
+  f.list.classList.add('show');
+  f.input.setAttribute('aria-expanded', 'true');
+  const act = f.list.querySelector('.mf-item.active');
+  if (act) act.scrollIntoView({ block: 'nearest' });
+}
+
+function closePeopleList(role) {
+  const f = peopleFilter[role];
+  f.list.classList.remove('show');
+  f.input.setAttribute('aria-expanded', 'false');
+  f.active = -1;
+}
+
+function togglePerson(role, x) {
+  const f = peopleFilter[role];
+  const i = f.sel.findIndex(s => s.key === x.key);
+  if (i >= 0) f.sel.splice(i, 1); else f.sel.push({ name: x.name, key: x.key });
+  renderPeopleTags(role);
+  renderPeopleList(role);
+  refreshTable();
+}
+
+Object.keys(peopleFilter).forEach((role) => {
+  const f = peopleFilter[role];
+  f.input.addEventListener('focus', () => renderPeopleList(role));
+  f.input.addEventListener('click', () => { if (!f.list.classList.contains('show')) renderPeopleList(role); });
+  f.input.addEventListener('input', () => { f.active = -1; renderPeopleList(role); });
+  f.input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== f.input) closePeopleList(role); }, 120));
+  f.input.addEventListener('keydown', (e) => {
+    const open = f.list.classList.contains('show');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) { renderPeopleList(role); return; }
+      const n = f.shown.length;
+      if (!n) return;
+      f.active = e.key === 'ArrowDown' ? (f.active + 1) % n : (f.active <= 0 ? n - 1 : f.active - 1);
+      renderPeopleList(role);
+    } else if (e.key === 'Enter') {
+      if (open && f.active >= 0 && f.shown[f.active]) { e.preventDefault(); e.stopPropagation(); togglePerson(role, f.shown[f.active]); }
+    } else if (e.key === 'Escape') {
+      if (open) { e.preventDefault(); e.stopPropagation(); closePeopleList(role); }
+    } else if (e.key === 'Backspace' && f.input.value === '' && f.sel.length) {
+      f.sel.pop();
+      renderPeopleTags(role);
+      if (open) renderPeopleList(role);
+      refreshTable();
+    }
+  });
+  // mousedown, not click: the field keeps focus, so the list stays open
+  f.list.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.mf-item');
+    e.preventDefault();
+    if (!item) return;
+    f.active = parseInt(item.dataset.i, 10);
+    togglePerson(role, f.shown[f.active]);
+  });
+  f.tags.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-key]');
+    if (!btn) return;
+    f.sel = f.sel.filter(s => s.key !== btn.dataset.key);
+    renderPeopleTags(role);
+    if (f.list.classList.contains('show')) renderPeopleList(role);
+    refreshTable();
+  });
+});
 
 // Filtering by status went away with the board: the three columns already
 // are that filter, and each one exports its own set from its header.
@@ -3933,12 +4002,7 @@ filterClearBtn.addEventListener('click', () => {
   filterAmountMin.value = '';
   filterAmountMax.value = '';
   setActivePreset(null);
-  filterOwnerInput.value = '';
-  filterPartyInput.value = '';
-  filterBenefInput.value = '';
-  filterOwnerSelected = '';
-  filterPartySelected = '';
-  filterBenefSelected = '';
+  Object.keys(peopleFilter).forEach(clearPeopleFilter);
   showArchivedCheckbox.checked = false;
   refreshTable();
 });
@@ -3951,8 +4015,12 @@ const reportBtn = document.getElementById('reportBtn');
 // statusId narrows the report to one board column — used by each column's
 // own PDF button; the toolbar's own button calls this with nothing, which
 // reports the whole filtered set exactly as before.
-function generateReport() {
-  const all = getFilteredCheques().slice().reverse();
+// statusId narrows the report to one board column, as with the Excel
+// export; without it the whole filtered set goes out. (It used to read a
+// statusId it never received, so the button threw and nothing opened.)
+function generateReport(statusId) {
+  let all = getFilteredCheques().slice().reverse();
+  if (statusId) all = all.filter(c => (c.status || 'pending') === statusId);
   if (!all.length) { showToast('چکی برای گزارش‌گیری نیست'); return; }
   const [jy, jm, jd] = todayJalali();
   const totalAmount = all.reduce((sum, c) => sum + (parseInt(c.amount, 10) || 0), 0);
@@ -4404,7 +4472,9 @@ function renderTable() {
   // filter emptying a column is exactly what each column's own "چکی در
   // این وضعیت نیست" already says.
   const nothingRegistered = loadCheques().length === 0;
-  const filtering = searchInput.value.trim() !== '' || filterClearBtn.classList.contains('show');
+  const emptyLane = searchInput.value.trim() !== '' ? 'موردی با این جستجو پیدا نشد'
+    : filterClearBtn.classList.contains('show') ? 'موردی با این فیلترها پیدا نشد'
+    : 'چکی در این وضعیت نیست';
 
   updateBoardCountBadge(all);
   // First render means the data is in — the loading skeleton can go.
@@ -4420,7 +4490,7 @@ function renderTable() {
     const listEl = document.getElementById(`boardColList-${st.id}`);
     listEl.innerHTML = colChecks.length
       ? colChecks.map(checkCardHtml).join('')
-      : `<div class="board-col-empty">${filtering ? 'موردی با این جستجو پیدا نشد' : 'چکی در این وضعیت نیست'}</div>`;
+      : `<div class="board-col-empty">${emptyLane}</div>`;
   });
 
   document.querySelectorAll('[data-status-for]').forEach(btn => {
