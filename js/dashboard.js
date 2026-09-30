@@ -4295,17 +4295,18 @@ const ICON_SERIAL = icon('serial');
 const ICON_AMOUNT = icon('amount');
 
 // The serial is what a person actually says out loud to mean this specific
-// cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight now;
-// the beneficiary rides along underneath as context, not the headline.
-// The national id rides along as a tooltip on the beneficiary instead of
-// a permanent line — real, but not worth a whole row just in case.
+// cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight. Under it
+// the two people the cheque moves between: the owner — the customer it was
+// received from, the one to follow up with (not necessarily the account
+// holder: the name printed on the cheque goes in the notes) — beside the
+// amount, and the party it goes on to, on a small line of its own. The
+// beneficiary stays in the view.
 // Set for exactly one renderTable() call, by applyStatus — see there.
 let justChangedId = null;
 
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const urgency = dueUrgencyClass(c);
-  const nidTip = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
   const justChanged = c.id === justChangedId ? ' just-changed' : '';
   // A problem cheque shows why, beside its red mark, in the bottom row's
   // free space — the reason is what someone opens that lane to find out.
@@ -4322,9 +4323,10 @@ function checkCardHtml(c) {
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
-      <span class="chk-benef" data-tip="${escapeHtml(nidTip)}">${ICON_PERSON}<span>${escapeHtml(c.benef)}</span></span>
+      <span class="chk-benef chk-owner" data-tip="صاحب چک">${ICON_PERSON}<span>${escapeHtml(c.owner || '—')}</span></span>
       <span class="chk-amount">${ICON_AMOUNT}${faAmountRial(c.amount)}</span>
     </div>
+    <div class="chk-party"><span class="chk-party-k">طرف حساب</span><span class="chk-party-v">${escapeHtml(c.party || '—')}</span></div>
     <div class="chk-row chk-row-bottom">
       <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">

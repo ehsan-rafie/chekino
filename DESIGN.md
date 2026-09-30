@@ -194,8 +194,12 @@ the status colour — dot, name, and an outlined count (no totals). On the
 phone's lane tabs the chosen tab takes its lane's tint.
 Cards: white, 1px edge, radius 16; serial on top with the due date as an
 outlined badge (amber / red wash with a dot when due soon / overdue),
-payee and amount in the middle, borderless 30px icon buttons (a grey wash
-on hover) and a tinted status square without an edge below. Under the pointer a soft light
+the owner — the customer the cheque was received from, the one to follow
+up with (not necessarily the account holder; the name printed on the
+cheque goes in the notes) — beside the amount, the party it goes on to
+on a small line with its label («طرف حساب»), the beneficiary only in the
+view; borderless 30px icon buttons (a grey wash on hover) and a tinted
+status square without an edge below. Under the pointer a soft light
 follows the cursor and catches the card's edge (Magic Card; `shell.js`
 sets `--mx` / `--my`). Empty lanes say so in a dashed box («چکی در این
 وضعیت نیست», or «موردی با این جستجو پیدا نشد» under a search or filter).

@@ -5329,3 +5329,25 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
     color: color-mix(in srgb, var(--tab-accent) 82%, var(--ink));
   }
 }
+
+/* ── The card's two people ──
+   The owner (the customer the cheque came from) beside the amount, in ink;
+   the party it goes on to on a small line of its own, with its label. */
+.chk-owner { color: var(--ink-2); font-variation-settings: 'wght' 520; }
+.chk-party {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 2px;
+  font-size: var(--t-micro);
+  line-height: 1.7;
+}
+.chk-party-k { flex-shrink: 0; color: var(--muted); }
+.chk-party-v {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
