@@ -4135,6 +4135,7 @@ function generateReport(statusId) {
   .print-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
   .ps-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 130px; padding: 12px 16px; border-radius: 8px; background: #F5F5F5; font-size: 13.5px; color: #171717; }
   .ps-item b { font-size: 20px; }
+  .ps-item.ps-pending { background: #F1F5F9; color: #334155; }
   .ps-item.ps-done { background: #F0FDF4; color: #15803D; }
   .ps-item.ps-problem { background: #FEF2F2; color: #B91C1C; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -4143,7 +4144,7 @@ function generateReport(statusId) {
   th { background: #171717; color: #fff; font-weight: normal; }
   tbody tr:nth-child(even) { background: #FAFAFA; }
   .print-status-pill { display: inline-block; padding: 3px 12px; border-radius: 6px; font-size: 13px; color: #fff; }
-  .print-status-pill.st-pending { background: #171717; }
+  .print-status-pill.st-pending { background: #475569; }
   .print-status-pill.st-done { background: #15803D; }
   .print-status-pill.st-problem { background: #B91C1C; }
   @media print {
@@ -4170,7 +4171,7 @@ function generateReport(statusId) {
     <div class="ps-item"><b>${toFa(all.length)}</b>تعداد کل چک‌ها</div>
     <div class="ps-item"><b>${toFa(groupDigits(String(totalAmount)))} ریال</b>جمع مبلغ</div>
     ${statusId ? '' : `
-    <div class="ps-item"><b>${toFa(counts.pending)}</b>منتظر ثبت</div>
+    <div class="ps-item ps-pending"><b>${toFa(counts.pending)}</b>منتظر ثبت</div>
     <div class="ps-item ps-done"><b>${toFa(counts.done)}</b>ثبت شد</div>
     <div class="ps-item ps-problem"><b>${toFa(counts.problem)}</b>مشکل در ثبت</div>`}
   </div>

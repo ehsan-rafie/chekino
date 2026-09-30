@@ -155,9 +155,11 @@
 
   /* The three board states, by id — dashboard.js paints status dots with
      var(--st-<id>) so the palette lives here and follows the theme.
-     Pending is ink (it is the default, waiting state); only the two
-     outcomes carry a colour. */
-  --st-pending: var(--ink-mid);      --st-pending-bg: var(--paper-2);
+     Pending is a cool slate grey: still neutral (it is the default,
+     waiting state — not good or bad yet), but lighter than ink, so it
+     doesn't sit heavier than the two outcomes beside it. Amber stays the
+     "due soon" warning on its cards, blue stays focus and picks. */
+  --st-pending: #64748B;             --st-pending-bg: #F1F5F9;
   --st-done:    var(--sabz-600);     --st-done-bg:    var(--sabz-50);
   --st-problem: var(--anar-600);     --st-problem-bg: var(--anar-50);
 
@@ -256,7 +258,7 @@
   --accent-2: #3FD5C3;
   --accent-2-wash: rgba(63, 213, 195, 0.12);
 
-  --st-pending: #D4D4D4;  --st-pending-bg: rgba(255, 255, 255, 0.07);
+  --st-pending: #94A3B8;  --st-pending-bg: rgba(148, 163, 184, 0.12);
   --st-done:    #4ADE80;  --st-done-bg:    rgba(74, 222, 128, 0.13);
   --st-problem: #F87171;  --st-problem-bg: rgba(248, 113, 113, 0.14);
 

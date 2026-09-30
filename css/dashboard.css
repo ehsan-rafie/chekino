@@ -4283,8 +4283,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .ve-receipt-btn:hover { background: color-mix(in srgb, var(--state-ok) 16%, var(--surface)); }
 .ve-status-banner { border: 1px solid var(--border); border-radius: 14px; }
-.ve-status-banner.st-pending { background: var(--surface-2); color: var(--ink-2); }
-.ve-status-banner.st-pending b { color: var(--ink); }
+.ve-status-banner.st-pending { background: var(--st-pending-bg); border-color: color-mix(in srgb, var(--st-pending) 25%, transparent); color: color-mix(in srgb, var(--st-pending) 70%, var(--ink)); }
+.ve-status-banner.st-pending b { color: color-mix(in srgb, var(--st-pending) 45%, var(--ink)); }
 .ve-status-banner.st-done { background: var(--st-done-bg); border-color: color-mix(in srgb, var(--state-ok) 25%, transparent); color: var(--state-ok-text); }
 .ve-status-banner.st-problem { background: var(--st-problem-bg); border-color: color-mix(in srgb, var(--state-bad) 22%, transparent); color: var(--state-bad-text); }
 
