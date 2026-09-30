@@ -380,6 +380,7 @@ function openModalForView(id) {
   partyInput.value = c.party;
   benefInput.value = c.benef;
   nidInput.value = toFa(c.nid);
+  nidFilledIn = false;   // the cheque's own id, typed in once already — edit it in place
   updateNidKind();
   if (c.spendDate) {
     const [sy, sm, sd] = c.spendDate.split('/').map(n => parseInt(n, 10));
@@ -1589,21 +1590,9 @@ function beneficiariesForParty() {
   return [...seen.values()];
 }
 
-// A beneficiary is not tied to one party: the same person can be paid by
-// several. The list offers this party's own beneficiaries first — the ones
-// it has paid before — then every other beneficiary on file, so one shared
-// with another party, or added by hand in the people panel, is picked from
-// the list rather than typed in again as someone new.
-const benefChoiceKey = (p) => nidDigits(p.nid) || normalizeName(p.name);
-function beneficiaryChoices() {
-  const own = beneficiariesForParty().map(p => ({ ...p, own: true }));
-  const seen = new Set(own.map(benefChoiceKey));
-  const others = peopleInRole('benef')
-    .map(p => ({ name: p.full_name, nid: toFa(p.national_id || ''), own: false }))
-    .filter(p => !seen.has(benefChoiceKey(p)));
-  return [...own, ...others];
-}
-// Which parties a beneficiary has been paid by, read off the cheques
+// Which parties a beneficiary has been paid by, read off the cheques (the
+// same person can be paid by several; see ensurePerson for how they stay
+// one record)
 function partiesOfBeneficiary(personId) {
   const names = new Set();
   loadCheques().forEach(c => { if (c.benefId === personId && c.party) names.add(c.party.trim()); });
@@ -1974,13 +1963,7 @@ function createAutocomplete(cfg) {
     activeIdx = -1;
 
     let html = '';
-    // Optional group heads (cfg.groupOf), only when the list really has two
-    const groupOf = cfg.groupOf || (() => null);
-    const showGroups = new Set(matches.map(groupOf).filter(Boolean)).size > 1;
-    let lastGroup = null;
     matches.forEach((item, i) => {
-      const group = showGroups ? groupOf(item) : null;
-      if (group && group !== lastGroup) { html += `<div class="ac-group" aria-hidden="true">${escapeHtml(group)}</div>`; lastGroup = group; }
       const main = `<span class="ac-main">${highlightMatch(cfg.primary(item), query)}</span>`;
       const sub = cfg.secondary ? `<span class="ac-tag">${escapeHtml(cfg.secondary(item))}</span>` : '';
       html += `<div class="ac-item" data-idx="${i}">${main}${sub}</div>`;
@@ -2118,6 +2101,7 @@ const partyAC = createAutocomplete({
 function clearBeneficiaryPair() {
   benefInput.value = '';
   nidInput.value = '';
+  nidFilledIn = false;
   nidKind.textContent = '';
   benefField.classList.remove('error');
   nidField.classList.remove('error');
@@ -2126,9 +2110,29 @@ function clearBeneficiaryPair() {
 // ---- ذینفع: name and national id are two views of the same record ----
 // Picking either one fills the other, in both directions, so the pair can
 // never end up describing two different people.
+// A national id the form fills in itself is selected when the field is
+// entered, so typing the id anyway replaces it instead of running on past
+// it — ten digits typed after ten filled in made an 11-digit id: someone
+// else, a second record for the same person.
+let nidFilledIn = false;
+function fillNid(value) {
+  nidInput.value = value;
+  nidFilledIn = true;
+  updateNidKind();
+}
+let nidJustSelected = false;
+nidInput.addEventListener('focus', () => {
+  if (!nidFilledIn || !nidInput.value) return;
+  nidInput.select();
+  nidJustSelected = true;
+});
+// a click's own mouseup would otherwise drop the selection again
+nidInput.addEventListener('mouseup', (e) => { if (nidJustSelected) { e.preventDefault(); nidJustSelected = false; } });
+nidInput.addEventListener('input', () => { nidFilledIn = false; nidJustSelected = false; });
+
 function selectBeneficiary(p) {
   benefInput.value = p.name;
-  nidInput.value = p.nid;
+  fillNid(p.nid);
   benefField.classList.remove('error');
   nidField.classList.remove('error');
   updateNidKind();
@@ -2136,31 +2140,27 @@ function selectBeneficiary(p) {
 
 const benefAC = createAutocomplete({
   input: benefInput, list: benefList, field: benefField,
-  search: q => beneficiaryChoices().filter(p => normalizeName(p.name).includes(normalizeName(q))),
+  search: q => beneficiariesForParty().filter(p => normalizeName(p.name).includes(normalizeName(q))),
   primary: p => p.name,
   secondary: p => p.nid,
-  groupOf: p => (partyInput.value.trim() ? (p.own ? 'ذینفع‌های این طرف حساب' : 'سایر ذینفع‌ها') : null),
   allowNew: true, newLabel: newPersonLabel,
-  hasExact: q => beneficiaryChoices().some(p => normalizeName(p.name) === normalizeName(q)),
-  emptyText: 'هنوز ذینفعی ثبت نشده',
+  hasExact: q => beneficiariesForParty().some(p => normalizeName(p.name) === normalizeName(q)),
+  emptyText: 'برای این طرف حساب شخصی ثبت نشده',
   pick: selectBeneficiary,
   onBlur: () => {
     const typed = benefInput.value.trim();
     if (!typed) { benefField.classList.remove('error'); return; }
-    const hit = beneficiaryChoices().find(p => normalizeName(p.name) === normalizeName(typed));
+    const hit = beneficiariesForParty().find(p => normalizeName(p.name) === normalizeName(typed));
     if (hit) {
-      // Already a beneficiary on file — same record, so take its spelling
-      // and its national id rather than treating it as a new person.
+      // Already a beneficiary of this party — same record, so take its
+      // spelling and its national id rather than treating it as a new person.
       benefInput.value = hit.name;
-      if (!nidInput.value.trim()) { nidInput.value = hit.nid; updateNidKind(); }
+      if (!nidInput.value.trim()) fillNid(hit.nid);
     } else {
       // Not one of this party's beneficiaries, but possibly someone already on
       // file under another role. Fold onto that record so the save reuses it.
       const person = foldOntoKnownPerson(benefInput);
-      if (person && person.national_id && !nidInput.value.trim()) {
-        nidInput.value = toFa(person.national_id);
-        updateNidKind();
-      }
+      if (person && person.national_id && !nidInput.value.trim()) fillNid(toFa(person.national_id));
     }
     validateBenef();
   }
@@ -2170,19 +2170,18 @@ const nidAC = createAutocomplete({
   input: nidInput, list: nidList, field: nidField,
   sanitize: v => toFa(toEnDigits(v).replace(/[^0-9]/g, '').slice(0, 11)),
   onType: () => updateNidKind(),
-  search: q => beneficiaryChoices().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
+  search: q => beneficiariesForParty().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
   primary: p => p.nid,
   secondary: p => p.name,
   allowNew: false,
-  hasExact: q => beneficiaryChoices().some(p => toEnDigits(p.nid) === toEnDigits(q)),
+  hasExact: q => beneficiariesForParty().some(p => toEnDigits(p.nid) === toEnDigits(q)),
   hideWhenEmpty: true,
   pick: selectBeneficiary,
   onBlur: () => {
     const typed = toEnDigits(nidInput.value).trim();
     if (!typed) { nidField.classList.remove('error'); return; }
-    // A national id already on file names its person: fill the name in
-    const person = findPersonByNid(typed);
-    if (person && !benefInput.value.trim()) benefInput.value = person.full_name;
+    const hit = beneficiariesForParty().find(p => toEnDigits(p.nid) === typed);
+    if (hit && !benefInput.value.trim()) benefInput.value = hit.name;
     validateNid();
   }
 });
@@ -3561,7 +3560,7 @@ function statusButtonHtml(c, st) {
   </button>`;
 }
 function eyeButtonHtml(c) {
-  return `<button type="button" class="eye-btn" data-view="${c.id}" data-tip="مشاهده‌ی جزئیات چک" aria-label="مشاهده‌ی جزئیات چک ${toFa(c.serial)}">
+  return `<button type="button" class="eye-btn" data-view="${c.id}" aria-label="مشاهده‌ی جزئیات چک ${toFa(c.serial)}">
     ${icon('eye')}
   </button>`;
 }
@@ -3579,7 +3578,7 @@ ${faDate(c.statusChangedAt)}`;
 // right as the one pure "view" action.
 function receiptButtonHtml(c) {
   if (c.status !== 'done') return '';
-  return `<button type="button" class="receipt-btn" data-receipt="${c.id}" data-tip="کپی پیام رسید ثبت" aria-label="کپی پیام رسید ثبت چک ${toFa(c.serial)}">
+  return `<button type="button" class="receipt-btn" data-receipt="${c.id}" data-tip="کپی رسید ثبت" aria-label="کپی پیام رسید ثبت چک ${toFa(c.serial)}">
     ${icon('receipt')}
   </button>`;
 }
@@ -4361,7 +4360,7 @@ function checkCardHtml(c) {
   // A problem cheque shows why, beside its red mark, in the bottom row's
   // free space — the reason is what someone opens that lane to find out.
   const reason = c.status === 'problem' && c.statusReason ? escapeHtml(c.statusReason) : '';
-  const reasonHtml = reason ? `<span class="chk-reason" data-tip="${reason}">${reason}</span>` : '';
+  const reasonHtml = reason ? `<span class="chk-reason" data-tip="${reason}" data-tip-clipped>${reason}</span>` : '';
   // No role="button"/tabindex here: the card has no click or key handler —
   // it announced as a control that does nothing, and wrapping the real
   // buttons inside a role="button" hid them from assistive tech
@@ -4373,7 +4372,7 @@ function checkCardHtml(c) {
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
-      <span class="chk-benef chk-owner" data-tip="صاحب چک">${ICON_PERSON}<span>${escapeHtml(c.owner || '—')}</span></span>
+      <span class="chk-benef chk-owner">${ICON_PERSON}<span>${escapeHtml(c.owner || '—')}</span></span>
       <span class="chk-amount">${ICON_AMOUNT}${faAmountRial(c.amount)}</span>
     </div>
     <div class="chk-row chk-row-bottom">
@@ -4469,26 +4468,52 @@ function ensureBoardColumns() {
 // rect, the same way the telegram button's does — instead of the native
 // title attribute, which every card was leaning on for the beneficiary's
 // national id and the status dot's problem reason.
+// HeroUI's Tooltip: above what it explains (below only when there is no
+// room), a small arrow pointing at it, a short fade in. It waits 400ms, so
+// a pointer crossing the card doesn't set tips flashing; once one is open,
+// moving to the next is instant. Only the controls that need a word get
+// one — the status square, the copy-receipt slip — plus the due date's
+// "how far away" and a problem reason only when it was cut off
+// (data-tip-clipped).
 const appTooltip = document.getElementById('appTooltip');
 function wireCardTooltips() {
   if (!hoverPointerQuery.matches) return;
+  let timer = null;
+  let current = null;
+  let warmUntil = 0;   // a tip was just open: the next one shows at once
+  const hide = () => {
+    clearTimeout(timer);
+    if (appTooltip.classList.contains('show')) warmUntil = Date.now() + 300;
+    appTooltip.classList.remove('show');
+    current = null;
+  };
+  const show = (el) => {
+    if (el.hasAttribute('data-tip-clipped') && el.scrollWidth <= el.clientWidth) return;
+    appTooltip.textContent = el.dataset.tip;
+    const r = el.getBoundingClientRect();
+    const w = appTooltip.offsetWidth, h = appTooltip.offsetHeight;
+    const cx = r.left + r.width / 2;
+    const left = Math.max(8, Math.min(cx - w / 2, window.innerWidth - w - 8));
+    const below = r.top - h - 10 < 8;
+    appTooltip.classList.toggle('below', below);
+    appTooltip.style.left = left + 'px';
+    appTooltip.style.top = (below ? r.bottom + 10 : r.top - h - 10) + 'px';
+    appTooltip.style.setProperty('--arrow-x', Math.round(cx - left) + 'px');
+    appTooltip.classList.add('show');
+  };
   boardColumns.addEventListener('mouseover', (e) => {
     const el = e.target.closest('[data-tip]');
-    if (!el || el.dataset.tip === '') return;
-    appTooltip.textContent = el.dataset.tip;
-    appTooltip.classList.add('show');
-    const r = el.getBoundingClientRect();
-    const w = appTooltip.offsetWidth;
-    let left = r.left + r.width / 2 - w / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-    appTooltip.style.left = left + 'px';
-    appTooltip.style.top = (r.bottom + 8) + 'px';
+    if (!el || !el.dataset.tip || el === current) return;
+    hide();
+    current = el;
+    timer = setTimeout(() => show(el), Date.now() < warmUntil ? 0 : 400);
   });
   boardColumns.addEventListener('mouseout', (e) => {
-    const el = e.target.closest('[data-tip]');
-    if (el && !el.contains(e.relatedTarget)) appTooltip.classList.remove('show');
+    if (current && !current.contains(e.relatedTarget)) hide();
   });
-  boardColumns.addEventListener('scroll', () => appTooltip.classList.remove('show'), true);
+  document.addEventListener('pointerdown', hide, true);
+  boardColumns.addEventListener('scroll', hide, true);
+  window.addEventListener('blur', hide);
 }
 
 // Ascending string compare — ISO timestamps sort correctly as plain text,

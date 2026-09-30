@@ -184,13 +184,13 @@ toolbar chip reads «صاحب چک: الف، ب و ۲ نفر دیگر». Keyboar
 ticks, Backspace in the empty field drops the last tag, Escape closes the
 list and then the popover.
 
-**Board.** Three lanes, each lit by its own status colour at the head: a
-thin line (2px) that fades out toward the corners, a soft glow spreading
-down from it (90px), over a wash that thins to a hint by 220px, inside an
-edge of the same hue (14%) — grey for «منتظر ثبت» (waiting is the neutral
-state; blue stays for focus and picks), green for «ثبت شد», red for «مشکل
-در ثبت». On first load the line draws out from the middle with the cards'
-blur-fade; nothing loops.
+**Board.** Three lanes, each with a faint wash of its status colour (3%),
+an edge of the same hue (11%), and down its start edge a thin line of that
+colour — 2px, pale (45%), fading out at both ends — which divides the
+lanes and names their state at once: grey for «منتظر ثبت» (waiting is the
+neutral state; blue stays for focus and picks), green for «ثبت شد», red
+for «مشکل در ثبت». Nothing glows or moves (a glow and a line along the
+top were tried and dropped: too loud).
 The white cards read clearly on it; a lane taking a dragged card turns
 the blue "pick" wash with a dashed edge. Each head is a small badge in
 the status colour — dot, name, and an outlined count (no totals). On the
@@ -204,7 +204,14 @@ in the notes) — beside the amount. The party and the beneficiary are only
 in the view. The footer, under a hairline on a faint band: the tinted
 status square (radius 8) with the problem reason or the copy-receipt
 button beside it, and the eye at the other end — 28px buttons, 44px tap
-areas on touch. Under the pointer a soft light
+areas on touch.
+**Tooltips** (HeroUI's Tooltip, `#appTooltip`): ink, small, above what
+they explain with a little arrow (below, flipped, only without room); they
+wait 400ms so a pointer crossing a card doesn't set them flashing, and the
+next one shows at once while one is open. Only where a word is needed:
+the status square («تغییر وضعیت»), the copy-receipt slip («کپی رسید ثبت»),
+the due date's distance, and a problem reason only when it was cut off.
+The eye and the owner's name have none. Under the pointer a soft light
 follows the cursor and catches the card's edge (Magic Card; `shell.js`
 sets `--mx` / `--my`). Empty lanes say so in a dashed box («چکی در این
 وضعیت نیست», or «موردی با این جستجو پیدا نشد» under a search or filter).
@@ -227,12 +234,13 @@ same id is the same person, however the name was typed), then by name — a
 same-named person without an id gains this one, one holding a different id
 is a namesake and gets a record of their own. The server refuses a second
 person with a national id already on file (409 with the one on file,
-backed by a unique index), so nothing duplicates even in a race. In the
-cheque form the beneficiary list offers the chosen party's own
-beneficiaries first («ذینفع‌های این طرف حساب»), then all others («سایر
-ذینفع‌ها»); typing a known national id fills the name in. The people
-panel's beneficiaries tab says this in one line and shows each
-beneficiary's parties under its name.
+backed by a unique index), so nothing duplicates even in a race. The
+cheque form's beneficiary list shows only the chosen party's own
+beneficiaries (the owner's choice); a person typed in full who is already
+on file folds onto that record, and a national id the form fills in is
+selected when the field is entered, so typing it again replaces it instead
+of running on into an 11-digit id. The people panel's beneficiaries tab
+shows each beneficiary's parties under its name.
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
 two faces, switched by the `.ve-locked` class dashboard.js puts on

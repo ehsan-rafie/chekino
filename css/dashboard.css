@@ -5281,42 +5281,34 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .filter-popover .mf-list.show { display: block; }
 
 /* ── Lanes carry their status ──
-   The page read as one white sheet. Each lane takes its status colour —
-   grey for «منتظر ثبت» (waiting is the neutral state, and blue is kept for
-   focus and picks), green for «ثبت شد», red for «مشکل در ثبت» — as a light
-   at its head: a thin line that fades out toward the corners, a soft glow
-   spreading down from it (90px), over a wash that thins to a hint by
-   220px, inside an edge of the same hue. On first load the line draws out
-   from the middle, with the cards' own blur-fade; nothing loops. The cards
-   stay white, so they read even more clearly on it. The head is a small
-   badge in the status colour. */
+   The page read as one white sheet. Each lane takes a faint wash of its
+   status colour, an edge of the same hue, and down its start edge a thin
+   line of that colour, pale and fading out at both ends — a divider
+   between the lanes that names their state at once: grey for «منتظر ثبت»
+   (waiting is the neutral state, and blue is kept for focus and picks),
+   green for «ثبت شد», red for «مشکل در ثبت». Nothing glows or moves. The
+   cards stay white, so they read even more clearly on it. The head is a
+   small badge in the status colour. */
 .board-columns .board-column {
-  background:
-    radial-gradient(120% 90px at 50% 0, color-mix(in srgb, var(--col-accent) 16%, transparent), transparent),
-    linear-gradient(to bottom,
-      color-mix(in srgb, var(--col-accent) 5%, var(--surface)),
-      color-mix(in srgb, var(--col-accent) 2.5%, var(--surface)) 220px);
-  border-color: color-mix(in srgb, var(--col-accent) 14%, var(--surface));
+  background: color-mix(in srgb, var(--col-accent) 3%, var(--surface));
+  border-color: color-mix(in srgb, var(--col-accent) 11%, var(--surface));
 }
 .board-columns .board-column::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 18px;
-  right: 18px;
+  top: 22px;
+  bottom: 22px;
+  inset-inline-start: -1px;
   z-index: 2;
-  height: 2px;
-  border-radius: 0 0 2px 2px;
-  background: linear-gradient(90deg, transparent,
-    color-mix(in srgb, var(--col-accent) 75%, transparent) 30%,
-    color-mix(in srgb, var(--col-accent) 75%, transparent) 70%, transparent);
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, transparent,
+    color-mix(in srgb, var(--col-accent) 45%, transparent) 18%,
+    color-mix(in srgb, var(--col-accent) 45%, transparent) 82%, transparent);
   pointer-events: none;
 }
-.board-columns .board-column.drag-over::before { opacity: 0; }
-body.is-entering .board-columns .board-column::before { animation: laneLineIn 0.7s var(--ease-out) 0.1s both; }
-@keyframes laneLineIn { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { body.is-entering .board-columns .board-column::before { animation: none; } }
 .board-columns .board-column.drag-over { background: var(--hl-soft); border: 1px dashed var(--hl); }
+.board-columns .board-column.drag-over::before { opacity: 0; }
 .board-col-badge {
   padding: 3px 9px 3px 8px;
   border-radius: var(--rad-xs);
@@ -5343,15 +5335,6 @@ body.is-entering .board-columns .board-column::before { animation: laneLineIn 0.
 .chk-owner { color: var(--ink-2); font-variation-settings: 'wght' 520; }
 
 /* ── Beneficiaries: one person, any number of parties ── */
-/* group heads in the beneficiary list: this party's own, then the rest */
-.ac-group {
-  padding: 8px 10px 4px;
-  color: var(--muted);
-  font-size: var(--t-micro);
-  font-variation-settings: var(--f-label);
-  cursor: default;
-}
-.ac-item + .ac-group { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border-subtle); }
 /* people panel: the parties a beneficiary has been paid by, under its name */
 .people-item-display { flex-wrap: wrap; row-gap: 2px; }
 .people-item-parties {
@@ -5363,8 +5346,6 @@ body.is-entering .board-columns .board-column::before { animation: laneLineIn 0.
   color: var(--muted);
   font-size: var(--t-micro);
 }
-/* the beneficiaries tab explains itself in one quiet line */
-.people-hint { margin: 0 2px 12px; color: var(--muted); font-size: var(--t-micro); line-height: 1.8; }
 
 /* ── The card: a body and a footer (HeroUI's Card) ──
    The actions — status, the problem reason or the receipt, the eye — sit
@@ -5381,3 +5362,44 @@ body.is-entering .board-columns .board-column::before { animation: laneLineIn 0.
 }
 .eye-btn, .receipt-btn, .status-dot-btn { width: 28px; height: 28px; border-radius: 8px !important; }
 .status-dot-btn svg { width: 14px; height: 14px; }
+
+/* ── Card tooltips (HeroUI's Tooltip) ──
+   Ink, small and tight, above what it explains with a little arrow at it
+   (below, arrow flipped, only when there's no room above); it fades in from
+   3px toward the arrow. Inverted in the dark theme, like the buttons. */
+.app-tooltip {
+  --arrow-x: 50%;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-2);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  line-height: 1.55;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 24px));
+  transform: translateY(3px) scale(0.97);
+  transform-origin: var(--arrow-x) 100%;
+  transition: opacity 0.12s var(--ease), transform 0.12s var(--ease);
+}
+.app-tooltip.below { transform: translateY(-3px) scale(0.97); transform-origin: var(--arrow-x) 0; }
+.app-tooltip.show { transform: none; }
+.app-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--arrow-x);
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 0 0 2px 0;
+  background: inherit;
+  transform: rotate(45deg);
+}
+.app-tooltip.below::after { top: auto; bottom: 100%; margin: 0 0 -4px -4px; border-radius: 2px 0 0 0; }
+:root[data-theme="dark"] .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
+}
+@media (prefers-reduced-motion: reduce) { .app-tooltip { transition: opacity 0.12s linear; transform: none; } }
