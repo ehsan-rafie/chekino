@@ -140,11 +140,18 @@ wordmark (the mark's strokes are drawn in the page colour, so it inverts)
 at the start; ghost square icon buttons (support, theme, account) at the
 end. Nothing in the middle: the Ctrl+K palette has no button, only its
 shortcut. The floating support button is hidden on the dashboard, since
-the header already has one.
+the header already has one. The bar spans the window but its content is
+set to the page's width (1320px, 32px in), so the brand sits over
+«افزودن چک» and the icons over «مدیریت اشخاص». The account button opens
+a menu with a header section («وارد شده با حساب» and the company name)
+and a labelled «خروج از حساب» item, red under the pointer (HeroUI's
+Dropdown).
 
 **Page head.** No title and no summary line. The one primary action,
 «افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
 (unrolls into PDF / Excel) and «مدیریت اشخاص» sit at the other end.
+With nothing to report (an empty board, a search with no match)
+«گزارش‌گیری» is switched off, not hidden, so nothing moves along the row.
 The add button is Magic UI's Shimmer Button (@dillionverma), ported class
 for class (`.shimmer-btn`): black, a 1px white/10 border, shadow-2xl,
 a blurred spark sliding end to end (3s, alternate) while spinning (6s),
@@ -158,9 +165,14 @@ label's fractional width (120.36px) one end sat between two pixels, so
 the spark faded and smeared there — on the climb up the left side, never
 on the right. It wasn't the corner.
 
-**Toolbar.** The search field, then the facet filters «تاریخ» «مبلغ»
-«اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها» when
-something is filtered.
+**Toolbar.** The search field (320px), then the facet filters «تاریخ»
+«مبلغ» «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها»
+when something is filtered, and after it, in the same row, a chip per
+applied filter with its value and its own × — an outlined badge (radius
+8, not a capsule). Filtering never moves the board: the chips used to
+take a line of their own under the row. Below 860px, with no room left
+in the row, they wrap under it. On phones the three facet filters share
+their row evenly.
 
 **Board.** Three lanes on `--surface-2` with a subtle edge. Each head is a
 status dot, the name in ink and a small outlined count badge (no totals).
@@ -169,8 +181,18 @@ outlined badge (amber / red wash with a dot when due soon / overdue),
 payee and amount in the middle, borderless 30px icon buttons (a grey wash
 on hover) and a tinted status square without an edge below. Under the pointer a soft light
 follows the cursor and catches the card's edge (Magic Card; `shell.js`
-sets `--mx` / `--my`). Empty lanes say so in a dashed box. On narrow
-screens the lanes become segmented tabs.
+sets `--mx` / `--my`). Empty lanes say so in a dashed box («چکی در این
+وضعیت نیست», or «موردی با این جستجو پیدا نشد» under a search or filter).
+On narrow screens the lanes become segmented tabs.
+The due badge's tooltip says how far away the date is («۳ روز دیگر»,
+«امروز», «۶ روز از سررسید گذشته»). A problem cheque shows its reason
+in red beside its red mark, in the bottom row's free space (the status
+button's tooltip just says «تغییر وضعیت»). A registered cheque's copy-
+receipt button is a slip with lines of text (Lucide receipt-text — the
+plain receipt carries a dollar sign). A lane taller than the screen
+scrolls on its own and fades out at an edge with more cards past it.
+The empty board (nothing registered yet) is a dashed box with a line of
+explanation and its own «افزودن اولین چک» button.
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
 two faces, switched by the `.ve-locked` class dashboard.js puts on

@@ -653,6 +653,7 @@ function closeModal(force) {
 
 const addCheckBtn = document.getElementById('addCheckBtn');
 addCheckBtn.addEventListener('click', openModal);
+document.getElementById('emptyAddBtn').addEventListener('click', openModal);
 
 // «افزودن چک» on whole device pixels. Its shimmer is a ring under 1px
 // thick just inside the edge; the label makes the button a fractional width
@@ -3713,7 +3714,7 @@ function updateFilterUI() {
   if (benefOn) chips.push({ key: 'benef', label: `ذینفع: ${filterBenefSelected.trim()}` });
   activeFiltersRow.innerHTML = chips.map(c => `
     <span class="active-chip" data-key="${c.key}">${c.html || escapeHtml(c.label)}
-      <button type="button" data-clear="${c.key}">
+      <button type="button" data-clear="${c.key}" aria-label="حذف فیلتر ${escapeHtml(c.label.split(':')[0])}" title="حذف این فیلتر">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </span>`).join('');
@@ -3736,9 +3737,14 @@ function clearOneFilter(key) {
 // nothing heavier than the title and search either. Each status's own
 // count and sum live where they're actually being asked about: in that
 // column's own badge and footer, built in renderTable() below.
+// With nothing to report the button is switched off rather than taken
+// away: hiding it moved «مدیریت اشخاص» along the row on every search that
+// came up empty.
 function updateBoardCountBadge(list) {
-  exportCluster.style.display = list.length === 0 ? 'none' : 'inline-flex';
-  if (list.length === 0) closeExportMenu();
+  const none = list.length === 0;
+  reportBtn.disabled = none;
+  reportBtn.title = none ? 'چکی برای گزارش نیست' : 'گزارش‌گیری';
+  if (none) closeExportMenu();
 }
 
 function refreshTable() {
@@ -4170,6 +4176,18 @@ function daysUntilDue(dateStr) {
   const now = new Date().setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
 }
+// The due badge shows the date; its tooltip says how far away that is —
+// the question a pending cheque is actually asking.
+function dueTip(c) {
+  const d = daysUntilDue(c.dueDate);
+  if (d === null) return 'تاریخ سررسید';
+  const pending = (c.status || 'pending') === 'pending';
+  if (d === 0) return 'سررسید: امروز';
+  if (d === 1) return 'سررسید: فردا';
+  if (d > 1) return `سررسید: ${toFa(d)} روز دیگر`;
+  if (pending) return d === -1 ? 'یک روز از سررسید گذشته' : `${toFa(-d)} روز از سررسید گذشته`;
+  return d === -1 ? 'سررسید: دیروز' : `سررسید: ${toFa(-d)} روز پیش`;
+}
 function dueUrgencyClass(c) {
   if (c.status !== 'pending') return '';
   const days = daysUntilDue(c.dueDate);
@@ -4192,8 +4210,9 @@ function dueUrgencyClass(c) {
 // is unchanged (still asks for a reason on "مشکل", still confirms a
 // revert to "منتظر ثبت").
 function statusDotTriggerHtml(c, st) {
-  const reasonText = c.status === 'problem' && c.statusReason ? c.statusReason : '';
-  const tip = reasonText ? `مشکل: ${reasonText}` : 'تغییر وضعیت';
+  // The reason itself is written on the card now (chk-reason); the button's
+  // tip says what the button does.
+  const tip = 'تغییر وضعیت';
   return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" style="background:${st.color}" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BOARD_COL_ICON[c.status || 'pending'] || ''}</svg>
   </button>`;
@@ -4220,6 +4239,10 @@ function checkCardHtml(c) {
   const urgency = dueUrgencyClass(c);
   const nidTip = c.nid ? `ذینفع: ${c.benef} — کد ملی: ${toFa(c.nid)}` : `ذینفع: ${c.benef}`;
   const justChanged = c.id === justChangedId ? ' just-changed' : '';
+  // A problem cheque shows why, beside its red mark, in the bottom row's
+  // free space — the reason is what someone opens that lane to find out.
+  const reason = c.status === 'problem' && c.statusReason ? escapeHtml(c.statusReason) : '';
+  const reasonHtml = reason ? `<span class="chk-reason" data-tip="${reason}">${reason}</span>` : '';
   // No role="button"/tabindex here: the card has no click or key handler —
   // it announced as a control that does nothing, and wrapping the real
   // buttons inside a role="button" hid them from assistive tech
@@ -4227,7 +4250,7 @@ function checkCardHtml(c) {
   // keyboard path to the same change is the status button inside.
   return `<div class="check-card ${st.cls}${justChanged}" data-id="${c.id}">
     <div class="chk-row">
-      <span class="chk-due${urgency}" data-tip="تاریخ سررسید">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
+      <span class="chk-due${urgency}" data-tip="${dueTip(c)}">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
@@ -4237,6 +4260,7 @@ function checkCardHtml(c) {
     <div class="chk-row chk-row-bottom">
       <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">
+        ${reasonHtml}
         ${receiptButtonHtml(c)}
         ${statusDotTriggerHtml(c, st)}
       </div>
@@ -4380,6 +4404,7 @@ function renderTable() {
   // filter emptying a column is exactly what each column's own "چکی در
   // این وضعیت نیست" already says.
   const nothingRegistered = loadCheques().length === 0;
+  const filtering = searchInput.value.trim() !== '' || filterClearBtn.classList.contains('show');
 
   updateBoardCountBadge(all);
   // First render means the data is in — the loading skeleton can go.
@@ -4395,7 +4420,7 @@ function renderTable() {
     const listEl = document.getElementById(`boardColList-${st.id}`);
     listEl.innerHTML = colChecks.length
       ? colChecks.map(checkCardHtml).join('')
-      : `<div class="board-col-empty">چکی در این وضعیت نیست</div>`;
+      : `<div class="board-col-empty">${filtering ? 'موردی با این جستجو پیدا نشد' : 'چکی در این وضعیت نیست'}</div>`;
   });
 
   document.querySelectorAll('[data-status-for]').forEach(btn => {
@@ -4442,7 +4467,22 @@ function updateBoardHeight() {
     const available = window.innerHeight - top - mainPad - 16;
     list.style.maxHeight = Math.max(160, available) + 'px';
   });
+  updateLaneFades();
 }
+
+// A lane taller than the screen scrolls on its own. Its edge fades where
+// there are more cards past it — at the bottom until the end is reached,
+// at the top once scrolled — instead of a card simply being cut in half.
+function updateLaneFades(list) {
+  (list ? [list] : document.querySelectorAll('.board-col-list')).forEach((el) => {
+    const more = el.scrollHeight - el.clientHeight > 2;
+    el.classList.toggle('fade-top', more && el.scrollTop > 2);
+    el.classList.toggle('fade-bottom', more && el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  });
+}
+document.addEventListener('scroll', (e) => {
+  if (e.target.classList && e.target.classList.contains('board-col-list')) updateLaneFades(e.target);
+}, { capture: true, passive: true });
 window.addEventListener('resize', updateBoardHeight);
 
 // ---- Drag a card between columns to change its status ----

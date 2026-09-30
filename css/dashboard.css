@@ -5069,3 +5069,143 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 /* the calendar buttons are out of the Tab order (tabindex -1): no keyboard
    ring on them — focus goes back to the field when the calendar closes */
 .date-cal-btn:focus-visible { outline: none; }
+
+/* ═══ Dashboard review (Sept 30) ═══
+   Laid over the visual layer above. Alignment, things that moved when
+   they shouldn't, and the few places that fell outside the system. */
+
+/* The header's content lines up with the page: the brand over «افزودن چک»,
+   the icons over «مدیریت اشخاص». The bar spans the window while the page
+   is 1320px wide, so on a 1440 screen the two edges sat 68px apart. */
+.header { padding-inline: max(32px, calc((100% - 1320px) / 2 + 32px)); }
+@media (max-width: 720px) { .header { padding-inline: 14px; } }
+
+/* Applied-filter chips sit at the free end of the toolbar row instead of
+   on a line of their own under it: filtering no longer pushes the board
+   down (it moved 36px). On narrow screens, with no free end, they drop
+   below as before. */
+@media (min-width: 861px) {
+  .board-toolbar { flex-direction: row; align-items: center; gap: 8px; }
+  .board-toolbar .board-search-box { width: auto; flex: 0 1 auto; min-width: 0; }
+  /* sized by its own width, not the input's small natural one */
+  .board-toolbar .board-search-box .search-box { flex: 0 0 320px; width: 320px; }
+  /* right after «پاک کردن فیلترها», so the values sit with their filters */
+  .active-filters-row { flex: 1 1 0; min-width: 0; justify-content: flex-start; }
+}
+/* A chip reports a value: an outlined badge (radius 8), not a capsule */
+.active-chip {
+  height: 26px;
+  padding-inline: 10px 3px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-xs);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-1);
+  font-size: var(--t-micro);
+}
+.active-chip button {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.active-chip button:hover,
+.active-chip button:active { background: var(--state-bad-bg); color: var(--state-bad-text); transform: none; }
+
+/* «گزارش‌گیری» with nothing to report: switched off, not taken away */
+.icon-action:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+.icon-action:disabled:hover { background: var(--surface); color: var(--ink); }
+
+/* A lane that scrolls fades out at an edge with more cards past it */
+.board-col-list.fade-bottom {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
+}
+.board-col-list.fade-top {
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 36px), transparent);
+}
+.board-col-list.fade-top.fade-bottom {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
+
+/* The empty board offers the way in itself */
+.table-empty .p-sub { max-width: 420px; text-align: center; line-height: 1.8; text-wrap: balance; }
+.table-empty .table-empty-add {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-width: 0;
+  height: 38px;
+  margin-top: 12px;
+  padding: 0 18px;
+}
+/* not the grey 32px of the box's own illustration (.table-empty svg) */
+.table-empty .table-empty-add svg { width: 16px; height: 16px; margin: 0; color: inherit; opacity: 1; }
+
+/* Account menu: who is signed in, then a labelled way out (HeroUI's
+   Dropdown with a header section) — the bare door icon beside the name
+   didn't say what it did. */
+.account-menu {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 220px;
+  padding: 6px;
+}
+.account-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.account-caption { font-size: var(--t-micro); color: var(--muted); }
+.account-menu .company-name {
+  max-width: 260px;
+  padding: 0;
+  font-size: var(--t-body);
+  color: var(--ink);
+  font-variation-settings: 'wght' 640;
+}
+.account-menu .logout-btn {
+  width: 100%;
+  height: 36px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  color: var(--ink-2);
+}
+.account-menu .logout-btn svg { width: 16px; height: 16px; }
+.account-menu .logout-btn:hover { background: var(--state-bad-bg); color: var(--state-bad-text); }
+
+/* Phones: the three facet filters share their row evenly */
+@media (max-width: 700px) {
+  .board-search-box .filter-pill-group { flex: 1 1 100%; }
+  .board-search-box .filter-pill-group .filter-pill-btn { flex: 1 1 0; justify-content: center; }
+}
+
+/* A problem cheque's reason, in the bottom row beside its red mark */
+.chk-row-bottom { min-width: 0; }
+.chk-row-bottom .chk-icon-group { min-width: 0; flex: 0 1 auto; }
+.chk-reason {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--state-bad-text);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  cursor: default;
+}
