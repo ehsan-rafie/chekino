@@ -129,7 +129,10 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 7. **Motion answers the user, with two exceptions.** Magic UI moments tied
    to something the user did or to the page arriving: the spotlight that
    follows the pointer across a cheque card, the blur-fade the first cards
-   arrive with, the theme switch opening as a circle from its button. Two
+   arrive with, the theme switch opening as a circle from its button
+   (every CSS transition is off while it runs — html.theme-switching — or
+   the hundreds of colour transitions it starts repaint the page under the
+   circle each frame and it drops to ~35fps; without them it holds 60). Two
    quiet loops are the exceptions, each on the one thing it points at:
    the shimmer round «افزودن چک» (Magic UI's Shimmer Button) and, on the
    login page, a border beam round the form. `prefers-reduced-motion` stops

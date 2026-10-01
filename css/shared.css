@@ -615,6 +615,10 @@ kbd {
    is switched off for the root snapshot. ── */
 ::view-transition-old(root),
 ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* no colour transitions while the theme flips (js/theme-reveal.js) */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after { transition: none !important; }
 
 /* ════════════════════════════════════════════════════════════════
    6 · INPUT GROUP (HeroUI's InputGroup)
