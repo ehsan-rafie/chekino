@@ -28,7 +28,7 @@ colors:
   hl-text: "#1E63AE"       # blue text on the soft blue wash
   hl-soft: "rgba(4,133,247,.14)"  # active date segment, today, range middle, applied filter
   focus-edge: hl           # a focused field: blue edge + 1px blue ring = a 2px blue line
-  pending: "#404040"       # the waiting state is ink, not a colour
+  pending: "#64748B"       # slate: the waiting state stays neutral, lighter than ink (dark #94A3B8, wash #F1F5F9)
   done: "#16A34A"
   problem: "#DC2626"
   due-soon: "#D97706"      # text step #92400E
@@ -100,7 +100,9 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    (`js/field-addons.js`). Buttons press in slightly (scale .97); the
    controls that belong to a field — the channel tags, a field's
    calendar / list / copy button, the photo row's button — don't.
-5. **Colour means status.** Pending is ink; registered green, problem red,
+5. **Colour means status.** Pending is a cool slate grey — neutral, not yet
+   good or bad, lighter than ink so it doesn't outweigh the outcomes (amber
+   stays "due soon", blue stays focus and picks); registered green, problem red,
    due-soon amber — always a small dot plus the Persian label. Besides the
    focus blue, the drawn cheque's own blue print is the only other colour
    on screen.
@@ -187,9 +189,10 @@ list and then the popover.
 **Board.** Three lanes, each with a faint wash of its status colour (3%),
 an edge of the same hue (11%), and down its start edge a thin line of that
 colour — 2px, pale (45%), fading out at both ends — which divides the
-lanes and names their state at once: grey for «منتظر ثبت» (waiting is the
-neutral state; blue stays for focus and picks), green for «ثبت شد», red
-for «مشکل در ثبت». Nothing glows or moves (a glow and a line along the
+lanes and names their state at once: slate grey for «منتظر ثبت» (waiting
+is the neutral state; blue stays for focus and picks), green for «ثبت شد»,
+red for «مشکل در ثبت» — the same three carry the view's status banner and
+the PDF report's tiles and pills. Nothing glows or moves (a glow and a line along the
 top were tried and dropped: too loud).
 The white cards read clearly on it; a lane taking a dragged card turns
 the blue "pick" wash with a dashed edge. Each head is a small badge in
