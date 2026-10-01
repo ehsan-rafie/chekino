@@ -110,29 +110,8 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
   return !!(lunar && lunar.has(key));
 }
 
-// ---- Theme: light/dark, manual toggle or automatic by time of day ----
-const THEME_KEY = 'chekino_theme_v1';
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-
-// Light is the default — the working theme for a table looked at all day
-// — not a time-of-day guess. Dark stays one click away and, once chosen,
-// wins forever: a saved choice is never silently overridden by the clock.
-const DEFAULT_THEME = 'light';
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-}
-function currentSavedTheme() {
-  try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
-}
-function initTheme() {
-  applyTheme(currentSavedTheme() || DEFAULT_THEME);
-}
-themeToggleBtn.addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-});
-initTheme();
+// ---- Theme: light / dark / automatic by the sun — js/boot.js applies it
+// before the first paint, js/theme-reveal.js holds the menu ----
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('chekino_token');
@@ -5564,7 +5543,7 @@ window.addEventListener('popstate', () => {
       title: 'تغییر تم روشن و تاریک', group: 'نمایش', key: 't', shortcut: 'T', order: 6,
       keywords: 'theme dark light تم تیره روشن',
       icon: icon('<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
-      run: click('themeToggleBtn'),
+      run: () => window.chekinoToggleTheme && window.chekinoToggleTheme(),
     },
     {
       title: 'برو به بالای صفحه', group: 'نمایش', order: 7,

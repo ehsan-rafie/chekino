@@ -1,21 +1,8 @@
 
 const TOKEN_KEY = 'chekino_admin_token';
 
-// ---- Theme: same key and same rules as the dashboard, so an admin who set
-// dark on one side of the product doesn't land in light on the other ----
-const THEME_KEY = 'chekino_theme_v1';
-// Light by default, same as the dashboard — a saved choice always wins.
-const DEFAULT_THEME = 'light';
-function currentSavedTheme() {
-  try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
-}
-function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
-applyTheme(currentSavedTheme() || DEFAULT_THEME);
-document.getElementById('themeToggleBtn').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-});
+// ---- Theme: the same three modes as the dashboard (light / dark / by the
+// sun), applied by js/boot.js; js/theme-reveal.js holds the menu ----
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 
@@ -685,7 +672,7 @@ if (getToken()) {
       title: 'تغییر تم روشن و تاریک', group: 'نمایش', key: 't', shortcut: 'T', order: 6,
       keywords: 'theme dark light تم تیره روشن',
       icon: icon('<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
-      run: () => { const el = document.getElementById('themeToggleBtn'); if (el) el.click(); },
+      run: () => window.chekinoToggleTheme && window.chekinoToggleTheme(),
     },
     {
       title: 'خروج از حساب', group: 'حساب', order: 7, when: panelUp,
