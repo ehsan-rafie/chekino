@@ -143,17 +143,19 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 **Header.** 56px, white glass with one hairline under it. Brand mark +
 wordmark (the mark's strokes are drawn in the page colour, so it inverts)
 at the start; ghost square icon buttons (support, theme, account) at the
-end. **Theme** has three modes, in a menu under its button (HeroUI's
-Dropdown with a radio group, the account menu's skin; a blue tick on the
-chosen one): «روشن», «تیره», and «خودکار» — the default — light from sunrise
-to sunset, dark after, by the sun over Tehran on the day (sunset runs from
-about 17:00 in winter to 20:30 in summer; SunCalc's method in
-`js/boot.js`, applied before the first paint so nothing flashes). The
-automatic row says when the next change comes («تیره از ۱۷:۵۰»); the button
-shows the sun, the moon, or the sun-and-moon for «خودکار». A choice opens as
-a circle from the button; in «خودکار» the page also changes by itself at
-sunrise and sunset with a soft fade. Saved as `chekino_theme_v2`, shared
-by the dashboard, the admin panel and the login page. Nothing in the middle: the Ctrl+K palette has no button, only its
+end. **Theme** follows the sun over Tehran on the day: light from sunrise
+to sunset, dark after (sunset runs from about 17:00 in winter to 20:30
+in summer; SunCalc's method in `js/boot.js`, applied before the first
+paint so nothing flashes). The button is a plain toggle — the sun or the moon — and a press
+wins over the sun until the sun next turns the other way: a dark chosen by
+day lasts until sunrise, a light chosen at night until the next sunset, so
+never more than a day (the scheduled dark theme on phones works the same
+way). A press opens as a circle from the button; a change nobody pressed —
+sunrise, sunset, the end of a choice, another tab — is a soft fade. Saved
+as `chekino_theme_v3` ({theme, until}), shared by the dashboard, the admin
+panel and the login page.
+
+Nothing in the middle: the Ctrl+K palette has no button, only its
 shortcut. The floating support button is hidden on the dashboard, since
 the header already has one. The bar spans the window but its content is
 set to the page's width (1320px, 32px in), so the brand sits over

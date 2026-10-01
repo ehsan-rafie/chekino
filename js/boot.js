@@ -11,15 +11,19 @@
   var mode = (script && script.getAttribute('data-mode')) || '';
 
   // ---- 1 · theme, before first paint ----
-  // Three modes, saved as chekino_theme_v2: 'light', 'dark', or 'auto' — the
-  // default — light from sunrise to sunset and dark after, by the sun over
-  // Tehran on today's date (sunset moves from about 17:00 in winter to 20:30
-  // in summer, so fixed hours would be wrong half the year). Set here, before
-  // the stylesheets apply, so a page never flashes the wrong theme on its way
-  // to the right one. The page scripts reach it through window.chekinoTheme
-  // (js/theme-reveal.js draws the menu and switches live at sunrise/sunset).
-  var THEME_KEY = 'chekino_theme_v2';
-  var MODES = { light: 1, dark: 1, auto: 1 };
+  // By the sun over Tehran on today's date: light from sunrise to sunset,
+  // dark after (sunset moves from about 17:00 in winter to 20:30 in summer,
+  // so fixed hours would be wrong half the year). A press of the theme
+  // button wins over the sun until the sun next turns the other way — a
+  // dark chosen by day lasts until sunrise, a light chosen at night until
+  // the next sunset, so never more than a day — the way the scheduled dark
+  // theme on phones behaves. That choice is saved as chekino_theme_v3,
+  // {theme, until}. Set here, before the stylesheets apply, so a page never
+  // flashes the wrong theme on its way to the right one; the page scripts
+  // reach it through window.chekinoTheme (js/theme-reveal.js runs the
+  // button and the change at sunrise/sunset while a page is open).
+  var THEME_KEY = 'chekino_theme_v3';
+  try { localStorage.removeItem('chekino_theme_v1'); localStorage.removeItem('chekino_theme_v2'); } catch (e) {}
 
   // Sunrise and sunset — SunCalc's method (BSD-2-Clause, Vladimir Agafonkin),
   // trimmed to the two events and one place.
@@ -41,43 +45,62 @@
     var toDate = function (j) { return new Date((j + 0.5 - J1970) * DAY_MS); };
     return { rise: toDate(Jnoon - (Jset - Jnoon)), set: toDate(Jset) };
   }
-  // The next sunrise or sunset after `now`, and the theme it brings
-  function nextSunEvent(now) {
+  // The next sunrise or sunset after `now` (or the next one bringing
+  // `theme`), and the theme it brings
+  function nextSunEvent(now, theme) {
     var events = [];
-    for (var k = -1; k <= 1; k++) {
+    for (var k = -1; k <= 2; k++) {
       var t = sunTimes(new Date(now.valueOf() + k * DAY_MS));
       events.push({ at: t.rise, theme: 'light' }, { at: t.set, theme: 'dark' });
     }
     events.sort(function (a, b) { return a.at - b.at; });
-    for (var i = 0; i < events.length; i++) if (events[i].at > now) return events[i];
+    for (var i = 0; i < events.length; i++) {
+      if (events[i].at > now && (!theme || events[i].theme === theme)) return events[i];
+    }
     return null;
   }
-  function themeForMode(mode, now) {
-    if (mode === 'light' || mode === 'dark') return mode;
-    var next = nextSunEvent(now || new Date());
-    // the theme in force now is the opposite of the one the next event brings
+  // the theme in force now is the opposite of the one the next event brings
+  function sunTheme(now) {
+    var next = nextSunEvent(now);
     return next && next.theme === 'light' ? 'dark' : 'light';
   }
-  function savedMode() {
-    try { var m = localStorage.getItem(THEME_KEY); return MODES[m] ? m : 'auto'; } catch (e) { return 'auto'; }
+  function savedChoice(now) {
+    try {
+      var c = JSON.parse(localStorage.getItem(THEME_KEY) || 'null');
+      if (c && (c.theme === 'light' || c.theme === 'dark') && c.until > now.valueOf()) return c;
+      if (c) localStorage.removeItem(THEME_KEY);   // its time is up: back to the sun
+    } catch (e) {}
+    return null;
   }
-  function applyMode(mode) {
-    var root = document.documentElement;
-    root.setAttribute('data-theme-mode', mode);
-    root.setAttribute('data-theme', themeForMode(mode));
+  function currentTheme(now) {
+    var c = savedChoice(now);
+    return c ? c.theme : sunTheme(now);
+  }
+  function apply() {
+    document.documentElement.setAttribute('data-theme', currentTheme(new Date()));
   }
   window.chekinoTheme = {
-    mode: savedMode,
-    themeFor: themeForMode,
+    KEY: THEME_KEY,
+    current: function () { return currentTheme(new Date()); },
+    choice: function () { return savedChoice(new Date()); },
     nextSunEvent: nextSunEvent,
-    apply: function () { applyMode(savedMode()); },
-    set: function (mode) {
-      if (!MODES[mode]) return;
-      try { localStorage.setItem(THEME_KEY, mode); } catch (e) {}
-      applyMode(mode);
+    apply: apply,
+    // a press of the button: kept until the sun next brings the other theme;
+    // a choice that matches the sun is just the sun, nothing to keep
+    choose: function (theme) {
+      var now = new Date();
+      try {
+        if (theme === sunTheme(now)) {
+          localStorage.removeItem(THEME_KEY);
+        } else {
+          var until = nextSunEvent(now, theme === 'dark' ? 'light' : 'dark');
+          localStorage.setItem(THEME_KEY, JSON.stringify({ theme: theme, until: until ? until.at.valueOf() : now.valueOf() + DAY_MS }));
+        }
+      } catch (e) {}
+      document.documentElement.setAttribute('data-theme', theme);
     },
   };
-  applyMode(savedMode());
+  apply();
 
   if (mode === 'login') return;
 

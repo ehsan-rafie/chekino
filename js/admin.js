@@ -1,8 +1,8 @@
 
 const TOKEN_KEY = 'chekino_admin_token';
 
-// ---- Theme: the same three modes as the dashboard (light / dark / by the
-// sun), applied by js/boot.js; js/theme-reveal.js holds the menu ----
+// ---- Theme: the same as the dashboard (by the sun unless the button was
+// pressed), applied by js/boot.js; js/theme-reveal.js runs the button ----
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 

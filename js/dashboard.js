@@ -110,8 +110,8 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
   return !!(lunar && lunar.has(key));
 }
 
-// ---- Theme: light / dark / automatic by the sun — js/boot.js applies it
-// before the first paint, js/theme-reveal.js holds the menu ----
+// ---- Theme: by the sun unless the button was pressed — js/boot.js applies
+// it before the first paint, js/theme-reveal.js runs the button ----
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('chekino_token');
