@@ -1,10 +1,12 @@
-// View face of the cheque modal: the drawn Sayad cheque plus the facts it
-// doesn't carry, and the fold of the form's optional details.
+// View face of the cheque modal: the drawn Sayad cheque, carrying
+// everything Chekino knows about the cheque (css/cheque.css has the map).
 //
 // Read-only on purpose: it never writes to a form field or touches the
 // modal's own state, it only mirrors what dashboard.js already put in the
-// DOM. That keeps it safe to load after dashboard.js without either file
-// knowing about the other.
+// form. That keeps it safe to load after dashboard.js without either file
+// depending on the other's internals; it calls three of its helpers when
+// they're there — daysUntilDue for how far off the due date is,
+// openLightbox for the photo, showToast after a copy.
 //
 // Several values change without an input event (the calendar's setDate,
 // setAmountValue in view mode, the channel chips), so on top of listening
@@ -25,6 +27,7 @@
     .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
   const digits = (s) => toEn(s).replace(/\D/g, '');
   const group = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
+  const pad = (n) => String(n).padStart(2, '0');
   const val = (id) => ($(id) ? $(id).value.trim() : '');
 
   // ---- Persian number words, the way a cheque is filled in ---------------
@@ -76,41 +79,32 @@
     if (m < 1 || m > 12 || day < 1 || day > 31) return null;
     return { y, m, d: day, raw: d };
   }
-  function dateWords(p) {
-    return `${ordinalWords(p.d)} ${MONTHS[p.m - 1]}‌ماه ${numberWords(String(p.y))}`;
+  const dateWords = (p) => `${ordinalWords(p.d)} ${MONTHS[p.m - 1]}‌ماه ${numberWords(String(p.y))}`;
+  const faDate = (p) => toFa(`${p.y}/${pad(p.m)}/${pad(p.d)}`);
+
+  // How far off the due date is; amber when close and red when past, but
+  // only while the cheque still waits to be registered (as on the cards)
+  function dueDistance(due, status) {
+    if (!due || typeof daysUntilDue !== 'function') return null;
+    const d = daysUntilDue(`${due.y}/${pad(due.m)}/${pad(due.d)}`);
+    if (d === null) return null;
+    const text = d === 0 ? 'امروز' : d === 1 ? 'فردا' : d === -1 ? 'دیروز'
+      : d > 0 ? `${toFa(d)} روز دیگر` : `${toFa(-d)} روز گذشته`;
+    const soon = typeof DUE_SOON_DAYS === 'number' ? DUE_SOON_DAYS : 3;
+    const cls = status !== 'pending' ? '' : d < 0 ? 'is-over' : d <= soon ? 'is-soon' : '';
+    return { text, cls };
   }
 
-  // Guilloche and signature strokes come from js/print.js, shared with the
-  // login page's cheque.
-  const Print = window.ChekinoPrint;
-  function drawGuilloche() {
-    if (Print) Print.guilloche($('cqcGuilloche'));
-  }
-
-  let signedFor = null;
-  let signPending = null;
-  let signTimer = 0;
-  function updateSignature(owner) {
-    // Nothing new, or this exact name is already waiting to be signed —
-    // the 300ms re-read must not keep pushing the pen back.
-    if (owner === signedFor || owner === signPending) return;
-    clearTimeout(signTimer);
-    signPending = owner;
-    // Wait until typing settles, so the pen doesn't restart per keystroke.
-    signTimer = setTimeout(() => {
-      signPending = null;
-      signedFor = owner;
-      const p = $('cqcSignPath');
-      if (!p) return;
-      if (!owner) { p.setAttribute('d', ''); return; }
-      if (!Print) return;
-      p.setAttribute('d', Print.signaturePath(owner));
-      Print.drawIn(p);
-    }, owner && signedFor !== null ? 450 : 0);
+  // ---- security print (js/print.js) ---------------------------------------
+  function drawPrint() {
+    const Print = window.ChekinoPrint;
+    if (!Print) return;
+    Print.guilloche($('cqcGuilloche'));
+    Print.star($('cqcStar'));
   }
 
   // ---- small DOM helpers ---------------------------------------------------
-  // setFill writes a value into a blank on the cheque and plays the "ink"
+  // setFill writes a value into its place on the cheque and plays the "ink"
   // entrance only when the text actually changes.
   function setFill(id, value, placeholder) {
     const el = $(id);
@@ -127,194 +121,154 @@
   }
   // The chosen tags by name: the messengers, then the user's own entries
   function channelNames() {
-    const group = $('channelGroup');
-    return group ? [...group.querySelectorAll('.ch-tag[aria-pressed="true"] .ch-name')].map((c) => c.textContent.trim()).filter(Boolean) : [];
+    const g = $('channelGroup');
+    return g ? [...g.querySelectorAll('.ch-tag[aria-pressed="true"] .ch-name')].map((c) => c.textContent.trim()).filter(Boolean) : [];
   }
-
-  // ---- fields whose error state the view reacts to ---------------------------
-  const isErr = (id) => { const f = $(id); return !!(f && f.classList.contains('error')); };
-  const CHECKS = [
-    [1, 'serialField', () => digits(val('serialInput')).length === 6],
-    [1, 'sayadField', () => digits(val('sayadInput')).length === 16],
-    [1, 'amountField', () => Number(digits(val('amountInput'))) > 0],
-    [1, 'dueDateField', () => !!jalaliParts(val('dueDateInput'))],
-    [2, 'ownerField', () => val('ownerInput').length > 0],
-    [2, 'partyField', () => val('partyInput').length > 0],
-    [2, 'benefField', () => val('benefInput').length > 0],
-    [2, 'nidField', () => [10, 11].includes(digits(val('nidInput')).length)],
-    [3, 'sendDateField', () => !!jalaliParts(val('sendDateInput'))],
-    [3, 'channelField', () => channelNames().length > 0],
-  ];
-
-  function statusStamp() {
+  // The status, as dashboard.js set it on the status block above the cheque
+  function statusOf() {
     const b = $('veStatusBanner');
-    if (!b || !b.classList.contains('show')) return null;
-    if (b.classList.contains('st-done')) return { cls: 'done', label: 'ثبت شد' };
-    if (b.classList.contains('st-problem')) return { cls: 'problem', label: 'ثبت نشد' };
-    if (b.classList.contains('st-pending')) return { cls: 'pending', label: 'منتظر ثبت' };
-    return null;
+    if (!b || !b.classList.contains('show')) return '';
+    if (b.classList.contains('st-done')) return 'done';
+    if (b.classList.contains('st-problem')) return 'problem';
+    if (b.classList.contains('st-pending')) return 'pending';
+    return '';
   }
+  const STAMP = { done: 'ثبت شد', problem: 'ثبت نشد', pending: 'منتظر ثبت' };
 
-  // ---- attachments (dashboard.js keeps them in the global `attachedFiles`) --
+  // ---- the photo, where the leaf has its QR ------------------------------
+  // (dashboard.js keeps the attachments in the global `attachedFiles`)
   function files() {
     try { return Array.isArray(attachedFiles) ? attachedFiles : []; } catch (e) { return []; }
   }
-  let thumbsKey = '';
-  function renderThumbs() {
-    const box = $('cqfFiles');
-    const row = $('cqfFilesRow');
-    if (!box || !row) return;
+  const isImage = (f) => (f.type || '').startsWith('image/');
+  const photoBtn = $('cqcPhoto');
+  let photoKey = null;
+  function renderPhoto() {
     const list = files();
     const key = list.map((f) => f.name + ':' + (f.dataUrl || '').length).join('|');
-    row.hidden = !list.length;
-    if (key === thumbsKey) return;
-    thumbsKey = key;
-    box.innerHTML = '';
-    list.forEach((f) => {
-      const isImage = (f.type || '').startsWith('image/');
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'cq-thumb';
-      b.title = f.name || '';
-      if (isImage) {
-        const img = document.createElement('img');
-        img.src = f.dataUrl;
-        img.alt = f.name || 'عکس چک';
-        b.appendChild(img);
-        b.addEventListener('click', () => {
-          if (typeof openLightbox === 'function') openLightbox(f.dataUrl, f.name);
-        });
-      } else {
-        b.textContent = f.name || 'فایل';
-        b.classList.add('is-doc');
-      }
-      box.appendChild(b);
-    });
+    if (key === photoKey) return;
+    photoKey = key;
+    const i = list.findIndex(isImage);
+    const at = i >= 0 ? i : 0;
+    const first = list[at];
+    photoBtn.hidden = !first;
+    if (!first) return;
+    const box = $('cqcPhotoImg');
+    box.textContent = '';
+    if (isImage(first)) {
+      const img = document.createElement('img');
+      img.src = first.dataUrl;
+      img.alt = '';
+      box.appendChild(img);
+    } else {
+      box.textContent = 'PDF';
+    }
+    photoBtn.classList.toggle('is-doc', !isImage(first));
+    photoBtn.dataset.index = String(at);
+    const n = list.length;
+    $('cqcPhotoLabel').textContent = n > 1 ? `${toFa(n)} عکس` : 'عکس چک';
+    photoBtn.setAttribute('aria-label', n > 1 ? `دیدن عکس‌های چک، ${toFa(n)} عکس` : 'دیدن عکس چک');
   }
+  photoBtn.addEventListener('click', () => {
+    const i = Number(photoBtn.dataset.index);
+    const f = files()[i];
+    if (!f || !isImage(f) || typeof openLightbox !== 'function') return;
+    openLightbox(f.dataUrl, f.name, i);
+  });
 
-  // ---- copy the sayad id (view mode) -------------------------------------------
-  const copyBtn = $('cqfCopySayad');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const text = digits(val('sayadInput'));
-      if (!text) return;
-      const done = () => {
-        copyBtn.textContent = 'کپی شد';
-        setTimeout(() => { copyBtn.textContent = 'کپی'; }, 1400);
-        if (typeof showToast === 'function') showToast('شناسه صیادی کپی شد');
-      };
-      const legacy = () => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand('copy'); done(); } catch (e) {}
-        ta.remove();
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done).catch(legacy);
-      } else {
-        legacy();
-      }
-    });
-  }
+  // ---- copy the sayad id ----------------------------------------------------
+  const copyBtn = $('cqcCopySayad');
+  copyBtn.addEventListener('click', () => {
+    const text = digits(val('sayadInput'));
+    if (!text) return;
+    const done = () => {
+      copyBtn.textContent = 'کپی شد';
+      setTimeout(() => { copyBtn.textContent = 'کپی'; }, 1400);
+      if (typeof showToast === 'function') showToast('شناسه صیادی کپی شد');
+    };
+    const legacy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(legacy);
+    } else {
+      legacy();
+    }
+  });
 
   // ---- render ---------------------------------------------------------------
   let last = '';
   function render() {
-    const locked = body.classList.contains('ve-locked');
+    // Only the view shows the cheque; the form's own fields are its source
+    if (!body.classList.contains('ve-locked')) { last = ''; return; }
     const serial = digits(val('serialInput'));
     const sayad = digits(val('sayadInput'));
     const amount = digits(val('amountInput')).replace(/^0+/, '');
     const due = jalaliParts(val('dueDateInput'));
     const owner = val('ownerInput');
+    const party = val('partyInput');
     const benef = val('benefInput');
     const nid = digits(val('nidInput'));
+    const send = jalaliParts(val('sendDateInput'));
+    const spend = jalaliParts(val('spendDateInput'));
+    const channels = channelNames().join('، ');
+    const notes = val('notesInput');
+    const status = statusOf();
+    renderPhoto();
     const snapshot = [
-      locked, serial, sayad, amount, due && due.raw, owner, val('partyInput'), benef, nid,
-      val('sendDateInput'), val('spendDateInput'), val('notesInput'), files().length,
-      channelNames().join(','), ($('veStatusBanner') || {}).className,
-      CHECKS.map(([, f]) => (isErr(f) ? 1 : 0)).join(''),
-      isErr('spendDateField') || isErr('fileField'),
+      serial, sayad, amount, due && due.raw, owner, party, benef, nid,
+      send && send.raw, spend && spend.raw, channels, notes, status,
+      new Date().toDateString(),   // «۳ روز دیگر» moves on at midnight
     ].join('|');
     if (snapshot === last) return;
     last = snapshot;
 
-    // The cheque is the view — readable by assistive tech only when shown.
-    cheque.setAttribute('aria-hidden', locked ? 'false' : 'true');
-
-    // Head: sayad id in four printed groups, serial beside it
-    const sayadEl = $('cqcSayad');
-    if (sayadEl) {
-      const padded = sayad.padEnd(16, '•');
-      sayadEl.innerHTML = [0, 4, 8, 12].map((i) => `<span>${toFa(padded.slice(i, i + 4))}</span>`).join('');
-      sayadEl.classList.toggle('is-empty', !sayad);
-    }
-    setFill('cqcSerial', serial && toFa(serial), '——————');
-
-    // Date: boxed digits plus the date in words, as a cheque is written
+    // Top: the due date boxed, in words, and how far off it is
     const dueEl = $('cqcDue');
-    if (dueEl) {
-      const parts = due
-        ? [toFa(String(due.y)), toFa(String(due.m).padStart(2, '0')), toFa(String(due.d).padStart(2, '0'))]
-        : ['––––', '––', '––'];
-      const html = parts.map((p) => `<i>${p}</i>`).join('');
-      if (dueEl.innerHTML !== html) dueEl.innerHTML = html;
-      dueEl.classList.toggle('is-empty', !due);
-    }
-    setFill('cqcDueWords', due && dateWords(due), '');
-
-    // Body sentence
-    setFill('cqcWords', amount && numberWords(amount), '');
-    setFill('cqcBenef', benef, '');
-    setFill('cqcNid', nid && toFa(nid), '');
-    setFill('cqcOwner', owner, '');
-    setFill('cqcAmount', amount && `${toFa(group(amount))}`, '—');
-    const amountBox = cheque.querySelector('.cqc-amount-box');
-    if (amountBox) amountBox.classList.toggle('is-filled', !!amount);
-    if (locked) updateSignature(owner);
-
-    // Stub
-    setFill('cqcStubSerial', serial && toFa(serial), '—');
-    setFill('cqcStubDue', due && toFa(`${due.y}/${String(due.m).padStart(2, '0')}/${String(due.d).padStart(2, '0')}`), '—');
-    setFill('cqcStubAmount', amount && toFa(group(amount)), '—');
-    setFill('cqcStubBenef', benef, '—');
-
-    // MICR line: serial, sayad id, amount — Latin digits, as it's printed
-    const micr = $('cqcMicr');
-    if (micr) {
-      const text = `⑆${(serial || '000000').padEnd(6, '0')}⑆  ${(sayad || '').padEnd(16, '0')}⑈  ${(amount || '0').padStart(12, '0')}⑇`;
-      if (micr.textContent !== text) micr.textContent = text;
+    const boxes = (due ? [toFa(due.y), toFa(pad(due.m)), toFa(pad(due.d))] : ['––––', '––', '––'])
+      .map((p) => `<i>${p}</i>`).join('');
+    if (dueEl.innerHTML !== boxes) dueEl.innerHTML = boxes;
+    setFill('cqcDueWords', due && dateWords(due), '—');
+    const dist = dueDistance(due, status);
+    const distEl = $('cqcDueRel');
+    distEl.hidden = !dist;
+    if (dist) {
+      distEl.textContent = dist.text;
+      distEl.className = 'cqc-due-rel' + (dist.cls ? ' ' + dist.cls : '');
     }
 
-    // Stamp for the status
-    const stamp = statusStamp();
-    const stampEl = $('cqcStamp');
-    if (stampEl) stampEl.textContent = stamp ? stamp.label : '';
-    cheque.dataset.status = stamp ? stamp.cls : '';
+    // The numbers, and the band that repeats the serial like a leaf's series
+    setFill('cqcSerial', serial && toFa(serial), '—');
+    setFill('cqcSayad', sayad && toFa(sayad.replace(/(\d{4})(?=\d)/g, '$1 ')), '—');
+    copyBtn.hidden = !sayad;
+    $('cqcBand').textContent = (serial ? serial + '-' : '') + 'CHEKINO';
 
-    // Key values repeated in readable type (shown only on narrow screens)
-    setFill('cqfAmount', amount && `${toFa(group(amount))} ﷼`, '—');
-    setFill('cqfDue', due && toFa(`${due.y}/${String(due.m).padStart(2, '0')}/${String(due.d).padStart(2, '0')}`), '—');
-    setFill('cqfBenef', benef, '—');
-    setFill('cqfNid', nid && toFa(nid), '—');
-    setFill('cqfOwner', owner, '—');
-    setFill('cqfSerial', serial && toFa(serial), '—');
-    setFill('cqfParty', val('partyInput'), '—');
-    const send = jalaliParts(val('sendDateInput'));
-    setFill('cqfSend', send && toFa(val('sendDateInput')), '—');
-    setFill('cqfChannels', channelNames().join('، '), '—');
-    const spend = jalaliParts(val('spendDateInput'));
-    setFill('cqfSpend', spend && toFa(val('spendDateInput')), '—');
-    setFill('cqfSayad', sayad && toFa(sayad.replace(/(\d{4})(?=\d)/g, '$1 ')), '—');
-    const notes = val('notesInput');
-    setFill('cqfNotes', notes, '');
-    const notesRow = $('cqfNotesRow');
-    if (notesRow) notesRow.hidden = !notes;
-    renderThumbs();
+    // The payment sentence
+    setFill('cqcWords', amount && numberWords(amount), '—');
+    setFill('cqcBenef', benef, '—');
+    $('cqcNidLabel').textContent = nid.length === 11 ? 'به شناسه ملی' : 'به کد ملی';
+    setFill('cqcNid', nid && toFa(nid), '—');
+    setFill('cqcAmount', amount && toFa(group(amount)), '');
 
+    // The stamp
+    $('cqcStamp').textContent = STAMP[status] || '';
+    cheque.dataset.status = status;
+
+    // The people, and when the cheque went where
+    setFill('cqcOwner', owner, '—');
+    setFill('cqcSend', send && faDate(send), '—');
+    setFill('cqcChannels', channels, '—');
+    setFill('cqcParty', party, '—');
+    setFill('cqcSpend', spend && faDate(spend), '—');
+    setFill('cqcNotes', notes, '');
+    $('cqcNotesRow').hidden = !notes;
   }
 
   // ---- wiring ---------------------------------------------------------------
@@ -331,11 +285,9 @@
   const watchOpen = () => {
     const open = overlay.classList.contains('show');
     if (open && !timer) {
-      drawGuilloche();
+      drawPrint();
       last = '';
-      signedFor = null;
-      signPending = null;
-      thumbsKey = '';
+      photoKey = null;
       render();
       timer = setInterval(render, 300);
     } else if (!open && timer) {

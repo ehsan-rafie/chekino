@@ -195,7 +195,6 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   padding: 48px 40px;
   border-radius: 20px;
   background: var(--surface-2);
-  --hole: var(--surface-2);
 }
 .auth-art-inner {
   width: 100%;
@@ -360,7 +359,6 @@ button.submit {
   border: 1px solid var(--border);
   border-radius: 24px;
   background: var(--surface-2);
-  --hole: var(--surface-2);
   box-shadow: none;
 }
 .auth-art::before {

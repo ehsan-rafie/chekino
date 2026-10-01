@@ -202,6 +202,9 @@ const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
 const lightboxEditBtn = document.getElementById('lightboxEditBtn');
 const lightboxShareBtn = document.getElementById('lightboxShareBtn');
 const lightboxDownloadBtn = document.getElementById('lightboxDownloadBtn');
+const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+const lightboxCount = document.getElementById('lightboxCount');
 const photoEditorOverlay = document.getElementById('photoEditorOverlay');
 const peStage = document.getElementById('peStage');
 const peImg = document.getElementById('peImg');
@@ -292,7 +295,7 @@ let veHasEdited = false;
 // The status block at the top of the view (HeroUI's Alert): the state as
 // the title, and one line under it with what matters for that state —
 // when it was registered, why it wasn't, or how long it has been waiting
-// and how close the due date is.
+// (how far off the due date is, the cheque itself says).
 const veStIcon = document.getElementById('veStIcon');
 const veStTitle = document.getElementById('veStTitle');
 const veStDesc = document.getElementById('veStDesc');
@@ -314,7 +317,6 @@ function fillVeStatus(c) {
     if (c.statusChangedAt) parts.push(faDate(c.statusChangedAt));
   } else {
     parts.push(sent >= 0 ? daysAgoText(sent, 'برای ثبت ارسال شد') : `ارسال برای ثبت ${faDate(c.sendDate)}`);
-    if (daysUntilDue(c.dueDate) !== null) parts.push(dueTip(c));
   }
   veStatusBanner.className = 've-status-banner show ' + st.cls;
   veStIcon.innerHTML = icon(c.status === 'done' ? 'check' : c.status === 'problem' ? 'alert' : 'clock');
@@ -2558,16 +2560,39 @@ function renderFileChips() {
 // while the form can be edited (not while a saved cheque is only viewed).
 let lightboxIndex = null;
 function openLightbox(dataUrl, name, index) {
+  const opening = !lightboxOverlay.classList.contains('show');
   lightboxImg.src = dataUrl;
   lightboxImg.dataset.filename = name || 'cheque-photo.jpg';
   lightboxIndex = Number.isInteger(index) ? index : null;
   lightboxEditBtn.hidden = lightboxIndex === null || modalBody.classList.contains('ve-locked');
+  updateLightboxNav();
   lightboxOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
   // Opened from a thumbnail click, so nothing inside the lightbox itself
   // has focus yet — this makes Enter do the standard thing (dismiss it),
-  // same as Escape already does.
-  lightboxCloseBtn.focus();
+  // same as Escape already does. Stepping to the next photo keeps focus
+  // where it is.
+  if (opening) lightboxCloseBtn.focus();
+}
+// More than one photo: step through the attached images — the two arrows,
+// ← and →, and a «۱ از ۲» beside the title
+function lightboxImages() {
+  return attachedFiles.map((f, i) => ({ f, i })).filter(x => (x.f.type || '').startsWith('image/'));
+}
+function updateLightboxNav() {
+  const imgs = lightboxIndex === null ? [] : lightboxImages();
+  const at = imgs.findIndex(x => x.i === lightboxIndex);
+  const many = imgs.length > 1 && at >= 0;
+  lightboxPrevBtn.hidden = !many;
+  lightboxNextBtn.hidden = !many;
+  lightboxCount.textContent = many ? `${toFa(at + 1)} از ${toFa(imgs.length)}` : '';
+}
+function stepLightbox(dir) {
+  const imgs = lightboxImages();
+  const at = imgs.findIndex(x => x.i === lightboxIndex);
+  if (imgs.length < 2 || at < 0) return;
+  const next = imgs[(at + dir + imgs.length) % imgs.length];
+  openLightbox(next.f.dataUrl, next.f.name, next.i);
 }
 function closeLightbox() {
   lightboxOverlay.classList.remove('show');
@@ -5372,6 +5397,14 @@ lightboxEditBtn.addEventListener('click', () => {
   });
 });
 lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
+lightboxPrevBtn.addEventListener('click', () => stepLightbox(-1));
+lightboxNextBtn.addEventListener('click', () => stepLightbox(1));
+// Right to left: → goes back, ← goes on
+document.addEventListener('keydown', (e) => {
+  if (!lightboxOverlay.classList.contains('show') || photoEditorOverlay.classList.contains('show')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); stepLightbox(1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); stepLightbox(-1); }
+});
 function mimeOfDataUrl(dataUrl) {
   const m = /^data:([^;,]+)/.exec(dataUrl || '');
   return (m && m[1]) || 'image/jpeg';

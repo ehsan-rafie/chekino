@@ -1,64 +1,80 @@
-/* ===== The Sayad cheque leaf =====
-   One drawing, used in two places: the live preview in the cheque form
-   (filled by js/cheque-form.js) and the sample on the login page (drawn by
-   js/login-art.js). Guilloche and signature strokes come from js/print.js.
-   Page stylesheets place it; this file only draws it. */
+/* ===== The Sayad cheque =====
+   One drawing, used in two places: the cheque view (filled by
+   js/cheque-form.js) and the sample on the login page (js/login-art.js).
+   Security print comes from js/print.js. Page stylesheets place it; this
+   file only draws it.
 
-/* ═══════════════════════════════════════════════════════════════════
-   THE SAYAD CHEQUE
-   Laid out like the printed leaf: stub (ته‌چک) on the binding side,
-   perforated tear line, then the cheque — bank mark and sayad id on top,
-   the date boxed and written out, the payment sentence with its blanks,
-   owner / signature / amount along the foot, and the MICR line at the
-   bottom edge. Everything is sized in em off a container-relative font
-   size, so the whole leaf scales as one object from phone to desktop.
+   Modelled on the uniform Sayad cheque every bank now prints — pale pink
+   paper with an eight-pointed star in the middle, a lilac band down the
+   binding edge, a line of microprint along the foot — but laid out around
+   what Chekino knows about a cheque, each value where the printed leaf
+   keeps its counterpart and captioned with the word the form uses:
 
-   The paper and print colours are the cheque's own, not the theme's: a
-   cheque is paper in the dark theme too — it is only dimmed a little.
+     ┌──────────────────────────────────────────────────────────┬──┐
+     │ سررسید ▢▢▢ (how far)    چک صیادی     سریال …       [photo] │  │
+     │ (the date in words)                 شناسه صیادی … کپی     │  │
+     │ به موجب این چک مبلغ ……………………… ریال                         │ba│
+     │ در وجه …… (ذینفع) به کد ملی …… پرداخت نمایید.              │nd│
+     │      [stamp]                       مبلغ به عدد [#…#] ریال │  │
+     │ صاحب چک / تاریخ ارسال / از طریق    طرف حساب / تاریخ خرج    │  │
+     │ توضیحات                                                   │  │
+     │ CHEKINO · SAYAD · CHEKINO · SAYAD …                       │  │
+     └──────────────────────────────────────────────────────────┴──┘
+
+   Where the leaf has the account holder, Chekino puts the cheque's owner —
+   the customer it came from — with when and how the request to register
+   it went to them; where the leaf has its legal line, the party it was
+   spent to. The stamp sits where a signature would.
+
+   The paper, the print and the ink are the cheque's own colours, not the
+   theme's: a cheque is paper in the dark theme too, only dimmed. Printed
+   words are a grey violet and whatever was filled in is blue ink, so the
+   cheque's data stands apart from its print at a glance.
+
+   Everything is sized in em off the cheque's font size: 14px in the view,
+   and a size relative to its container on the login page, where the leaf
+   scales as one object. Below 540px the view reflows the same zones into a
+   single column (the end of this file).
    ═══════════════════════════════════════════════════════════════════ */
-.cq-cheque-wrap {
-  container-type: inline-size;
-  perspective: 1200px;
-}
+.cq-cheque-wrap { container: cheque / inline-size; }
 .cq-cheque {
-  --paper-a: #FBFCFF;
-  --paper-b: #F5F8FC;
-  --paper-c: #F1F8F6;
-  --print: #2C3FC4;
-  --print-2: #13A594;
-  --pen: #1A2A94;
-  --text: #2B3152;
-  --soft: #6C7396;
-  --rule: rgba(44, 63, 196, 0.32);
-  /* What shows through the punched holes of the tear line: whatever the
-     cheque is lying on. Pages that place it on another surface set it. */
-  --hole: var(--surface-sunken);
+  --paper-1: #FAE5DF;
+  --paper-2: #FCF2EF;
+  --paper-3: #F5F1F9;
+  --rose: #D47E6A;
+  --lilac: #9A91C4;
+  --print: #4B445D;
+  --soft: #736C86;
+  --pen: #1D3893;
+  --rule: rgba(75, 68, 93, 0.32);
+  --box: rgba(75, 68, 93, 0.38);
 
   position: relative;
   display: grid;
-  grid-template-columns: 20% auto minmax(0, 1fr);
-  aspect-ratio: 1.9;
-  font-size: 2.3cqi;
-  line-height: 1.5;
-  color: var(--text);
-  border-radius: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  /* a cheque's proportions at the least, taller when what it carries needs
+     it (aspect-ratio would clip it instead: the leaf hides its overflow) */
+  min-height: calc(100cqi / 2.05);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--print);
+  border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(112deg, var(--paper-a) 0%, var(--paper-b) 48%, var(--paper-c) 100%);
+  background: radial-gradient(ellipse 58% 82% at 50% 52%, var(--paper-1), var(--paper-2) 58%, var(--paper-3));
   box-shadow:
-    inset 0 0 0 1px rgba(44, 63, 196, 0.14),
+    inset 0 0 0 1px rgba(75, 68, 93, 0.13),
     0 1px 2px rgba(15, 17, 32, 0.05),
     0 12px 28px -16px rgba(15, 17, 32, 0.22);
-  -webkit-user-select: none;
-  user-select: none;
 }
 :root[data-theme="dark"] .cq-cheque {
-  filter: brightness(0.93) saturate(0.96);
+  filter: brightness(0.9) saturate(0.92);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
     0 16px 36px -18px rgba(0, 0, 0, 0.8);
 }
+.cq-cheque.is-art { font-size: 1.62cqi; }
 
-/* Security print */
+/* ---- Security print ---- */
 .cqc-guilloche {
   position: absolute;
   inset: 0;
@@ -66,270 +82,283 @@
   height: 100%;
   pointer-events: none;
 }
-.cqc-guilloche path { fill: none; vector-effect: non-scaling-stroke; }
-.cqc-guilloche .g-a { stroke: var(--print-2); stroke-width: 0.5; opacity: 0.14; }
-.cqc-guilloche .g-b { stroke: var(--print); stroke-width: 0.5; opacity: 0.07; }
-.cqc-guilloche .g-r { stroke: var(--print); stroke-width: 0.5; opacity: 0.08; }
-.cqc-guilloche .g-r2 { stroke: var(--print-2); opacity: 0.11; }
+.cqc-guilloche path { fill: none; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.cqc-guilloche .g-a { stroke: var(--rose); opacity: 0.16; }
+.cqc-guilloche .g-b { stroke: var(--lilac); opacity: 0.13; }
 
-.cqc-glare { display: none; }
+/* The star, behind everything in the middle of the leaf */
+.cqc-star {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  height: 94%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.cqc-star path { fill: none; stroke: var(--rose); vector-effect: non-scaling-stroke; }
+.cqc-star .s-a { stroke-width: 1.1; opacity: 0.32; }
+.cqc-star .s-b { stroke-width: 0.7; opacity: 0.24; }
+.cqc-star path:first-child { fill: color-mix(in srgb, var(--rose) 6%, transparent); }
 
-/* Stub (ته‌چک) */
-.cqc-stub {
+/* The band down the binding edge: lilac, a chain of rings, and the
+   serial and name reading upward, as the leaf prints its series and bank */
+.cqc-band {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35em;
-  padding: 1em 0.8em 0.8em;
-  background: rgba(255, 255, 255, 0.4);
-}
-.cqc-stub-title {
-  margin-bottom: 0.3em;
-  padding-bottom: 0.4em;
-  border-bottom: 1px solid var(--rule);
-  text-align: center;
-  color: var(--print);
-  font-size: 0.95em;
-  font-variation-settings: var(--f-title);
-}
-.cqc-stub-row {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding-bottom: 0.25em;
-  border-bottom: 1px dotted var(--rule);
-}
-.cqc-stub-row span { font-size: 0.72em; color: var(--soft); }
-.cqc-stub-row b {
-  font-size: 0.86em;
-  color: var(--pen);
-  font-variation-settings: var(--f-value);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cqc-stub-row b.is-empty { color: var(--soft); opacity: 0.6; }
-
-/* The tear line: a dashed cut with the punched holes showing the desk
-   beneath. */
-.cqc-perf {
-  position: relative;
-  z-index: 1;
-  width: 0.9em;
+  display: grid;
+  place-items: center;
+  width: 2.1em;
   background:
-    radial-gradient(circle, var(--hole) 0 0.2em, transparent 0.24em) center / 100% 0.95em repeat-y,
-    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+    radial-gradient(circle, transparent 0.3em, rgba(255, 255, 255, 0.36) 0.32em 0.4em, transparent 0.42em) 50% 0 / 1.1em 1.1em,
+    linear-gradient(#A79FCD, #8F86BC);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45), inset -1px 0 0 rgba(255, 255, 255, 0.45);
+}
+.cqc-band span {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  direction: ltr;
+  font-size: 0.8em;
+  letter-spacing: 0.32em;
+  color: #fff;
+  font-variation-settings: 'wght' 720;
+  white-space: nowrap;
+  text-shadow: 0 0 0.35em rgba(70, 60, 120, 0.6);
 }
 
-/* The cheque itself */
+/* ---- The leaf ---- */
 .cqc-main {
   position: relative;
   z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: 0.7em;
   min-width: 0;
-  padding: 0.9em 1.15em 0.6em;
+  padding: 1.1em 1.4em 0;
 }
+/* A printed caption, and what was written after it */
 .cqc-k {
-  font-size: 0.72em;
+  font-size: 0.82em;
   color: var(--soft);
   font-variation-settings: var(--f-body);
   white-space: nowrap;
 }
-/* Values use the font's proportional digits (IRANSansX's tabular ones are cut
-   wide); only the sayad id, printed in groups of four, keeps them. */
-#cqfSayad { font-variant-numeric: tabular-nums; }
+.cqc-v { color: var(--pen); font-variation-settings: 'wght' 600; }
 
+/* Top: the due date at the start, the title in the middle, the serial,
+   the sayad id and the photo at the end — where the leaf has its date,
+   its bank, and its numbers beside the QR */
 .cqc-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.8em;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: "date title ids";
+  align-items: start;
+  gap: 1em;
 }
-.cqc-bank { display: flex; align-items: center; gap: 0.5em; min-width: 0; }
-.cqc-emblem { width: 2.7em; height: 2.7em; color: var(--print); flex-shrink: 0; }
-.cqc-bank-text { display: flex; flex-direction: column; line-height: 1.35; }
-.cqc-bank-text b { font-size: 1.2em; color: var(--print); font-variation-settings: var(--f-display); }
-.cqc-bank-text span { font-size: 0.7em; color: var(--soft); }
-
-.cqc-ids { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15em; }
-.cqc-sayad {
-  direction: ltr;
+.cqc-date {
+  grid-area: date;
   display: flex;
-  gap: 0.5em;
-  padding: 0.2em 0.6em;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3em;
+  min-width: 0;
+}
+.cqc-date-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4em 0.5em; }
+.cqc-datebox { direction: ltr; display: inline-flex; gap: 0.25em; }
+.cqc-datebox i {
+  min-width: 2em;
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--box);
+  border-radius: 0.3em;
+  background: rgba(255, 255, 255, 0.62);
+  font-style: normal;
+  text-align: center;
+  color: var(--pen);
+  font-size: 1.04em;
+  font-variation-settings: 'wght' 640;
+}
+.cqc-due-words {
+  max-width: 100%;
+  padding: 0 0.2em;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 0.86em;
+  color: var(--pen);
+  font-variation-settings: 'wght' 560;
+}
+/* How far off the due date is — amber when close, red when past, while
+   the cheque still waits to be registered */
+.cqc-due-rel {
+  padding: 0 0.5em;
   border: 1px solid var(--rule);
   border-radius: 0.35em;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.8em;
+  color: var(--soft);
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+}
+.cqc-due-rel[hidden] { display: none; }
+.cqc-due-rel.is-soon { color: #8F5300; border-color: rgba(194, 120, 3, 0.5); background: rgba(255, 243, 212, 0.9); }
+.cqc-due-rel.is-over { color: #B42318; border-color: rgba(201, 48, 42, 0.42); background: rgba(254, 228, 226, 0.9); }
+
+.cqc-title {
+  grid-area: title;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  color: var(--print);
+}
+.cqc-emblem { width: 2.5em; height: 2.5em; }
+.cqc-title b { font-size: 1.1em; font-variation-settings: var(--f-title); white-space: nowrap; }
+
+.cqc-ids {
+  grid-area: ids;
+  justify-self: end;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8em;
+  min-width: 0;
+}
+.cqc-id-lines { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; }
+/* caption above value, so a long sayad id never wraps on one cheque and
+   not on the next */
+.cqc-id { display: flex; flex-direction: column; align-items: flex-start; }
+.cqc-id-val { display: inline-flex; align-items: center; gap: 0.5em; }
+.cqc-id b {
+  color: var(--pen);
+  font-size: 1.08em;
+  letter-spacing: 0.05em;
+  font-variation-settings: 'wght' 660;
+  white-space: nowrap;
+}
+#cqcSayad { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.cqc-copy {
+  height: 1.9em;
+  padding: 0 0.75em;
+  border: 1px solid var(--box);
+  border-radius: 0.4em;
   background: rgba(255, 255, 255, 0.78);
-  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
-}
-.cqc-sayad span {
-  font-size: 1em;
-  letter-spacing: 0.1em;
   color: var(--pen);
-  font-variation-settings: var(--f-num);
-  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  font-size: 0.8em;
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.cqc-sayad.is-empty span { color: var(--soft); opacity: 0.55; }
-.cqc-serial { display: flex; align-items: baseline; gap: 0.4em; }
-.cqc-serial b {
-  font-size: 0.92em;
-  letter-spacing: 0.08em;
-  color: var(--pen);
-  font-variation-settings: var(--f-num);
-}
-.cqc-serial b.is-empty { color: var(--soft); letter-spacing: 0; opacity: 0.6; }
+.cqc-copy:hover { background: #fff; border-color: var(--pen); }
+.cqc-copy:focus-visible,
+.cqc-photo:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
 
-/* Date: boxed digits, then the same date in words */
-.cqc-date { display: flex; align-items: center; gap: 0.55em; min-width: 0; }
-.cqc-datebox { direction: ltr; display: inline-flex; gap: 0.25em; flex-shrink: 0; }
-.cqc-datebox i {
-  font-style: normal;
-  padding: 0.05em 0.4em;
-  border: 1px solid var(--rule);
-  border-radius: 0.25em;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--pen);
-  font-size: 0.95em;
-  font-variation-settings: var(--f-num);
+/* The photo, where the leaf has its QR */
+.cqc-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5em;
+  background: none;
+  font-family: inherit;
+  cursor: zoom-in;
 }
-.cqc-datebox.is-empty i { color: var(--soft); opacity: 0.6; }
-.cqc-date-words { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cqc-photo[hidden] { display: none; }
+.cqc-photo.is-doc { cursor: default; }
+.cqc-photo-img {
+  display: grid;
+  place-items: center;
+  width: 4.4em;
+  height: 4.4em;
+  border: 1px solid var(--box);
+  border-radius: 0.45em;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 1px 2px rgba(15, 17, 32, 0.08);
+  color: var(--soft);
+  font-size: 0.8em;
+  font-variation-settings: var(--f-label);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.cqc-photo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cqc-photo:not(.is-doc):hover .cqc-photo-img { border-color: var(--pen); box-shadow: 0 2px 8px rgba(15, 17, 32, 0.16); }
+.cqc-photo .cqc-k { font-size: 0.74em; }
 
-/* The payment sentence and its blanks */
-.cqc-text {
+/* The payment sentence: printed words, and the blanks written into */
+.cqc-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15em 0.5em;
   margin: 0;
-  font-size: 0.95em;
-  line-height: 2.15;
-  color: var(--text);
+  line-height: 1.9;
 }
-.cqc-keep,
-.cqc-fill:not(.cqc-fill-wide) { white-space: nowrap; }
 .cqc-fill {
-  padding: 0 0.3em 0.05em;
+  padding: 0 0.35em;
   border-bottom: 1px dotted var(--rule);
   color: var(--pen);
+  font-size: 1.06em;
   font-variation-settings: 'wght' 600;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  border-radius: 0.2em;
-  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  overflow-wrap: anywhere;
 }
-/* An empty blank still reads as a blank to be filled in. */
-.cqc-fill.is-empty::after { content: '\2003\2003\2003\2003\2003\2003'; }
-.cqc-fill-wide.is-empty::after { content: '\2003\2003\2003\2003\2003\2003\2003\2003\2003\2003\2003'; }
-.cqc-date-words.is-empty::after { content: ''; }
-.cqc-date-words { border-bottom: 1px dotted var(--rule); }
+.cqc-fill.is-empty { color: var(--soft); font-variation-settings: var(--f-body); }
+.cqc-grow { flex: 1 1 8em; min-width: 0; }
+/* «به کد ملی» never parts from its number at a line break */
+.cqc-keep { display: inline-flex; align-items: baseline; gap: 0.5em; white-space: nowrap; }
+.cqc-field { display: inline-flex; flex-direction: column; min-width: 0; }
+.cqc-field > small { padding-inline-start: 0.5em; font-size: 0.7em; line-height: 1.3; color: var(--soft); }
+.cqc-num { font-variation-settings: 'wght' 640; }
 
-@keyframes cqcInkIn {
-  from { opacity: 0; filter: blur(1.5px); }
-  to   { opacity: 1; filter: none; }
-}
-.cq-cheque .ink-in { animation: cqcInkIn 0.5s var(--ease-out); }
-
-/* Foot: owner · signature · amount */
-.cqc-foot {
+/* Middle: the stamp where a signature would go, the amount in figures */
+.cqc-mid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 0.9em;
-  margin-top: auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1em;
 }
-.cqc-owner { display: flex; flex-direction: column; min-width: 0; }
-.cqc-owner b {
-  font-size: 0.95em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-bottom: none;
-  padding: 0;
-}
-.cqc-owner b.is-empty::after { content: ''; }
-.cqc-sign { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
-.cqc-signature {
-  width: 118%;
-  height: 3.6em;
-  margin: -1.2em -9% -0.2em;
-  overflow: visible;
-}
-.cqc-signature path {
-  fill: none;
-  stroke: var(--pen);
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: stroke-dashoffset 1.4s cubic-bezier(0.55, 0.1, 0.35, 1);
-}
-.cqc-sign .cqc-k {
-  padding-top: 0.2em;
-  border-top: 1px dotted var(--rule);
-  text-align: center;
-}
-.cqc-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15em; }
+.cqc-stamp-zone { position: relative; align-self: stretch; min-height: 3.4em; }
+.cqc-amount { display: flex; align-items: center; gap: 0.6em; }
 .cqc-amount-box {
   display: flex;
   align-items: baseline;
-  gap: 0.35em;
-  padding: 0.3em 0.7em;
+  gap: 0.4em;
+  padding: 0.2em 0.8em;
   border: 1.5px solid var(--print);
-  border-radius: 0.4em;
+  border-radius: 0.45em;
   background: rgba(255, 255, 255, 0.82);
-  transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 .cqc-amount-box b {
   direction: ltr;
   unicode-bidi: isolate;
-  font-size: 1.2em;
+  font-size: 1.36em;
   color: var(--pen);
-  font-variation-settings: 'wght' 700;
+  font-variation-settings: 'wght' 720;
   white-space: nowrap;
 }
-.cqc-amount-box b.is-empty { color: var(--soft); opacity: 0.6; }
-.cqc-amount-box.is-filled b::before,
-.cqc-amount-box.is-filled b::after { content: '#'; opacity: 0.55; margin: 0 0.1em; }
-.cqc-amount-box span { font-size: 0.72em; color: var(--soft); }
+.cqc-amount-box b:not(:empty)::before,
+.cqc-amount-box b:not(:empty)::after { content: '#'; opacity: 0.5; margin: 0 0.12em; }
+.cqc-amount-box span { font-size: 0.8em; color: var(--soft); }
 
-/* MICR line, printed along the bottom edge */
-.cqc-micr {
-  margin-top: 0.1em;
-  font-family: 'OCR A Extended', 'OCR A Std', Consolas, 'Courier New', ui-monospace, monospace;
-  font-size: 0.8em;
-  letter-spacing: 0.14em;
-  color: rgba(20, 25, 52, 0.55);
-  white-space: nowrap;
-  overflow: hidden;
-  text-align: left;
-}
-
-/* "Where does this go?" — the blank a focused field fills gets a quiet
-   lapis tint. */
-.cq-cheque .is-focus {
-  background: rgba(44, 63, 196, 0.1);
-  box-shadow: 0 0 0 0.2em rgba(44, 63, 196, 0.1);
-  border-radius: 0.2em;
-}
-
-/* Rubber stamp for the status, in view mode */
+/* The rubber stamp: the status of the registration in Sayad */
 .cqc-stamp {
   position: absolute;
-  z-index: 2;
-  /* Over the stub and across the tear line: the stub only repeats what
-     the cheque says, so the stamp never hides a value that matters. */
-  top: 52%;
-  inset-inline-start: 3%;
+  top: 50%;
+  inset-inline-start: 14%;
   display: none;
-  padding: 0.1em 0.85em 0.2em;
+  padding: 0.05em 0.8em 0.15em;
   border: 0.12em solid currentColor;
   border-radius: 0.4em;
-  font-size: 1.6em;
-  font-variation-settings: 'wght' 740;
+  font-size: 1.55em;
+  font-variation-settings: 'wght' 760;
   white-space: nowrap;
-  pointer-events: none;
-  rotate: -10deg;
+  translate: 0 -50%;
+  rotate: -7deg;
   opacity: 0.85;
   mix-blend-mode: multiply;
+  pointer-events: none;
 }
 .cq-cheque[data-status="done"] .cqc-stamp,
 .cq-cheque[data-status="problem"] .cqc-stamp,
@@ -345,18 +374,80 @@
   to   { opacity: 0.85; scale: 1; }
 }
 
-/* In the view the stamp sits in the cheque's open space, between the
-   payment sentence and the foot — over the stub it ran through the stub's
-   own lines. */
-.cq-view .cqc-stamp { top: 56%; inset-inline-start: auto; inset-inline-end: 12%; }
-@media (max-width: 600px) {
-  .cq-view .cqc-stamp { top: 58%; inset-inline-end: 10%; font-size: 1.3em; }
+/* Foot: the owner and the request to register at the start, where the
+   leaf names its account holder; the party it was spent to at the end */
+.cqc-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.6em 2em;
+}
+.cqc-people { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; margin: 0; }
+.cqc-people > div { display: flex; align-items: baseline; gap: 0.45em; min-width: 0; }
+.cqc-people dt { flex-shrink: 0; font-size: 0.84em; color: var(--soft); font-variation-settings: var(--f-body); }
+.cqc-people dd { margin: 0; min-width: 0; color: var(--pen); font-variation-settings: 'wght' 600; overflow-wrap: anywhere; }
+.cqc-people dd.is-empty { color: var(--soft); font-variation-settings: var(--f-body); }
+.cqc-people .cqc-who { font-size: 1.06em; }
+/* the party's block keeps to the end edge, under the amount box */
+.cqc-foot > .cqc-people + .cqc-people { justify-self: end; }
+.cqc-notes { display: flex; align-items: baseline; gap: 0.45em; min-width: 0; }
+.cqc-notes[hidden] { display: none; }
+.cqc-notes .cqc-v { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Microprint along the foot */
+.cqc-micro {
+  margin: auto -1.4em 0;
+  padding: 0.2em 0 0.25em;
+  overflow: hidden;
+  border-top: 1px solid rgba(154, 145, 196, 0.3);
+  background: linear-gradient(90deg, rgba(154, 145, 196, 0.16), rgba(212, 126, 106, 0.1));
+  direction: ltr;
+  white-space: nowrap;
+  line-height: 1;
+}
+.cqc-micro::before {
+  font-size: 0.56em;
+  letter-spacing: 0.2em;
+  color: var(--lilac);
+  font-variation-settings: 'wght' 650;
+  content: 'CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD · CHEKINO · SAYAD';
 }
 
-@media (max-width: 600px) {
-  .cq-cheque { aspect-ratio: 1.75; font-size: 2.55cqi; }
+/* A value arriving: ink settling into the paper */
+@keyframes cqcInkIn {
+  from { opacity: 0; filter: blur(1.5px); }
+  to   { opacity: 1; filter: none; }
 }
+.cq-cheque .ink-in { animation: cqcInkIn 0.5s var(--ease-out); }
+
+/* ---- The view on a narrow screen: the same zones in one column ----
+   The numbers first (serial, sayad id, photo), then the due date, the
+   amount, the sentence, the people. */
+@container cheque (max-width: 540px) {
+  .cq-view .cq-cheque { min-height: 0; font-size: 13.5px; }
+  .cq-view .cqc-main { gap: 0.85em; padding: 1em 1.05em 0; }
+  .cq-view .cqc-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ids" "date"; gap: 0.85em; }
+  .cq-view .cqc-title { display: none; }
+  .cq-view .cqc-ids { justify-self: stretch; justify-content: space-between; }
+  /* the stamp beside the amount when there's room, under it when not */
+  .cq-view .cqc-mid { order: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5em 1em; }
+  .cq-view .cqc-amount { order: -1; flex-direction: column; align-items: flex-start; gap: 0.1em; }
+  .cq-view .cqc-stamp-zone { flex: 1 0 8.5em; min-height: 3.2em; }
+  /* the sentence flows as text, so a long amount in words or a long name
+     runs on to the next line instead of shrinking into a narrow column */
+  .cq-view .cqc-line { display: block; line-height: 2.1; }
+  .cq-view .cqc-line .cqc-fill { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .cq-view .cqc-field { max-width: 100%; }
+  .cq-view .cqc-line-amount { order: 2; }
+  .cq-view .cqc-line-payee { order: 3; }
+  .cq-view .cqc-foot { order: 4; grid-template-columns: minmax(0, 1fr); }
+  .cq-view .cqc-foot > .cqc-people + .cqc-people { justify-self: start; }
+  .cq-view .cqc-notes { order: 5; }
+  .cq-view .cqc-micro { order: 6; margin-inline: -1.05em; }
+  .cq-view .cqc-band { width: 1.7em; }
+  .cq-view .cqc-star { height: auto; width: 92%; }
+  .cq-view .cqc-stamp { inset-inline-start: auto; inset-inline-end: 4%; font-size: 1.3em; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .cq-cheque, .cqc-signature path { transition: none; }
   .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp { animation: none; }
 }

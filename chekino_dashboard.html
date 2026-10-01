@@ -2,17 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261001d" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261001e" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261001d">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261001d">
-<link rel="stylesheet" href="/css/cheque.css?v=20261001d">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261001d">
+<link rel="stylesheet" href="/css/shared.css?v=20261001e">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261001e">
+<link rel="stylesheet" href="/css/cheque.css?v=20261001e">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261001e">
 </head>
 <body class="chekino-auth-pending">
 
@@ -352,99 +352,85 @@
           </button>
         </div>
 
+        <!-- The cheque, and everything Chekino knows about it, on one leaf
+             (css/cheque.css; filled by js/cheque-form.js from the same form
+             fields «ویرایش» edits, so the two can never disagree). -->
         <div class="cq-cheque-wrap">
-          <div class="cq-cheque" id="cqCheque" aria-hidden="true">
-            <svg class="cqc-guilloche" id="cqcGuilloche" preserveAspectRatio="none"></svg>
-            <div class="cqc-glare"></div>
-
-            <div class="cqc-stub">
-              <div class="cqc-stub-title">ته چک</div>
-              <div class="cqc-stub-row"><span>سریال</span><b class="cqc-num" id="cqcStubSerial">—</b></div>
-              <div class="cqc-stub-row"><span>تاریخ</span><b class="cqc-num" id="cqcStubDue">—</b></div>
-              <div class="cqc-stub-row"><span>مبلغ</span><b class="cqc-num" id="cqcStubAmount">—</b></div>
-              <div class="cqc-stub-row"><span>در وجه</span><b id="cqcStubBenef">—</b></div>
-            </div>
-            <div class="cqc-perf"></div>
-
+          <article class="cq-cheque" id="cqCheque" aria-label="چک">
+            <svg class="cqc-guilloche" id="cqcGuilloche" preserveAspectRatio="none" aria-hidden="true"></svg>
             <div class="cqc-main">
+              <svg class="cqc-star" id="cqcStar" aria-hidden="true"></svg>
+
               <div class="cqc-head">
-                <div class="cqc-bank">
+                <div class="cqc-date">
+                  <div class="cqc-date-row">
+                    <span class="cqc-k">سررسید</span>
+                    <span class="cqc-datebox" id="cqcDue"></span>
+                    <span class="cqc-due-rel" id="cqcDueRel" hidden></span>
+                  </div>
+                  <span class="cqc-due-words" id="cqcDueWords"></span>
+                </div>
+                <div class="cqc-title" aria-hidden="true">
                   <svg class="cqc-emblem" viewBox="0 0 40 40" aria-hidden="true">
                     <circle cx="20" cy="20" r="18.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
                     <circle cx="20" cy="20" r="15" fill="none" stroke="currentColor" stroke-width="0.6" stroke-dasharray="1.2 1.6"/>
                     <path d="M11 29h18M12.5 27V18.5M17.5 27V18.5M22.5 27V18.5M27.5 27V18.5M10.5 17.5 20 11l9.5 6.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
                   </svg>
-                  <div class="cqc-bank-text">
-                    <b>چک صیادی</b>
-                    <span>شعبه ــــــ &nbsp; کد ــــ</span>
-                  </div>
+                  <b>چک صیادی</b>
                 </div>
                 <div class="cqc-ids">
-                  <span class="cqc-k">شناسه صیادی</span>
-                  <div class="cqc-sayad" id="cqcSayad"></div>
-                  <span class="cqc-serial"><span class="cqc-k">سریال</span><b class="cqc-num" id="cqcSerial">——————</b></span>
+                  <div class="cqc-id-lines">
+                    <div class="cqc-id"><span class="cqc-k">سریال</span><b class="cqc-num" id="cqcSerial"></b></div>
+                    <div class="cqc-id">
+                      <span class="cqc-k">شناسه صیادی</span>
+                      <span class="cqc-id-val"><b id="cqcSayad"></b><button type="button" class="cqc-copy" id="cqcCopySayad">کپی</button></span>
+                    </div>
+                  </div>
+                  <button type="button" class="cqc-photo" id="cqcPhoto" hidden>
+                    <span class="cqc-photo-img" id="cqcPhotoImg"></span>
+                    <span class="cqc-k" id="cqcPhotoLabel">عکس چک</span>
+                  </button>
                 </div>
               </div>
 
-              <div class="cqc-date">
-                <span class="cqc-k">تاریخ</span>
-                <span class="cqc-datebox" id="cqcDue"><i>––––</i><i>––</i><i>––</i></span>
-                <span class="cqc-fill cqc-date-words" id="cqcDueWords"></span>
-              </div>
-
-              <p class="cqc-text">
-                به موجب این چک مبلغ
-                <span class="cqc-fill cqc-fill-wide" id="cqcWords"></span>
-                ریال در وجه
-                <span class="cqc-fill" id="cqcBenef"></span>
-                <span class="cqc-keep">به شماره / شناسه ملی</span>
-                <span class="cqc-fill cqc-num" id="cqcNid"></span>
-                پرداخت نمایید.
+              <p class="cqc-line cqc-line-amount">
+                <span>به موجب این چک مبلغ</span>
+                <span class="cqc-fill cqc-grow" id="cqcWords"></span>
+                <span>ریال</span>
+              </p>
+              <p class="cqc-line cqc-line-payee">
+                <span>در وجه</span>
+                <span class="cqc-field cqc-grow"><span class="cqc-fill" id="cqcBenef"></span><small>ذینفع</small></span>
+                <span class="cqc-keep"><span id="cqcNidLabel">به کد ملی</span><span class="cqc-fill cqc-num" id="cqcNid"></span></span>
+                <span>پرداخت نمایید.</span>
               </p>
 
-              <div class="cqc-foot">
-                <div class="cqc-owner">
-                  <span class="cqc-k">نام صاحب حساب</span>
-                  <b class="cqc-fill" id="cqcOwner"></b>
-                </div>
-                <div class="cqc-sign">
-                  <svg class="cqc-signature" id="cqcSignature" viewBox="0 0 200 64" aria-hidden="true"><path id="cqcSignPath" d=""/></svg>
-                  <span class="cqc-k">محل امضا</span>
-                </div>
+              <div class="cqc-mid">
+                <div class="cqc-stamp-zone"><div class="cqc-stamp" id="cqcStamp"></div></div>
                 <div class="cqc-amount">
                   <span class="cqc-k">مبلغ به عدد</span>
-                  <div class="cqc-amount-box"><b class="cqc-num" id="cqcAmount">—</b><span>ریال</span></div>
+                  <div class="cqc-amount-box"><b class="cqc-num" id="cqcAmount"></b><span>ریال</span></div>
                 </div>
               </div>
 
-              <div class="cqc-micr" id="cqcMicr" dir="ltr"></div>
+              <div class="cqc-foot">
+                <dl class="cqc-people">
+                  <div><dt>صاحب چک:</dt><dd class="cqc-who" id="cqcOwner"></dd></div>
+                  <div><dt>تاریخ ارسال:</dt><dd class="cqc-num" id="cqcSend"></dd></div>
+                  <div><dt>از طریق:</dt><dd id="cqcChannels"></dd></div>
+                </dl>
+                <dl class="cqc-people">
+                  <div><dt>طرف حساب:</dt><dd class="cqc-who" id="cqcParty"></dd></div>
+                  <div><dt>تاریخ خرج:</dt><dd class="cqc-num" id="cqcSpend"></dd></div>
+                </dl>
+              </div>
+              <div class="cqc-notes" id="cqcNotesRow" hidden><span class="cqc-k">توضیحات:</span><span class="cqc-v" id="cqcNotes"></span></div>
+
+              <div class="cqc-micro" aria-hidden="true"></div>
             </div>
-
-            <div class="cqc-stamp" id="cqcStamp"></div>
-          </div>
+            <div class="cqc-band" aria-hidden="true"><span id="cqcBand">CHEKINO</span></div>
+          </article>
         </div>
-
-        <!-- What the cheque itself doesn't carry, label above value. On a
-             phone the drawing is small, so its key values come first here
-             in readable type (.cq-narrow-only, hidden on wider screens). -->
-        <dl class="cq-view-facts">
-          <div class="cq-narrow-only"><dt>مبلغ</dt><dd class="cqc-num" id="cqfAmount">—</dd></div>
-          <div class="cq-narrow-only"><dt>تاریخ سررسید</dt><dd class="cqc-num" id="cqfDue">—</dd></div>
-          <div class="cq-narrow-only"><dt>ذینفع</dt><dd id="cqfBenef">—</dd></div>
-          <div class="cq-narrow-only"><dt>کد / شناسه ملی</dt><dd class="cqc-num" id="cqfNid">—</dd></div>
-          <div class="cq-narrow-only"><dt>صاحب چک</dt><dd id="cqfOwner">—</dd></div>
-          <div class="cq-narrow-only"><dt>شماره سریال</dt><dd class="cqc-num" id="cqfSerial">—</dd></div>
-          <div><dt>طرف حساب</dt><dd id="cqfParty">—</dd></div>
-          <div><dt>ارسال برای ثبت</dt><dd class="cqc-num" id="cqfSend">—</dd></div>
-          <div><dt>ارسال شده در</dt><dd id="cqfChannels">—</dd></div>
-          <div><dt>تاریخ خرج</dt><dd class="cqc-num" id="cqfSpend">—</dd></div>
-          <div class="cq-wide cq-sayad-cell">
-            <dt>شناسه صیادی</dt>
-            <dd class="cq-sayad-row"><span class="cqc-num" id="cqfSayad" dir="ltr">—</span><button type="button" class="cq-copy" id="cqfCopySayad">کپی</button></dd>
-          </div>
-          <div class="cq-wide" id="cqfNotesRow"><dt>توضیحات</dt><dd id="cqfNotes">—</dd></div>
-          <div class="cq-wide" id="cqfFilesRow"><dt>عکس چک</dt><dd class="cq-thumbs" id="cqfFiles"></dd></div>
-        </dl>
 
         <div class="ve-history" id="veHistory">
           <div class="ve-history-label">تاریخچه وضعیت</div>
@@ -720,13 +706,19 @@
 <div class="lightbox-overlay" id="lightboxOverlay">
   <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
     <div class="pe-head">
-      <h2 class="pe-title" id="lightboxTitle">عکس چک</h2>
+      <h2 class="pe-title" id="lightboxTitle">عکس چک <span class="lightbox-count" id="lightboxCount"></span></h2>
       <button type="button" class="modal-close pe-close" id="lightboxCloseBtn" title="بستن" aria-label="بستن نمایش تصویر">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="lightbox-body">
       <img id="lightboxImg" src="" alt="عکس چک">
+      <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrevBtn" aria-label="عکس قبلی" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button type="button" class="lightbox-nav lightbox-next" id="lightboxNextBtn" aria-label="عکس بعدی" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
     </div>
     <div class="pe-bar lightbox-bar">
       <button type="button" class="lightbox-btn" id="lightboxEditBtn" title="برش و چرخش دوباره" hidden>
@@ -772,17 +764,17 @@
 <div class="app-toast" id="appToast" role="status" aria-live="polite"></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261001d"></script>
-<script src="/js/shared.js?v=20261001d"></script>
-<script src="/js/palette.js?v=20261001d"></script>
-<script src="/js/dashboard.js?v=20261001d"></script>
-<script src="/js/print.js?v=20261001d"></script>
-<script src="/js/cheque-form.js?v=20261001d"></script>
-<script src="/js/date-segments.js?v=20261001d"></script>
-<script src="/js/cal-picker.js?v=20261001d"></script>
-<script src="/js/field-addons.js?v=20261001d"></script>
-<script src="/js/shell.js?v=20261001d"></script>
-<script src="/js/theme-reveal.js?v=20261001d"></script>
+<script src="/js/icons.js?v=20261001e"></script>
+<script src="/js/shared.js?v=20261001e"></script>
+<script src="/js/palette.js?v=20261001e"></script>
+<script src="/js/dashboard.js?v=20261001e"></script>
+<script src="/js/print.js?v=20261001e"></script>
+<script src="/js/cheque-form.js?v=20261001e"></script>
+<script src="/js/date-segments.js?v=20261001e"></script>
+<script src="/js/cal-picker.js?v=20261001e"></script>
+<script src="/js/field-addons.js?v=20261001e"></script>
+<script src="/js/shell.js?v=20261001e"></script>
+<script src="/js/theme-reveal.js?v=20261001e"></script>
 
 </body>
 </html>

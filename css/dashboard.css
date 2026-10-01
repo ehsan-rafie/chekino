@@ -1794,6 +1794,33 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .lightbox-btn:hover { background: var(--accent-wash); color: var(--ink); }
 .lightbox-btn svg { width: 17px; height: 17px; }
 .lightbox-btn[hidden] { display: none; }
+/* Stepping through several photos: round arrows on the dark well's sides */
+.lightbox-body { position: relative; }
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(20, 20, 22, 0.62);
+  color: #fff;
+  translate: 0 -50%;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: background var(--dur-1) var(--ease);
+}
+.lightbox-nav:hover { background: rgba(20, 20, 22, 0.85); }
+.lightbox-nav:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.lightbox-nav[hidden] { display: none; }
+.lightbox-nav svg { width: 20px; height: 20px; }
+.lightbox-prev { inset-inline-start: 10px; }
+.lightbox-next { inset-inline-end: 10px; }
+.lightbox-count { margin-inline-start: 6px; color: var(--muted); font-size: var(--t-cap); font-variation-settings: var(--f-num); }
 @media (max-width: 600px) {
   .lightbox-overlay { padding: 0; }
   .lightbox-card { max-width: none; max-height: none; height: 100%; border-radius: 0; }

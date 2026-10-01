@@ -335,7 +335,10 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   and can be widened again (the parts cut off aren't lost); the primary
   then reads «ذخیره» and the result replaces the photo in place. A photo
   that came back from the server has no original kept: it opens as it is.
-  «ویرایش» shows only while the form can be edited.
+  «ویرایش» shows only while the form can be edited. With more than one
+  photo, round arrows on the dark well's sides step through them, ← and →
+  do the same (← goes on, as the page reads right to left), and the title
+  counts «۱ از ۲».
   The note is a single line that grows as it is typed into (up to 120px), its count at the end of the
   line while focused; Shift+Enter breaks a line. «مشخصات اشخاص», each
   person beside the date that belongs to them: owner | send date, party
@@ -425,14 +428,12 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     registered (it used to be in the header; the header is now just the
     title and the close button). This replaced a long sentence
     («… برای آقای …»), which was slow to read and wrong for a company.
-  - **The drawn cheque**, its stamp in the open space under the payment
-    sentence.
-  - **A card with what the cheque doesn't carry**, label above value, four
-    to a row (two on a phone): party, sent for registration, channels,
-    spend date; then, each on its own row under a hairline, the sayad id
-    with «کپی», the notes and the photos (landscape tiles). On a phone the
-    cheque's key values come first in readable type — amount, due date,
-    beneficiary, their national id, owner, serial.
+    For a waiting cheque the line says how long it has waited; how far off
+    the due date is, the cheque itself says.
+  - **The cheque**, carrying everything Chekino has about it — see «The
+    cheque» below. There is no separate card of facts any more: each value
+    sits where the printed leaf keeps its counterpart, under the word the
+    form uses for it.
   - **The status history**, a vertical timeline (a dot in the status colour
     per step, joined by a hairline, the date at the end, the reason under
     its step) — only once there has been more than one change; a single
@@ -531,16 +532,43 @@ columns, the chosen year solid blue); picking a year shows the twelve
 months, and picking a month goes back to the days. It writes to the two
 hidden `<select>`s dashboard.js reads, so the calendar logic is unchanged.
 
-**The cheque** (`css/cheque.css`, `js/print.js`). Laid out like the printed
-leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id box,
-the date boxed and written out in words, the payment sentence with blanks,
-the amount in rial words, owner and a signature that draws itself, and the
-MICR line. Its paper, blue print and faint guilloche are its own colours
-(dimmed in dark mode; the tear line's holes are paper-grey there, not
-black). A clean outlined stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت», in the
-status colours — slate for waiting) sits in the open space under the
-payment sentence; over the stub it ran through the stub's own lines. Sized off a container-query font size, so
-the leaf scales as one object. Used in the view face and on the login page.
+**The cheque** (`css/cheque.css`, `js/print.js`). Modelled on the
+uniform Sayad cheque every bank now prints — pale pink paper with an
+eight-pointed star (a شمسه) in the middle, a lilac band with a chain of
+rings down the binding edge carrying the serial and the name reading
+upward («331010-CHEKINO», as the leaf prints its series and bank), and a
+line of microprint along the foot — but laid out around what Chekino knows
+about a cheque, each value where the leaf keeps its counterpart and
+captioned with the word the form uses:
+- top, at the start: «سررسید» in three boxes, the date in words under it,
+  and how far off it is («۱۴ روز دیگر», «۳ روز گذشته» — amber when close
+  and red when past, while the cheque still waits to be registered);
+  in the middle «چک صیادی» with a bank emblem; at the end «سریال» and
+  «شناسه صیادی» (caption above value) with «کپی», and the cheque's photo
+  where the leaf has its QR («۲ عکس» when there are more; it opens the
+  photo viewer);
+- the payment sentence: «به موجب این چک مبلغ … ریال», «در وجه [the
+  beneficiary, captioned ذینفع] به کد ملی (or به شناسه ملی, by the
+  number's length) … پرداخت نمایید.»;
+- the middle: the status stamp where a signature would go, and «مبلغ به
+  عدد» boxed at the end;
+- the foot, where the leaf names its account holder: «صاحب چک», «تاریخ
+  ارسال» and «از طریق» (the request to register went to the owner); at the
+  end, under the amount, «طرف حساب» and «تاریخ خرج»; then «توضیحات».
+Printed words are a grey violet and whatever was filled in is blue ink, so
+the cheque's data stands apart from its print at a glance; an empty value
+is a muted «—». The paper, print and ink are the cheque's own colours,
+dimmed in dark mode. The stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت») is in
+the status colours — slate for waiting. The leaf keeps a cheque's
+proportions at the least and grows when what it carries needs more room.
+Everything is sized in em: 14px in the view; on the login page the leaf
+scales with its container as one object. Below 540px the view reflows the
+same zones into one column — the numbers and the photo, the due date, the
+amount with the stamp beside it (or under it, when the amount is long),
+the sentence flowing as text, the people, the notes. There is no stub, no
+MICR line and no signature: the leaf people hold has none of the first
+two, and a drawn signature said nothing true. Used in the view face and on
+the login page.
 
 **Floating surfaces.** No border of their own: `--shadow-2` plus the 1px
 ring, radius 16–20, a 280ms rise. Menu items are radius 10 with a grey
@@ -572,8 +600,8 @@ screens the navigation becomes segmented tabs.
 | `css/cheque.css` | the cheque leaf |
 | `css/cheque-form.css` | the add / view / edit modal |
 | `css/login.css`, `css/admin.css` | the two other pages (each ends with a "Monochrome finish" section) |
-| `js/print.js` | guilloche + signature generators |
-| `js/cheque-form.js` | view face: the cheque and the facts card (read-only) |
+| `js/print.js` | guilloche + the star medallion |
+| `js/cheque-form.js` | view face: fills the cheque from the form's fields (read-only) |
 | `js/shell.js` | card spotlight, first-load blur-fade, tooltip tidy-up (read-only) |
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
