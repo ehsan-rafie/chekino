@@ -143,67 +143,123 @@
 #modalOverlay .cq-note label { padding-inline-start: 2px; }
 #modalOverlay .notes-count:empty { display: none; }
 
-/* ═══ View: the cheque ═══ */
+/* ═══ View: the cheque ═══
+   Top to bottom: the status (an alert), the drawn cheque, a card with what
+   the cheque doesn't carry, and — only after more than one change — the
+   status history. */
 .cq-view {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 20px;
 }
+
+/* The status — HeroUI's Alert: a soft wash of the status colour, the icon
+   in a tinted square, the state as the title, one line under it. */
 .cq-view .ve-status-banner {
+  --st: var(--st-pending);
+  --st-text: color-mix(in srgb, var(--st-pending) 55%, var(--ink));
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
   margin: 0;
-  padding: 11px 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--st) 24%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--st) 7%, var(--surface));
+  color: var(--ink);
   font-size: var(--t-cap);
-  line-height: 2;
+  line-height: 1.6;
 }
-.cq-view .ve-status-banner b { font-size: var(--t-cap); }
+.cq-view .ve-status-banner.st-done { --st: var(--st-done); --st-text: var(--state-ok-text); }
+.cq-view .ve-status-banner.st-problem { --st: var(--st-problem); --st-text: var(--state-bad-text); }
+.ve-st-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--st) 15%, var(--surface));
+  color: var(--st-text);
+}
+.ve-st-icon svg { width: 17px; height: 17px; stroke-width: 2.2; }
+.ve-st-text { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.cq-view .ve-st-title { font-size: var(--t-value); color: var(--st-text); font-variation-settings: var(--f-title); }
+.ve-st-desc { color: var(--ink-2); font-variation-settings: var(--f-body); }
+.ve-st-desc:empty { display: none; }
+.ve-st-desc > span { unicode-bidi: isolate; }
+/* parted by a short hairline, not a dot: a middle dot beside Persian
+   digits reads as a zero («۰۹ · ۴» → «۰۹ ۰ ۴») */
+.ve-st-sep { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ve-st-desc > .ve-st-sep + span::before {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin-inline: 9px;
+  vertical-align: -0.1em;
+  background: color-mix(in srgb, var(--st) 40%, transparent);
+}
+.cq-view .ve-receipt-btn {
+  flex-shrink: 0;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--st) 32%, transparent);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--st-text);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.cq-view .ve-receipt-btn svg { width: 14px; height: 14px; }
+.cq-view .ve-receipt-btn:hover,
+.cq-view .ve-receipt-btn.copied { background: color-mix(in srgb, var(--st) 10%, var(--surface)); border-color: color-mix(in srgb, var(--st) 48%, transparent); }
+
 .cq-view .cq-cheque-wrap { width: 100%; max-width: 780px; margin-inline: auto; }
 .cq-body.ve-locked .cq-cheque { -webkit-user-select: text; user-select: text; }
+/* The tear line's holes show what the cheque lies on — in the dark that
+   was a row of black dots; a paper-grey hole reads as punched, not inked. */
+:root[data-theme="dark"] .cq-view .cq-cheque { --hole: #B9BFCB; }
 
+/* What the cheque doesn't carry: label above value, four to a row (two on
+   a phone); the long ones — sayad id, notes, photos — take a whole row
+   under a hairline. */
 .cq-view-facts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 28px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 20px;
   margin: 0;
-  padding: 2px 16px 0;
+  padding: 16px 18px;
   border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
   box-shadow: var(--shadow-1);
-  overflow: hidden;
 }
-/* Every row draws a line under itself and pulls the next row up by 1px;
-   the card clips the last line, whichever rows happen to be visible. */
-.cq-view-facts > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  padding: 12px 0;
-  margin-bottom: -1px;
-  border-bottom: 1px solid var(--border-subtle);
-}
+.cq-view-facts > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cq-view-facts > div[hidden] { display: none; }
-.cq-view-facts .cq-wide { grid-column: 1 / -1; }
+.cq-view-facts .cq-wide { grid-column: 1 / -1; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
 .cq-view-facts .cq-narrow-only { display: none; }
-.cq-view-facts dt { flex-shrink: 0; font-size: var(--t-cap); color: var(--muted); }
+.cq-view-facts dt { font-size: var(--t-cap); color: var(--muted); font-variation-settings: var(--f-body); }
 .cq-view-facts dd {
   margin: 0;
   min-width: 0;
-  font-size: var(--t-body);
+  font-size: var(--t-value);
+  line-height: 1.6;
   color: var(--ink);
   font-variation-settings: var(--f-value);
-  text-align: end;
   overflow-wrap: anywhere;
 }
-.cq-view-facts dd.is-empty { color: var(--muted); }
-#cqfNotes { white-space: pre-wrap; text-align: start; }
-.cq-sayad-row { display: inline-flex; align-items: center; gap: 10px; }
+.cq-view-facts dd.cqc-num { font-variation-settings: var(--f-num); }
+.cq-view-facts dd.is-empty { color: var(--muted); font-variation-settings: var(--f-body); }
+#cqfNotes { white-space: pre-wrap; font-variation-settings: var(--f-body); }
+.cq-sayad-row { display: flex; align-items: center; gap: 12px; }
 #cqfSayad { letter-spacing: 0.06em; font-variation-settings: var(--f-num); }
 .cq-copy {
-  height: 26px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: var(--rad-xs);
   background: var(--surface);
@@ -216,10 +272,11 @@
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
 .cq-copy:hover { background: var(--accent-wash); color: var(--ink); }
-.cq-thumbs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+/* Photos: landscape tiles, a cheque's shape */
+.cq-thumbs { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
 .cq-thumb {
-  width: 64px;
-  height: 64px;
+  width: 104px;
+  height: 66px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
@@ -231,17 +288,54 @@
 }
 .cq-thumb:hover { box-shadow: var(--shadow-lift); border-color: var(--border-strong); }
 .cq-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cq-thumb.is-doc { width: auto; padding: 0 12px; font-family: inherit; font-size: var(--t-micro); color: var(--ink-2); cursor: default; }
+.cq-thumb.is-doc { width: auto; padding: 0 14px; font-family: inherit; font-size: var(--t-micro); color: var(--ink-2); cursor: default; }
 
+/* The history: a vertical timeline — a dot in the status colour per step,
+   joined by a hairline; the date at the end, the reason under its step. */
 .cq-view .ve-history {
   margin: 0;
-  padding: 14px 16px;
+  padding: 14px 18px 16px;
   border: 1px solid var(--border);
   border-radius: var(--rad-card);
   background: var(--surface);
   box-shadow: var(--shadow-1);
 }
-.cq-view .ve-history-list { gap: var(--s3); }
+.cq-view .ve-history-label { margin-bottom: 12px; font-size: var(--t-cap); color: var(--muted); font-variation-settings: var(--f-body); }
+.cq-view .ve-history-list { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 0; }
+.cq-view .ve-history-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding-bottom: 14px;
+  padding-inline-start: 22px;
+  font-size: var(--t-cap);
+  line-height: 1.6;
+}
+.cq-view .ve-history-link:last-child { padding-bottom: 0; }
+.cq-view .ve-history-link::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: calc(0.8em - 4.5px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--hist-dot);
+}
+.cq-view .ve-history-link:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 4px;
+  top: calc(0.8em + 9px);
+  bottom: calc(-0.8em + 7px);
+  width: 1px;
+  background: var(--border);
+}
+.cq-view .ve-history-name { font-size: inherit; color: var(--ink); font-variation-settings: var(--f-value); }
+.cq-view .ve-history-date { font-size: inherit; color: var(--muted); }
+.cq-view .ve-history-reason { grid-column: 1 / -1; font-size: var(--t-micro); color: var(--ink-2); white-space: normal; }
 
 /* ---- Footer: a compact save at the end ---- */
 #modalOverlay .modal-footer { justify-content: flex-end; }
@@ -261,8 +355,11 @@
   #serialField, #sayadField, #amountField, #dueDateField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
   #ownerField, #partyField { grid-column: span 1; }   /* each beside its date */
   .cq-view { padding: 14px; gap: 14px; }
-  .cq-view-facts { grid-template-columns: minmax(0, 1fr); padding: 2px 14px 0; }
+  .cq-view .ve-status-banner { flex-wrap: wrap; }
+  .cq-view .ve-receipt-btn { margin-inline-start: 46px; }
+  .cq-view-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; padding: 14px 16px; }
   .cq-view-facts .cq-narrow-only { display: flex; }
+  .cq-view .ve-history { padding: 14px 16px; }
   #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }
   #modalOverlay .modal-footer .btn-clear { width: 44px; height: 44px; }

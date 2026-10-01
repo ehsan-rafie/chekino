@@ -298,7 +298,8 @@
     // Key values repeated in readable type (shown only on narrow screens)
     setFill('cqfAmount', amount && `${toFa(group(amount))} ﷼`, '—');
     setFill('cqfDue', due && toFa(`${due.y}/${String(due.m).padStart(2, '0')}/${String(due.d).padStart(2, '0')}`), '—');
-    setFill('cqfBenef', benef && (nid ? `${benef} (${toFa(nid)})` : benef), '—');
+    setFill('cqfBenef', benef, '—');
+    setFill('cqfNid', nid && toFa(nid), '—');
     setFill('cqfOwner', owner, '—');
     setFill('cqfSerial', serial && toFa(serial), '—');
     setFill('cqfParty', val('partyInput'), '—');

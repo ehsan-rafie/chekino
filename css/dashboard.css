@@ -1800,8 +1800,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   .lightbox-body { margin: 0 10px; }
   .lightbox-body img { max-height: 100%; }
   .lightbox-bar .lightbox-btn { flex: 1 1 0; height: 44px; padding: 0 8px; }
-  .ve-receipt-btn span { display: none; }
-  .ve-receipt-btn { padding: 8px; }
 }
 .file-add {
   display: flex;

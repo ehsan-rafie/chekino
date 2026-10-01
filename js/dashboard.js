@@ -271,13 +271,14 @@ function renderVeHistory(c) {
   // The chain always opens with the cheque's initial "منتظر ثبت" state
   // (from when it was created), then every recorded change after it, in
   // order — one continuous line, not separate expandable cards.
+  // A single change is already the status block's own line; the history
+  // earns its place once there has been more than one.
   const chain = [{ to: 'pending', at: c.createdAt }, ...hist];
-  veHistory.classList.toggle('show', chain.length > 1);
-  veHistoryList.innerHTML = chain.map((h, i) => {
+  veHistory.classList.toggle('show', chain.length > 2);
+  veHistoryList.innerHTML = chain.map((h) => {
     const st = statusById(h.to);
     const reasonHtml = h.reason ? `<div class="ve-history-reason">${escapeHtml(h.reason)}</div>` : '';
-    return `${i > 0 ? '<span class="ve-history-arrow">←</span>' : ''}
-      <div class="ve-history-link" style="--hist-dot:${st.color}">
+    return `<div class="ve-history-link" style="--hist-dot:${st.color}">
         <span class="ve-history-name">${escapeHtml(st.name)}</span>
         <span class="ve-history-date">${faDate(h.at)}</span>
         ${reasonHtml}
@@ -288,20 +289,40 @@ let modalMode = 'add';        // 'add' | 'view' | 'editing'
 let editingChequeId = null;
 let veHasEdited = false;
 
-function buildStatusSentence(c) {
-  const sendD = faDate(c.sendDate);
-  const owner = escapeHtml(c.owner);
-  const benef = escapeHtml(c.benef);
+// The status block at the top of the view (HeroUI's Alert): the state as
+// the title, and one line under it with what matters for that state —
+// when it was registered, why it wasn't, or how long it has been waiting
+// and how close the due date is.
+const veStIcon = document.getElementById('veStIcon');
+const veStTitle = document.getElementById('veStTitle');
+const veStDesc = document.getElementById('veStDesc');
+function daysAgoText(days, verb) {
+  if (days === 0) return `امروز ${verb}`;
+  if (days === 1) return `دیروز ${verb}`;
+  return `${toFa(days)} روز پیش ${verb}`;
+}
+function fillVeStatus(c) {
+  const st = statusById(c.status);
+  const sent = daysSinceJalali(c.sendDate);
+  const parts = [];
   if (c.status === 'done') {
-    const changedD = faDate(c.statusChangedAt || c.sendDate);
-    return { cls: 'st-done', html: `چک در تاریخ <b>${sendD}</b> جهت ثبت به نام <b>${benef}</b> برای آقای <b>${owner}</b> ارسال شد و در تاریخ <b>${changedD}</b> ثبت شد.` };
+    if (c.statusChangedAt) parts.push(`تاریخ ثبت ${faDate(c.statusChangedAt)}`);
+    const took = sent >= 0 ? sent - Math.max(0, daysSinceJalali(c.statusChangedAt)) : -1;
+    if (took > 0) parts.push(`${toFa(took)} روز پس از ارسال`);
+  } else if (c.status === 'problem') {
+    if (c.statusReason) parts.push(c.statusReason);
+    if (c.statusChangedAt) parts.push(faDate(c.statusChangedAt));
+  } else {
+    parts.push(sent >= 0 ? daysAgoText(sent, 'برای ثبت ارسال شد') : `ارسال برای ثبت ${faDate(c.sendDate)}`);
+    if (daysUntilDue(c.dueDate) !== null) parts.push(dueTip(c));
   }
-  if (c.status === 'problem') {
-    const changedD = faDate(c.statusChangedAt || c.sendDate);
-    const reason = c.statusReason ? escapeHtml(c.statusReason) : 'نامشخص';
-    return { cls: 'st-problem', html: `چک در تاریخ <b>${sendD}</b> جهت ثبت به نام <b>${benef}</b> برای آقای <b>${owner}</b> ارسال شد و در تاریخ <b>${changedD}</b> به دلیل <b>${reason}</b> ثبت نشد.` };
-  }
-  return { cls: 'st-pending', html: `چک در تاریخ <b>${sendD}</b> برای آقای <b>${owner}</b> ارسال شده و در وضعیت منتظر ثبت می‌باشد.` };
+  veStatusBanner.className = 've-status-banner show ' + st.cls;
+  veStIcon.innerHTML = icon(c.status === 'done' ? 'check' : c.status === 'problem' ? 'alert' : 'clock');
+  veStTitle.textContent = st.name;
+  // each part isolated, so a date and a count side by side never merge
+  // into one number run; the comma is for screen readers, the eye gets a
+  // hairline
+  veStDesc.innerHTML = parts.map(t => `<span>${escapeHtml(t)}</span>`).join('<i class="ve-st-sep">، </i>');
 }
 
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
@@ -342,9 +363,7 @@ function openModalForView(id) {
   modalTitle.textContent = 'مشاهده چک';
   enableFormButtons();
   hideFormAlert();
-  const st = buildStatusSentence(c);
-  veStatusBanner.className = 've-status-banner show ' + st.cls;
-  veStatusBanner.innerHTML = `<span>${st.html}</span>`;
+  fillVeStatus(c);
   veReceiptBtn.style.display = c.status === 'done' ? 'flex' : 'none';
   renderVeHistory(c);
 

@@ -206,7 +206,7 @@ an edge of the same hue (11%), and down its start edge a thin line of that
 colour — 2px, pale (45%), fading out at both ends — which divides the
 lanes and names their state at once: slate grey for «منتظر ثبت» (waiting
 is the neutral state; blue stays for focus and picks), green for «ثبت شد»,
-red for «مشکل در ثبت» — the same three carry the view's status banner and
+red for «مشکل در ثبت» — the same three carry the view's status block and
 the PDF report's tiles and pills. Nothing glows or moves (a glow and a line along the
 top were tried and dropped: too loud).
 The white cards read clearly on it; a lane taking a dragged card turns
@@ -414,11 +414,31 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   the window, grow in step by their own rules. On a phone every field's
   text is 16px, since below that Safari on iOS zooms the page when a
   field is tapped.
-- *View — the cheque itself.* The status sentence, the drawn cheque with
-  its stamp, then a bordered card with only what the cheque doesn't carry
-  (party, send date, channels, spend date, notes, photos, sayad id with a
-  copy button) and the status history. On narrow screens the cheque's key
-  values are repeated in readable type. «ویرایش» switches to the form.
+- *View — the cheque itself.* Top to bottom:
+  - **The status**, as HeroUI's Alert: a soft wash of the status colour,
+    the icon in a tinted square (tick / warning / clock), the state as the
+    title and one line under it with what matters for that state —
+    «تاریخ ثبت … | ۴ روز پس از ارسال», the problem's reason and date, or
+    «۱۱ روز پیش برای ثبت ارسال شد | سررسید: ۱۴ روز دیگر». The parts are
+    parted by a short hairline, never a middle dot: beside Persian digits a
+    dot reads as a zero. «کپی رسید ثبت» sits at its end once the cheque is
+    registered (it used to be in the header; the header is now just the
+    title and the close button). This replaced a long sentence
+    («… برای آقای …»), which was slow to read and wrong for a company.
+  - **The drawn cheque**, its stamp in the open space under the payment
+    sentence.
+  - **A card with what the cheque doesn't carry**, label above value, four
+    to a row (two on a phone): party, sent for registration, channels,
+    spend date; then, each on its own row under a hairline, the sayad id
+    with «کپی», the notes and the photos (landscape tiles). On a phone the
+    cheque's key values come first in readable type — amount, due date,
+    beneficiary, their national id, owner, serial.
+  - **The status history**, a vertical timeline (a dot in the status colour
+    per step, joined by a hairline, the date at the end, the reason under
+    its step) — only once there has been more than one change; a single
+    change is already the status block's own line.
+
+  «ویرایش» switches to the form.
 
 The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
 makes inert in view mode; `#sayadField` stays outside them. The wrappers
@@ -516,8 +536,10 @@ leaf: stub (ته‌چک) with a perforated tear line, bank emblem and sayad id b
 the date boxed and written out in words, the payment sentence with blanks,
 the amount in rial words, owner and a signature that draws itself, and the
 MICR line. Its paper, blue print and faint guilloche are its own colours
-(dimmed in dark mode). A clean outlined stamp («ثبت شد» / «ثبت نشد» /
-«منتظر ثبت») sits over the stub. Sized off a container-query font size, so
+(dimmed in dark mode; the tear line's holes are paper-grey there, not
+black). A clean outlined stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت», in the
+status colours — slate for waiting) sits in the open space under the
+payment sentence; over the stub it ran through the stub's own lines. Sized off a container-query font size, so
 the leaf scales as one object. Used in the view face and on the login page.
 
 **Floating surfaces.** No border of their own: `--shadow-2` plus the 1px

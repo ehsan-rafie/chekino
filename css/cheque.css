@@ -339,10 +339,18 @@
 }
 .cq-cheque[data-status="done"] .cqc-stamp { color: #148352; }
 .cq-cheque[data-status="problem"] .cqc-stamp { color: #C9302A; }
-.cq-cheque[data-status="pending"] .cqc-stamp { color: #2C3FC4; }
+.cq-cheque[data-status="pending"] .cqc-stamp { color: #56647A; }   /* slate, as the lane: blue is for focus and picks */
 @keyframes cqcStamp {
   from { opacity: 0; scale: 1.3; }
   to   { opacity: 0.85; scale: 1; }
+}
+
+/* In the view the stamp sits in the cheque's open space, between the
+   payment sentence and the foot — over the stub it ran through the stub's
+   own lines. */
+.cq-view .cqc-stamp { top: 56%; inset-inline-start: auto; inset-inline-end: 12%; }
+@media (max-width: 600px) {
+  .cq-view .cqc-stamp { top: 58%; inset-inline-end: 10%; font-size: 1.3em; }
 }
 
 @media (max-width: 600px) {
