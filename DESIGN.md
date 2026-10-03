@@ -566,7 +566,9 @@ Everything is sized in em: 14px in the view; on the login page the leaf
 scales with its container as one object. Below 540px the view reflows the
 same zones into one column — the numbers and the photo, the due date, the
 amount with the stamp beside it (or under it, when the amount is long),
-the sentence flowing as text, the people, the notes. There is no stub, no
+the sentence flowing as text, the people, the notes. The photo itself is not in the cheque list — only its id — and arrives
+from /api/images when the cheque is opened; until then its tile pulses
+faintly. A PDF shows as «PDF» and opens in a new tab. There is no stub, no
 MICR line and no signature: the leaf people hold has none of the first
 two, and a drawn signature said nothing true. Used in the view face and on
 the login page.

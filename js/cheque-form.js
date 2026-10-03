@@ -155,15 +155,17 @@
     if (!first) return;
     const box = $('cqcPhotoImg');
     box.textContent = '';
-    if (isImage(first)) {
+    // a server photo is on its way until its object URL arrives
+    box.classList.toggle('is-loading', isImage(first) && !first.dataUrl);
+    if (isImage(first) && first.dataUrl) {
       const img = document.createElement('img');
       img.src = first.dataUrl;
       img.alt = '';
       box.appendChild(img);
-    } else {
+    } else if (!isImage(first)) {
       box.textContent = 'PDF';
     }
-    photoBtn.classList.toggle('is-doc', !isImage(first));
+    photoBtn.classList.toggle('is-doc', !isImage(first) && !first.id);
     photoBtn.dataset.index = String(at);
     const n = list.length;
     $('cqcPhotoLabel').textContent = n > 1 ? `${toFa(n)} عکس` : 'عکس چک';
@@ -172,7 +174,12 @@
   photoBtn.addEventListener('click', () => {
     const i = Number(photoBtn.dataset.index);
     const f = files()[i];
-    if (!f || !isImage(f) || typeof openLightbox !== 'function') return;
+    if (!f) return;
+    if (!isImage(f)) {
+      if (f.id && typeof openAttachment === 'function') openAttachment(f);   // a PDF: a new tab
+      return;
+    }
+    if (!f.dataUrl || typeof openLightbox !== 'function') return;   // still on its way
     openLightbox(f.dataUrl, f.name, i);
   });
 

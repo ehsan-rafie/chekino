@@ -4922,6 +4922,11 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   overflow: hidden;
 }
 .file-chip .file-thumb { position: relative; display: block; width: 46px; flex-shrink: 0; cursor: pointer; }
+/* a photo still on its way from the server */
+.file-chip .file-thumb.is-loading { cursor: default; background: var(--surface-sunken); animation: fileThumbWait 1.2s ease-in-out infinite alternate; }
+@keyframes fileThumbWait { from { opacity: 0.55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .file-chip .file-thumb.is-loading { animation: none; } }
+.file-chip.is-openable .file-doc { cursor: pointer; }
 .file-chip img { width: 100%; height: 100%; border: none; border-radius: 0; object-fit: cover; }
 .file-chip .file-view-overlay { inset: 0; width: auto; height: auto; border-radius: 0; background: rgba(0, 0, 0, 0.45); }
 .file-chip:hover .file-view-overlay { opacity: 0; }

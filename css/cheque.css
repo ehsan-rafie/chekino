@@ -284,6 +284,9 @@
   transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
 .cqc-photo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* A photo on its way from the server: the paper, gently pulsing */
+.cqc-photo-img.is-loading { animation: cqcPhotoWait 1.2s ease-in-out infinite alternate; }
+@keyframes cqcPhotoWait { from { background: rgba(255, 255, 255, 0.4); } to { background: rgba(255, 255, 255, 0.85); } }
 .cqc-photo:not(.is-doc):hover .cqc-photo-img { border-color: var(--pen); box-shadow: 0 2px 8px rgba(15, 17, 32, 0.16); }
 .cqc-photo .cqc-k { font-size: 0.74em; }
 
@@ -449,5 +452,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp { animation: none; }
+  .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp, .cqc-photo-img.is-loading { animation: none; }
 }

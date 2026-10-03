@@ -432,8 +432,9 @@ function openModalForView(id) {
   setChannels(c.channels);
   notesInput.value = c.notes || '';
   updateNotesCount();
-  attachedFiles = Array.isArray(c.files) ? c.files.map(f => ({ name: f.name, type: f.type, size: 0, dataUrl: f.dataUrl })) : [];
+  attachedFiles = Array.isArray(c.files) ? c.files.map(f => ({ id: f.id, name: f.name, type: f.type, size: 0, dataUrl: f.dataUrl })) : [];
   renderFileChips();
+  loadAttachedImages();
   fileMsg.textContent = '';
   fileField.classList.remove('error');
 
@@ -2563,7 +2564,10 @@ function renderFileChips() {
     // One small tile: a landscape thumbnail (a cheque's shape) and, beside
     // it, its own always-visible × — nothing sits on the photo.
     const isImage = item.type.startsWith('image/');
-    const thumb = isImage
+    const loading = isImage && !item.dataUrl;
+    const thumb = loading
+      ? '<span class="file-thumb is-loading" aria-label="در حال بارگذاری عکس"></span>'
+      : isImage
       ? `<span class="file-thumb"><img src="${item.dataUrl}" alt=""><span class="file-view-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span></span>`
       : `<span class="file-thumb file-doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>PDF</span></span>`;
 
@@ -2585,8 +2589,11 @@ function renderFileChips() {
         (rest[Math.min(i, rest.length - 1)] || fileAddBtn).focus();
       }
     });
-    if (isImage) {
+    if (isImage && !loading) {
       chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name, i));
+    } else if (!isImage && item.id) {
+      chip.classList.add('is-openable');   // a PDF on the server: opens in a new tab
+      chip.addEventListener('click', () => openAttachment(item));
     }
     fileChips.appendChild(chip);
   });
@@ -2600,6 +2607,8 @@ function openLightbox(dataUrl, name, index) {
   lightboxImg.src = dataUrl;
   lightboxImg.dataset.filename = name || 'cheque-photo.jpg';
   lightboxIndex = Number.isInteger(index) ? index : null;
+  const shown = lightboxIndex !== null ? attachedFiles[lightboxIndex] : null;
+  lightboxImg.dataset.type = (shown && shown.type) || mimeOfDataUrl(dataUrl);
   lightboxEditBtn.hidden = lightboxIndex === null || modalBody.classList.contains('ve-locked');
   updateLightboxNav();
   lightboxOverlay.classList.add('show');
@@ -2613,7 +2622,84 @@ function openLightbox(dataUrl, name, index) {
 // More than one photo: step through the attached images — the two arrows,
 // ← and →, and a «۱ از ۲» beside the title
 function lightboxImages() {
-  return attachedFiles.map((f, i) => ({ f, i })).filter(x => (x.f.type || '').startsWith('image/'));
+  return attachedFiles.map((f, i) => ({ f, i })).filter(x => (x.f.type || '').startsWith('image/') && x.f.dataUrl);
+}
+
+// ---- Photos from the server ----
+// The cheque list carries only a photo's id: the photo itself comes from
+// /api/images/:id when its cheque is opened, sent with the token (an <img>
+// can't send one). Each is kept for the life of the page as a Blob and an
+// object URL. The Blob is what «اشتراک‌گذاری» hands the share sheet with
+// nothing awaited in between — a phone shares only from the tap itself
+// (see dataUrlToBlobSync). The oldest are let go past IMAGE_CACHE_MAX,
+// never one the open cheque is showing.
+const imageCache = new Map();   // id → Promise<{ blob, url }>
+const blobOfUrl = new Map();    // object URL → Blob
+const IMAGE_CACHE_MAX = 60;
+function loadImage(id) {
+  let p = imageCache.get(id);
+  if (p) {
+    imageCache.delete(id);   // most recently used last
+    imageCache.set(id, p);
+    return p;
+  }
+  p = apiFetch(`/images/${encodeURIComponent(id)}`).then(async (res) => {
+    if (!res.ok) throw new Error('image ' + res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    blobOfUrl.set(url, blob);
+    return { blob, url };
+  });
+  p.catch(() => imageCache.delete(id));   // a failed fetch can be tried again
+  imageCache.set(id, p);
+  if (imageCache.size > IMAGE_CACHE_MAX) {
+    const inUse = new Set(attachedFiles.map(f => f.id));
+    for (const [oldId, oldP] of imageCache) {
+      if (imageCache.size <= IMAGE_CACHE_MAX) break;
+      if (inUse.has(oldId)) continue;
+      imageCache.delete(oldId);
+      oldP.then(({ url }) => { blobOfUrl.delete(url); URL.revokeObjectURL(url); }).catch(() => {});
+    }
+  }
+  return p;
+}
+// Each server photo of the open cheque gets its object URL as it arrives
+function loadAttachedImages() {
+  const forCheque = editingChequeId;
+  attachedFiles.forEach((f) => {
+    if (!f.id || f.dataUrl || !(f.type || '').startsWith('image/')) return;
+    loadImage(f.id).then(({ url }) => {
+      if (editingChequeId !== forCheque || !attachedFiles.includes(f)) return;
+      f.dataUrl = url;
+      renderFileChips();
+    }).catch(() => {
+      if (editingChequeId === forCheque) showToast('عکس چک بار نشد — اتصال را بررسی کنید');
+    });
+  });
+}
+// A PDF from the server opens in a new tab: the tab is opened by the tap
+// itself (so no popup blocker) and pointed at the file once it arrives
+function openAttachment(f) {
+  const tab = window.open('', '_blank');
+  loadImage(f.id).then(({ url }) => {
+    if (tab) tab.location.href = url;
+    else window.location.assign(url);
+  }).catch(() => {
+    if (tab) tab.close();
+    showToast('فایل بار نشد — اتصال را بررسی کنید');
+  });
+}
+// A file name for a download: «cheque-482913.jpg»
+function attachmentName(mime, serial) {
+  const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'application/pdf': 'pdf' }[mime] || 'jpg';
+  return `cheque-${serial || 'photo'}.${ext}`;
+}
+// The photo a form saves: only one picked or re-cut in this form (a data:
+// URL). One that came from the server has an object URL instead; sending
+// nothing keeps it as it is, rather than uploading it again.
+function newPhotoOf(rec) {
+  const f = rec.files && rec.files[0];
+  return f && /^data:/.test(f.dataUrl || '') ? f.dataUrl : null;
 }
 function updateLightboxNav() {
   const imgs = lightboxIndex === null ? [] : lightboxImages();
@@ -3148,8 +3234,9 @@ function apiCheckToRec(c) {
     sendDate: isoToJalaliStr(c.send_date),
     channels: Array.isArray(c.channels) ? c.channels : [],
     notes: c.notes || '',
-    receiptImage: c.receipt_image || '',
-    files: c.receipt_image ? [{ name: 'رسید.jpg', type: 'image/jpeg', dataUrl: c.receipt_image }] : [],
+    // The photo itself isn't in the list — only its id and type. It is
+    // fetched when the cheque is opened (loadImage); until then dataUrl is ''.
+    files: c.image_id ? [{ id: c.image_id, name: attachmentName(c.image_mime, c.serial), type: c.image_mime || '', dataUrl: '' }] : [],
   };
 }
 
@@ -3385,7 +3472,7 @@ submitCheckBtn.addEventListener('click', async () => {
         party_id: partyId,
         beneficiary_id: benefId,
         notes: rec.notes || null,
-        receipt_image: rec.files && rec.files[0] ? rec.files[0].dataUrl : null,
+        receipt_image: newPhotoOf(rec),
         channels: rec.channels,
         status: 'pending',
       }),
@@ -3506,7 +3593,7 @@ async function commitSaveEdit() {
         party_id: partyId,
         beneficiary_id: benefId,
         notes: rec.notes || null,
-        receipt_image: rec.files && rec.files[0] ? rec.files[0].dataUrl : null,
+        receipt_image: newPhotoOf(rec),
         channels: rec.channels,
       }),
     });
@@ -5536,7 +5623,7 @@ function dataUrlToBlobSync(dataUrl) {
 lightboxDownloadBtn.addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = lightboxImg.src;
-  a.download = withExtension(lightboxImg.dataset.filename, mimeOfDataUrl(lightboxImg.src));
+  a.download = withExtension(lightboxImg.dataset.filename, lightboxImg.dataset.type || mimeOfDataUrl(lightboxImg.src));
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -5544,7 +5631,9 @@ lightboxDownloadBtn.addEventListener('click', () => {
 lightboxShareBtn.addEventListener('click', async () => {
   if (!navigator.share) { lightboxDownloadBtn.click(); return; }   // no share sheet at all (typical on desktop)
   try {
-    const blob = dataUrlToBlobSync(lightboxImg.src);
+    // a server photo's Blob is already in memory; a fresh one is decoded here
+    const blob = lightboxImg.src.startsWith('blob:') ? blobOfUrl.get(lightboxImg.src) : dataUrlToBlobSync(lightboxImg.src);
+    if (!blob) { lightboxDownloadBtn.click(); return; }
     const file = new File([blob], withExtension(lightboxImg.dataset.filename, blob.type), { type: blob.type });
     if (navigator.canShare && !navigator.canShare({ files: [file] })) {
       lightboxDownloadBtn.click();

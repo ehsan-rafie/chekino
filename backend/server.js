@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const authRoutes = require('./routes/auth');
 const peopleRoutes = require('./routes/people');
 const checksRoutes = require('./routes/checks');
+const imagesRoutes = require('./routes/images');
 const adminRoutes = require('./routes/admin');
 const { generalLimiter } = require('./middleware/rateLimit');
 
@@ -57,6 +58,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api/people', peopleRoutes);
 app.use('/api/checks', checksRoutes);
+app.use('/api/images', imagesRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Bind to loopback only: Nginx reverse-proxies to 127.0.0.1:3000 on the same

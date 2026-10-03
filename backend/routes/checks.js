@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const { body, param } = require('express-validator');
 const pool = require('../db');
@@ -8,20 +9,63 @@ const router = express.Router();
 
 router.use(authenticate);
 
+// What a cheque looks like to the dashboard: everything but its photos. A
+// photo is fetched on its own from /api/images/:id when the cheque is
+// opened; the list only names the first one and says how many there are.
+// (With photos inline, 43 cheques with two photos already weighed 1.1 MB,
+// and every new photo made each visit to the board heavier.) Owner and
+// beneficiary are LEFT JOINs: a cheque waiting for them (migration 007)
+// must not drop out of the list.
 const SELECT_FIELDS = `
   c.id, c.company_id, c.serial, c.sayad_id, c.amount, c.due_date, c.send_date, c.spend_date,
-  c.status, c.status_history, c.channels, c.notes, c.receipt_image, c.created_at,
+  c.status, c.status_history, c.channels, c.notes, c.created_at,
+  c.stage, c.version, c.updated_at,
   c.owner_id, o.full_name AS owner_name,
   c.party_id, p.full_name AS party_name,
-  c.beneficiary_id, b.full_name AS beneficiary_name, b.national_id AS beneficiary_national_id
+  c.beneficiary_id, b.full_name AS beneficiary_name, b.national_id AS beneficiary_national_id,
+  img.image_id, img.image_mime, COALESCE(img.image_count, 0)::int AS image_count
 `;
 
 const JOIN_CLAUSE = `
   FROM checks c
-  JOIN people o ON o.id = c.owner_id
+  LEFT JOIN people o ON o.id = c.owner_id
   JOIN people p ON p.id = c.party_id
-  JOIN people b ON b.id = c.beneficiary_id
+  LEFT JOIN people b ON b.id = c.beneficiary_id
+  LEFT JOIN LATERAL (
+    SELECT (array_agg(i.id ORDER BY i.position, i.created_at))[1] AS image_id,
+           (array_agg(i.mime ORDER BY i.position, i.created_at))[1] AS image_mime,
+           count(*) AS image_count
+    FROM check_images i
+    WHERE i.check_id = c.id AND i.kind = 'cheque'
+  ) img ON true
 `;
+
+// The cheque's photo goes to check_images. Until the dashboard reads photos
+// only from there, checks.receipt_image keeps a copy too (migration 007:
+// that is what lets rollback_007 lose nothing); both are written in the
+// same transaction. One photo per cheque for now — the form sends one.
+const DATA_URL_RE = /^data:([^;,]+);base64,(.+)$/s;
+async function saveChequeImage(db, companyId, checkId, dataUrl) {
+  const m = DATA_URL_RE.exec(dataUrl || '');
+  if (!m) return;
+  const type = m[1].toLowerCase();
+  const mime = type === 'image/jpg' ? 'image/jpeg' : type;
+  const bytes = Buffer.from(m[2], 'base64');
+  const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+  await db.query(
+    "DELETE FROM check_images WHERE check_id = $1 AND company_id = $2 AND kind = 'cheque'",
+    [checkId, companyId]
+  );
+  await db.query(
+    `INSERT INTO check_images (company_id, check_id, kind, mime, bytes, byte_size, sha256)
+     VALUES ($1, $2, 'cheque', $3, $4, $5, $6)`,
+    [companyId, checkId, mime, bytes, bytes.length, sha256]
+  );
+}
+
+// Since migration 007 only the sayad id is unique: a 6-digit serial repeats
+// across banks.
+const DUPLICATE_SAYAD = 'چکی با این شناسه صیادی قبلاً برای این شرکت ثبت شده است';
 
 async function ensureOwnedPeople(companyId, ids) {
   const uniqueIds = [...new Set(ids.filter((x) => x !== undefined && x !== null))];
@@ -82,11 +126,16 @@ const updateValidation = [
   body('status_reason').optional({ values: 'falsy' }).isString().isLength({ max: 500 }),
 ];
 
+// ?stage=sent (the default, what the board shows) | waiting | ready | all
+const STAGES = ['sent', 'waiting', 'ready', 'all'];
 router.get('/', async (req, res) => {
   try {
+    const stage = STAGES.includes(req.query.stage) ? req.query.stage : 'sent';
     const result = await pool.query(
-      `SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.company_id = $1 ORDER BY c.id DESC`,
-      [req.companyId]
+      `SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE}
+       WHERE c.company_id = $1 AND ($2 = 'all' OR c.stage = $2)
+       ORDER BY c.id DESC`,
+      [req.companyId, stage]
     );
     res.json(result.rows);
   } catch (err) {
@@ -123,28 +172,42 @@ router.post('/', createValidation, validate, async (req, res) => {
     const initialStatus = status || 'pending';
     const initialHistory = initialStatus === 'pending' ? [] : [{ to: initialStatus, reason: '', at: new Date().toISOString() }];
 
-    // No send date given: today in Tehran — the database runs in UTC, where
-    // CURRENT_DATE is still yesterday until 03:30 Tehran time
-    const result = await pool.query(
-      `INSERT INTO checks (
-         company_id, serial, sayad_id, amount, due_date, send_date, spend_date,
-         owner_id, party_id, beneficiary_id, notes, receipt_image, channels, status, status_history
-       ) VALUES (
-         $1, $2, $3, $4, $5, COALESCE($6, (now() AT TIME ZONE 'Asia/Tehran')::date), $7,
-         $8, $9, $10, $11, $12, COALESCE($13, '[]'::jsonb), $14, $15::jsonb
-       ) RETURNING id`,
-      [
-        req.companyId, serial, sayad_id || null, amount, due_date, send_date || null, spend_date || null,
-        owner_id, party_id, beneficiary_id, notes || null, receipt_image || null,
-        channels ? JSON.stringify(channels) : null, initialStatus, JSON.stringify(initialHistory),
-      ]
-    );
+    // The cheque and its photo go in together, or not at all
+    const db = await pool.connect();
+    let newId;
+    try {
+      await db.query('BEGIN');
+      // No send date given: today in Tehran — the database runs in UTC, where
+      // CURRENT_DATE is still yesterday until 03:30 Tehran time
+      const result = await db.query(
+        `INSERT INTO checks (
+           company_id, serial, sayad_id, amount, due_date, send_date, spend_date,
+           owner_id, party_id, beneficiary_id, notes, receipt_image, channels, status, status_history
+         ) VALUES (
+           $1, $2, $3, $4, $5, COALESCE($6, (now() AT TIME ZONE 'Asia/Tehran')::date), $7,
+           $8, $9, $10, $11, $12, COALESCE($13, '[]'::jsonb), $14, $15::jsonb
+         ) RETURNING id`,
+        [
+          req.companyId, serial, sayad_id || null, amount, due_date, send_date || null, spend_date || null,
+          owner_id, party_id, beneficiary_id, notes || null, receipt_image || null,
+          channels ? JSON.stringify(channels) : null, initialStatus, JSON.stringify(initialHistory),
+        ]
+      );
+      newId = result.rows[0].id;
+      if (receipt_image) await saveChequeImage(db, req.companyId, newId, receipt_image);
+      await db.query('COMMIT');
+    } catch (e) {
+      await db.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      db.release();
+    }
 
-    const created = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = $1`, [result.rows[0].id]);
+    const created = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = $1`, [newId]);
     res.status(201).json(created.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'چکی با این شماره سریال یا شناسه صیادی قبلاً برای این شرکت ثبت شده است' });
+      return res.status(409).json({ error: DUPLICATE_SAYAD });
     }
     console.error('Create check error:', err);
     res.status(500).json({ error: 'خطای سرور' });
@@ -186,36 +249,47 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
       }
     }
 
-    const result = await pool.query(
-      `UPDATE checks SET
-         serial = COALESCE($1, serial),
-         sayad_id = COALESCE($2, sayad_id),
-         amount = COALESCE($3, amount),
-         due_date = COALESCE($4, due_date),
-         send_date = COALESCE($5, send_date),
-         spend_date = COALESCE($6, spend_date),
-         owner_id = COALESCE($7, owner_id),
-         party_id = COALESCE($8, party_id),
-         beneficiary_id = COALESCE($9, beneficiary_id),
-         notes = COALESCE($10, notes),
-         receipt_image = COALESCE($11, receipt_image),
-         channels = COALESCE($12, channels),
-         status = $13,
-         status_history = $14::jsonb
-       WHERE id = $15 AND company_id = $16`,
-      [
-        serial || null, sayad_id || null, amount || null, due_date || null, send_date || null, spend_date || null,
-        owner_id || null, party_id || null, beneficiary_id || null, notes || null, receipt_image || null,
-        channels ? JSON.stringify(channels) : null, nextStatus, JSON.stringify(nextHistory),
-        id, req.companyId,
-      ]
-    );
+    const db = await pool.connect();
+    try {
+      await db.query('BEGIN');
+      await db.query(
+        `UPDATE checks SET
+           serial = COALESCE($1, serial),
+           sayad_id = COALESCE($2, sayad_id),
+           amount = COALESCE($3, amount),
+           due_date = COALESCE($4, due_date),
+           send_date = COALESCE($5, send_date),
+           spend_date = COALESCE($6, spend_date),
+           owner_id = COALESCE($7, owner_id),
+           party_id = COALESCE($8, party_id),
+           beneficiary_id = COALESCE($9, beneficiary_id),
+           notes = COALESCE($10, notes),
+           receipt_image = COALESCE($11, receipt_image),
+           channels = COALESCE($12, channels),
+           status = $13,
+           status_history = $14::jsonb
+         WHERE id = $15 AND company_id = $16`,
+        [
+          serial || null, sayad_id || null, amount || null, due_date || null, send_date || null, spend_date || null,
+          owner_id || null, party_id || null, beneficiary_id || null, notes || null, receipt_image || null,
+          channels ? JSON.stringify(channels) : null, nextStatus, JSON.stringify(nextHistory),
+          id, req.companyId,
+        ]
+      );
+      if (receipt_image) await saveChequeImage(db, req.companyId, Number(id), receipt_image);
+      await db.query('COMMIT');
+    } catch (e) {
+      await db.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      db.release();
+    }
 
     const updated = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = $1`, [id]);
     res.json(updated.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'چکی با این شماره سریال یا شناسه صیادی قبلاً برای این شرکت ثبت شده است' });
+      return res.status(409).json({ error: DUPLICATE_SAYAD });
     }
     console.error('Update check error:', err);
     res.status(500).json({ error: 'خطای سرور' });
