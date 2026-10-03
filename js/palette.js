@@ -35,6 +35,7 @@
       .replace(/[أإآ]/g, 'ا')
       .replace(/[ً-ْ‌‏‎]/g, '')   // harakat + zero-width marks
       .replace(/[۰-۹]/g, (d) => String(FA_DIGITS.indexOf(d)))
+      .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
       .replace(/[٠-٩]/g, (d) => String(AR_DIGITS.indexOf(d)))
       .toLowerCase()
       .replace(/\s+/g, ' ')

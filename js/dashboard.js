@@ -808,7 +808,7 @@ document.addEventListener('keydown', (e) => {
 
 // ---- Serial number field: digits only, live validation ----
 serialInput.addEventListener('input', () => {
-  serialInput.value = serialInput.value.replace(/[^0-9۰-۹]/g, '');
+  serialInput.value = arabicToFa(serialInput.value).replace(/[^0-9۰-۹]/g, '');
   if (serialInput.value.length === 6) {
     serialField.classList.remove('error');
   }
@@ -822,11 +822,11 @@ serialInput.addEventListener('blur', () => {
 // Shown in groups of four («۱۲۳۴ ۵۶۷۸ ۹۰۱۲ ۳۴۵۶»), as the cheque prints it,
 // while it's typed. The spaces are only for the eye: sayadDigits() is what
 // gets checked, compared and saved.
-const groupSayad = (s) => String(s).replace(/[^0-9۰-۹]/g, '').slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ');
-const sayadDigits = () => sayadInput.value.replace(/[^0-9۰-۹]/g, '');
+const groupSayad = (s) => arabicToFa(s).replace(/[^0-9۰-۹]/g, '').slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ');
+const sayadDigits = () => arabicToFa(sayadInput.value).replace(/[^0-9۰-۹]/g, '');
 sayadInput.addEventListener('input', () => {
   const pos = sayadInput.selectionStart ?? sayadInput.value.length;
-  const before = sayadInput.value.slice(0, pos).replace(/[^0-9۰-۹]/g, '').length;
+  const before = arabicToFa(sayadInput.value.slice(0, pos)).replace(/[^0-9۰-۹]/g, '').length;
   sayadInput.value = groupSayad(sayadInput.value);
   let p = 0;                                  // the caret stays after the same digit
   for (let n = 0; p < sayadInput.value.length && n < before; p++) if (sayadInput.value[p] !== ' ') n++;
@@ -895,10 +895,15 @@ function validateSayad() {
 // slots[0..1]=day, [2..3]=month, [4..7]=year.
 // Displayed as YYYY/MM/DD left-to-right, so read right-to-left it is day/month/year.
 
+// Persian (۰-۹) and Arabic (٠-٩) digits to Latin — an Arabic keyboard, or a
+// number copied from a document typed on one, types the second kind (N1)
 function toEnDigits(str) {
-  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-  return String(str).replace(/[۰-۹]/g, ch => String(fa.indexOf(ch)));
+  return String(str)
+    .replace(/[۰-۹]/g, ch => String(ch.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, ch => String(ch.charCodeAt(0) - 0x0660));
 }
+// Arabic digits shown as Persian ones, for fields that keep what was typed
+const arabicToFa = (str) => String(str).replace(/[٠-٩]/g, ch => '۰۱۲۳۴۵۶۷۸۹'[ch.charCodeAt(0) - 0x0660]);
 
 function createDateField(cfg) {
   const api = {
@@ -1811,6 +1816,8 @@ function wirePeopleItem(item, cfg) {
       const newNid = nidInput ? toEnDigits(nidInput.value).replace(/[^0-9]/g, '') : null;
       if ((newName && newName !== oldName) || (nidInput && newNid !== oldNid)) {
         if (nidInput && newNid) {
+          const valid = window.ChekinoNid.check(newNid);
+          if (!valid.ok) { showToast(valid.error); nidInput.focus(); return; }
           const conflict = findNidOwner(newNid, oldName);
           if (conflict) { showToast(`این کد ملی قبلاً برای «${conflict.name}» ثبت شده`); return; }
         }
@@ -1902,6 +1909,8 @@ document.getElementById('addBenefBtn').addEventListener('click', async () => {
   const nid = toEnDigits(newBenefNidInput.value).replace(/[^0-9]/g, '');
   if (!name) return;
   if (nid) {
+    const valid = window.ChekinoNid.check(nid);
+    if (!valid.ok) { showToast(valid.error); newBenefNidInput.focus(); return; }
     const conflict = findNidOwner(nid, name);
     if (conflict) { showToast(`این کد ملی قبلاً برای «${conflict.name}» ثبت شده`); return; }
   }
@@ -2213,7 +2222,10 @@ const benefAC = createAutocomplete({
 const nidAC = createAutocomplete({
   input: nidInput, list: nidList, field: nidField,
   sanitize: v => toFa(toEnDigits(v).replace(/[^0-9]/g, '').slice(0, 11)),
-  onType: () => updateNidKind(),
+  onType: () => {
+    updateNidKind();
+    if (toEnDigits(nidInput.value).replace(/[^0-9]/g, '').length === 11) validateNid();
+  },
   search: q => beneficiariesForParty().filter(p => p.nid && toEnDigits(p.nid).includes(toEnDigits(q))),
   primary: p => p.nid,
   secondary: p => p.name,
@@ -2280,6 +2292,14 @@ function validateNid() {
   if (raw.length !== 10 && raw.length !== 11) {
     nidField.classList.add('error');
     nidMsg.textContent = '۱۰ یا ۱۱ رقم باشد';   // fits the narrow column beside its label
+    return false;
+  }
+  // The check digit (js/nid.js, the same file the server checks with): a
+  // mistyped code would reach the cheque's owner and fail in Sayad
+  const valid = window.ChekinoNid.check(raw);
+  if (!valid.ok) {
+    nidField.classList.add('error');
+    nidMsg.textContent = valid.error;
     return false;
   }
   const conflict = findNidOwner(raw, benefInput.value.trim());

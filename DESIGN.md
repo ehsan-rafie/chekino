@@ -388,7 +388,11 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   under the pointer so the click was lost. The message says what's needed,
   not the field's name again: «لازم است», «باید ۶ رقم باشد», «ناقص است»,
   «مهر ۳۰ روزه است», «۱۰ یا ۱۱ رقم باشد», «قبلاً با سریال ۴۸۲۹۱۳ ثبت شده»,
-  «یکی را انتخاب کنید», «فقط عکس یا PDF: نام فایل». Too long for a
+  «یکی را انتخاب کنید», «فقط عکس یا PDF: نام فایل», «کد ملی معتبر نیست» /
+  «شناسه ملی معتبر نیست» (the check digit, js/nid.js — the same file the
+  server checks people with; ten digits are checked on leaving the field,
+  since they may be the start of an eleven-digit شناسه ملی, eleven at once).
+  Persian, Arabic and Latin digits are all read as digits. Too long for a
   narrow field, it ends in «…» with the whole of it in its title. The
   label keeps its colour, the format hint and the amount in words step
   aside while the error shows, and the input carries `aria-invalid`.

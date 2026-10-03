@@ -3,6 +3,7 @@ const { body, param } = require('express-validator');
 const pool = require('../db');
 const authenticate = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const nid = require('../lib/nid');
 
 const router = express.Router();
 
@@ -16,16 +17,26 @@ const idParamValidation = [param('id').isInt().withMessage('شناسه نامع�
 const ROLES = ['owner', 'party', 'benef'];
 const roleOrNull = (role) => (ROLES.includes(role) ? role : null);
 
+// A national id is checked by its check digit (lib/nid.js — the very file the
+// dashboard's form uses): a 10-digit کد ملی or an 11-digit شناسه ملی. A wrong
+// one would go out to the cheque's owner and fail at registration in Sayad.
+const nationalIdValidator = () => body('national_id').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('national_id نامعتبر است')
+  .bail().custom((v) => {
+    const r = nid.check(v);
+    if (!r.ok) throw new Error(r.error);
+    return true;
+  });
+
 const personBodyValidation = [
   body('full_name').trim().notEmpty().withMessage('full_name الزامی است').isLength({ max: 200 }),
-  body('national_id').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('national_id نامعتبر است'),
+  nationalIdValidator(),
   body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
   body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
 const personBodyValidationOptional = [
   body('full_name').optional({ values: 'falsy' }).trim().isLength({ max: 200 }),
-  body('national_id').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('national_id نامعتبر است'),
+  nationalIdValidator(),
   body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
   body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
