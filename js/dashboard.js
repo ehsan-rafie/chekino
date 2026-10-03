@@ -329,6 +329,11 @@ function renderVeHistory(c) {
 }
 let modalMode = 'add';        // 'add' | 'view' | 'editing'
 let editingChequeId = null;
+// What an edit started from: the cheque's version (PATCH sends it back, so
+// a cheque changed elsewhere meanwhile isn't silently overwritten) and
+// whether it had a photo (so taking the photo away clears it on save)
+let editingVersion = null;
+let editingHadPhoto = false;
 let veHasEdited = false;
 
 // The status block at the top of the view (HeroUI's Alert): the state as
@@ -400,6 +405,8 @@ function openModalForView(id) {
   pushBackGuard();
   modalMode = 'view';
   editingChequeId = id;
+  editingVersion = c.version;
+  editingHadPhoto = Array.isArray(c.files) && c.files.length > 0;
   veHasEdited = false;
   modalTitle.textContent = 'مشاهده چک';
   enableFormButtons();
@@ -3234,6 +3241,7 @@ function apiCheckToRec(c) {
     sendDate: isoToJalaliStr(c.send_date),
     channels: Array.isArray(c.channels) ? c.channels : [],
     notes: c.notes || '',
+    version: c.version || 1,
     // The photo itself isn't in the list — only its id and type. It is
     // fetched when the cheque is opened (loadImage); until then dataUrl is ''.
     files: c.image_id ? [{ id: c.image_id, name: attachmentName(c.image_mime, c.serial), type: c.image_mime || '', dataUrl: '' }] : [],
@@ -3567,6 +3575,7 @@ async function commitSaveEdit() {
   // cheque opened, editingChequeId changes — reading it after the await sent
   // the PUT to the wrong cheque and closed the other one's window.
   const id = editingChequeId;
+  const version = editingVersion;
   const stored = loadCheques().find(x => x.id === id);
   if (!stored) { closeModal(true); return; }
 
@@ -3580,23 +3589,27 @@ async function commitSaveEdit() {
   try {
     const [ownerId, partyId, benefId] = await ensurePeople(rec);
 
-    await apiJson(`/checks/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        serial: rec.serial,
-        sayad_id: rec.sayad || null,
-        amount: rec.amount,
-        due_date: jalaliStrToIso(rec.dueDate),
-        send_date: jalaliStrToIso(rec.sendDate),
-        spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
-        owner_id: ownerId,
-        party_id: partyId,
-        beneficiary_id: benefId,
-        notes: rec.notes || null,
-        receipt_image: newPhotoOf(rec),
-        channels: rec.channels,
-      }),
-    });
+    // PATCH: an emptied notes or spend date goes as null and is cleared (the
+    // old PUT kept whatever was there); the photo goes only when it changed
+    // — a new one, or null when the one it had was taken away
+    const body = {
+      version,
+      serial: rec.serial,
+      sayad_id: rec.sayad,
+      amount: rec.amount,
+      due_date: jalaliStrToIso(rec.dueDate),
+      send_date: jalaliStrToIso(rec.sendDate),
+      spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
+      owner_id: ownerId,
+      party_id: partyId,
+      beneficiary_id: benefId,
+      notes: rec.notes || null,
+      channels: rec.channels,
+    };
+    const photo = newPhotoOf(rec);
+    if (photo) body.receipt_image = photo;
+    else if (editingHadPhoto && !rec.files.length) body.receipt_image = null;
+    await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
     // Same rule the create path already follows: the board refresh is not on
     // the path between "saved" and the modal being done with. Awaiting a full
     // re-download of every cheque here is what made saving an edit feel slow.
@@ -3610,6 +3623,26 @@ async function commitSaveEdit() {
   } catch (e) {
     submitCheckBtn.disabled = false;
     if (editingChequeId !== id) return;   // that window is gone; don't write into another cheque's
+    // Changed elsewhere since this edit began: the user decides whose wins
+    if (e.status === 409 && e.data && e.data.code === 'version_conflict') {
+      const mine = await askConfirm({
+        title: 'این چک همین حالا جای دیگری تغییر کرد',
+        body: 'از وقتی بازش کردی، در زبانه‌ی دیگری یا به دست کس دیگری ذخیره شده است. تغییرات خودت را روی آن ذخیره کنم؟',
+        confirmLabel: 'ذخیره‌ی تغییرات من',
+        cancelLabel: 'دیدن نسخه‌ی تازه',
+      });
+      if (editingChequeId !== id) return;
+      if (mine) {
+        editingVersion = e.data.version;
+        commitSaveEdit();
+        return;
+      }
+      await loadChecksFromApi();
+      renderTable();
+      if (editingChequeId === id) openModalForView(id);
+      showToast('نسخه‌ی تازه‌ی چک باز شد');
+      return;
+    }
     showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
     // Failed — put the confirm step back so the user can just try again
     // instead of having to re-trigger "ذخیره تغییرات" from scratch.
@@ -5194,6 +5227,7 @@ function showReasonBox(menu, id) {
 // card goes back where it was and the error is shown.
 async function applyStatus(id, status, reason) {
   const rec = loadCheques().find((x) => x.id === id);
+  const version = rec ? rec.version : undefined;
   const before = rec
     ? { status: rec.status, statusReason: rec.statusReason, statusChangedAt: rec.statusChangedAt, statusChangedAtIso: rec.statusChangedAtIso }
     : null;
@@ -5220,16 +5254,25 @@ async function applyStatus(id, status, reason) {
   justChangedId = null;
 
   try {
-    await apiJson(`/checks/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status, status_reason: reason || '' }),
+    const updated = await apiJson(`/checks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ version, status, status_reason: reason || '' }),
     });
+    // The new version at once: a second change made before the background
+    // reconcile lands must not read as a conflict with the first
+    if (rec && updated && updated.version) rec.version = updated.version;
     // Reconcile in the background — the server owns the status history
     // and the exact timestamp, neither of which the guess above fills in.
     loadChecksFromApi().then(renderTable).catch(() => {});
   } catch (e) {
     if (rec && before) Object.assign(rec, before);
     renderTable();
+    if (e.status === 409 && e.data && e.data.code === 'version_conflict') {
+      // changed elsewhere: show what it is now rather than overwrite it
+      loadChecksFromApi().then(renderTable).catch(() => {});
+      showToast('این چک همین حالا جای دیگری تغییر کرد؛ فهرست تازه شد — دوباره امتحان کن');
+      return;
+    }
     showToast(e.message || 'تغییر وضعیت در سرور ناموفق بود');
   }
 }

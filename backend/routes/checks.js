@@ -238,15 +238,14 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
       return res.status(400).json({ error: 'owner_id، party_id یا beneficiary_id متعلق به این شرکت نیستند یا وجود ندارند' });
     }
 
+    // The history is only ever added to — going back to «منتظر ثبت» used to
+    // wipe it (H4). PUT stays for dashboards opened before PATCH; new code
+    // uses PATCH below.
     let nextHistory = current.status_history || [];
     let nextStatus = current.status;
     if (status && status !== current.status) {
       nextStatus = status;
-      if (status === 'pending') {
-        nextHistory = [];
-      } else {
-        nextHistory = [...nextHistory, { to: status, reason: status_reason || '', at: new Date().toISOString() }];
-      }
+      nextHistory = [...nextHistory, { to: status, reason: status_reason || '', at: new Date().toISOString() }];
     }
 
     const db = await pool.connect();
@@ -267,7 +266,9 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
            receipt_image = COALESCE($11, receipt_image),
            channels = COALESCE($12, channels),
            status = $13,
-           status_history = $14::jsonb
+           status_history = $14::jsonb,
+           version = version + 1,
+           updated_at = now()
          WHERE id = $15 AND company_id = $16`,
         [
           serial || null, sayad_id || null, amount || null, due_date || null, send_date || null, spend_date || null,
@@ -293,6 +294,116 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
     }
     console.error('Update check error:', err);
     res.status(500).json({ error: 'خطای سرور' });
+  }
+});
+
+// ---- PATCH: change what is sent, clear what is sent as null ----
+// A field left out is left alone; a field sent as null is cleared (C2: the
+// old PUT couldn't clear anything). Only the optional fields clear: notes,
+// spend date, the photo, and — for a cheque not yet sent — owner and
+// beneficiary. `version` must be the one the edit started from: if the
+// cheque changed since (another tab, another person), nothing is written
+// and the answer is 409 version_conflict with the current version (N4). A
+// status change is added to the history, never wiping it (H4); every change
+// is a new version.
+const patchValidation = [
+  body('version').isInt({ min: 1 }).withMessage('version الزامی است').toInt(),
+  body('serial').optional().trim().notEmpty().withMessage('سریال را نمی‌شود خالی کرد').isLength({ max: 50 }),
+  body('sayad_id').optional().isString().withMessage('شناسه صیادی را نمی‌شود خالی کرد').isLength({ max: 50 }),
+  body('amount').optional().isFloat({ min: 0 }).withMessage('amount باید عدد مثبت باشد'),
+  body('due_date').optional().isISO8601().withMessage('due_date نامعتبر است'),
+  body('send_date').optional().isISO8601().withMessage('send_date نامعتبر است'),
+  body('spend_date').optional({ values: 'null' }).isISO8601().withMessage('spend_date نامعتبر است'),
+  body('owner_id').optional({ values: 'null' }).isInt().withMessage('owner_id نامعتبر است'),
+  body('party_id').optional().isInt().withMessage('طرف حساب را نمی‌شود خالی کرد'),
+  body('beneficiary_id').optional({ values: 'null' }).isInt().withMessage('beneficiary_id نامعتبر است'),
+  body('notes').optional({ values: 'null' }).isString().isLength({ max: 2000 }),
+  receiptImageValidator('receipt_image'),
+  body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
+  body('status').optional().isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
+  body('status_reason').optional({ values: 'null' }).isString().isLength({ max: 500 }),
+];
+
+router.patch('/:id', idParamValidation, patchValidation, validate, async (req, res) => {
+  const id = Number(req.params.id);
+  const b = req.body;
+  const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
+  const db = await pool.connect();
+  try {
+    await db.query('BEGIN');
+    const found = await db.query('SELECT * FROM checks WHERE id = $1 AND company_id = $2 FOR UPDATE', [id, req.companyId]);
+    if (found.rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'چک یافت نشد' });
+    }
+    const current = found.rows[0];
+    if (current.version !== b.version) {
+      await db.query('ROLLBACK');
+      return res.status(409).json({
+        error: 'این چک همین حالا جای دیگری تغییر کرد',
+        code: 'version_conflict',
+        version: current.version,
+      });
+    }
+    // A sent cheque keeps its owner and beneficiary: taking it back off the
+    // board is a separate, deliberate step (unsend), not a cleared field.
+    if (current.stage === 'sent' && ((has('owner_id') && b.owner_id === null) || (has('beneficiary_id') && b.beneficiary_id === null))) {
+      await db.query('ROLLBACK');
+      return res.status(400).json({ error: 'صاحب چک یا ذینفعِ چکِ ارسال‌شده را نمی‌شود خالی کرد', code: 'unsend_required' });
+    }
+    const ids = ['owner_id', 'party_id', 'beneficiary_id'].filter((k) => has(k) && b[k] !== null).map((k) => b[k]);
+    if (!(await ensureOwnedPeople(req.companyId, ids))) {
+      await db.query('ROLLBACK');
+      return res.status(400).json({ error: 'owner_id، party_id یا beneficiary_id متعلق به این شرکت نیستند یا وجود ندارند' });
+    }
+
+    const sets = [];
+    const vals = [];
+    const set = (col, v, cast = '') => { vals.push(v); sets.push(`${col} = $${vals.length}${cast}`); };
+    if (has('serial')) set('serial', b.serial);
+    if (has('sayad_id')) set('sayad_id', b.sayad_id);
+    if (has('amount')) set('amount', b.amount);
+    if (has('due_date')) set('due_date', b.due_date);
+    if (has('send_date')) set('send_date', b.send_date);
+    if (has('spend_date')) set('spend_date', b.spend_date || null);
+    if (has('owner_id')) set('owner_id', b.owner_id);
+    if (has('party_id')) set('party_id', b.party_id);
+    if (has('beneficiary_id')) set('beneficiary_id', b.beneficiary_id);
+    if (has('notes')) set('notes', b.notes || null);
+    if (has('channels')) set('channels', JSON.stringify(b.channels), '::jsonb');
+    if (has('status') && b.status !== current.status) {
+      const history = [...(current.status_history || []), { to: b.status, reason: b.status_reason || '', at: new Date().toISOString() }];
+      set('status', b.status);
+      set('status_history', JSON.stringify(history), '::jsonb');
+    }
+    const photo = has('receipt_image') ? b.receipt_image : undefined;   // null: remove; a data URL: replace
+    if (photo === null) set('receipt_image', null);
+    else if (photo) set('receipt_image', photo);
+
+    if (sets.length) {
+      vals.push(id, req.companyId);
+      await db.query(
+        `UPDATE checks SET ${sets.join(', ')}, version = version + 1, updated_at = now()
+         WHERE id = $${vals.length - 1} AND company_id = $${vals.length}`,
+        vals
+      );
+      if (photo === null) {
+        await db.query("DELETE FROM check_images WHERE check_id = $1 AND company_id = $2 AND kind = 'cheque'", [id, req.companyId]);
+      } else if (photo) {
+        await saveChequeImage(db, req.companyId, id, photo);
+      }
+    }
+    await db.query('COMMIT');
+    const updated = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = $1`, [id]);
+    res.json(updated.rows[0]);
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => {});
+    if (err.code === '23505') return res.status(409).json({ error: DUPLICATE_SAYAD });
+    if (err.code === '23514') return res.status(400).json({ error: 'این تغییر با مرحله‌ی چک نمی‌خواند' });
+    console.error('Patch check error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  } finally {
+    db.release();
   }
 });
 
