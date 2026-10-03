@@ -123,12 +123,14 @@ router.post('/', createValidation, validate, async (req, res) => {
     const initialStatus = status || 'pending';
     const initialHistory = initialStatus === 'pending' ? [] : [{ to: initialStatus, reason: '', at: new Date().toISOString() }];
 
+    // No send date given: today in Tehran — the database runs in UTC, where
+    // CURRENT_DATE is still yesterday until 03:30 Tehran time
     const result = await pool.query(
       `INSERT INTO checks (
          company_id, serial, sayad_id, amount, due_date, send_date, spend_date,
          owner_id, party_id, beneficiary_id, notes, receipt_image, channels, status, status_history
        ) VALUES (
-         $1, $2, $3, $4, $5, COALESCE($6, CURRENT_DATE), $7,
+         $1, $2, $3, $4, $5, COALESCE($6, (now() AT TIME ZONE 'Asia/Tehran')::date), $7,
          $8, $9, $10, $11, $12, COALESCE($13, '[]'::jsonb), $14, $15::jsonb
        ) RETURNING id`,
       [

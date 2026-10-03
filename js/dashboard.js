@@ -113,8 +113,22 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
 // ---- Theme: by the sun unless the button was pressed — js/boot.js applies
 // it before the first paint, js/theme-reveal.js runs the button ----
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  // Signing out takes this browser's unsaved form with it — say so first
+  // when there is one
+  let hasDraft = false;
+  try { hasDraft = localStorage.getItem(DRAFT_KEY) !== null; } catch (e) {}
+  if (hasDraft) {
+    const ok = await askConfirm({
+      title: 'خروج از حساب؟',
+      body: 'یک چک نیمه‌کاره در فرم داری؛ با خروج از این مرورگر پاک می‌شود.',
+      confirmLabel: 'خروج',
+      cancelLabel: 'بمان',
+    });
+    if (!ok) return;
+  }
   localStorage.removeItem('chekino_token');
+  clearAllDrafts();
   window.location.href = '/login';
 });
 
@@ -254,7 +268,32 @@ const formNotice = document.getElementById('formNotice');
 const formNoticeText = document.getElementById('formNoticeText');
 const clearFormBtn = document.getElementById('clearFormBtn');
 
-const DRAFT_KEY = 'chekino_draft_v1';
+// The unsaved form, kept per company: one browser can be signed in to two
+// companies in turn (an accountant, a shared office PC), and a single shared
+// key showed one company's half-typed cheque to the other. Signing out
+// clears every company's draft from this browser.
+const DRAFT_PREFIX = 'chekino_draft_v2_';
+const DRAFT_KEY = (() => {
+  const p = decodeJwtPayload(getAuthToken() || '');
+  const id = p && (p.company_id != null ? p.company_id : p.companyId);
+  return DRAFT_PREFIX + (id != null ? id : 'none');
+})();
+// The old shared key: whichever company opens first takes it over, once
+try {
+  const old = localStorage.getItem('chekino_draft_v1');
+  if (old !== null) {
+    if (localStorage.getItem(DRAFT_KEY) === null) localStorage.setItem(DRAFT_KEY, old);
+    localStorage.removeItem('chekino_draft_v1');
+  }
+} catch (e) {}
+function clearAllDrafts() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith(DRAFT_PREFIX) || k === 'chekino_draft_v1')) localStorage.removeItem(k);
+    }
+  } catch (e) {}
+}
 
 function todayJalali() {
   const now = new Date();
@@ -1410,14 +1449,11 @@ let peopleFetchSeq = 0;
 
 async function fetchPeopleCache() {
   const seq = ++peopleFetchSeq;
-  let result;
   try {
-    result = await apiJson('/people');
+    const result = await apiJson('/people');
+    if (seq === peopleFetchSeq) peopleCache = result;
   } catch (e) {
-    result = [];
-  }
-  if (seq === peopleFetchSeq) {
-    peopleCache = result;
+    // keep the people already known; an empty list here would offer no one
   }
   return peopleCache;
 }
@@ -3052,9 +3088,23 @@ document.addEventListener('click', (e) => {
 // ---- Saving a cheque ----
 // =========================================================
 // ---- Date helpers between the API's ISO dates and the form's Jalali strings ----
+// A value from the API is either a date ("2026-10-02", a DATE column) or a
+// moment ("2026-10-02T21:30:00.000Z": created_at, a status change). A moment
+// is dated by the clock in Tehran — the first ten characters of its UTC form
+// put anything from midnight to 03:30 on the day before, and that date goes
+// out in the receipt message. A date stays the date it is.
+const TEHRAN_DAY = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' });
+function tehranDatePart(isoStr) {
+  const s = String(isoStr);
+  if (s.length <= 10) return s;
+  const t = new Date(s);
+  if (isNaN(t)) return s.slice(0, 10);
+  const p = Object.fromEntries(TEHRAN_DAY.formatToParts(t).map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
 function isoToJalaliStr(isoStr) {
   if (!isoStr) return '';
-  const datePart = String(isoStr).slice(0, 10);
+  const datePart = tehranDatePart(isoStr);
   const [gy, gm, gd] = datePart.split('-').map(n => parseInt(n, 10));
   const [jy, jm, jd] = gregorianToJalali(gy, gm, gd);
   return `${jy}/${pad2(jm)}/${pad2(jd)}`;
@@ -3103,20 +3153,55 @@ function apiCheckToRec(c) {
   };
 }
 
+// Whether the last fetch of the list failed, and when one last arrived. A
+// failure keeps what was already there: an empty list would put «هنوز چکی
+// ثبت نشده» over a company that has cheques. renderTable says what happened.
+let checksLoadFailed = false;
+let checksLoadedAt = null;
 async function loadChecksFromApi() {
   const seq = ++checksFetchSeq;
-  let result;
   try {
     const rows = await apiJson('/checks');
-    result = rows.map(apiCheckToRec);
+    if (seq === checksFetchSeq) {
+      checksCache = rows.map(apiCheckToRec);
+      checksLoadFailed = false;
+      checksLoadedAt = new Date();
+    }
   } catch (e) {
-    result = [];
-  }
-  if (seq === checksFetchSeq) {
-    checksCache = result;
+    if (seq === checksFetchSeq) checksLoadFailed = true;
   }
   return checksCache;
 }
+
+// The failure itself: a bar over the board when the last list that did load
+// is still on screen, a panel in the board's place when nothing has loaded
+const boardError = document.getElementById('boardError');
+const boardErrorTitle = document.getElementById('boardErrorTitle');
+const boardErrorSub = document.getElementById('boardErrorSub');
+const boardErrorRetry = document.getElementById('boardErrorRetry');
+function renderBoardError() {
+  boardError.hidden = !checksLoadFailed;
+  if (!checksLoadFailed) return;
+  const stale = checksLoadedAt !== null;
+  boardError.classList.toggle('is-panel', !stale);
+  boardErrorTitle.textContent = stale ? 'فهرست به‌روز نشد' : 'چک‌ها بارگذاری نشدند';
+  const hhmm = stale ? toFa(`${checksLoadedAt.getHours()}:${String(checksLoadedAt.getMinutes()).padStart(2, '0')}`) : '';
+  boardErrorSub.textContent = stale
+    ? `اتصال به سرور برقرار نشد؛ آنچه می‌بینی مال ساعت ${hhmm} است.`
+    : 'اتصال به سرور برقرار نشد. اینترنت را بررسی کن و دوباره امتحان کن.';
+}
+async function retryLoad() {
+  if (boardErrorRetry.disabled) return;
+  boardErrorRetry.disabled = true;
+  boardErrorRetry.textContent = 'در حال تلاش…';
+  await Promise.all([fetchPeopleCache(), loadChecksFromApi()]);
+  boardErrorRetry.disabled = false;
+  boardErrorRetry.textContent = 'تلاش دوباره';
+  renderTable();
+}
+boardErrorRetry.addEventListener('click', retryLoad);
+// back online: try again by itself
+window.addEventListener('online', () => { if (checksLoadFailed) retryLoad(); });
 // Every existing render/lookup in this file reads cheques through this
 // synchronous getter — it's simply a view over checksCache, refreshed by
 // loadChecksFromApi() after every create/edit/delete/status-change.
@@ -4571,7 +4656,9 @@ function renderTable() {
   // simply has no matches from taking the whole board down with it. A
   // filter emptying a column is exactly what each column's own "چکی در
   // این وضعیت نیست" already says.
-  const nothingRegistered = loadCheques().length === 0;
+  // Only a list that actually arrived empty means «nothing registered yet»
+  const nothingRegistered = checksLoadedAt !== null && loadCheques().length === 0;
+  const nothingLoaded = checksLoadedAt === null;
   const emptyLane = searchInput.value.trim() !== '' ? 'موردی با این جستجو پیدا نشد'
     : filterClearBtn.classList.contains('show') ? 'موردی با این فیلترها پیدا نشد'
     : 'چکی در این وضعیت نیست';
@@ -4580,7 +4667,9 @@ function renderTable() {
   // First render means the data is in — the loading skeleton can go.
   boardWrap.classList.remove('is-loading');
   tableEmpty.style.display = nothingRegistered ? 'flex' : 'none';
-  boardColumns.style.display = nothingRegistered ? 'none' : '';
+  boardColumns.style.display = nothingRegistered || nothingLoaded ? 'none' : '';
+  boardStatusTabs.style.display = nothingLoaded ? 'none' : '';
+  renderBoardError();
 
   STATUSES.forEach((st) => {
     const colChecks = sortColumnChecks(all.filter((c) => (c.status || 'pending') === st.id), st.id);

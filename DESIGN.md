@@ -223,6 +223,7 @@ in the view. The footer, under a hairline on a faint band: the tinted
 status square (radius 8) with the problem reason or the copy-receipt
 button beside it, and the eye at the other end — 28px buttons, 44px tap
 areas on touch.
+**When the list can't be fetched** the board never says «هنوز چکی ثبت نشده»: with nothing loaded yet, a panel takes its place (a no-signal icon, «چک‌ها بارگذاری نشدند», «تلاش دوباره»); when a refresh fails, the last list stays and a slim red alert bar over it says «فهرست به‌روز نشد … مال ساعت ۹:۰۶ است» with the same button. Coming back online retries by itself.
 **Tooltips** (HeroUI's Tooltip, `#appTooltip`): ink, small, above what
 they explain with a little arrow (below, flipped, only without room); they
 wait 400ms so a pointer crossing a card doesn't set them flashing, and the

@@ -3239,6 +3239,57 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .board-wrap.is-loading .board-skeleton { display: grid; }
 .board-wrap.is-loading .board-columns,
 .board-wrap.is-loading .table-empty { display: none; }
+/* The list couldn't be fetched (js: renderBoardError). A slim alert bar over
+   the board while the last list stays on it; .is-panel in the board's place,
+   centred like the empty state, when nothing has loaded. */
+.board-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--s3);
+  padding: 10px 12px 10px 10px;
+  border: 1px solid var(--error-border);
+  border-radius: 14px;
+  background: var(--error-bg);
+  color: var(--ink);
+}
+.board-error[hidden] { display: none; }
+.board-error > svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--error); }
+.board-error-text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; line-height: 1.6; }
+.board-error-text b { font-size: var(--t-cap); color: var(--error); font-variation-settings: var(--f-label); }
+.board-error-text span { font-size: var(--t-cap); color: var(--ink-2); }
+.board-error-retry {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  font-family: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.board-error-retry:hover { background: var(--accent-wash); }
+.board-error-retry:disabled { color: var(--muted); cursor: progress; }
+.board-error.is-panel {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s2);
+  margin: 0;
+  padding: 64px var(--s5);
+  border: 0;
+  background: none;
+  text-align: center;
+}
+.board-error.is-panel > svg { width: 30px; height: 30px; color: var(--muted); }
+.board-error.is-panel .board-error-text { flex: none; align-items: center; }
+.board-error.is-panel .board-error-text b { font-size: 15px; color: var(--ink); font-variation-settings: var(--f-value); }
+.board-error.is-panel .board-error-text span { color: var(--muted); }
+.board-error.is-panel .board-error-retry { margin-top: var(--s2); height: 36px; }
+.board-wrap.is-loading .board-error { display: none; }
 .board-skeleton-col {
   background: var(--surface);
   border: 1px solid var(--border);
