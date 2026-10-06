@@ -588,6 +588,26 @@ ancestor.
 close button. The people window uses segmented tabs and outlined rows.
 The command palette follows shadcn's Command.
 
+**When the session ends** (the 24-hour sign-in ran out, or another tab signed
+out or into another account), the page doesn't jump to the login page: a
+small dialog that can't be dismissed (`#sessionOverlay`, above every
+other layer, the page behind it inert and deaf to shortcuts) says so in
+one line and offers one ink button, «ورود دوباره» (or «باز کردن دوباره‌ی
+صفحه» when another account signed in). When the sign-in ran out the work
+behind it is only dimmed — it's still yours; when another account signed
+in, or nobody is signed in any more, the page behind is covered.
+Whatever was open — the add form with its photos, an edit with its
+starting version, a cheque being viewed — is put aside in that tab
+(sessionStorage: no other tab can take it, and it goes when the tab is
+closed) and reopens after signing in again with the same account, once
+the cheque list has loaded. Signing out on purpose keeps nothing: the
+logout button leaves a mark, so a page can tell a sign-out from a token
+that merely ran out. The add form's draft is the add form's only — an
+edit never writes it. The login page then says why in a plain grey note
+with an «i», never in the red of an error, and promises the work back
+only when some was kept. If the same account signs in again in another
+tab, the dialog goes by itself.
+
 **Login.** Two panes: the form in a bordered card with a Border Beam (a
 short bright arc of the edge, turning once every seven seconds), and a
 faint grey panel with the sample cheque over a fading Grid Pattern and one

@@ -125,7 +125,8 @@
       window.__chekinoAuthOK = true;
     } else {
       try { localStorage.removeItem(key); } catch (e) {}
-      window.location.replace('/login');
+      // a sign-in that ran out (not one that never was) says so there
+      window.location.replace(token ? '/login?expired=1' : '/login');
       return;   // nothing below matters; we're leaving the page
     }
   } else if (mode === 'admin' && !valid) {

@@ -127,6 +127,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
     });
     if (!ok) return;
   }
+  try { localStorage.setItem(SIGNED_OUT_KEY, String(Date.now())); } catch (e) {}
   localStorage.removeItem('chekino_token');
   clearAllDrafts();
   window.location.href = '/login';
@@ -273,11 +274,32 @@ const clearFormBtn = document.getElementById('clearFormBtn');
 // key showed one company's half-typed cheque to the other. Signing out
 // clears every company's draft from this browser.
 const DRAFT_PREFIX = 'chekino_draft_v2_';
-const DRAFT_KEY = (() => {
-  const p = decodeJwtPayload(getAuthToken() || '');
+// The account a token belongs to, as a string ('' for none)
+function companyOfToken(token) {
+  const p = token ? decodeJwtPayload(token) : null;
   const id = p && (p.company_id != null ? p.company_id : p.companyId);
-  return DRAFT_PREFIX + (id != null ? id : 'none');
-})();
+  return id != null ? String(id) : '';
+}
+const tokenAlive = (token) => {
+  const p = token ? decodeJwtPayload(token) : null;
+  return !!(p && p.exp && p.exp * 1000 > Date.now());
+};
+// Everything this page shows and saves belongs to the account it was opened
+// for. A token for another account showing up later (signed in elsewhere,
+// in another tab) must never be used from here — see apiFetch.
+const PAGE_COMPANY = companyOfToken(getAuthToken());
+const PAGE_COMPANY_NAME = ((getAuthToken() && decodeJwtPayload(getAuthToken())) || {}).name || '';
+const DRAFT_KEY = DRAFT_PREFIX + (PAGE_COMPANY || 'none');
+// Work put aside when the session ended mid-way (see sessionEnded); kept in
+// sessionStorage, one per tab
+const RESUME_PREFIX = 'chekino_resume_v1_';
+const RESUME_KEY = RESUME_PREFIX + (PAGE_COMPANY || 'none');
+// Left by the logout button, cleared by the next sign-in: tells a page whose
+// token has gone that it was signed out, not that the sign-in ran out
+const SIGNED_OUT_KEY = 'chekino_signed_out';
+// Why this page's session ended, once it has ('expired' | 'switched' |
+// 'signed-out'); see sessionEnded. Up here because saveDraft reads it.
+let sessionEndedReason = '';
 // The old shared key: whichever company opens first takes it over, once
 try {
   const old = localStorage.getItem('chekino_draft_v1');
@@ -290,7 +312,13 @@ function clearAllDrafts() {
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith(DRAFT_PREFIX) || k === 'chekino_draft_v1')) localStorage.removeItem(k);
+      if (k && (k.startsWith(DRAFT_PREFIX) || k.startsWith(RESUME_PREFIX) || k === 'chekino_draft_v1')) localStorage.removeItem(k);
+    }
+  } catch (e) {}
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(RESUME_PREFIX)) sessionStorage.removeItem(k);
     }
   } catch (e) {}
 }
@@ -523,8 +551,11 @@ function isFormDirty() {
     peopleFieldsDirty;
 }
 
-function saveDraft() {
-  const draft = {
+// The form's fields as plain data, and back — the add form's draft and an
+// edit put aside when the session ends both travel this way. (Photos go
+// separately: they can be far bigger than the browser's storage allows.)
+function formSnapshot() {
+  return {
     serial: serialInput.value,
     sayad: sayadInput.value,
     dueSlots: dueDate.slots, dueTouched: dueDate.touched,
@@ -532,21 +563,8 @@ function saveDraft() {
     sendSlots: sendDate.slots, sendTouched: sendDate.touched,
     channels: channelsValue(), notes: notesInput.value, amount: amountInput.value, owner: ownerInput.value, party: partyInput.value, benef: benefInput.value, nid: nidInput.value
   };
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) {}
 }
-
-function clearDraft() {
-  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-}
-
-function restoreDraftIfAny() {
-  let raw;
-  try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
-  if (!raw) return;
-  let d;
-  try { d = JSON.parse(raw); } catch (e) { return; }
-  const hasData = (d.serial || '') !== '' || (d.sayad || '') !== '' || (d.amount || '') !== '' || (d.owner || '') !== '' || (d.party || '') !== '' || (Array.isArray(d.dueSlots) && d.dueSlots.some(x => x !== null));
-  if (!hasData) return;
+function applyFormSnapshot(d) {
   serialInput.value = d.serial || '';
   sayadInput.value = groupSayad(d.sayad || '');
   if (Array.isArray(d.dueSlots) && d.dueSlots.length === 8) dueDate.slots = d.dueSlots.slice();
@@ -568,7 +586,27 @@ function restoreDraftIfAny() {
   benefInput.value = d.benef || '';
   nidInput.value = d.nid || '';
   updateNidKind();
+}
+function saveDraft() {
+  if (modalMode !== 'add' || sessionEndedReason === 'signed-out') return;
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(formSnapshot())); } catch (e) {}
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+function restoreDraftIfAny() {
+  let raw;
+  try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return false; }
+  if (!raw) return false;
+  let d;
+  try { d = JSON.parse(raw); } catch (e) { return false; }
+  const hasData = (d.serial || '') !== '' || (d.sayad || '') !== '' || (d.amount || '') !== '' || (d.owner || '') !== '' || (d.party || '') !== '' || (Array.isArray(d.dueSlots) && d.dueSlots.some(x => x !== null));
+  if (!hasData) return false;
+  applyFormSnapshot(d);
   openModal();
+  return true;
 }
 
 function resetAllFields(opts) {
@@ -1413,12 +1451,18 @@ function validateAmount() {
 
 function getAuthToken() { return localStorage.getItem('chekino_token'); }
 
-async function apiFetch(path, opts) {
+// Every request goes out with this page's account, or not at all. A 401 —
+// the 24-hour sign-in ran out — or a token for another account (signed in
+// elsewhere, in another tab), or none (signed out in another tab) ends the
+// session for this page: sessionEnded puts the work aside and says so,
+// instead of jumping to the login page and dropping whatever was open. If
+// this same account signed in again in another tab meanwhile, the request
+// is simply tried once more with that token.
+const sessionError = () => Object.assign(new Error('نشستت تمام شد'), { sessionEnded: true });
+async function apiFetch(path, opts, retried) {
   const token = getAuthToken();
-  if (!token) {
-    window.location.href = '/login';
-    throw new Error('no token');
-  }
+  if (!token) { sessionEnded(missingTokenReason()); throw sessionError(); }
+  if (companyOfToken(token) !== PAGE_COMPANY) { sessionEnded('switched', token); throw sessionError(); }
   const res = await fetch(API_BASE_URL + path, {
     ...opts,
     headers: {
@@ -1428,9 +1472,14 @@ async function apiFetch(path, opts) {
     },
   });
   if (res.status === 401) {
-    localStorage.removeItem('chekino_token');
-    window.location.href = '/login';
-    throw new Error('unauthorized');
+    const now = getAuthToken();
+    if (!retried && now && now !== token && companyOfToken(now) === PAGE_COMPANY && tokenAlive(now)) {
+      return apiFetch(path, opts, true);
+    }
+    if (!now) sessionEnded(missingTokenReason());
+    else if (companyOfToken(now) !== PAGE_COMPANY) sessionEnded('switched', now);
+    else sessionEnded('expired', token);
+    throw sessionError();
   }
   return res;
 }
@@ -1439,6 +1488,7 @@ async function apiFetch(path, opts) {
 // when it sent one, otherwise (no answer at all — the connection dropped, the
 // browser's English "Failed to fetch") what didn't happen and what to do.
 function requestErrorText(e, what) {
+  if (e && e.sessionEnded) return 'نشستت تمام شد';
   if (e && e.status) return e.message || `${what} — خطای سرور، دوباره بزنید`;
   return `${what} — اتصال را بررسی کنید و دوباره بزنید`;
 }
@@ -3283,7 +3333,7 @@ async function loadChecksFromApi() {
       checksLoadedAt = new Date();
     }
   } catch (e) {
-    if (seq === checksFetchSeq) checksLoadFailed = true;
+    if (seq === checksFetchSeq && !(e && e.sessionEnded)) checksLoadFailed = true;
   }
   return checksCache;
 }
@@ -3313,6 +3363,7 @@ async function retryLoad() {
   boardErrorRetry.disabled = false;
   boardErrorRetry.textContent = 'تلاش دوباره';
   renderTable();
+  resumeWhenReady();
 }
 boardErrorRetry.addEventListener('click', retryLoad);
 // back online: try again by itself
@@ -5719,6 +5770,7 @@ lightboxShareBtn.addEventListener('click', async () => {
 // in stacking order and stops at the first one that's actually open.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
+  if (sessionDialogOpen()) return;   // nothing to go back to until signed in again
   if (confirmIsOpen()) { closeConfirm(false); return; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
@@ -5748,6 +5800,7 @@ function closeTopmostLayer() {
   // still up, when the modal closes underneath it — so it's done here
   // explicitly to match what a normal close already does.
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  if (sessionDialogOpen()) return true;   // stays: there is nothing to go back to
   if (confirmIsOpen()) { closeConfirm(false); return true; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return true; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
@@ -5778,12 +5831,208 @@ window.addEventListener('popstate', () => {
   }
 });
 
-// ---- Load people + cheques from the API before the first render ----
+// ==========================================================
+// When the session ends mid-work (N3, H11)
+// ==========================================================
+const sessionOverlay = document.getElementById('sessionOverlay');
+const sessionTitle = document.getElementById('sessionTitle');
+const sessionBody = document.getElementById('sessionBody');
+const sessionGo = document.getElementById('sessionGo');
+let sessionKept = '';           // what stashWork put aside: 'add' | 'edit' | 'view' | ''
+let stashedHere = false;        // this page wrote the stash (not one waiting from before)
+function sessionDialogOpen() { return sessionOverlay.classList.contains('show'); }
+
+// Why there's no token any more: the logout button leaves a mark (cleared
+// by the next sign-in); without it, the token ran out and a page removed
+// it — boot.js on opening the site, or another tab's sessionEnded.
+function missingTokenReason() {
+  let mark = null;
+  try { mark = localStorage.getItem(SIGNED_OUT_KEY); } catch (e) {}
+  return mark ? 'signed-out' : 'expired';
+}
+
+// The open cheque, the edit under way and the photos picked, put aside in
+// this tab (sessionStorage): it outlives the trip to the login page and
+// back, no other tab can take or clear it, and on a shared computer it
+// goes when the tab is closed. The add form keeps its own draft as well.
+// Photos go along when there's room for them.
+function stashWork() {
+  if (!modalOverlay.classList.contains('show')) return '';
+  let state = null;
+  if (modalMode === 'editing') {
+    state = { kind: 'edit', id: editingChequeId, version: editingVersion, hadPhoto: editingHadPhoto, form: formSnapshot() };
+  } else if (modalMode === 'view') {
+    state = { kind: 'view', id: editingChequeId };
+  } else {
+    saveDraft();
+    state = { kind: 'add', form: formSnapshot() };
+  }
+  state.at = Date.now();
+  const photos = attachedFiles.map((f) => {
+    if (/^data:/.test(f.dataUrl || '')) return { name: f.name, type: f.type, dataUrl: f.dataUrl };
+    if (f.id) return { id: f.id, name: f.name, type: f.type };   // on the server already: fetched again
+    return null;
+  }).filter(Boolean);
+  const put = (v) => sessionStorage.setItem(RESUME_KEY, JSON.stringify(v));
+  try {
+    put(Object.assign({}, state, { files: photos }));
+  } catch (e) {
+    try { put(Object.assign({}, state, { files: photos.filter(f => !f.dataUrl), photosDropped: photos.some(f => f.dataUrl) })); } catch (e2) { return ''; }
+  }
+  stashedHere = true;
+  return state.kind;
+}
+function dropStash() {
+  try { sessionStorage.removeItem(RESUME_KEY); } catch (e) {}
+}
+
+function sessionEnded(reason, token) {
+  if (sessionEndedReason) return;   // already said
+  sessionEndedReason = reason;
+  // Signed out on purpose: nothing of this page is kept, here or in a draft
+  if (reason === 'signed-out') { dropStash(); clearDraft(); }
+  const kept = sessionKept = reason === 'signed-out' ? '' : stashWork();
+  if (reason === 'expired' && token) {
+    // the dead token goes — unless another tab has put a fresh one there
+    try { if (localStorage.getItem('chekino_token') === token) localStorage.removeItem('chekino_token'); } catch (e) {}
+  }
+  const what = kept === 'view' ? 'چکی که باز بود' : 'کار نیمه‌کاره‌ات';
+  const keptLine = !kept ? ''
+    : reason === 'switched'
+      ? ` ${what} در همین زبانه نگه داشته شده و هر وقت اینجا دوباره با ${PAGE_COMPANY_NAME ? `حساب «${PAGE_COMPANY_NAME}»` : 'همین حساب'} وارد شوی همان‌جا باز می‌شود.`
+      : ` ${what} نگه داشته شده و بعد از ورود همان‌جا باز می‌شود.`;
+  if (reason === 'switched') {
+    const other = ((token && decodeJwtPayload(token)) || {}).name;
+    sessionTitle.textContent = 'با حساب دیگری وارد شدی';
+    sessionBody.textContent = `در زبانه‌ی دیگری ${other ? `با حساب «${other}»` : 'با حساب دیگری'} وارد شدی؛ این صفحه ${PAGE_COMPANY_NAME ? `مال حساب «${PAGE_COMPANY_NAME}»` : 'مال حساب قبلی'} است و دیگر چیزی از آن ذخیره نمی‌شود.${keptLine} برای کار با حساب تازه، صفحه را دوباره باز کن.`;
+    sessionGo.textContent = 'باز کردن دوباره‌ی صفحه';
+  } else if (reason === 'signed-out') {
+    sessionTitle.textContent = 'از حساب خارج شدی';
+    sessionBody.textContent = 'در زبانه‌ی دیگری از حساب خارج شدی. برای ادامه دوباره وارد شو.';
+    sessionGo.textContent = 'ورود دوباره';
+  } else {
+    sessionTitle.textContent = 'نشستت تمام شد';
+    sessionBody.textContent = `هر ورود ۲۴ ساعت اعتبار دارد؛ برای ادامه دوباره وارد شو.${keptLine}`;
+    sessionGo.textContent = 'ورود دوباره';
+  }
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  setPageInert(true);
+  // Another account, or nobody: this account's cheques are not for whoever
+  // is at the computer now — the page behind is covered, not just dimmed
+  sessionOverlay.classList.toggle('sealed', reason !== 'expired');
+  sessionOverlay.classList.add('show');
+  sessionGo.focus();
+}
+function setPageInert(on) {
+  for (const el of document.body.children) {
+    if (el === sessionOverlay || el.id === 'appToast' || el.tagName === 'SCRIPT') continue;
+    if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+  }
+}
+sessionGo.addEventListener('click', () => {
+  if (sessionEndedReason === 'switched') window.location.reload();
+  // the login page promises the work back only when there is some
+  else window.location.href = sessionEndedReason === 'expired' ? (sessionKept ? '/login?expired=2' : '/login?expired=1') : '/login';
+});
+// Ahead of every other key handler (window, capture phase): one button, so
+// Tab stays on it; Enter and Space press it; nothing else reaches the page.
+window.addEventListener('keydown', (e) => {
+  if (!sessionDialogOpen()) return;
+  e.stopImmediatePropagation();
+  if (e.key === 'Tab') { e.preventDefault(); sessionGo.focus(); }
+}, true);
+
+// The sign-in as it stands now, against the account this page is for
+function checkSignIn() {
+  const now = getAuthToken();
+  if (!now) { sessionEnded(missingTokenReason()); return; }
+  if (companyOfToken(now) !== PAGE_COMPANY) { sessionEnded('switched', now); return; }
+  if (!tokenAlive(now)) { sessionEnded('expired', now); return; }
+  if (sessionDialogOpen()) {
+    // The same account signed in again (in another tab): the dialog goes
+    // and the page carries on where it is. Only what this page put aside is
+    // dropped — the work is still on screen — not a stash waiting from
+    // before, which reopens once the list has loaded.
+    sessionOverlay.classList.remove('show', 'sealed');
+    setPageInert(false);
+    sessionEndedReason = '';
+    if (stashedHere) { dropStash(); stashedHere = false; }
+    sessionKept = '';
+    showToast('دوباره وارد شدی؛ از همین‌جا ادامه بده');
+    retryLoad();
+  }
+}
+// Another tab changed the sign-in: this page stops at once rather than at
+// its next request
+window.addEventListener('storage', (e) => {
+  if (e.key !== 'chekino_token' && e.key !== null) return;
+  checkSignIn();
+});
+// Coming back from the browser's back/forward cache, a page has missed
+// every storage event since it was left
+window.addEventListener('pageshow', (e) => { if (e.persisted) checkSignIn(); });
+
+// After signing in again: open what was open — the edit with its own
+// starting version, so a change made elsewhere meanwhile still asks before
+// being saved over. Read once, then gone; a week-old leftover is dropped.
+// Only once the list has loaded: whether the cheque is still there can't
+// be told from a list that never came.
+function resumeStashedWork() {
+  let w = null;
+  try { w = JSON.parse(sessionStorage.getItem(RESUME_KEY) || 'null'); } catch (e) { w = null; }
+  dropStash();
+  if (!w || !w.kind || !(Date.now() - (w.at || 0) < 7 * 86400000)) return false;
+  const files = (w.files || []).map(f => ({ id: f.id, name: f.name, type: f.type || '', size: 0, dataUrl: f.dataUrl || '' }));
+  const dropped = w.photosDropped ? ' (عکسی که تازه گذاشته بودی جا نشد؛ دوباره بگذارش)' : '';
+  if (w.kind === 'add') {
+    // the stash carries the form itself: the draft may be gone (signed out
+    // elsewhere meanwhile) or be newer (typed in another tab since)
+    const hasForm = w.form && ['serial', 'sayad', 'amount', 'owner', 'party', 'benef', 'notes'].some(k => (w.form[k] || '') !== '');
+    if (!hasForm && !files.length) return restoreDraftIfAny();
+    openModal();
+    if (hasForm) applyFormSnapshot(w.form);
+    if (files.length) {
+      attachedFiles = files;
+      renderFileChips();
+      loadAttachedImages();
+    }
+    saveDraft();
+    showToast('فرم نیمه‌کاره‌ات برگشت' + dropped);
+    return true;
+  }
+  if (!loadCheques().some(c => c.id === w.id)) {
+    showToast('چکی که باز کرده بودی دیگر در فهرست نیست');
+    return false;
+  }
+  openModalForView(w.id);
+  if (w.kind === 'edit') {
+    enterEditMode();
+    if (w.form) applyFormSnapshot(w.form);
+    editingVersion = w.version;
+    editingHadPhoto = !!w.hadPhoto;
+    attachedFiles = files;
+    renderFileChips();
+    loadAttachedImages();
+    showToast('ویرایش نیمه‌کاره‌ات برگشت — ذخیره‌اش کن' + dropped);
+  }
+  return true;
+}
+// Whatever was open last reopens once, after the first list that loads —
+// at start, or after «تلاش دوباره» / coming back online / signing in again
+let resumePending = true;
+function resumeWhenReady() {
+  if (!resumePending || checksLoadFailed || sessionEndedReason) return;
+  resumePending = false;
+  // Work put aside when the session last ended goes first; otherwise an
+  // unsaved add form (e.g. after switching desktop/mobile view)
+  if (!resumeStashedWork()) restoreDraftIfAny();
+}
+
+// ---- Load people + cheques from the API, then reopen whatever was open ----
 (async function bootstrap() {
   await Promise.all([fetchPeopleCache(), loadChecksFromApi()]);
   renderTable();
-  // ---- Restore any unsaved draft (e.g. after switching desktop/mobile view) ----
-  restoreDraftIfAny();
+  resumeWhenReady();
 })();
 
 // ==========================================================
@@ -5869,7 +6118,7 @@ window.addEventListener('popstate', () => {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

@@ -343,6 +343,8 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
 .toggle-eye:hover { color: var(--ink); background: var(--accent-wash); }
 .alert { border: 1px solid color-mix(in srgb, var(--state-bad) 22%, transparent); }
 .alert.success { border-color: color-mix(in srgb, var(--state-ok) 25%, transparent); }
+/* why you're here (the session ran out): plain, not an error */
+.alert.info { background: var(--surface-2); color: var(--ink-2); border-color: var(--border); }
 button.submit {
   height: 44px;
   margin-top: 8px;

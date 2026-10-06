@@ -2662,6 +2662,9 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   padding: 24px;
 }
 .confirm-overlay.show { display: flex; }
+.session-overlay { z-index: 3000; }
+/* another account, or nobody: the page behind is covered, not dimmed */
+.session-overlay.sealed { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
 .confirm-box {
   width: 100%;
   max-width: 380px;

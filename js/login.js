@@ -54,18 +54,33 @@ const iconWarning = `<circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12
 const iconCheck = `<circle cx="12" cy="12" r="10"/><polyline points="8 12.5 10.8 15.5 16 9.5"/>`;
 
 function showError(message) {
-  alertBox.classList.remove('success');
+  alertBox.classList.remove('success', 'info');
   alertIcon.innerHTML = iconWarning;
   alertText.textContent = message;
   alertBox.classList.add('show');
 }
 function showSuccess(message) {
+  alertBox.classList.remove('info');
   alertBox.classList.add('success');
   alertIcon.innerHTML = iconCheck;
   alertText.textContent = message;
   alertBox.classList.add('show');
 }
-function hideAlert() { alertBox.classList.remove('show', 'success'); }
+function hideAlert() { alertBox.classList.remove('show', 'success', 'info'); }
+// Sent here because the session ran out: say so, quietly, once (the query
+// only picks between two fixed lines and is cleared from the address)
+(function sessionNote() {
+  const why = new URLSearchParams(window.location.search).get('expired');
+  if (!why) return;
+  alertBox.classList.remove('success');
+  alertBox.classList.add('info');
+  alertIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/><circle cx="12" cy="7.7" r="1.1" fill="currentColor" stroke="none"/>';
+  alertText.textContent = why === '2'
+    ? 'نشستت تمام شد. دوباره وارد شو تا کار نیمه‌کاره‌ات همان‌جا باز شود.'
+    : 'نشستت تمام شد؛ برای ادامه دوباره وارد شو.';
+  alertBox.classList.add('show');
+  try { history.replaceState(null, '', '/login'); } catch (e) {}
+})();
 
 
 username.addEventListener('input', () => usernameField.classList.remove('error'));
@@ -110,6 +125,7 @@ loginForm.addEventListener('submit', async (e) => {
       return;
     }
 
+    try { localStorage.removeItem('chekino_signed_out'); } catch (e) {}   // see dashboard.js SIGNED_OUT_KEY
     localStorage.setItem('chekino_token', data.token);
     showSuccess('ورود موفق');
     navigatingAway = true;
