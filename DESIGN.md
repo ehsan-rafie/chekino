@@ -505,10 +505,16 @@ time (`createDateField` in dashboard.js):
 - Backspace takes off the last digit, as in any input; in an empty
   segment it steps back to the one before. Delete clears the segment.
 - ← / → the next / previous segment (← is next in this right-to-left
-  line), Home / End the ends; «/», «.», «-» or a space move on too.
+  line), Home / End the ends; «/», «.», «-», «٫» or a space move on too.
   ↑ / ↓ step the value.
 - a lone day or month digit is padded («۳» → «۰۳») once its segment is
   left.
+- a paste is read as a date wherever it came from: «14050820»,
+  «1405/08/20», «۱۴۰۵/۸/۳۰», «۱۴۰۵٫۰۸٫۲۰», «20-08-1405» (the four-digit
+  year at either end), with words or bidi marks around it. What isn't a
+  date leaves the field alone.
+Any number of date fields can be made (`createDateField` with its own
+`onChange`; the cheque form's save its draft); each is drawn as segments.
 A phone keyboard, which sends no usable keydown, comes through
 `beforeinput` to the same code. The segments are drawn over the real
 input, whose caret sits at the active segment; pressing a segment makes it
@@ -587,6 +593,22 @@ ancestor.
 **Modals.** Radius 24, header and footer framed by hairlines, a ghost
 close button. The people window uses segmented tabs and outlined rows.
 The command palette follows shadcn's Command.
+
+**Questions** (`askChoice`; `askConfirm` is its yes/no case). A small
+alert dialog: a title, one line, the answers. Two answers sit side by
+side — the one that keeps the work filled in ink, the destructive one
+outlined in red; three or more stand one under another, full width, in
+the order given, so long Persian labels fit a phone. Every question has an
+answer that changes nothing: Escape, a press outside and the phone's back
+give that one, and it puts the caret back where it was. When a saved
+cheque changed elsewhere meanwhile, the question offers «دیدن نسخه‌ی
+تازه», «ذخیره‌ی تغییرات من» and «برگشت به فرم» (Escape).
+
+**Toasts.** A plain line at the foot of the page, gone after two seconds.
+One that offers a way on or back («مشاهده» / «برگردون») has quiet edged
+buttons at the end of its line, stays half a minute, holds still while
+the pointer or the keyboard is on it and goes on Escape; it keeps its own
+place, and a plain message that comes meanwhile shows above it.
 
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a

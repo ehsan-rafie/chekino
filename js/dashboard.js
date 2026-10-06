@@ -336,6 +336,18 @@ const veStatusBanner = document.getElementById('veStatusBanner');
 const veHistory = document.getElementById('veHistory');
 const veHistoryList = document.getElementById('veHistoryList');
 
+// What each kind of history event (spec 6.2) reads as in the cheque's history
+const HISTORY_EVENTS = {
+  sent: (h) => {
+    const ch = CHANNELS.find(x => x.id === h.channel);
+    return 'برای صاحب چک فرستاده شد' + (ch ? ` (${ch.name})` : '');
+  },
+  beneficiary_changed: () => 'ذینفع عوض شد',
+  owner_changed: () => 'صاحب چک عوض شد',
+  bulk_edit: () => 'ویرایش گروهی',
+  unsent: () => 'از بُرد برداشته شد',
+  undo: () => 'تغییر قبلی برگردانده شد',
+};
 function renderVeHistory(c) {
   const hist = c.history || [];
   // The chain always opens with the cheque's initial "منتظر ثبت" state
@@ -343,9 +355,18 @@ function renderVeHistory(c) {
   // order — one continuous line, not separate expandable cards.
   // A single change is already the status block's own line; the history
   // earns its place once there has been more than one.
-  const chain = [{ to: 'pending', at: c.createdAt }, ...hist];
+  // Events (6.2) show as plain lines in the same chain; one this page
+  // doesn't know is left out rather than shown as a status it isn't
+  const chain = [{ to: 'pending', at: c.createdAt }, ...hist]
+    .filter(h => (h.event ? HISTORY_EVENTS[h.event] : STATUSES.some(st => st.id === h.to)));
   veHistory.classList.toggle('show', chain.length > 2);
   veHistoryList.innerHTML = chain.map((h) => {
+    if (h.event) {
+      return `<div class="ve-history-link is-event" style="--hist-dot:var(--muted)">
+        <span class="ve-history-name">${escapeHtml(HISTORY_EVENTS[h.event](h))}</span>
+        <span class="ve-history-date">${faDate(h.at)}</span>
+      </div>`;
+    }
     const st = statusById(h.to);
     const reasonHtml = h.reason ? `<div class="ve-history-reason">${escapeHtml(h.reason)}</div>` : '';
     return `<div class="ve-history-link" style="--hist-dot:${st.color}">
@@ -652,12 +673,25 @@ function resetAllFields(opts) {
 // ---- Styled confirmation dialog ----
 // The browser's own confirm() showed up in the OS language, with OS buttons,
 // left-to-right, in the middle of an otherwise Persian app. This replaces it.
+//
+// askChoice puts a question with any number of answers:
+//   choices  [{ value, label, tone }] — tone 'primary' (filled), 'danger'
+//            (red) or 'neutral' (outlined); three or more stand one under
+//            another, in the order given
+//   cancel   the value that changes nothing: Escape, a press outside the
+//            box or the phone's back answer with it, and answering with it
+//            puts the caret back where it was
+//   focus    the value whose button the keyboard starts on (default: cancel)
+// It resolves with the chosen value. askConfirm is the yes/no case.
 const confirmOverlay = document.getElementById('confirmOverlay');
 const confirmTitleEl = document.getElementById('confirmTitle');
 const confirmBodyEl = document.getElementById('confirmBody');
-const confirmOkBtn = document.getElementById('confirmOk');
-const confirmCancelBtn = document.getElementById('confirmCancel');
+const confirmActionsEl = confirmOverlay.querySelector('.confirm-actions');
+// (the class names are older than the tones: confirm-cancel is the filled
+// one, confirm-ok the red one)
+const CONFIRM_TONES = { primary: 'confirm-cancel', danger: 'confirm-ok', neutral: 'confirm-neutral' };
 let confirmResolve = null;
+let confirmCancelValue = null;
 let confirmReturnFocus = null;
 
 function confirmIsOpen() { return confirmResolve !== null; }
@@ -665,40 +699,57 @@ function closeConfirm(answer) {
   if (!confirmResolve) return;
   confirmOverlay.classList.remove('show');
   const resolve = confirmResolve;
+  const changesNothing = answer === confirmCancelValue;
   confirmResolve = null;
   resolve(answer);
-  // Answering "no" puts the user back in the form, so the caret goes back
-  // where it was too. Answering "yes" closes the form, so there is nothing
-  // to return to.
+  // The answer that changes nothing puts the user back where they were, so
+  // the caret goes back too. Any other answer moves on: nothing to return to.
   const back = confirmReturnFocus;
   confirmReturnFocus = null;
-  if (!answer && back && document.contains(back)) back.focus();
+  if (changesNothing && back && document.contains(back)) back.focus();
 }
-function askConfirm({ title, body, confirmLabel, cancelLabel }) {
+function cancelConfirm() { closeConfirm(confirmCancelValue); }
+
+function askChoice({ title, body, choices, cancel, focus }) {
+  if (confirmResolve) cancelConfirm();   // one question at a time: one left open counts as unanswered
   confirmTitleEl.textContent = title;
   confirmBodyEl.textContent = body || '';
   confirmBodyEl.style.display = body ? '' : 'none';
-  confirmOkBtn.textContent = confirmLabel || 'تأیید';
-  confirmCancelBtn.textContent = cancelLabel || 'انصراف';
+  confirmActionsEl.innerHTML = '';
+  confirmActionsEl.classList.toggle('stacked', choices.length > 2);
+  const buttons = choices.map((c) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = CONFIRM_TONES[c.tone] || CONFIRM_TONES.neutral;
+    if (c.id) b.id = c.id;
+    b.textContent = c.label;
+    b.addEventListener('click', () => closeConfirm(c.value));
+    confirmActionsEl.appendChild(b);
+    return b;
+  });
+  confirmCancelValue = cancel;
   confirmReturnFocus = document.activeElement;
   confirmOverlay.classList.add('show');
-  // Focus lands on "keep working", the non-destructive side, so Enter never
-  // throws the form away.
-  confirmCancelBtn.focus();
+  const start = choices.findIndex(c => c.value === (focus !== undefined ? focus : cancel));
+  (buttons[start] || buttons[0]).focus();
   return new Promise((resolve) => { confirmResolve = resolve; });
 }
-confirmOkBtn.addEventListener('click', () => closeConfirm(true));
-confirmCancelBtn.addEventListener('click', () => closeConfirm(false));
+
+// Yes or no. Focus lands on "keep working", the non-destructive side, so
+// Enter never throws the form away.
+function askConfirm({ title, body, confirmLabel, cancelLabel }) {
+  return askChoice({
+    title, body, cancel: false,
+    choices: [
+      { value: false, label: cancelLabel || 'انصراف', tone: 'primary', id: 'confirmCancel' },
+      { value: true, label: confirmLabel || 'تأیید', tone: 'danger', id: 'confirmOk' },
+    ],
+  });
+}
 confirmOverlay.addEventListener('click', (e) => {
-  if (e.target === confirmOverlay) closeConfirm(false);
+  if (e.target === confirmOverlay) cancelConfirm();
 });
-// Tab stays inside the dialog while it is up — otherwise it walks into the
-// form underneath, which is exactly the thing being asked about.
-confirmOverlay.addEventListener('keydown', (e) => {
-  if (e.key !== 'Tab') return;
-  e.preventDefault();
-  (document.activeElement === confirmCancelBtn ? confirmOkBtn : confirmCancelBtn).focus();
-});
+// Tab stays inside the dialog while it is up (trapDialogFocus, at the end)
 
 // closeModal stays synchronous for every caller (the × button, the Escape
 // chain, and the mobile back handler, whose return value drives the history
@@ -943,6 +994,27 @@ function toEnDigits(str) {
 // Arabic digits shown as Persian ones, for fields that keep what was typed
 const arabicToFa = (str) => String(str).replace(/[٠-٩]/g, ch => '۰۱۲۳۴۵۶۷۸۹'[ch.charCodeAt(0) - 0x0660]);
 
+// A date pasted from anywhere: «14050820», «1405/08/20», «۱۴۰۵/۸/۳۰»,
+// «۱۴۰۵٫۰۸٫۲۰», «20-08-1405», «سررسید: ۱۴۰۵/۰۸/۲۰» — any of / . - ٫ , ، or
+// spaces between, Persian, Arabic or Latin digits, a one-digit month or day,
+// and the year at either end (its four digits say which end). The marks
+// that keep right-to-left text in order, which a copied date often carries,
+// don't count. Anything else is null: better left alone than guessed wrong.
+function parseDateText(raw) {
+  const s = toEnDigits(String(raw || '')).replace(/[\u200c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');
+  const SEP = '[\\/.\\-٫,،\\s]+';
+  let m = new RegExp('(?:^|\\D)(\\d{4})' + SEP + '(\\d{1,2})' + SEP + '(\\d{1,2})(?!\\d)').exec(s);
+  if (m) return { y: +m[1], m: +m[2], d: +m[3] };
+  m = new RegExp('(?:^|\\D)(\\d{1,2})' + SEP + '(\\d{1,2})' + SEP + '(\\d{4})(?!\\d)').exec(s);
+  if (m) return { y: +m[3], m: +m[2], d: +m[1] };
+  const digits = s.replace(/[^0-9]/g, '');   // eight digits in a row, as before: YYYYMMDD
+  if (digits.length === 8) return { y: +digits.slice(0, 4), m: +digits.slice(4, 6), d: +digits.slice(6, 8) };
+  return null;
+}
+
+// cfg: input, field, msg, calBtn, required, prefillToday, nextEl, and
+// onChange(api) — told whenever the user changes the date (typing, a
+// paste, the calendar), e.g. so the cheque form can save its draft
 function createDateField(cfg) {
   const api = {
     input: cfg.input,
@@ -971,10 +1043,12 @@ function createDateField(cfg) {
   api.render = () => {
     if (api.slots.every(x => x === null) && !api.touched) {
       api.input.value = '';                 // placeholder shows through
-      return;
+    } else {
+      api.input.value = api.build();
+      placeCaret();                         // at the active segment (below)
     }
-    api.input.value = api.build();
-    placeCaret();                           // at the active segment (below)
+    // the segments drawn over it (js/date-segments.js) follow at once
+    api.input.dispatchEvent(new Event('dseg-render'));
   };
 
   api.reset = () => {
@@ -1027,7 +1101,7 @@ function createDateField(cfg) {
   // comes through 'beforeinput' to the same functions.
   const SEG_SLOTS = [[0, 1], [2, 3], [4, 5, 6, 7]];
   const SEG_CARET = [8, 5, 0];              // where each segment sits in "YYYY/MM/DD"
-  const SEPARATORS = ['/', '.', '-', ' ', '،', ','];
+  const SEPARATORS = ['/', '.', '-', ' ', '،', ',', '٫'];
   api.seg = 0;                              // 0 day, 1 month, 2 year
   api.typed = 0;                            // digits typed into it since it became active
 
@@ -1058,10 +1132,12 @@ function createDateField(cfg) {
     api.typed = 0;
     api.render();
   };
+  // What the user changed is passed on (cfg.onChange)
+  api.notify = () => { if (cfg.onChange) cfg.onChange(api); };
   function changed() {
     api.render();
     api.field.classList.remove('error');
-    saveDraft();
+    api.notify();
   }
 
   function typeDigit(d) {
@@ -1185,7 +1261,7 @@ function createDateField(cfg) {
       e.preventDefault();
       const to = e.key === 'ArrowRight' ? api.seg - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? 2 : api.seg + 1;
       api.selectSeg(to);
-      saveDraft();
+      api.notify();
       return;
     } else if (e.key === 'Enter') {
       // On mobile, the "Next" key on the numeric keypad often fires this
@@ -1223,23 +1299,15 @@ function createDateField(cfg) {
   // Anything that still changed the text by itself (an undo) is put back
   api.input.addEventListener('input', () => api.render());
 
-  // Pasting used to just be swallowed outright — the field is a segmented
-  // mask, so raw text genuinely can't be dropped in character-by-character,
-  // but silently discarding the paste (rather than reading it) meant
-  // copying a date from anywhere and pasting it here simply did nothing.
-  // Now it reads the clipboard itself, pulls out 8 digits (Persian or
-  // English) in the field's own YYYY MM DD order, and fills the slots —
-  // so the paste is honored, just not as a literal text insertion.
+  // The field is a segmented mask, so a paste can't be dropped in as text:
+  // it is read instead (parseDateText) and fills the three segments. What
+  // isn't a recognisable date leaves the field as it was.
   api.input.addEventListener('paste', (e) => {
     e.preventDefault();
-    const raw = (e.clipboardData || window.clipboardData).getData('text');
-    const digits = toEnDigits(raw).replace(/[^0-9]/g, '');
-    if (digits.length !== 8) return;   // not a recognizable date — leave the field alone rather than guess wrong
-    const y = parseInt(digits.slice(0, 4), 10);
-    const m = parseInt(digits.slice(4, 6), 10);
-    const d = parseInt(digits.slice(6, 8), 10);
-    api.setDate(y, m, d);
-    saveDraft();
+    const date = parseDateText((e.clipboardData || window.clipboardData).getData('text'));
+    if (!date) return;
+    api.setDate(date.y, date.m, date.d);
+    api.notify();
   });
 
   api.validate = () => {
@@ -1286,6 +1354,11 @@ function createDateField(cfg) {
     });
   }
 
+  // Drawn as three segments by js/date-segments.js, which picks up every
+  // field made before it loaded by this mark, and later ones when told
+  api.input.dataset.dateField = '';
+  if (window.ChekinoDateSegments) window.ChekinoDateSegments.attach(api.input);
+
   if (cfg.prefillToday) {
     const [ty, tm, td] = todayJalali();
     api.setDate(ty, tm, td);
@@ -1297,15 +1370,15 @@ function createDateField(cfg) {
 
 const dueDate = createDateField({
   input: dueDateInput, field: dueDateField, msg: dueDateMsg,
-  calBtn: dueDateCalBtn, required: true
+  calBtn: dueDateCalBtn, required: true, onChange: saveDraft
 });
 const spendDate = createDateField({
   input: spendDateInput, field: spendDateField, msg: spendDateMsg,
-  calBtn: spendDateCalBtn, required: false
+  calBtn: spendDateCalBtn, required: false, onChange: saveDraft
 });
 const sendDate = createDateField({
   input: sendDateInput, field: sendDateField, msg: sendDateMsg,
-  calBtn: sendDateCalBtn, required: true, prefillToday: true
+  calBtn: sendDateCalBtn, required: true, prefillToday: true, onChange: saveDraft
   // nextEl used to jump straight to channelBox here — a leftover from
   // before the two-column layout, when sendDate really was the field
   // right before channel. Now party/spendDate/benef/nid sit between them,
@@ -2040,7 +2113,12 @@ function positionDropdown(listEl, anchorEl) {
   listEl.style.width = w + 'px';
 }
 
+// cfg also takes onChange() — told whenever the user changes the field
+// (typing, a pick, leaving it), e.g. so the cheque form can save its draft
+// — and onEnter(), what Enter does after it has picked (by default, inside
+// the cheque form, on to the next field)
 function createAutocomplete(cfg) {
+  const changed = () => { if (cfg.onChange) cfg.onChange(); };
   let matches = [];
   let activeIdx = -1;
   let repositionFn = null;
@@ -2095,11 +2173,11 @@ function createAutocomplete(cfg) {
     cfg.list.querySelectorAll('.ac-item').forEach(el => {
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        if (el.dataset.new) { close(); cfg.field.classList.remove('error'); saveDraft(); return; }
+        if (el.dataset.new) { close(); cfg.field.classList.remove('error'); changed(); return; }
         cfg.pick(matches[parseInt(el.dataset.idx, 10)]);
         close();
         cfg.field.classList.remove('error');
-        saveDraft();
+        changed();
       });
     });
   }
@@ -2117,7 +2195,7 @@ function createAutocomplete(cfg) {
     render();                                  // list appears from the first character
     cfg.field.classList.remove('error');
     if (cfg.onType) cfg.onType();
-    saveDraft();
+    changed();
   });
 
   cfg.input.addEventListener('keydown', (e) => {
@@ -2132,15 +2210,16 @@ function createAutocomplete(cfg) {
         if (!el.dataset.new) cfg.pick(matches[parseInt(el.dataset.idx, 10)]);
       }
       close();
-      saveDraft();
-      if (modalBody.contains(cfg.input)) focusNextField(cfg.input);   // then on, as Enter does everywhere else
+      changed();
+      if (cfg.onEnter) cfg.onEnter();
+      else if (modalBody.contains(cfg.input)) focusNextField(cfg.input);   // then on, as Enter does everywhere else
     } else if (e.key === 'Escape') close();
   });
 
   cfg.input.addEventListener('blur', () => {
     close();
     if (cfg.onBlur) cfg.onBlur();
-    saveDraft();
+    changed();
   });
 
   // Sent by the suffix arrow (js/field-addons.js): toggle the full list.
@@ -2170,7 +2249,7 @@ const newPersonLabel = q => (findPersonByName(q) ? 'شخص موجود' : 'شخص
 
 // ---- صاحب چک ----
 const ownerAC = createAutocomplete({
-  input: ownerInput, list: ownerList, field: ownerField,
+  input: ownerInput, list: ownerList, field: ownerField, onChange: saveDraft,
   search: q => allOwners().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
   allowNew: true, newLabel: newPersonLabel,
@@ -2188,7 +2267,7 @@ const ownerAC = createAutocomplete({
 
 // ---- طرف حساب ----
 const partyAC = createAutocomplete({
-  input: partyInput, list: partyList, field: partyField,
+  input: partyInput, list: partyList, field: partyField, onChange: saveDraft,
   search: q => allParties().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
   allowNew: true, newLabel: q => (findPersonByName(q) ? 'طرف حساب موجود' : 'طرف حساب جدید'),
@@ -2242,7 +2321,7 @@ function selectBeneficiary(p) {
 }
 
 const benefAC = createAutocomplete({
-  input: benefInput, list: benefList, field: benefField,
+  input: benefInput, list: benefList, field: benefField, onChange: saveDraft,
   search: q => beneficiariesForParty().filter(p => normalizeName(p.name).includes(normalizeName(q))),
   primary: p => p.name,
   secondary: p => p.nid,
@@ -2270,7 +2349,7 @@ const benefAC = createAutocomplete({
 });
 
 const nidAC = createAutocomplete({
-  input: nidInput, list: nidList, field: nidField,
+  input: nidInput, list: nidList, field: nidField, onChange: saveDraft,
   sanitize: v => toFa(toEnDigits(v).replace(/[^0-9]/g, '').slice(0, 11)),
   onType: () => {
     updateNidKind();
@@ -3094,15 +3173,18 @@ document.addEventListener('focusin', (e) => {
 window.addEventListener('resize', () => {
   if (dueDateCal.classList.contains('show')) positionCalendar();
 });
-modalBody.addEventListener('scroll', () => {
+// Whatever scrolls under it — the form, a panel, the page — it stays with
+// its field (capture: scroll events don't bubble)
+window.addEventListener('scroll', () => {
   if (dueDateCal.classList.contains('show')) positionCalendar();
-});
+}, true);
 
 function selectDate(y, m, d) {
-  if (!activeDateField) return;
-  activeDateField.setDate(y, m, d);
+  const field = activeDateField;
+  if (!field) return;
+  field.setDate(y, m, d);
   closeCalendar();
-  saveDraft();
+  field.notify();
 }
 
 function dateNum(y, m, d) { return y * 10000 + m * 100 + d; }
@@ -3285,8 +3367,13 @@ let checksCache = [];
 let checksFetchSeq = 0;
 
 function apiCheckToRec(c) {
-  const hist = c.status_history || [];
-  const last = hist.length ? hist[hist.length - 1] : null;
+  const hist = (c.status_history || []).filter(Boolean);
+  // Rows with an `event` (sent, owner_changed, undo… — spec 6.2) are things
+  // that happened to the cheque, not changes of its status: the last status
+  // change, and with it archiving, column order and the receipt's date,
+  // comes from the others only
+  const changes = hist.filter(h => !h.event);
+  const last = changes.length ? changes[changes.length - 1] : null;
   return {
     id: c.id,
     serial: c.serial || '',
@@ -3298,7 +3385,9 @@ function apiCheckToRec(c) {
     benefId: c.beneficiary_id, benef: c.beneficiary_name || '',
     nid: c.beneficiary_national_id || '',
     status: c.status,
-    history: hist.map(h => ({ to: h.to, reason: h.reason || '', at: isoToJalaliStr(h.at) })),
+    history: hist.map(h => (h.event
+      ? { event: h.event, channel: h.channel || '', at: isoToJalaliStr(h.at) }
+      : { to: h.to, reason: h.reason || '', at: isoToJalaliStr(h.at) })),
     statusChangedAt: last ? isoToJalaliStr(last.at) : '',
     // Raw ISO, kept alongside the Jalali display strings above — those only
     // carry a date, not a time, so two changes on the same day would sort as
@@ -3696,14 +3785,27 @@ async function commitSaveEdit() {
     if (editingChequeId !== id) return;   // that window is gone; don't write into another cheque's
     // Changed elsewhere since this edit began: the user decides whose wins
     if (e.status === 409 && e.data && e.data.code === 'version_conflict') {
-      const mine = await askConfirm({
+      const answer = await askChoice({
         title: 'این چک همین حالا جای دیگری تغییر کرد',
-        body: 'از وقتی بازش کردی، در زبانه‌ی دیگری یا به دست کس دیگری ذخیره شده است. تغییرات خودت را روی آن ذخیره کنم؟',
-        confirmLabel: 'ذخیره‌ی تغییرات من',
-        cancelLabel: 'دیدن نسخه‌ی تازه',
+        body: 'از وقتی بازش کردی، در زبانه‌ی دیگری یا به دست کس دیگری ذخیره شده است. تغییرات خودت را روی آن ذخیره کنم، یا نسخه‌ی تازه را ببینی؟',
+        choices: [
+          // (the same ids as the yes/no dialog's two buttons, which these two were)
+          { value: 'theirs', label: 'دیدن نسخه‌ی تازه', tone: 'primary', id: 'confirmCancel' },
+          { value: 'mine', label: 'ذخیره‌ی تغییرات من', tone: 'danger', id: 'confirmOk' },
+          { value: 'back', label: 'برگشت به فرم', tone: 'neutral' },
+        ],
+        cancel: 'back', focus: 'theirs',
       });
       if (editingChequeId !== id) return;
-      if (mine) {
+      if (answer === 'back') {
+        // nothing saved and nothing lost: back to editing, as before «ذخیره»
+        submitCheckBtn.textContent = 'ذخیره تغییرات';
+        submitCheckBtn.classList.remove('pending-confirm');
+        clearFormBtn.classList.remove('pending-cancel');
+        clearFormBtn.title = 'حذف چک';
+        return;
+      }
+      if (answer === 'mine') {
         editingVersion = e.data.version;
         commitSaveEdit();
         return;
@@ -3881,13 +3983,93 @@ function receiptButtonHtml(c) {
     ${icon('receipt')}
   </button>`;
 }
-function showToast(message) {
+// A short message at the foot of the page, gone after two seconds.
+// opts.duration: how long instead. opts.actions [{ label, run }] (or one,
+// opts.action): buttons in it — «مشاهده» / «برگردون»; such a toast stays 30
+// seconds unless told otherwise, holds still while the pointer or the
+// keyboard is on it, and goes on Escape. It has a place of its own: a plain
+// message that comes meanwhile shows above it instead of taking its place.
+// One with buttons at a time: a newer one replaces it. Returns { close }.
+function showToast(message, opts = {}) {
+  const actions = opts.actions || (opts.action ? [opts.action] : []);
+  if (actions.length) return showActionToast(message, actions, opts.duration);
   const el = document.getElementById('appToast');
   el.textContent = message;
   el.classList.add('show');
+  liftPlainToast();
   clearTimeout(el._hideTimer);
-  el._hideTimer = setTimeout(() => el.classList.remove('show'), 2000);
+  const close = () => { clearTimeout(el._hideTimer); el.classList.remove('show'); };
+  el._hideTimer = setTimeout(close, opts.duration || 2000);
+  return { close };
 }
+const actionToast = document.getElementById('appToastAction');
+const actionToastText = actionToast.querySelector('.toast-text');
+const actionToastBtns = actionToast.querySelector('.toast-actions');
+let actionToastState = null;   // { left, startedAt, timer, held }
+function liftPlainToast() {
+  // the plain toast steps up above the one with a button while both show
+  const plain = document.getElementById('appToast');
+  plain.style.bottom = actionToast.classList.contains('show') ? (32 + actionToast.offsetHeight + 8) + 'px' : '';
+}
+function hideActionToast() {
+  if (!actionToastState) return;
+  clearTimeout(actionToastState.timer);
+  actionToastState = null;
+  if (actionToast.contains(document.activeElement)) document.activeElement.blur();
+  actionToast.classList.remove('show');
+  liftPlainToast();
+}
+function runActionToastTimer() {
+  const st = actionToastState;
+  if (!st || st.timer || st.held) return;
+  st.startedAt = Date.now();
+  st.timer = setTimeout(hideActionToast, st.left);
+}
+function holdActionToast() {
+  const st = actionToastState;
+  if (!st) return;
+  st.held = true;
+  if (!st.timer) return;
+  clearTimeout(st.timer);
+  st.timer = null;
+  st.left = Math.max(1500, st.left - (Date.now() - st.startedAt));
+}
+function showActionToast(message, actions, duration) {
+  hideActionToast();
+  actionToastText.textContent = message;
+  actionToastBtns.innerHTML = '';
+  const state = { left: duration || 30000, timer: null, held: false };
+  actions.forEach((a) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast-action';
+    b.textContent = a.label;
+    b.addEventListener('click', () => {
+      if (actionToastState !== state) return;
+      hideActionToast();
+      a.run();
+    });
+    actionToastBtns.appendChild(b);
+  });
+  actionToastState = state;
+  actionToast.classList.add('show');
+  liftPlainToast();
+  runActionToastTimer();
+  return { close: () => { if (actionToastState === state) hideActionToast(); } };
+}
+const releaseActionToast = () => {
+  if (!actionToastState) return;
+  if (actionToast.matches(':hover') || actionToast.contains(document.activeElement)) return;
+  actionToastState.held = false;
+  runActionToastTimer();
+};
+actionToast.addEventListener('mouseenter', holdActionToast);
+actionToast.addEventListener('focusin', holdActionToast);
+actionToast.addEventListener('mouseleave', () => setTimeout(releaseActionToast, 0));
+actionToast.addEventListener('focusout', () => setTimeout(releaseActionToast, 0));
+actionToast.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { e.stopPropagation(); hideActionToast(); }
+});
 
 function copyReceiptMessage(id, btn) {
   const c = loadCheques().find(x => x.id === id);
@@ -5771,7 +5953,7 @@ lightboxShareBtn.addEventListener('click', async () => {
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (sessionDialogOpen()) return;   // nothing to go back to until signed in again
-  if (confirmIsOpen()) { closeConfirm(false); return; }
+  if (confirmIsOpen()) { cancelConfirm(); return; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
@@ -5801,7 +5983,7 @@ function closeTopmostLayer() {
   // explicitly to match what a normal close already does.
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (sessionDialogOpen()) return true;   // stays: there is nothing to go back to
-  if (confirmIsOpen()) { closeConfirm(false); return true; }
+  if (confirmIsOpen()) { cancelConfirm(); return true; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return true; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
@@ -5925,7 +6107,7 @@ function sessionEnded(reason, token) {
 }
 function setPageInert(on) {
   for (const el of document.body.children) {
-    if (el === sessionOverlay || el.id === 'appToast' || el.tagName === 'SCRIPT') continue;
+    if (el === sessionOverlay || el.id === 'appToast' || el.id === 'appToastAction' || el.tagName === 'SCRIPT') continue;
     if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert');
   }
 }

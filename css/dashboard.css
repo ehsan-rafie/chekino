@@ -2715,6 +2715,17 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--state-bad);
 }
 .confirm-actions .confirm-ok:hover { border-color: var(--state-bad); background: var(--state-bad-bg); }
+/* The answer that changes nothing, when there are more than two */
+.confirm-actions .confirm-neutral {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.confirm-actions .confirm-neutral:hover { border-color: var(--border-strong); background: var(--surface-2); }
+/* Three or more answers stand one under another, full width, in the order
+   given: three Persian labels side by side don't fit a phone */
+.confirm-actions.stacked { flex-direction: column; }
+.confirm-actions.stacked button { flex: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    LINEAR PASS
@@ -4581,6 +4592,49 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .confirm-actions .confirm-cancel:hover { background: var(--accent-hover); }
 .confirm-actions .confirm-ok { background: var(--surface); color: var(--state-bad-text); border: 1px solid color-mix(in srgb, var(--state-bad) 30%, transparent); }
 .confirm-actions .confirm-ok:hover { background: var(--state-bad); color: #fff; border-color: var(--state-bad); }
+.confirm-actions .confirm-neutral { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+.confirm-actions .confirm-neutral:hover { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* ── Toast with a way back («برگردون») ──
+   Same surface as the plain toast; it stays for half a minute, so it takes
+   the pointer and wraps a long line; its buttons are quiet ones at the end
+   of the line, edged so they read as buttons in both themes. */
+.app-toast { transition: opacity 0.2s ease, transform 0.2s ease, bottom 0.2s ease; }
+.app-toast.app-toast-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  white-space: normal;
+  /* as wide as its line, up to the screen: centred by left 50% and a
+     shift back, a box would otherwise only get the half of the screen
+     right of centre, and wrap a short line into five on a phone */
+  width: max-content;
+  /* hidden, it neither catches a press nor takes a Tab */
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+  max-width: calc(100vw - 32px);
+  padding-block: 6px;
+  padding-inline: 16px 8px;
+}
+.app-toast.app-toast-action.show { visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.app-toast-action .toast-text { padding-block: 5px; }
+.app-toast-action .toast-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.app-toast-action .toast-action {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: var(--inset-hairline);
+  color: var(--ink);
+  font: inherit;
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+}
+.app-toast-action .toast-action:hover { background: var(--surface-sunken); }
+/* events in the cheque's history: a plain line, no status colour */
+.ve-history-link.is-event .ve-history-name { color: var(--ink-2); font-variation-settings: var(--f-value); }
 
 /* ── People modal ── */
 .people-tabs { gap: 2px; padding: 3px; margin: 0 20px; border: none; border-radius: 14px; background: var(--surface-sunken); }
