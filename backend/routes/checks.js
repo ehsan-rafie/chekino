@@ -3,11 +3,14 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const pool = require('../db');
 const authenticate = require('../middleware/auth');
+const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 
 const router = express.Router();
 
-router.use(authenticate);
+// The body is read after the sign-in: up to 15 MB here (photos still travel
+// inside the JSON), 100 KB everywhere else — see server.js
+router.use(authenticate, companyLimiter, express.json({ limit: '15mb' }));
 
 // What a cheque looks like to the dashboard: everything but its photos. A
 // photo is fetched on its own from /api/images/:id when the cheque is

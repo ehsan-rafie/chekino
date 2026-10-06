@@ -1,5 +1,7 @@
 const rateLimit = require('express-rate-limit');
 
+const WINDOW = 15 * 60 * 1000;
+
 // Applied to login endpoints only — slows down credential-guessing without
 // affecting normal authenticated traffic elsewhere in the API.
 //
@@ -17,7 +19,7 @@ const rateLimit = require('express-rate-limit');
 //   a quarter of an hour is still unmistakably an attack, and leaves an
 //   honest user who fumbles the keyboard a wide margin.
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: WINDOW,
   max: 20,
   skipSuccessfulRequests: true,
   standardHeaders: true,
@@ -25,16 +27,30 @@ const loginLimiter = rateLimit({
   message: { error: 'تلاش‌های ناموفق ورود بیش از حد مجاز. چند دقیقه دیگر دوباره امتحان کنید.' },
 });
 
-// Applied to the whole API — a much looser ceiling than the login limiter,
-// sized so a normal busy dashboard session (which re-fetches lists after
-// every create/edit/delete) never comes close, while still capping
-// scripted abuse or a runaway client per IP.
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 600,
+// Applied to the whole API, before anyone is known — per address. Loose,
+// because a whole office (and every company behind the same carrier NAT)
+// shares one address: at 600 a few busy colleagues could shut each other
+// out (N2). What one account may do is capped by companyLimiter below,
+// which can tell the companies apart.
+const ipLimiter = rateLimit({
+  windowMs: WINDOW,
+  limit: 3000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'تعداد درخواست‌ها بیش از حد مجاز است. چند دقیقه دیگر دوباره امتحان کنید.' },
 });
 
-module.exports = { loginLimiter, generalLimiter };
+// Applied after authenticate, per company, whatever address its requests
+// come from: a runaway client or a leaked token stays within one account's
+// share. Sized well above a busy day's dashboard (two lists per change,
+// one request per photo opened).
+const companyLimiter = rateLimit({
+  windowMs: WINDOW,
+  limit: 1500,
+  keyGenerator: (req) => 'company:' + req.companyId,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'درخواست‌های این حساب بیش از حد مجاز است. چند دقیقه دیگر دوباره امتحان کنید.' },
+});
+
+module.exports = { loginLimiter, ipLimiter, companyLimiter };

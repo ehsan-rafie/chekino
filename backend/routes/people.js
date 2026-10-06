@@ -2,12 +2,13 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const pool = require('../db');
 const authenticate = require('../middleware/auth');
+const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 const nid = require('../lib/nid');
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, companyLimiter);
 
 const idParamValidation = [param('id').isInt().withMessage('شناسه نامعتبر است')];
 

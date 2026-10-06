@@ -2,6 +2,7 @@ const express = require('express');
 const { param } = require('express-validator');
 const pool = require('../db');
 const authenticate = require('../middleware/auth');
+const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 
 // A cheque's photo (or PDF), on its own: the cheque list only names it.
@@ -10,7 +11,7 @@ const validate = require('../middleware/validate');
 // never changed in place (a new photo is a new row), so it can be cached
 // for good; private, because it is personal data.
 const router = express.Router();
-router.use(authenticate);
+router.use(authenticate, companyLimiter);
 
 router.get('/:id', [param('id').isUUID().withMessage('شناسه نامعتبر است')], validate, async (req, res) => {
   try {

@@ -7,7 +7,7 @@ const peopleRoutes = require('./routes/people');
 const checksRoutes = require('./routes/checks');
 const imagesRoutes = require('./routes/images');
 const adminRoutes = require('./routes/admin');
-const { generalLimiter } = require('./middleware/rateLimit');
+const { ipLimiter } = require('./middleware/rateLimit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,8 +48,20 @@ app.use(cors({
   },
 }));
 
-app.use(express.json({ limit: '15mb' }));
-app.use(generalLimiter);
+// Per address first, so a flood is turned away before its body is read
+app.use(ipLimiter);
+
+// Bodies: 100 KB everywhere, except the cheque routes, which take up to
+// 15 MB while the cheque form still sends its photos inside the JSON (as
+// data URLs) — that comes down once photos travel to /api/images on their
+// own. Those are left to routes/checks.js, which reads them only after the
+// sign-in is checked: nobody unknown gets the server to hold 15 MB.
+const smallBody = express.json({ limit: '100kb' });
+app.use((req, res, next) => {
+  const p = req.path.toLowerCase();
+  if (p === '/api/checks' || p.startsWith('/api/checks/')) return next();
+  smallBody(req, res, next);
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Chekino server is running', timestamp: new Date().toISOString() });
@@ -60,6 +72,21 @@ app.use('/api/people', peopleRoutes);
 app.use('/api/checks', checksRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Whatever no route answered, and whatever failed, answers in JSON — never
+// Express's HTML page, and never a stack or a request body
+app.use('/api', (req, res) => res.status(404).json({ error: 'مسیر پیدا نشد' }));
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: req.path.startsWith('/api/checks') ? 'حجم عکس‌ها بیش از حد مجاز است (حداکثر ۱۵ مگابایت)' : 'حجم درخواست بیش از حد مجاز است' });
+  }
+  if (err.message === 'Not allowed by CORS') return res.status(403).json({ error: 'دسترسی از این نشانی مجاز نیست' });
+  // the body couldn't be read: not JSON, an unknown charset, cut off midway
+  if (err.status >= 400 && err.status < 500) return res.status(err.status).json({ error: 'درخواست نامعتبر است' });
+  console.error('unhandled error:', err.message);
+  res.status(500).json({ error: 'خطای سرور' });
+});
 
 // Bind to loopback only: Nginx reverse-proxies to 127.0.0.1:3000 on the same
 // host, so the API never needs a public interface. ufw already blocks 3000
