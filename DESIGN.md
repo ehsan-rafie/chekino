@@ -610,6 +610,48 @@ buttons at the end of its line, stays half a minute, holds still while
 the pointer or the keyboard is on it and goes on Escape; it keeps its own
 place, and a plain message that comes meanwhile shows above it.
 
+**Bulk add** (`js/bulk-add.js`, `css/bulk.css`). For adding many cheques
+at once. An outlined «افزودن گروهی» sits beside «افزودن چک»; for now only
+the test company sees it, until the whole round is built (add → send →
+board).
+- **The window.** A large window over the board in the cheque form's
+  system: radius 24, the same fields and lists.
+- **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»
+  (today) and a switch «ذینفع رو هم دارم». The switch is on in the picking
+  blue; it shows the beneficiary and their national id, which is checked
+  by its check digit.
+- **Pasting serials.** A strip under the header takes a pasted list of
+  serials (js/serials.js: any digits, any separators, with or without the
+  series). «ساخت ردیف‌ها» makes a row for each and says what it ignored.
+- **The rows.** A table of fields, one row per cheque: a tick «در این
+  ثبت», #, serial, sayad id in fours, amount (in words under it), due date
+  in segments, and the owner, which may stay empty.
+- **Judging a row.** A row is judged when a field is left. What blocks it
+  shows red, in one line under the row: «شناسه صیادی: این شناسه قبلاً ثبت
+  شده — چک ۴۸۲۹۱۳». What only asks for a look (a serial already on file
+  from another bank, one read from a longer number) shows muted with a
+  «⚠».
+- **The keyboard.** Enter goes to the next field, and from a row's last
+  field to the next row (a new one if needed). Shift+Enter goes back.
+  Alt+↑/↓ moves between rows. Ctrl+Enter saves. A space in an amount adds
+  three zeros.
+- **The footer.** It counts «۵ ردیف، ۱ کامل، ۴ ناقص» (a Persian comma
+  between counts, never «·»). It says why nothing was saved, and its button
+  says how many will be: «ثبت ۳ چک».
+- **Saving the draft.** It is saved as it is typed: on this device at
+  once (IndexedDB) and on the server two seconds later. A muted
+  «ذخیره شد» shows it, or «آفلاین — روی همین دستگاه نگه داشته شد», which
+  goes by itself once the connection is back.
+- **Unfinished lists.** Escape or × closes the window and keeps the work
+  («کارت ذخیره شد، هر وقت خواستی ادامه بده»). A grey bar over the board
+  then offers what is unfinished: «ادامه» / «حذف».
+- **Saving the cheques.** Saved rows leave the list, and a toast says
+  where they went («۴ چک ثبت شد و به «منتظر ذینفع» رفت»). It offers
+  «برگردون», also on Ctrl+Z outside a field. Rows that failed stay, each
+  with its reason.
+- **Phones.** Each row is a card with its labels, and the footer stays at
+  the bottom.
+
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a
 small dialog that can't be dismissed (`#sessionOverlay`, above every

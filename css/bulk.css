@@ -1,0 +1,351 @@
+/* ═══════════════════════════════════════════════════════════════════
+   BULK ADD (js/bulk-add.js)
+   A large window over the board, in the system of the cheque form: the
+   same fields, the same radii. The party, spend date and beneficiary sit
+   once at the top; below, one row per cheque in a table of fields; the
+   footer counts and saves. On a phone each row becomes a card.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── the way in, beside «افزودن چک»: outlined, second to it ── */
+.bulk-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+  transition: background var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.bulk-entry-btn svg { width: 16px; height: 16px; color: var(--ink-2); }
+.bulk-entry-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.bulk-entry-btn[hidden] { display: none; }
+.board-page-head .bulk-entry-btn { margin-inline-start: 8px; margin-inline-end: auto; }
+
+/* ── an unfinished batch, over the board ── */
+.bulk-resume {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 14px;
+  padding: 6px 6px 6px 8px;
+  padding-inline-start: 14px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-2);
+  box-shadow: var(--inset-hairline);
+}
+.bulk-resume[hidden] { display: none; }
+.bulk-resume-line { display: flex; align-items: center; gap: 6px; min-height: 34px; }
+.bulk-resume-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bulk-resume-go,
+.bulk-resume-del {
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+}
+.bulk-resume-go { color: var(--ink); background: var(--surface); box-shadow: var(--inset-hairline); }
+.bulk-resume-go:hover { background: var(--bg); }
+.bulk-resume-del { color: var(--muted); }
+.bulk-resume-del:hover { color: var(--state-bad-text); background: var(--state-bad-bg); }
+.bulk-resume-more { font-size: var(--t-micro); color: var(--muted); padding: 2px 0 4px; }
+
+/* ── the window ── */
+.bulk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;              /* the cheque form's layer: dialogs, lists and the calendar sit above */
+  display: none;
+  padding: 24px;
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.bulk-overlay.show { display: flex; justify-content: center; }
+.bulk-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1240px;
+  min-height: 0;
+  background: var(--surface);
+  border-radius: var(--rad-modal);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
+  overflow: hidden;
+  animation: sheetIn var(--dur-3) var(--ease-out) both;
+}
+body.bulk-open { overflow: hidden; }
+
+.bulk-head { flex: none; padding: 16px 22px 14px; border-bottom: 1px solid var(--border); }
+.bulk-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bulk-title-row h2 { margin: 0; font-size: 17px; color: var(--ink); font-variation-settings: var(--f-title); }
+.bulk-save { flex: 1; font-size: var(--t-micro); color: var(--muted); }
+.bulk-save.is-offline { color: var(--state-bad-text); }
+
+.bulk-common { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 14px; }
+.bulk-common .form-field { margin: 0; }
+#bulkPartyField { flex: 1 1 240px; max-width: 320px; }
+#bulkSpendField { flex: 0 0 170px; }
+#bulkBenefField { flex: 1 1 220px; max-width: 300px; }
+#bulkNidField { flex: 0 1 200px; }
+.bulk-common .form-field[hidden] { display: none; }
+
+/* HeroUI's Switch: on is what you picked, so it is the picking blue */
+.bulk-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.bulk-switch-track {
+  position: relative;
+  width: 36px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--surface-sunken);
+  box-shadow: var(--inset-hairline);
+  transition: background var(--dur-2) var(--ease);
+}
+.bulk-switch-thumb {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: inset-inline-start var(--dur-2) var(--ease);
+}
+.bulk-switch[aria-checked="true"] .bulk-switch-track { background: var(--hl); box-shadow: none; }
+.bulk-switch[aria-checked="true"] .bulk-switch-thumb { inset-inline-start: 17px; }
+
+/* ── pasting a list of serials ── */
+.bulk-paste {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.bulk-paste textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 120px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  line-height: 1.6;
+  resize: none;
+  field-sizing: content;
+}
+.bulk-paste textarea:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
+.bulk-paste textarea::placeholder { color: var(--muted); }
+.bulk-btn {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+}
+.bulk-btn:hover { background: var(--bg); border-color: var(--border-strong); }
+.bulk-paste-note { flex-basis: 100%; font-size: var(--t-micro); color: var(--muted); }
+.bulk-paste-note:empty { display: none; }
+
+/* ── the rows: a table of fields ── */
+.bulk-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 22px 16px; }
+.bulk-overlay {
+  --bulk-cols: 26px 26px 104px minmax(190px, 1.2fr) minmax(170px, 1.1fr) 156px minmax(150px, 1fr) 32px;
+}
+.bulk-grid-head,
+.bulk-row {
+  display: grid;
+  grid-template-columns: var(--bulk-cols);
+  column-gap: 8px;
+  align-items: start;
+}
+.bulk-grid-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 0 6px;
+  background: var(--surface);
+  font-size: var(--t-micro);
+  color: var(--muted);
+  font-variation-settings: var(--f-label);
+}
+.bulk-row { padding: 6px 0; border-top: 1px solid var(--border); }
+.bulk-row .form-field { margin: 0; min-width: 0; }
+.bulk-row .ig,
+.bulk-row .date-input-wrap,
+.bulk-row .amount-box { height: 36px; }
+.bulk-row input { font-size: var(--t-body); }
+.b-inc, .b-idx { display: flex; align-items: center; justify-content: center; height: 36px; }
+.b-inc input { width: 16px; height: 16px; margin: 0; accent-color: var(--hl); cursor: pointer; }
+.b-idx { font-size: var(--t-micro); color: var(--muted); }
+.b-words {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.b-words:empty { display: none; }
+.b-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.b-del svg { width: 16px; height: 16px; }
+.b-del:hover { color: var(--state-bad-text); background: var(--state-bad-bg); }
+/* one line under the row: what blocks it (red), or what to look at (muted) */
+.b-msg {
+  grid-column: 3 / -2;
+  margin-top: 4px;
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.b-msg:empty { display: none; }
+.bulk-row.has-error .b-msg { color: var(--state-bad-text); }
+.bulk-row.has-note .b-msg::before { content: '⚠ '; }
+.bulk-row:not(.is-complete) .b-idx { color: var(--muted); }
+.bulk-row.is-complete .b-idx { color: var(--ink-2); font-variation-settings: var(--f-label); }
+
+.bulk-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--rad-ctl);
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+}
+.bulk-add-row svg { width: 15px; height: 15px; }
+.bulk-add-row:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ── the footer: how many, why not, save ── */
+.bulk-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.bulk-count { font-size: var(--t-cap); color: var(--ink-2); white-space: nowrap; }
+.bulk-foot-msg { flex: 1; min-width: 0; font-size: var(--t-micro); color: var(--state-bad-text); line-height: 1.6; }
+/* the form's main button, at its own width here (it fills its row in the form) */
+.bulk-commit { flex: none; min-width: 132px; padding: 0 22px; margin-inline-start: auto; }
+.bulk-commit:disabled { opacity: 0.6; cursor: progress; }
+
+/* ── narrower: each row a card ── */
+@media (max-width: 899px) {
+  .bulk-overlay { padding: 0; }
+  .bulk-panel { max-width: none; border-radius: 0; overflow-y: auto; }
+  .bulk-body { flex: none; overflow: visible; padding: 4px 16px 16px; }
+  .bulk-head, .bulk-paste { padding-inline: 16px; }
+  .bulk-foot { position: sticky; bottom: 0; padding: 10px 16px; }
+  .bulk-grid-head { display: none; }
+  #bulkPartyField, #bulkBenefField, #bulkNidField { flex: 1 1 100%; max-width: none; }
+  #bulkSpendField { flex: 1 1 160px; }
+  .bulk-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "inc del"
+      "serial sayad"
+      "amount due"
+      "owner owner"
+      "msg msg";
+    gap: 8px 10px;
+    margin-top: 10px;
+    padding: 10px 12px 12px;
+    border: none;
+    border-radius: var(--rad-card);
+    box-shadow: var(--inset-hairline);
+    background: var(--surface);
+  }
+  .b-inc { grid-area: inc; justify-content: flex-start; gap: 8px; height: 28px; }
+  .b-idx { display: none; }
+  .b-del { grid-area: del; justify-self: end; height: 28px; }
+  .b-serial { grid-area: serial; }
+  .b-sayad { grid-area: sayad; }
+  .b-amount { grid-area: amount; }
+  .b-due { grid-area: due; }
+  .b-owner { grid-area: owner; }
+  .b-msg { grid-area: msg; margin: 0; }
+  .b-cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: var(--t-micro);
+    color: var(--muted);
+    font-variation-settings: var(--f-label);
+  }
+  .b-inc::after { content: attr(data-label); font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-label); }
+}
+@media (max-width: 420px) {
+  .bulk-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "inc del" "serial serial" "sayad sayad" "amount amount" "due due" "owner owner" "msg msg";
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bulk-panel { animation: none; }
+}

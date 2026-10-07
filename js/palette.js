@@ -213,7 +213,7 @@
 
   function anotherOverlayOpen() {
     return !!document.querySelector(
-      '.modal-overlay.show, .confirm-overlay.show, .photo-editor-overlay.show, .lightbox-overlay.show'
+      '.modal-overlay.show, .bulk-overlay.show, .confirm-overlay.show, .photo-editor-overlay.show, .lightbox-overlay.show'
     );
   }
 

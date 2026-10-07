@@ -130,6 +130,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   try { localStorage.setItem(SIGNED_OUT_KEY, String(Date.now())); } catch (e) {}
   localStorage.removeItem('chekino_token');
   clearAllDrafts();
+  // the bulk add's copies on this device go too (a moment at most)
+  if (window.ChekinoBulk) await Promise.race([window.ChekinoBulk.clearLocal(), new Promise((r) => setTimeout(r, 500))]);
   window.location.href = '/login';
 });
 
@@ -821,9 +823,11 @@ document.getElementById('emptyAddBtn').addEventListener('click', openModal);
 })();
 
 // Insert opens the add-cheque form from anywhere on the dashboard.
+// (the bulk-add panel, js/bulk-add.js, is a layer of its own)
+const bulkPanelOpen = () => !!(window.ChekinoBulk && window.ChekinoBulk.isOpen());
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Insert') return;
-  if (modalOverlay.classList.contains('show')) return;
+  if (modalOverlay.classList.contains('show') || bulkPanelOpen()) return;
   const t = e.target;
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
   e.preventDefault();
@@ -832,7 +836,7 @@ document.addEventListener('keydown', (e) => {
 // F2 jumps straight to the search box, from anywhere on the dashboard.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'F2') return;
-  if (modalOverlay.classList.contains('show')) return;
+  if (modalOverlay.classList.contains('show') || bulkPanelOpen()) return;
   e.preventDefault();
   searchInput.focus();
   searchInput.select();
@@ -1453,19 +1457,21 @@ function setAmountValue(rawDigits, digitsBeforeCaret) {
   updateAmountWords(trimmed);
 }
 
-function updateAmountWords(rawDigits) {
-  const raw = rawDigits === undefined ? amountRawDigits() : rawDigits;
-  if (raw === '' || parseInt(raw, 10) === 0) {
-    amountWords.textContent = amountWords.title = '';
-    return;
-  }
+// An amount in rials, said in words the way people say it: in tomans, with
+// any odd rials after («سی و دو میلیون تومان») — '' for nothing or zero
+function amountInWords(raw) {
+  if (raw === '' || parseInt(raw, 10) === 0) return '';
   const rial = parseInt(raw, 10);
-  if (!Number.isSafeInteger(rial)) { amountWords.textContent = amountWords.title = ''; return; }
+  if (!Number.isSafeInteger(rial)) return '';
   const toman = Math.floor(rial / 10);
   const remRial = rial % 10;
   let text = '';
   if (toman > 0) text = numberToPersianWords(toman) + ' تومان';
   if (remRial > 0) text += (text ? ' و ' : '') + numberToPersianWords(remRial) + ' ریال';
+  return text;
+}
+function updateAmountWords(rawDigits) {
+  const text = amountInWords(rawDigits === undefined ? amountRawDigits() : rawDigits);
   amountWords.textContent = text;
   amountWords.title = text;               // in full, when a long one runs past the label line
 }
@@ -1741,8 +1747,8 @@ function findNidOwner(nid, excludeName) {
 // cheques — the list is empty and the field falls back to "new person".
 // Reads the party field live rather than taking an argument, so the suggestion
 // list re-scopes itself the moment the party changes.
-function beneficiariesForParty() {
-  const party = normalizeName(partyInput.value.trim());
+function beneficiariesForParty(partyName = partyInput.value) {
+  const party = normalizeName(String(partyName || '').trim());
   if (!party) return [];
   const seen = new Map();
   loadCheques().forEach(c => {
@@ -3401,6 +3407,9 @@ function apiCheckToRec(c) {
     channels: Array.isArray(c.channels) ? c.channels : [],
     notes: c.notes || '',
     version: c.version || 1,
+    stage: c.stage || 'sent',
+    copiedAt: c.copied_at || null,
+    batchId: c.batch_id || null,
     // The photo itself isn't in the list — only its id and type. It is
     // fetched when the cheque is opened (loadImage); until then dataUrl is ''.
     files: c.image_id ? [{ id: c.image_id, name: attachmentName(c.image_mime, c.serial), type: c.image_mime || '', dataUrl: '' }] : [],
@@ -3415,7 +3424,10 @@ let checksLoadedAt = null;
 async function loadChecksFromApi() {
   const seq = ++checksFetchSeq;
   try {
-    const rows = await apiJson('/checks');
+    // every stage: a bulk add's cheques waiting for their beneficiary, or
+    // ready to send, count for duplicates and for who plays which role —
+    // only the sent ones are on the board (sentCheques)
+    const rows = await apiJson('/checks?stage=all');
     if (seq === checksFetchSeq) {
       checksCache = rows.map(apiCheckToRec);
       checksLoadFailed = false;
@@ -3461,6 +3473,14 @@ window.addEventListener('online', () => { if (checksLoadFailed) retryLoad(); });
 // synchronous getter — it's simply a view over checksCache, refreshed by
 // loadChecksFromApi() after every create/edit/delete/status-change.
 function loadCheques() { return checksCache; }
+// The cheques on the board: sent to their owner. The board, its counts and
+// filters, the reports and «nothing registered yet» read these; duplicates,
+// people's roles and lookups by id read every stage (loadCheques).
+let sentSource = null, sentList = [];
+function sentCheques() {
+  if (sentSource !== checksCache) { sentSource = checksCache; sentList = checksCache.filter((c) => c.stage === 'sent'); }
+  return sentList;
+}
 // Bulk "save the whole list" no longer applies — each mutation now goes
 // straight to the API (see the create/edit/delete/status handlers below) —
 // this stays only so any leftover caller doesn't throw.
@@ -4150,7 +4170,7 @@ function isArchived(c) {
 }
 
 function getFilteredCheques() {
-  let list = loadCheques();
+  let list = sentCheques();
 
   if (!showArchivedCheckbox || !showArchivedCheckbox.checked) {
     list = list.filter(c => !isArchived(c));
@@ -4434,7 +4454,7 @@ function renderPeopleList(role) {
   const q = normalizeName(f.input.value);
   const qDigits = toEnDigits(f.input.value).replace(/[^0-9]/g, '');
   const counts = new Map();
-  loadCheques().forEach(c => { const k = f.chequeKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
+  sentCheques().forEach(c => { const k = f.chequeKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
   let items = f.source();
   if (q || qDigits) {
     items = items.filter(x => (q && normalizeName(x.name).includes(q)) ||
@@ -5030,7 +5050,7 @@ function renderTable() {
   // filter emptying a column is exactly what each column's own "چکی در
   // این وضعیت نیست" already says.
   // Only a list that actually arrived empty means «nothing registered yet»
-  const nothingRegistered = checksLoadedAt !== null && loadCheques().length === 0;
+  const nothingRegistered = checksLoadedAt !== null && sentCheques().length === 0;
   const nothingLoaded = checksLoadedAt === null;
   const emptyLane = searchInput.value.trim() !== '' ? 'موردی با این جستجو پیدا نشد'
     : filterClearBtn.classList.contains('show') ? 'موردی با این فیلترها پیدا نشد'
@@ -5958,6 +5978,7 @@ document.addEventListener('keydown', (e) => {
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (activePopover) { closePopover(); return; }
+  if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
@@ -5988,6 +6009,7 @@ function closeTopmostLayer() {
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (activePopover) { closePopover(); return true; }
+  if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
@@ -6300,7 +6322,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {
