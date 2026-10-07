@@ -2,18 +2,18 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261007b" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261007c" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261007b">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261007b">
-<link rel="stylesheet" href="/css/cheque.css?v=20261007b">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261007b">
-<link rel="stylesheet" href="/css/bulk.css?v=20261007b">
+<link rel="stylesheet" href="/css/shared.css?v=20261007c">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261007c">
+<link rel="stylesheet" href="/css/cheque.css?v=20261007c">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261007c">
+<link rel="stylesheet" href="/css/bulk.css?v=20261007c">
 </head>
 <body class="chekino-auth-pending">
 
@@ -203,6 +203,13 @@
 
   <div class="bulk-resume" id="bulkResume" role="region" aria-label="افزودن گروهی نیمه‌کاره" hidden></div>
   <div class="stage-chips" id="stageChips" role="region" aria-label="چک‌های بیرون از بُرد" hidden></div>
+  <!-- The cheques off the board (waiting / ready), one line each; a click
+       opens the cheque (js/send-window.js) -->
+  <div class="filter-popover stage-pop" id="popStage" role="dialog" aria-labelledby="popStageTitle">
+    <div class="fp-title" id="popStageTitle"></div>
+    <div class="stage-pop-hint" id="popStageHint"></div>
+    <div class="stage-pop-list" id="popStageList"></div>
+  </div>
 
   <div class="board-wrap is-loading" id="boardWrap">
     <!-- The list couldn't be fetched: a bar over the board while the last
@@ -370,6 +377,10 @@
           <button type="button" class="ve-receipt-btn" id="veReceiptBtn" style="display:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2.5"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>
             <span>کپی رسید ثبت</span>
+          </button>
+          <button type="button" class="ve-receipt-btn" id="veSendBtn" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <span>ارسال برای صاحب چک</span>
           </button>
         </div>
 
@@ -913,21 +924,21 @@
 <div class="app-toast app-toast-action" id="appToastAction" role="status" aria-live="polite"><span class="toast-text"></span><span class="toast-actions"></span></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261007b"></script>
-<script src="/js/shared.js?v=20261007b"></script>
-<script src="/js/palette.js?v=20261007b"></script>
-<script src="/js/nid.js?v=20261007b"></script>
-<script src="/js/dashboard.js?v=20261007b"></script>
-<script src="/js/print.js?v=20261007b"></script>
-<script src="/js/cheque-form.js?v=20261007b"></script>
-<script src="/js/date-segments.js?v=20261007b"></script>
-<script src="/js/cal-picker.js?v=20261007b"></script>
-<script src="/js/field-addons.js?v=20261007b"></script>
-<script src="/js/serials.js?v=20261007b"></script>
-<script src="/js/bulk-add.js?v=20261007b"></script>
-<script src="/js/send-window.js?v=20261007b"></script>
-<script src="/js/shell.js?v=20261007b"></script>
-<script src="/js/theme-reveal.js?v=20261007b"></script>
+<script src="/js/icons.js?v=20261007c"></script>
+<script src="/js/shared.js?v=20261007c"></script>
+<script src="/js/palette.js?v=20261007c"></script>
+<script src="/js/nid.js?v=20261007c"></script>
+<script src="/js/dashboard.js?v=20261007c"></script>
+<script src="/js/print.js?v=20261007c"></script>
+<script src="/js/cheque-form.js?v=20261007c"></script>
+<script src="/js/date-segments.js?v=20261007c"></script>
+<script src="/js/cal-picker.js?v=20261007c"></script>
+<script src="/js/field-addons.js?v=20261007c"></script>
+<script src="/js/serials.js?v=20261007c"></script>
+<script src="/js/bulk-add.js?v=20261007c"></script>
+<script src="/js/send-window.js?v=20261007c"></script>
+<script src="/js/shell.js?v=20261007c"></script>
+<script src="/js/theme-reveal.js?v=20261007c"></script>
 
 </body>
 </html>

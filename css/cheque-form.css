@@ -173,6 +173,12 @@
 }
 .cq-view .ve-status-banner.st-done { --st: var(--st-done); --st-text: var(--state-ok-text); }
 .cq-view .ve-status-banner.st-problem { --st: var(--st-problem); --st-text: var(--state-bad-text); }
+/* Not sent to its owner yet (waiting / ready): where it stands, in grey */
+.cq-view .ve-status-banner.st-stage { --st: var(--ink-soft); --st-text: var(--ink); }
+/* ...and no send date or channels to fill in: the owner takes the row */
+.cq-body.pre-send #sendDateField,
+.cq-body.pre-send #channelField { display: none; }
+.cq-body.pre-send #ownerField { grid-column: 1 / -1; }
 .ve-st-icon {
   display: grid;
   place-items: center;

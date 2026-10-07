@@ -401,6 +401,18 @@ function daysAgoText(days, verb) {
   return `${toFa(days)} روز پیش ${verb}`;
 }
 function fillVeStatus(c) {
+  // Not sent to its owner yet: where it stands instead of a Sayad status
+  // (a neutral wash; the leaf then has no stamp)
+  if (isPreSend(c)) {
+    const missing = [!c.benefId && 'ذینفع', !c.ownerId && 'صاحب چک'].filter(Boolean);
+    veStatusBanner.className = 've-status-banner show st-stage';
+    veStIcon.innerHTML = icon('clock');
+    veStTitle.textContent = c.stage === 'ready' ? 'آماده‌ی ارسال' : 'منتظر ذینفع';
+    const desc = c.stage === 'ready' ? 'هنوز برای صاحب چک فرستاده نشده'
+      : `${missing.join(' و ')} ${missing.length > 1 ? 'هنوز معلوم نیستند' : 'هنوز معلوم نیست'}؛ «ویرایش» را بزن و بنویس`;
+    veStDesc.innerHTML = `<span>${escapeHtml(desc)}</span>`;
+    return;
+  }
   const st = statusById(c.status);
   const sent = daysSinceJalali(c.sendDate);
   const parts = [];
@@ -422,6 +434,18 @@ function fillVeStatus(c) {
   // hairline
   veStDesc.innerHTML = parts.map(t => `<span>${escapeHtml(t)}</span>`).join('<i class="ve-st-sep">، </i>');
 }
+
+// Added in bulk and not yet sent to its owner (waiting / ready): the form
+// shows it without a send date, channels or a status, and lets its owner
+// and beneficiary stay empty (lib/stage.js moves it along on save)
+function isPreSend(c) { return !!c && !!c.stage && c.stage !== 'sent'; }
+const veSendBtn = document.getElementById('veSendBtn');
+veSendBtn.addEventListener('click', () => {
+  const id = editingChequeId;
+  if (!id || !window.ChekinoSend) return;
+  closeModal(true);
+  window.ChekinoSend.open([id]);
+});
 
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
 const veFieldsWrapA2 = document.getElementById('veFieldsWrapA2');
@@ -464,7 +488,10 @@ function openModalForView(id) {
   enableFormButtons();
   hideFormAlert();
   fillVeStatus(c);
-  veReceiptBtn.style.display = c.status === 'done' ? 'flex' : 'none';
+  const preSend = isPreSend(c);
+  modalBody.classList.toggle('pre-send', preSend);
+  veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
+  veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
   renderVeHistory(c);
 
   serialInput.value = toFa(c.serial);
@@ -486,9 +513,13 @@ function openModalForView(id) {
   } else {
     spendDate.reset();
   }
-  const [ey, em, ed] = c.sendDate.split('/').map(n => parseInt(n, 10));
-  sendDate.setDate(ey, em, ed);
-  setChannels(c.channels);
+  if (c.sendDate) {
+    const [ey, em, ed] = c.sendDate.split('/').map(n => parseInt(n, 10));
+    sendDate.setDate(ey, em, ed);
+  } else {
+    sendDate.clear();   // not sent yet
+  }
+  setChannels(c.channels || []);
   notesInput.value = c.notes || '';
   updateNotesCount();
   attachedFiles = Array.isArray(c.files) ? c.files.map(f => ({ id: f.id, name: f.name, type: f.type, size: 0, dataUrl: f.dataUrl })) : [];
@@ -532,6 +563,8 @@ function exitViewEditMode() {
   document.getElementById('deleteCancelSlideBtn').classList.remove('show');
   veStatusBanner.classList.remove('show');
   veReceiptBtn.style.display = 'none';
+  veSendBtn.style.display = 'none';
+  modalBody.classList.remove('pre-send');
   veHistory.classList.remove('show', 'open');
   lockFormFields(false);
   cancelPendingDelete();
@@ -553,6 +586,8 @@ function openModal() {
   clearFormBtn.classList.remove('confirming-delete');
   veStatusBanner.classList.remove('show');
   veReceiptBtn.style.display = 'none';
+  veSendBtn.style.display = 'none';
+  modalBody.classList.remove('pre-send');
   veHistory.classList.remove('show', 'open');
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
@@ -1067,6 +1102,15 @@ function createDateField(cfg) {
     } else {
       api.render();
     }
+  };
+
+  // Empty, even where reset starts on today (a cheque not sent yet has no
+  // send date)
+  api.clear = () => {
+    api.slots = [null, null, null, null, null, null, null, null];
+    api.touched = false;
+    api.field.classList.remove('error');
+    api.render();
   };
 
   // If the user clears this field and forgets it, fall back to today on submit.
@@ -3696,20 +3740,29 @@ submitCheckBtn.addEventListener('click', async () => {
 function handleSaveEdit() {
   hideFormAlert();
 
+  // Not sent yet: its owner, and its beneficiary with the national id, may
+  // still be empty — but a beneficiary goes with its id, as everywhere
+  const preSend = isPreSend(loadCheques().find(x => x.id === editingChequeId));
+  const blank = (input, field) => { field.classList.remove('error'); return input.value.trim() === ''; };
+  const ownerOk = preSend && blank(ownerInput, ownerField) ? true : validateOwner();
+  const noBenef = preSend && toEnDigits(nidInput.value).replace(/[^0-9]/g, '') === '' && blank(benefInput, benefField);
+  if (noBenef) nidField.classList.remove('error');
   const checks = [
     [validateSerial(), serialInput],
     [validateSayad(), sayadInput],
     [dueDate.validate(), dueDateInput],
     [validateAmount(), amountInput],
-    [validateOwner(), ownerInput],
+    [ownerOk, ownerInput],
     [validateParty(), partyInput],
-    [validateBenef(), benefInput],
-    [validateNid(), nidInput],
+    [noBenef || validateBenef(), benefInput],
+    [noBenef || validateNid(), nidInput],
     [spendDate.validate(), spendDateInput]
   ];
-  sendDate.fillTodayIfEmpty();
-  checks.push([sendDate.validate(), sendDateInput]);
-  checks.push([validateChannels(), channelFocusTarget()]);
+  if (!preSend) {
+    sendDate.fillTodayIfEmpty();
+    checks.push([sendDate.validate(), sendDateInput]);
+    checks.push([validateChannels(), channelFocusTarget()]);
+  }
 
   const firstBad = checks.find(([ok]) => !ok);
   if (firstBad) {
@@ -3782,18 +3835,32 @@ async function commitSaveEdit() {
       sayad_id: rec.sayad,
       amount: rec.amount,
       due_date: jalaliStrToIso(rec.dueDate),
-      send_date: jalaliStrToIso(rec.sendDate),
       spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
       owner_id: ownerId,
       party_id: partyId,
       beneficiary_id: benefId,
       notes: rec.notes || null,
-      channels: rec.channels,
     };
+    // the send date and channels are «ارسال کردم»'s to write, not a cheque's
+    // that hasn't gone yet
+    const preSend = isPreSend(stored);
+    if (!preSend) {
+      body.send_date = jalaliStrToIso(rec.sendDate);
+      body.channels = rec.channels;
+    }
     const photo = newPhotoOf(rec);
     if (photo) body.receipt_image = photo;
     else if (editingHadPhoto && !rec.files.length) body.receipt_image = null;
-    await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    // its owner and beneficiary both known now: it can go to the owner
+    if (preSend && stored.stage !== 'ready' && saved && saved.stage === 'ready') {
+      const send = () => {
+        const go = () => window.ChekinoSend.open([id]);
+        const c = loadCheques().find(x => x.id === id);
+        if (c && c.stage === 'ready') go(); else loadChecksFromApi().then(() => { renderTable(); go(); });
+      };
+      showToast('چک آماده‌ی ارسال شد', window.ChekinoSend ? { action: { label: 'ارسال', run: send } } : {});
+    }
     // Same rule the create path already follows: the board refresh is not on
     // the path between "saved" and the modal being done with. Awaiting a full
     // re-download of every cheque here is what made saving an edit feel slow.
@@ -4344,21 +4411,26 @@ function repositionActivePopover() {
   if (activePopover && activePopoverBtn) positionPopover(activePopover, activePopoverBtn);
 }
 
+// Opens `pop` under `btn`, or closes it when it's the one open (also used by
+// the «منتظر ذینفع» list, js/send-window.js). Returns whether it opened.
+function togglePopover(pop, btn) {
+  if (activePopover === pop) { closePopover(); return false; }
+  closePopover();
+  pop.classList.add('show');
+  btn.classList.add('open');
+  btn.setAttribute('aria-expanded', 'true');
+  activePopover = pop;
+  activePopoverBtn = btn;
+  positionPopover(pop, btn);
+  window.addEventListener('scroll', repositionActivePopover, true);
+  window.addEventListener('resize', repositionActivePopover);
+  pushBackGuard();
+  return true;
+}
 document.querySelectorAll('.filter-pill-btn[data-pop]').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const pop = filterPopovers[btn.dataset.pop];
-    if (activePopover === pop) { closePopover(); return; }
-    closePopover();
-    pop.classList.add('show');
-    btn.classList.add('open');
-    btn.setAttribute('aria-expanded', 'true');
-    activePopover = pop;
-    activePopoverBtn = btn;
-    positionPopover(pop, btn);
-    window.addEventListener('scroll', repositionActivePopover, true);
-    window.addEventListener('resize', repositionActivePopover);
-    pushBackGuard();
+    togglePopover(filterPopovers[btn.dataset.pop], btn);
   });
 });
 Object.values(filterPopovers).forEach(pop => pop.addEventListener('click', (e) => e.stopPropagation()));

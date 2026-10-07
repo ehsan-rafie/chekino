@@ -611,9 +611,7 @@ the pointer or the keyboard is on it and goes on Escape; it keeps its own
 place, and a plain message that comes meanwhile shows above it.
 
 **Bulk add** (`js/bulk-add.js`, `css/bulk.css`). For adding many cheques
-at once. An outlined «افزودن گروهی» sits beside «افزودن چک»; for now only
-the test company sees it, until the whole round is built (add → send →
-board).
+at once. An outlined «افزودن گروهی» sits beside «افزودن چک».
 - **The window.** A large window over the board in the cheque form's
   system: radius 24, the same fields and lists.
 - **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»
@@ -656,8 +654,8 @@ board).
 cheques that are ready (owner and beneficiary known, not yet sent) go to
 their owners from here, so each owner can register them in Sayad.
 - **Opening it.** The chip «آماده‌ی ارسال n» over the board, the command
-  palette, or by itself after a bulk add with a beneficiary. Beside the
-  chip, «منتظر ذینفع n» only counts (it opens bulk edit once that exists).
+  palette, «ارسال برای صاحب چک» in a ready cheque's window, or by itself
+  after a bulk add with a beneficiary.
 - **Layout.** The beneficiary once at the top («ذینفع: …، کد ملی …»),
   each part with a copy button; the national id in Latin digits, as Sayad
   takes it. Then one section per owner (Persian order; owner + beneficiary
@@ -681,6 +679,23 @@ their owners from here, so each owner can register them in Sayad.
 - **No owner yet.** A ready list can't hold these, but a bulk add can leave
   some: they sit at the end under «⚠ بدون صاحب چک», each with an owner
   field; naming one moves the cheque to its section.
+
+**Cheques off the board** (waiting / ready). Over the board, beside
+«آماده‌ی ارسال n», the chip «منتظر ذینفع n» opens a list (a filter popover
+with HeroUI's ListBox inside): one line a cheque — serial, amount, due date;
+its party and what it lacks («بدون ذینفع»، «بدون صاحب چک») under it; by
+party, then due date. A line opens the cheque in its own window, where:
+- the banner says where it stands, in grey («منتظر ذینفع — ذینفع هنوز معلوم
+  نیست؛ «ویرایش» را بزن و بنویس», or «آماده‌ی ارسال» with «ارسال برای صاحب
+  چک»); the leaf has no stamp, and «—» for the send date and channel;
+- editing it has no send date and no channels (the owner takes the row),
+  and its owner and beneficiary may stay empty; a beneficiary still goes
+  with its national id;
+- once both are known it is ready: «چک آماده‌ی ارسال شد» with «ارسال».
+
+A board search that matches cheques off the board says so beside the chips:
+«چک ۱۲۳۴۵۶ در «منتظر ذینفع» است» + «نمایش» (several: the same list).
+Bulk edit, for many at once, comes next and takes over the chip.
 
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a

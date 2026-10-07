@@ -522,8 +522,54 @@ body.bulk-open { overflow: hidden; }
 }
 .stage-chip b { min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 10px; background: var(--surface); color: var(--ink); font-size: var(--t-micro); }
 .stage-chip:hover { background: var(--surface-sunken); color: var(--ink); }
-.stage-chip.is-static { cursor: default; }
-.stage-chip.is-static:hover { background: var(--surface-2); color: var(--ink-2); }
+.stage-chip[hidden] { display: none; }
+.stage-chip.open { background: var(--surface-sunken); color: var(--ink); }
+.stage-chip:focus-visible, .stage-hint-btn:focus-visible { outline: none; box-shadow: var(--ring); }
+/* a search that found cheques off the board: one quiet line beside the chips */
+.stage-hint { display: inline-flex; align-items: center; gap: 10px; min-height: 32px; color: var(--ink-2); font-size: var(--t-cap); }
+.stage-hint[hidden] { display: none; }
+.stage-hint-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: var(--inset-hairline);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.stage-hint-btn:hover { background: var(--surface-2); }
+
+/* ── the list behind «منتظر ذینفع» (a filter popover, HeroUI's ListBox inside) ── */
+.filter-popover.stage-pop { width: 400px; padding: 14px 8px 8px; }
+.stage-pop .fp-title { margin: 0 8px 2px; color: var(--ink); }
+.stage-pop-hint { margin: 0 8px 10px; color: var(--ink-2); font-size: var(--t-cap); }
+.stage-pop-list { display: flex; flex-direction: column; gap: 2px; }
+.stage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.stage-item:hover { background: var(--surface-2); }
+.stage-item:focus-visible { outline: none; background: var(--surface-2); box-shadow: var(--ring); }
+.stage-item-top { display: flex; align-items: baseline; gap: 10px; font-size: var(--t-body); }
+.stage-item-top b { font-variation-settings: var(--f-title); }
+.stage-item-due { margin-inline-start: auto; color: var(--ink-2); font-size: var(--t-cap); }
+.stage-item-sub { display: flex; align-items: baseline; gap: 10px; color: var(--ink-2); font-size: var(--t-cap); }
+.stage-item-party { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stage-item-tag { flex-shrink: 0; margin-inline-start: auto; }
 
 @media (max-width: 899px) {
   .send-overlay { padding: 0; }

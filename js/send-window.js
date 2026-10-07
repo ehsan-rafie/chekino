@@ -10,7 +10,8 @@
 // the server).
 //
 // Opened from the board's «آماده‌ی ارسال» chip (every ready cheque), or by
-// a bulk add saved with a beneficiary (those cheques). Gated like bulk add.
+// a bulk add saved with a beneficiary (those cheques), or from a ready
+// cheque's own window («ارسال برای صاحب چک»).
 (function () {
   const overlay = document.getElementById('sendOverlay');
   if (!overlay) return;
@@ -551,33 +552,118 @@
   }
 
   // ---------------------------------------------------------------
-  // The board's chips: «آماده‌ی ارسال ۵» (opens this window) and
-  // «منتظر ذینفع ۳» (where bulk-added cheques wait; bulk edit comes next)
+  // Over the board: «آماده‌ی ارسال ۵» opens this window; «منتظر ذینفع ۳»
+  // lists the cheques still missing their beneficiary or owner, each opening
+  // in the cheque window to fill them in. A search that matches cheques off
+  // the board says so beside them («نمایش»).
   // ---------------------------------------------------------------
   const chips = $('stageChips');
+  const pop = $('popStage');
+  const offBoard = (c) => c.stage === 'waiting' || c.stage === 'ready';
+  const STAGE_NAME = { waiting: 'منتظر ذینفع', ready: 'آماده‌ی ارسال' };
+  function chipButton(cls) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = cls;
+    chips.appendChild(b);
+    return b;
+  }
+  let readyChip = null, waitingChip = null, hint = null, hintIds = [];
+  if (chips) {
+    readyChip = chipButton('stage-chip');
+    readyChip.addEventListener('click', () => open(loadCheques().filter((c) => c.stage === 'ready').map((c) => c.id)));
+    waitingChip = chipButton('stage-chip');
+    waitingChip.setAttribute('aria-haspopup', 'dialog');
+    waitingChip.setAttribute('aria-expanded', 'false');
+    waitingChip.addEventListener('click', (e) => {
+      e.stopPropagation();   // the page's «clicked elsewhere» would close it again
+      const ids = loadCheques().filter((c) => c.stage === 'waiting').map((c) => c.id);
+      showList(ids, 'منتظر ذینفع', 'روی هر چک بزن تا ذینفع یا صاحب چکش را بنویسی', waitingChip);
+    });
+    hint = document.createElement('div');
+    hint.className = 'stage-hint';
+    hint.innerHTML = '<span class="stage-hint-text"></span><button type="button" class="stage-hint-btn" aria-haspopup="dialog" aria-expanded="false">نمایش</button>';
+    chips.appendChild(hint);
+    hint.querySelector('button').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (hintIds.length === 1) { openModalForView(hintIds[0]); return; }
+      showList(hintIds, 'نتیجه‌ی جستجو، بیرون از بُرد', 'این چک‌ها هنوز برای صاحب چک فرستاده نشده‌اند', e.currentTarget);
+    });
+  }
+  // A search the board reads (1–6 digits: the serial; more: the sayad id)
+  function searchMatches() {
+    const q = typeof searchInput !== 'undefined' ? toEnDigits(searchInput.value).replace(/[^0-9]/g, '') : '';
+    if (!q) return [];
+    return loadCheques().filter((c) => offBoard(c) && (q.length <= 6 ? (c.serial || '').includes(q) : (c.sayad || '').includes(q)));
+  }
   function refreshChips() {
     if (!chips) return;
     if (!enabled()) { chips.hidden = true; return; }
     const all = loadCheques();
-    const ready = all.filter((c) => c.stage === 'ready');
-    const waiting = all.filter((c) => c.stage === 'waiting');
-    chips.innerHTML = '';
-    if (ready.length) {
+    const ready = all.filter((c) => c.stage === 'ready').length;
+    const waiting = all.filter((c) => c.stage === 'waiting').length;
+    readyChip.innerHTML = `<span>آماده‌ی ارسال</span><b>${fa(ready)}</b>`;
+    readyChip.hidden = !ready;
+    waitingChip.innerHTML = `<span>منتظر ذینفع</span><b>${fa(waiting)}</b>`;
+    waitingChip.hidden = !waiting;
+    const found = searchMatches();
+    hintIds = found.map((c) => c.id);
+    if (found.length === 1) {
+      hint.firstChild.textContent = `چک ${toFa(found[0].serial)} در «${STAGE_NAME[found[0].stage]}» است`;
+    } else if (found.length) {
+      const where = [...new Set(found.map((c) => c.stage))].map((s) => `«${STAGE_NAME[s]}»`).join(' و ');
+      hint.firstChild.textContent = `${fa(found.length)} چک با این جستجو در ${where} است`;
+    }
+    hint.hidden = !found.length;
+    chips.hidden = !ready && !waiting && !found.length;
+    if (pop && pop.classList.contains('show') && pop._btn && (pop._btn.hidden || pop._btn.closest('[hidden]'))) closePopover();
+  }
+
+  // The list: one line a cheque — serial, amount, due date; the party and
+  // what's missing under it. Grouped by nothing: sorted by party, then due.
+  function showList(ids, title, note, btn) {
+    if (!pop) return;
+    const recs = ids.map(recOf).filter(Boolean);
+    const coll = new Intl.Collator('fa');
+    recs.sort((a, b) => coll.compare(a.party || '', b.party || '') || (a.dueDate || '').localeCompare(b.dueDate || '') || (a.serial || '').localeCompare(b.serial || ''));
+    $('popStageTitle').textContent = `${title} (${fa(recs.length)})`;
+    $('popStageHint').textContent = note;
+    const list = $('popStageList');
+    list.innerHTML = '';
+    for (const c of recs) {
+      const missing = [!c.benefId && 'بدون ذینفع', !c.ownerId && 'بدون صاحب چک'].filter(Boolean);
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'stage-chip';
-      b.innerHTML = `<span>آماده‌ی ارسال</span><b>${fa(ready.length)}</b>`;
-      b.addEventListener('click', () => open(ready.map((c) => c.id)));
-      chips.appendChild(b);
+      b.className = 'stage-item';
+      b.innerHTML = '<span class="stage-item-top"><b></b><span class="stage-item-amt"></span><span class="stage-item-due"></span></span>'
+        + '<span class="stage-item-sub"><span class="stage-item-party"></span><span class="stage-item-tag"></span></span>';
+      b.querySelector('b').textContent = toFa(c.serial);
+      b.querySelector('.stage-item-amt').textContent = `${money(c.amount)} ریال`;
+      b.querySelector('.stage-item-due').textContent = c.dueDate ? `سررسید ${faDate(c.dueDate)}` : '';
+      b.querySelector('.stage-item-party').textContent = c.party || '';
+      b.querySelector('.stage-item-tag').textContent = c.stage === 'ready' ? 'آماده‌ی ارسال' : missing.join('، ');
+      b.addEventListener('click', () => { closePopover(); openModalForView(c.id); });
+      list.appendChild(b);
     }
-    if (waiting.length) {
-      const s = document.createElement('span');
-      s.className = 'stage-chip is-static';
-      s.title = 'ذینفع یا صاحب چکشان هنوز معلوم نیست؛ ویرایش گروهی در قدم بعد';
-      s.innerHTML = `<span>منتظر ذینفع</span><b>${fa(waiting.length)}</b>`;
-      chips.appendChild(s);
+    pop._btn = btn;
+    if (togglePopover(pop, btn)) {
+      list.scrollTop = 0;
+      const first = list.querySelector('.stage-item');
+      if (first) first.focus({ preventScroll: true });
     }
-    chips.hidden = !chips.childElementCount;
+  }
+  if (pop) {
+    pop.addEventListener('click', (e) => e.stopPropagation());
+    // ↑ / ↓ between the lines
+    pop.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const items = [...pop.querySelectorAll('.stage-item')];
+      const i = items.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      const next = items[Math.max(0, Math.min(items.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+      next.focus();
+    });
   }
 
   // Escape on an open name list closes the list only — caught before the

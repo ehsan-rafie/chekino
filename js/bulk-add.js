@@ -16,17 +16,14 @@
 // createAutocomplete, askChoice/askConfirm, showToast, apiJson, the people
 // lists — and ChekinoSerials (js/serials.js) to read a pasted list.
 //
-// Only for the test company until the whole round (add → send → board) is
-// in place; anyone can turn it on in their browser with
-// localStorage.chekino_feature_bulk = '1'.
+// Every company has it. (The test company had it alone while the round —
+// add → send → board — was being built; `enabled` stays as the one switch
+// the send window and the page ask.)
 (function () {
   const overlay = document.getElementById('bulkOverlay');
   if (!overlay) return;
 
-  function enabled() {
-    if (PAGE_COMPANY === '62') return true;
-    try { return localStorage.getItem('chekino_feature_bulk') === '1'; } catch (e) { return false; }
-  }
+  function enabled() { return true; }
   const $ = (id) => document.getElementById(id);
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
     : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & 15) >> (c / 4)).toString(16)));
