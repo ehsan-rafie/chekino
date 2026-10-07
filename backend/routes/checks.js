@@ -5,6 +5,7 @@ const pool = require('../db');
 const authenticate = require('../middleware/auth');
 const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
+const { nextStage } = require('../lib/stage');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.use(authenticate, companyLimiter, express.json({ limit: '15mb' }));
 const SELECT_FIELDS = `
   c.id, c.company_id, c.serial, c.sayad_id, c.amount, c.due_date, c.send_date, c.spend_date,
   c.status, c.status_history, c.channels, c.notes, c.created_at,
-  c.stage, c.version, c.updated_at,
+  c.stage, c.version, c.updated_at, c.copied_at, c.batch_id,
   c.owner_id, o.full_name AS owner_name,
   c.party_id, p.full_name AS party_name,
   c.beneficiary_id, b.full_name AS beneficiary_name, b.national_id AS beneficiary_national_id,
@@ -147,6 +148,46 @@ router.get('/', async (req, res) => {
   }
 });
 
+// One cheque in full, with the list of its files (not their bytes: each is
+// GET /api/images/:id) — the PDF attachments included, which the list leaves
+// out of image_id
+router.get('/:id', idParamValidation, validate, async (req, res) => {
+  try {
+    const found = await pool.query(
+      `SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = $1 AND c.company_id = $2`,
+      [req.params.id, req.companyId]
+    );
+    if (found.rows.length === 0) return res.status(404).json({ error: 'چک یافت نشد' });
+    const images = await pool.query(
+      `SELECT id, kind, mime, position, byte_size FROM check_images
+       WHERE check_id = $1 AND company_id = $2 ORDER BY position, created_at`,
+      [req.params.id, req.companyId]
+    );
+    res.json({ ...found.rows[0], images: images.rows });
+  } catch (err) {
+    console.error('Get check error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  }
+});
+
+// The stage after a change (lib/stage.js) folded into what gets written: the
+// stage itself, the columns that go with it, and the history — a status
+// change and any events (owner or beneficiary of a sent cheque changed)
+// added to it, never taken from it (H4)
+function stageWrites(current, after, opts) {
+  const st = nextStage(current, after, opts);
+  if (st.error) return st;
+  const now = new Date().toISOString();
+  const base = current.status_history || [];
+  let history = base;
+  const status = st.set.status || after.status || current.status;
+  if (status !== current.status) {
+    history = [...history, { to: status, reason: (status === after.status && after.status_reason) || '', at: now }];
+  }
+  if (st.events.length) history = [...history, ...st.events.map((e) => ({ ...e, at: now }))];
+  return { stage: st.stage, set: st.set, status, history, historyChanged: history !== base };
+}
+
 router.post('/', createValidation, validate, async (req, res) => {
   try {
     const {
@@ -242,14 +283,17 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
     }
 
     // The history is only ever added to — going back to «منتظر ثبت» used to
-    // wipe it (H4). PUT stays for dashboards opened before PATCH; new code
-    // uses PATCH below.
-    let nextHistory = current.status_history || [];
-    let nextStatus = current.status;
-    if (status && status !== current.status) {
-      nextStatus = status;
-      nextHistory = [...nextHistory, { to: status, reason: status_reason || '', at: new Date().toISOString() }];
-    }
+    // wipe it (H4) — and the stage follows the change (lib/stage.js). PUT
+    // stays for dashboards opened before PATCH; new code uses PATCH below.
+    const sw = stageWrites(current, {
+      ...current,
+      status: status || current.status, status_reason: status_reason || '',
+      owner_id: owner_id ? Number(owner_id) : current.owner_id,
+      beneficiary_id: beneficiary_id ? Number(beneficiary_id) : current.beneficiary_id,
+    }, {});
+    if (sw.error) return res.status(400).json(sw.error);
+    const nextHistory = sw.history;
+    const nextStatus = sw.status;
 
     const db = await pool.connect();
     try {
@@ -270,6 +314,8 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
            channels = COALESCE($12, channels),
            status = $13,
            status_history = $14::jsonb,
+           stage = $17,
+           copied_at = CASE WHEN $18::boolean THEN NULL ELSE copied_at END,
            version = version + 1,
            updated_at = now()
          WHERE id = $15 AND company_id = $16`,
@@ -277,7 +323,7 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
           serial || null, sayad_id || null, amount || null, due_date || null, send_date || null, spend_date || null,
           owner_id || null, party_id || null, beneficiary_id || null, notes || null, receipt_image || null,
           channels ? JSON.stringify(channels) : null, nextStatus, JSON.stringify(nextHistory),
-          id, req.companyId,
+          id, req.companyId, sw.stage, 'copied_at' in sw.set,
         ]
       );
       if (receipt_image) await saveChequeImage(db, req.companyId, Number(id), receipt_image);
@@ -348,11 +394,18 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
         version: current.version,
       });
     }
-    // A sent cheque keeps its owner and beneficiary: taking it back off the
-    // board is a separate, deliberate step (unsend), not a cleared field.
-    if (current.stage === 'sent' && ((has('owner_id') && b.owner_id === null) || (has('beneficiary_id') && b.beneficiary_id === null))) {
+    // The stage follows the change (lib/stage.js): a waiting cheque given
+    // both its people becomes ready; a sent one keeps them — taking it back
+    // off the board is a separate, deliberate step (a bulk edit's unsend),
+    // not a cleared field; only a sent cheque has a Sayad status.
+    const after = { ...current, status: has('status') ? b.status : current.status, status_reason: b.status_reason || '' };
+    // (ids compared as numbers: «5» sent as text is the same person, not a change)
+    if (has('owner_id')) after.owner_id = b.owner_id === null ? null : Number(b.owner_id);
+    if (has('beneficiary_id')) after.beneficiary_id = b.beneficiary_id === null ? null : Number(b.beneficiary_id);
+    const sw = stageWrites(current, after, {});
+    if (sw.error) {
       await db.query('ROLLBACK');
-      return res.status(400).json({ error: 'صاحب چک یا ذینفعِ چکِ ارسال‌شده را نمی‌شود خالی کرد', code: 'unsend_required' });
+      return res.status(400).json(sw.error);
     }
     const ids = ['owner_id', 'party_id', 'beneficiary_id'].filter((k) => has(k) && b[k] !== null).map((k) => b[k]);
     if (!(await ensureOwnedPeople(req.companyId, ids))) {
@@ -374,11 +427,10 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
     if (has('beneficiary_id')) set('beneficiary_id', b.beneficiary_id);
     if (has('notes')) set('notes', b.notes || null);
     if (has('channels')) set('channels', JSON.stringify(b.channels), '::jsonb');
-    if (has('status') && b.status !== current.status) {
-      const history = [...(current.status_history || []), { to: b.status, reason: b.status_reason || '', at: new Date().toISOString() }];
-      set('status', b.status);
-      set('status_history', JSON.stringify(history), '::jsonb');
-    }
+    if (sw.stage !== current.stage) set('stage', sw.stage);
+    if (sw.status !== current.status) set('status', sw.status);
+    if (sw.historyChanged) set('status_history', JSON.stringify(sw.history), '::jsonb');
+    if ('copied_at' in sw.set) set('copied_at', null);
     const photo = has('receipt_image') ? b.receipt_image : undefined;   // null: remove; a data URL: replace
     if (photo === null) set('receipt_image', null);
     else if (photo) set('receipt_image', photo);
