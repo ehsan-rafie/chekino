@@ -96,6 +96,25 @@ router.post('/:id/undo', [param('id').isInt().toInt()], validate, async (req, re
       await db.query('COMMIT');
       return res.json({ ok: true, kind: op.kind, restored: ids.length, batch_id: batchId, batch_version: version });
     }
+    if (op.kind === 'mark_sent') {
+      // Back to «آماده‌ی ارسال» as they were: off the board, their send date,
+      // channels and «copied» mark as before. The history keeps the send and
+      // gains the undo — it is only ever added to.
+      const at = new Date().toISOString();
+      for (const b of op.before) {
+        await db.query(
+          `UPDATE checks SET stage = $1, send_date = $2, channels = $3::jsonb, copied_at = $4,
+                  status_history = COALESCE(status_history, '[]'::jsonb) || $5::jsonb,
+                  version = version + 1, updated_at = now()
+           WHERE id = $6 AND company_id = $7`,
+          [b.stage, b.send_date, JSON.stringify(b.channels || []), b.copied_at,
+            JSON.stringify([{ event: 'undo', op_id: op.id, at }]), b.id, req.companyId]
+        );
+      }
+      await db.query('UPDATE bulk_ops SET undone_at = now() WHERE id = $1', [op.id]);
+      await db.query('COMMIT');
+      return res.json({ ok: true, kind: op.kind, restored: op.before.length });
+    }
     return fail(400, { error: 'برگرداندن این نوع تغییر هنوز ممکن نیست', code: 'not_supported' });
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});

@@ -658,6 +658,7 @@
       return;
     }
     const btn = $('bulkCommit');
+    const hadBenef = st.hasBenef;
     st.committing = true;
     btn.disabled = true;
     btn.textContent = 'در حال ثبت…';
@@ -683,7 +684,9 @@
       st.rows = st.rows.filter((x) => !made.has(x.ref));
       for (const f of r.failed) { const row = st.rows.find((x) => x.ref === f.ref); if (row) row.serverError = f.error; }
       for (const s of r.skipped_incomplete) { const row = st.rows.find((x) => x.ref === s.ref); if (row) row.serverError = `ناقص: ${s.missing.join('، ')}`; }
-      loadChecksFromApi().then(() => { renderTable(); if (st) revalidate(); });
+      // saved with a beneficiary: the send window opens on them (F4), once the list has them
+      const sendNow = hadBenef && r.created.length ? r.created.map((c) => c.id) : null;
+      loadChecksFromApi().then(() => { renderTable(); if (st) revalidate(); if (sendNow && window.ChekinoSend) window.ChekinoSend.open(sendNow); });
       const n = r.created.length;
       const ready = r.created.filter((c) => c.stage === 'ready').length;
       const left = r.failed.length + r.skipped_incomplete.length;
@@ -978,6 +981,7 @@
   // ---------------------------------------------------------------
   window.ChekinoBulk = {
     isOpen: () => overlay.classList.contains('show'),
+    enabled,
     escape() { if (anyListOpen()) closeLists(); else closePanel(); },
     // signing out takes this browser's copies with it
     async clearLocal() {

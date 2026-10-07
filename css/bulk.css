@@ -349,3 +349,203 @@ body.bulk-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .bulk-panel { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE SEND WINDOW (js/send-window.js)
+   Ready cheques by owner: a section per owner with «کپی متن», a card per
+   cheque with its photo and «کپی عکس» (green once copied — the one place
+   a «done» mark belongs). The channel and «ارسال کردم» at the foot.
+   ═══════════════════════════════════════════════════════════════════ */
+.send-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 310;              /* over bulk add, under dialogs, lists and the calendar */
+  display: none;
+  padding: 24px;
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.send-overlay.show { display: flex; justify-content: center; }
+.send-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 980px;
+  min-height: 0;
+  background: var(--surface);
+  border-radius: var(--rad-modal);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
+  overflow: hidden;
+  animation: sheetIn var(--dur-3) var(--ease-out) both;
+}
+.send-head { flex: none; padding: 16px 22px 12px; border-bottom: 1px solid var(--border); }
+.send-head .bulk-title-row { margin-bottom: 8px; }
+.send-progress { flex: 1; display: flex; align-items: center; gap: 10px; font-size: var(--t-micro); color: var(--muted); }
+.send-progress[hidden] { display: none; }
+.send-progress-bar { position: relative; width: 120px; height: 6px; border-radius: 3px; background: var(--surface-sunken); overflow: hidden; }
+.send-progress-bar i { position: absolute; inset: 0; transform-origin: right; transform: scaleX(var(--done, 0)); background: var(--state-ok, #16a34a); transition: transform var(--dur-3) var(--ease-out); }
+.send-benef { display: flex; flex-wrap: wrap; gap: 8px; }
+.send-benef:empty { display: none; }
+.send-copy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: var(--inset-hairline);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  cursor: pointer;
+}
+.send-copy-chip:hover { background: var(--surface-sunken); }
+.send-copy-chip svg { width: 14px; height: 14px; color: var(--muted); }
+.send-chip-label { color: var(--muted); }
+.send-chip-value { font-variation-settings: var(--f-label); }
+
+.send-body { flex: 1; min-height: 0; overflow: auto; padding: 8px 22px 18px; }
+.send-choose-note { margin: 10px 0 0; font-size: var(--t-cap); color: var(--ink-2); }
+.send-empty { margin: 40px 0; text-align: center; color: var(--muted); font-size: var(--t-cap); }
+.send-sec { margin-top: 14px; }
+.send-sec-head { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.send-sec-pick { width: 18px; height: 18px; margin: 0; accent-color: var(--hl); }
+.send-sec-title { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.send-sec-title b { font-size: var(--t-value); color: var(--ink); font-variation-settings: var(--f-title); }
+.send-sec-meta, .send-sec-benef { font-size: var(--t-micro); color: var(--muted); }
+.send-sec-noowner .send-sec-title b { color: var(--ink-2); }
+.send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-btn);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.send-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.send-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.send-btn:disabled { opacity: 0.6; cursor: progress; }
+.send-btn.is-done { border-color: transparent; background: var(--state-ok-bg); color: var(--state-ok-text); }
+.send-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.send-card {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  grid-template-areas: "thumb info" "act act";
+  gap: 8px 12px;
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--inset-hairline);
+}
+.send-card.no-thumb { grid-template-columns: 1fr; grid-template-areas: "info" "act"; }
+.send-card.is-copied { background: color-mix(in srgb, var(--state-ok-bg) 55%, var(--surface)); }
+.send-thumb {
+  grid-area: thumb;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--muted);
+}
+.send-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.send-info { grid-area: info; display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: var(--t-cap); color: var(--ink-2); }
+.send-info b { font-size: var(--t-value); color: var(--ink); font-variation-settings: var(--f-title); }
+.send-due { font-size: var(--t-micro); color: var(--muted); }
+.send-card > .send-btn, .send-card > .send-done-mark, .send-card > .send-owner { grid-area: act; justify-self: stretch; justify-content: center; }
+.send-done-mark { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; font-size: var(--t-cap); color: var(--state-ok-text); }
+.send-done-mark svg { width: 15px; height: 15px; }
+.send-owner { margin: 0; }
+.send-owner .ig { height: 36px; }
+
+.send-foot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+}
+.send-channel { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.send-channel-label { font-size: var(--t-cap); color: var(--ink-2); }
+.send-channels { display: flex; flex-wrap: wrap; gap: 6px; }
+.send-channels .ch-tag { height: 32px; font-size: var(--t-cap); }
+.send-channel.error .ch-tag { border-color: var(--state-bad); }
+.send-channel-other {
+  width: 130px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+}
+.send-channel-other[hidden] { display: none; }
+.send-channel-other:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
+.send-foot .bulk-foot-msg { flex: 1 1 160px; }
+
+/* ── the chips over the board ── */
+.stage-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.stage-chips[hidden] { display: none; }
+.stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: var(--inset-hairline);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.stage-chip b { min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 10px; background: var(--surface); color: var(--ink); font-size: var(--t-micro); }
+.stage-chip:hover { background: var(--surface-sunken); color: var(--ink); }
+.stage-chip.is-static { cursor: default; }
+.stage-chip.is-static:hover { background: var(--surface-2); color: var(--ink-2); }
+
+@media (max-width: 899px) {
+  .send-overlay { padding: 0; }
+  .send-panel { max-width: none; border-radius: 0; }
+  .send-head, .send-body, .send-foot { padding-inline: 16px; }
+  .send-cards { grid-template-columns: 1fr; }
+  /* the title on its line, how far along under it */
+  .send-head .bulk-title-row { flex-wrap: wrap; }
+  .send-head .bulk-title-row h2 { flex: 1; }
+  .send-progress { order: 3; flex-basis: 100%; }
+  .send-progress-bar { flex: 1; }
+  /* the foot kept short: the channels in one row that scrolls sideways,
+     the two buttons side by side under them */
+  .send-foot { padding-block: 10px; }
+  .send-channel { flex-basis: 100%; flex-wrap: nowrap; min-width: 0; }
+  .send-channels { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  .send-channels::-webkit-scrollbar { display: none; }
+  .send-foot .bulk-foot-msg:empty { display: none; }
+  .send-foot .bulk-foot-msg { flex-basis: 100%; }
+  .send-foot .bulk-btn { flex: none; }
+  .send-foot .bulk-commit { flex: 1; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .send-panel { animation: none; }
+}

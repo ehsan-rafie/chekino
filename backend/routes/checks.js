@@ -148,6 +148,98 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ---- the send window (spec 5.4, 6.3) ----
+// Today in Tehran, and the day after: a send date can't be later (the
+// client sends its own Tehran date; a clock a little ahead is allowed)
+const tehranDay = (offset = 0) => {
+  const d = new Date(Date.now() + offset * 86400000);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+};
+const idsValidation = [
+  body('ids').isArray({ min: 1, max: 500 }).withMessage('چکی انتخاب نشده'),
+  body('ids.*').isInt({ min: 1 }).withMessage('شناسه نامعتبر است').toInt(),
+];
+
+// «کپی شد»: the photo of a cheque ready to send went to its owner's chat.
+// Kept on the server so the window can be picked up from any device; the
+// version is left alone, so marking doesn't stand in the way of «برگردون».
+router.post('/mark-copied', idsValidation, validate, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE checks SET copied_at = COALESCE(copied_at, now())
+       WHERE company_id = $1 AND id = ANY($2::int[]) AND stage = 'ready' RETURNING id, copied_at`,
+      [req.companyId, req.body.ids]
+    );
+    res.json({ updated: r.rows });
+  } catch (err) {
+    console.error('Mark copied error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  }
+});
+
+// «ارسال کردم»: the cheques ready to send go onto the board — sent today
+// (Tehran) through the chosen channel, waiting for their Sayad status. Only
+// ready ones move; others are reported as skipped (asking twice is
+// harmless: the second time they are already sent). One bulk_ops row keeps
+// what they were, for «برگردون».
+router.post('/mark-sent', [
+  ...idsValidation,
+  body('channel').isString().withMessage('کانال را انتخاب کن').trim().isLength({ min: 1, max: 40 }).withMessage('کانال را انتخاب کن'),
+  body('sent_on').isISO8601({ strict: true }).withMessage('تاریخ ارسال نامعتبر است')
+    .bail().custom((v) => String(v).slice(0, 10) <= tehranDay(1)).withMessage('تاریخ ارسال از فردا جلوتر است'),
+], validate, async (req, res) => {
+  const { ids, channel } = req.body;
+  const sentOn = String(req.body.sent_on).slice(0, 10);
+  const db = await pool.connect();
+  try {
+    await db.query('BEGIN');
+    const rows = (await db.query(
+      `SELECT id, version, stage, send_date::text AS send_date, channels, copied_at, status_history
+       FROM checks WHERE company_id = $1 AND id = ANY($2::int[]) ORDER BY id FOR UPDATE`,
+      [req.companyId, ids]
+    )).rows;
+    const ready = rows.filter((r) => r.stage === 'ready');
+    const skipped = ids.filter((id) => !ready.some((r) => r.id === id)).map((id) => {
+      const r = rows.find((x) => x.id === id);
+      return { id, reason: !r ? 'not_found' : r.stage === 'sent' ? 'already_sent' : 'not_ready' };
+    });
+    if (!ready.length) {
+      await db.query('ROLLBACK');
+      return res.json({ op_id: null, updated: [], skipped });
+    }
+    const at = new Date().toISOString();
+    const after = {};
+    for (const r of ready) {
+      const channels = Array.isArray(r.channels) ? [...r.channels] : [];
+      if (!channels.includes(channel)) channels.push(channel);
+      const history = [...(r.status_history || []), { event: 'sent', channel, at }];
+      const u = await db.query(
+        `UPDATE checks SET stage = 'sent', send_date = $1, channels = $2::jsonb, status = 'pending',
+                status_history = $3::jsonb, copied_at = NULL, version = version + 1, updated_at = now()
+         WHERE id = $4 RETURNING version`,
+        [sentOn, JSON.stringify(channels), JSON.stringify(history), r.id]
+      );
+      after[r.id] = u.rows[0].version;
+    }
+    const op = await db.query(
+      `INSERT INTO bulk_ops (company_id, kind, request, before, after_versions)
+       VALUES ($1, 'mark_sent', $2::jsonb, $3::jsonb, $4::jsonb) RETURNING id`,
+      [req.companyId, JSON.stringify({ ids: ready.map((r) => r.id), channel, sent_on: sentOn }),
+        JSON.stringify(ready.map((r) => ({ id: r.id, version: r.version, stage: r.stage, send_date: r.send_date, channels: r.channels, copied_at: r.copied_at }))),
+        JSON.stringify(after)]
+    );
+    await db.query('COMMIT');
+    const updated = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = ANY($1::int[]) ORDER BY c.id`, [ready.map((r) => r.id)]);
+    res.json({ op_id: op.rows[0].id, updated: updated.rows, skipped });
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => {});
+    console.error('Mark sent error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  } finally {
+    db.release();
+  }
+});
+
 // One cheque in full, with the list of its files (not their bytes: each is
 // GET /api/images/:id) — the PDF attachments included, which the list leaves
 // out of image_id

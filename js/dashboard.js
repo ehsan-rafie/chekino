@@ -342,7 +342,8 @@ const veHistoryList = document.getElementById('veHistoryList');
 const HISTORY_EVENTS = {
   sent: (h) => {
     const ch = CHANNELS.find(x => x.id === h.channel);
-    return 'برای صاحب چک فرستاده شد' + (ch ? ` (${ch.name})` : '');
+    const name = ch ? ch.name : (LEGACY_CHANNEL_NAMES[h.channel] || h.channel || '');
+    return 'برای صاحب چک فرستاده شد' + (name ? ` (${name})` : '');
   },
   beneficiary_changed: () => 'ذینفع عوض شد',
   owner_changed: () => 'صاحب چک عوض شد',
@@ -824,7 +825,8 @@ document.getElementById('emptyAddBtn').addEventListener('click', openModal);
 
 // Insert opens the add-cheque form from anywhere on the dashboard.
 // (the bulk-add panel, js/bulk-add.js, is a layer of its own)
-const bulkPanelOpen = () => !!(window.ChekinoBulk && window.ChekinoBulk.isOpen());
+const bulkPanelOpen = () => !!(window.ChekinoBulk && window.ChekinoBulk.isOpen())
+  || !!(window.ChekinoSend && window.ChekinoSend.isOpen());
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Insert') return;
   if (modalOverlay.classList.contains('show') || bulkPanelOpen()) return;
@@ -3380,6 +3382,7 @@ function apiCheckToRec(c) {
   // comes from the others only
   const changes = hist.filter(h => !h.event);
   const last = changes.length ? changes[changes.length - 1] : null;
+  const sent = hist.filter(h => h.event === 'sent').pop();
   return {
     id: c.id,
     serial: c.serial || '',
@@ -3408,6 +3411,7 @@ function apiCheckToRec(c) {
     notes: c.notes || '',
     version: c.version || 1,
     stage: c.stage || 'sent',
+    sentAtIso: sent ? sent.at : null,
     copiedAt: c.copied_at || null,
     batchId: c.batch_id || null,
     // The photo itself isn't in the list — only its id and type. It is
@@ -5031,7 +5035,9 @@ function cmpStr(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
 function sortColumnChecks(list, statusId) {
   const out = list.slice();
   if (statusId === 'pending') {
-    out.sort((a, b) => cmpStr(a.createdAtIso || '', b.createdAtIso || '') || (a.id - b.id));
+    // the longest waiting first: by the day it was sent to its owner, then
+    // the moment (the «sent» event, or when it was added), then its id (H10)
+    out.sort((a, b) => cmpStr(a.sendDate || '', b.sendDate || '') || cmpStr(a.sentAtIso || a.createdAtIso || '', b.sentAtIso || b.createdAtIso || '') || (a.id - b.id));
   } else {
     out.sort((a, b) => cmpStr(b.statusChangedAtIso || '', a.statusChangedAtIso || '') || (b.id - a.id));
   }
@@ -5039,6 +5045,7 @@ function sortColumnChecks(list, statusId) {
 }
 
 function renderTable() {
+  if (window.ChekinoSend) window.ChekinoSend.refreshChips();
   ensureBoardColumns();
   const all = getFilteredCheques();
   // "No checks at all" and "no checks match this filter" are different
@@ -5978,6 +5985,7 @@ document.addEventListener('keydown', (e) => {
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (activePopover) { closePopover(); return; }
+  if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
@@ -6009,6 +6017,7 @@ function closeTopmostLayer() {
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (activePopover) { closePopover(); return true; }
+  if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return true; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
@@ -6322,7 +6331,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

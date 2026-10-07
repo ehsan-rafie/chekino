@@ -652,6 +652,36 @@ board).
 - **Phones.** Each row is a card with its labels, and the footer stays at
   the bottom.
 
+**Send window** (`js/send-window.js`, its part of `css/bulk.css`). The
+cheques that are ready (owner and beneficiary known, not yet sent) go to
+their owners from here, so each owner can register them in Sayad.
+- **Opening it.** The chip «آماده‌ی ارسال n» over the board, the command
+  palette, or by itself after a bulk add with a beneficiary. Beside the
+  chip, «منتظر ذینفع n» only counts (it opens bulk edit once that exists).
+- **Layout.** The beneficiary once at the top («ذینفع: …، کد ملی …»),
+  each part with a copy button; the national id in Latin digits, as Sayad
+  takes it. Then one section per owner (Persian order; owner + beneficiary
+  when the batch mixes beneficiaries), its cheques by due date, then
+  serial. A section's head: the owner, «۲ چک، … ریال», «کپی متن» (and
+  «اشتراک» on phones that can't copy a photo).
+- **Cards.** Serial, amount, due date; a thumbnail and «کپی عکس» only when
+  the cheque has a photo (a PDF offers «باز کردن PDF»). A cheque with no
+  photo says «در متن آمد» once its owner's text is copied. Whatever was
+  copied turns green («کپی شد»); the head keeps count, «۲ از ۴ کپی شد».
+- **The message.**
+  «سلام، وقت بخیر / لطفاً چک‌های زیر را در سامانه صیاد به نام «…» با کد ملی
+  … ثبت کنید: / • سریال … — … ریال — سررسید … / ممنون». Amounts with «٬».
+- **«ارسال کردم».** Needs a channel first (the tags, «سایر» opens a name
+  field; the last one is remembered). If some owners weren't copied it asks:
+  «همه ارسال شدند» / «فقط کپی‌شده‌ها» / «برگرد». The cheques go to «در
+  انتظار» with today's send date, and a toast offers «برگردون».
+- **Closing** with nothing copied just closes. Otherwise it asks «همه رو
+  برای صاحب چک‌ها فرستادی؟»: «آره، همه» / «بعضی‌ها رو» (checkboxes on the
+  sections, then «ثبت ارسالِ این‌ها») / «نه، بعداً».
+- **No owner yet.** A ready list can't hold these, but a bulk add can leave
+  some: they sit at the end under «⚠ بدون صاحب چک», each with an owner
+  field; naming one moves the cheque to its section.
+
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a
 small dialog that can't be dismissed (`#sessionOverlay`, above every
