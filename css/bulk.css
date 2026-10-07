@@ -595,3 +595,315 @@ body.bulk-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .send-panel { animation: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BULK EDIT (js/bulk-edit.js)
+   The same window as bulk add. At the top, which cheques: the list of
+   serials and the filters, and what the list found. Below, the table of
+   cheques beside «چه چیزی عوض شود؟»; the footer counts and previews. The
+   preview is a sheet over the window.
+   ═══════════════════════════════════════════════════════════════════ */
+.board-page-head .bulk-entry-btn:has(+ .bulk-entry-btn:not([hidden])) { margin-inline-end: 0; }
+
+.edit-panel { position: relative; }
+.edit-head .bulk-title-row { margin-bottom: 10px; }
+.edit-recent-wrap { position: relative; }
+.edit-recent-btn { height: 34px; }
+.edit-recent {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 5;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 360px;
+  overflow: auto;
+  padding: 6px;
+  border-radius: var(--rad-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
+}
+.edit-recent[hidden] { display: none; }
+.edit-recent-line { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; }
+.edit-recent-line + .edit-recent-line { border-top: 1px solid var(--border); border-radius: 0; }
+.edit-recent-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.edit-recent-text b { font-size: var(--t-cap); color: var(--ink); font-variation-settings: var(--f-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-recent-text span { font-size: var(--t-micro); color: var(--muted); }
+.edit-recent-undo { height: 30px; padding: 0 10px; flex: none; }
+.edit-recent-state { flex: none; font-size: var(--t-micro); color: var(--muted); }
+.edit-recent-empty { padding: 14px; font-size: var(--t-cap); color: var(--muted); text-align: center; }
+
+/* ── which cheques ── */
+.edit-find { display: flex; flex-direction: column; gap: 10px; }
+.edit-find textarea {
+  width: 100%;
+  min-height: 40px;
+  max-height: 132px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--field-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-body);
+  line-height: 1.6;
+  resize: none;
+}
+.edit-find textarea:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
+.edit-find textarea::placeholder { color: var(--muted); }
+.edit-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.edit-chip {
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: var(--inset-hairline);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.edit-chip:hover { background: var(--surface-sunken); color: var(--ink); }
+.edit-chip[aria-pressed="true"] { background: var(--hl-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hl) 40%, transparent); color: var(--hl-text); }
+.edit-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+.edit-filter-sep { width: 1px; height: 20px; background: var(--border); margin-inline: 2px; }
+.edit-party-filter { margin: 0; width: 200px; }
+.edit-party-filter .ig { height: 32px; min-height: 32px; }
+.edit-party-filter input { font-size: var(--t-cap); }
+
+/* what the list found: one part a kind, each opening its detail */
+.edit-summary { display: flex; flex-wrap: wrap; gap: 6px; }
+.edit-summary[hidden], .edit-detail[hidden] { display: none; }
+.edit-sum-part {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: var(--inset-hairline);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+  cursor: pointer;
+}
+.edit-sum-part.is-plain { cursor: default; color: var(--ink-2); box-shadow: none; padding-inline: 2px; }
+.edit-sum-part.is-not_found { color: var(--state-bad-text); }
+.edit-sum-part:not(.is-plain):hover, .edit-sum-part.open { background: var(--surface-2); }
+.edit-sum-part:focus-visible { outline: none; box-shadow: var(--ring); }
+.edit-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-2);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+.edit-detail-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.edit-detail-btn { height: 30px; padding: 0 10px; align-self: flex-start; }
+
+/* ── the table, and what changes beside it ── */
+.edit-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.edit-table { min-height: 0; overflow: auto; padding: 8px 22px 16px; }
+.edit-change {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 18px 18px;
+  border-inline-start: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.edit-change h3 { margin: 0 0 10px; font-size: var(--t-body); color: var(--ink); font-variation-settings: var(--f-title); }
+
+.edit-overlay {
+  --edit-cols: 24px 104px minmax(112px, 1fr) 84px minmax(100px, 1fr) 84px minmax(110px, 1.1fr) minmax(100px, 1fr) 88px;
+}
+.edit-table-bar { display: flex; align-items: center; gap: 12px; min-height: 34px; }
+.edit-all { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-cap); color: var(--ink-2); cursor: pointer; }
+.edit-all input, .e-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--hl); cursor: pointer; }
+.edit-grid-head, .edit-row {
+  display: grid;
+  grid-template-columns: var(--edit-cols);
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+}
+.edit-grid-head {
+  position: sticky;
+  top: -8px;
+  z-index: 1;
+  min-height: 34px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t-micro);
+  color: var(--muted);
+  font-variation-settings: var(--f-label);
+}
+.edit-rows:focus { outline: none; }
+.edit-row {
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.edit-row > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.edit-row:hover { background: var(--surface-2); }
+.edit-row.is-sel { background: color-mix(in srgb, var(--hl) 6%, var(--surface)); }
+.edit-row.is-sel:hover { background: color-mix(in srgb, var(--hl) 9%, var(--surface)); }
+.edit-row:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--hl); }
+.e-check { display: flex; align-items: center; justify-content: center; height: 44px; }
+.e-serial { display: flex; flex-direction: column; line-height: 1.3; }
+.e-serial b { font-size: var(--t-value); color: var(--ink); font-variation-settings: var(--f-title); }
+.e-sub { font-size: var(--t-micro); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.e-sub:empty { display: none; }
+.e-amount { color: var(--ink); }
+.e-owner-field { margin: 0; }
+.e-owner-field .ig { height: 34px; min-height: 34px; }
+.e-owner-field input { font-size: var(--t-cap); }
+.edit-row .e-owner:has(.e-owner-field) { overflow: visible; }
+.edit-empty { padding: 32px 0; text-align: center; font-size: var(--t-cap); color: var(--muted); }
+.edit-empty[hidden], .edit-more[hidden] { display: none; }
+.edit-more { margin-top: 8px; }
+
+/* «چه چیزی عوض شود؟»: a checkbox a field, each opening its inputs */
+.edit-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.edit-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--inset-hairline);
+  font-size: var(--t-cap);
+  color: var(--ink);
+  cursor: pointer;
+}
+.edit-pick[hidden] { display: none; }
+.edit-pick input { width: 15px; height: 15px; margin: 0; accent-color: var(--hl); cursor: pointer; }
+.edit-pick:has(input:checked) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hl) 45%, transparent); }
+.edit-pick:has(input:focus-visible) { box-shadow: var(--ring); }
+.edit-f {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  box-shadow: var(--inset-hairline);
+}
+.edit-f[hidden], .edit-f-inputs[hidden], .edit-f .form-field[hidden], .edit-note[hidden] { display: none; }
+.edit-f-inputs { display: flex; flex-direction: column; gap: 10px; }
+.edit-f .form-field { margin: 0; }
+.edit-note { margin: 0; font-size: var(--t-micro); color: var(--ink-2); line-height: 1.7; }
+/* HeroUI's Tabs, small: one track, the picked part raised */
+.edit-seg { display: flex; padding: 3px; gap: 2px; border-radius: 11px; background: var(--surface-sunken); }
+.edit-seg button {
+  flex: 1;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.edit-seg button:hover { color: var(--ink); }
+.edit-seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), var(--inset-hairline); }
+.edit-seg button:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ── the preview: a sheet over the window (in the overlay, beside it, so a
+   window scrolled on a phone doesn't carry it away) ── */
+.edit-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--scrim);
+}
+.edit-sheet[hidden] { display: none; }
+.edit-sheet-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px 22px 18px;
+  border-radius: var(--rad-modal);
+  background: var(--surface);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
+  animation: sheetIn var(--dur-3) var(--ease-out) both;
+}
+.edit-sheet-card h3 { margin: 0 0 12px; font-size: 16px; color: var(--ink); font-variation-settings: var(--f-title); }
+.edit-sheet-body { display: flex; flex-direction: column; gap: 8px; }
+.edit-sheet-sum { font-size: var(--t-value); color: var(--ink); font-variation-settings: var(--f-title); }
+.edit-sheet-what { font-size: var(--t-body); color: var(--ink); line-height: 1.7; padding-inline-start: 10px; border-inline-start: 2px solid var(--border-strong); }
+.edit-sheet-warn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 12px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-2);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+.edit-sheet-check { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); cursor: pointer; flex-basis: 100%; }
+.edit-sheet-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--hl); }
+.edit-sheet-more { border: none; background: none; padding: 0; color: var(--ink); font: inherit; font-size: var(--t-cap); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.edit-sheet-list { color: var(--ink); }
+.edit-sheet-err { margin-top: 8px; font-size: var(--t-cap); color: var(--state-bad-text); }
+.edit-sheet-err:empty { display: none; }
+.edit-sheet-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.edit-sheet-actions .bulk-commit { margin-inline-start: 0; }
+
+/* ── narrower: one column, each row a card ── */
+@media (max-width: 899px) {
+  .edit-main { display: block; flex: none; }
+  .edit-table { overflow: visible; padding: 8px 16px 12px; }
+  .edit-change { border-inline-start: none; border-top: 1px solid var(--border); padding: 14px 16px 16px; }
+  .edit-grid-head { display: none; }
+  .edit-party-filter { width: 100%; flex: 1 1 100%; order: 10; }
+  .edit-filter-sep { display: none; }
+  .edit-row {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "check serial amount"
+      "check party stage"
+      "check owner benef";
+    gap: 2px 10px;
+    padding: 10px 10px;
+  }
+  .e-check { grid-area: check; align-self: start; height: 24px; }
+  .e-serial { grid-area: serial; }
+  .e-amount { grid-area: amount; text-align: end; }
+  .e-party { grid-area: party; }
+  .e-stage { grid-area: stage; text-align: end; }
+  .e-owner { grid-area: owner; }
+  .e-benef { grid-area: benef; text-align: end; }
+  .e-due, .e-spend { display: none; }
+  .edit-row .e-owner:has(.e-owner-field) { grid-column: 2 / -1; }
+  .edit-recent { position: fixed; top: 60px; inset-inline: 16px; width: auto; }
+  .edit-sheet { padding: 16px; align-items: flex-end; }
+}
+@media (max-width: 600px) {
+  .board-page-head .bulk-entry-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
+  .board-page-head .bulk-entry-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit-sheet-card { animation: none; }
+}

@@ -861,7 +861,8 @@ document.getElementById('emptyAddBtn').addEventListener('click', openModal);
 // Insert opens the add-cheque form from anywhere on the dashboard.
 // (the bulk-add panel, js/bulk-add.js, is a layer of its own)
 const bulkPanelOpen = () => !!(window.ChekinoBulk && window.ChekinoBulk.isOpen())
-  || !!(window.ChekinoSend && window.ChekinoSend.isOpen());
+  || !!(window.ChekinoSend && window.ChekinoSend.isOpen())
+  || !!(window.ChekinoEdit && window.ChekinoEdit.isOpen());
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Insert') return;
   if (modalOverlay.classList.contains('show') || bulkPanelOpen()) return;
@@ -6058,6 +6059,7 @@ document.addEventListener('keydown', (e) => {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (activePopover) { closePopover(); return; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
+  if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
@@ -6090,6 +6092,7 @@ function closeTopmostLayer() {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (activePopover) { closePopover(); return true; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return true; }
+  if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return true; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
@@ -6403,7 +6406,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

@@ -681,10 +681,13 @@ their owners from here, so each owner can register them in Sayad.
   field; naming one moves the cheque to its section.
 
 **Cheques off the board** (waiting / ready). Over the board, beside
-«آماده‌ی ارسال n», the chip «منتظر ذینفع n» opens a list (a filter popover
-with HeroUI's ListBox inside): one line a cheque — serial, amount, due date;
-its party and what it lacks («بدون ذینفع»، «بدون صاحب چک») under it; by
-party, then due date. A line opens the cheque in its own window, where:
+«آماده‌ی ارسال n», the chip «منتظر ذینفع n» opens bulk edit on them (below).
+A board search that matches cheques off the board says so beside the chips:
+«چک ۱۲۳۴۵۶ در «منتظر ذینفع» است» + «نمایش», which opens it; several open a
+list (a filter popover with HeroUI's ListBox inside): one line a cheque —
+serial, amount, due date; its party and what it lacks («بدون ذینفع»، «بدون
+صاحب چک») under it; by party, then due date. A cheque opens in its own
+window, where:
 - the banner says where it stands, in grey («منتظر ذینفع — ذینفع هنوز معلوم
   نیست؛ «ویرایش» را بزن و بنویس», or «آماده‌ی ارسال» with «ارسال برای صاحب
   چک»); the leaf has no stamp, and «—» for the send date and channel;
@@ -693,9 +696,42 @@ party, then due date. A line opens the cheque in its own window, where:
   with its national id;
 - once both are known it is ready: «چک آماده‌ی ارسال شد» with «ارسال».
 
-A board search that matches cheques off the board says so beside the chips:
-«چک ۱۲۳۴۵۶ در «منتظر ذینفع» است» + «نمایش» (several: the same list).
-Bulk edit, for many at once, comes next and takes over the chip.
+**Bulk edit** (`js/bulk-edit.js`, its part of `css/bulk.css`). Many cheques
+at once: a party's list of serials gets its beneficiary, a stack of
+cheques its owners. «ویرایش گروهی» beside «افزودن گروهی» (on phones both
+are icons), the «منتظر ذینفع» chip, the command palette. The bulk add
+window, in three parts always in sight:
+- **Which cheques.** A box for serials or sayad ids as the party sent them
+  (any digits, any separators, series or not: js/serials.js), and filter
+  chips — «منتظر ذینفع»، «آماده‌ی ارسال»، «ارسال‌شده»، a party, «بدون
+  صاحب چک»، «بدون ذینفع» (picked: the picking blue). What the list found,
+  in parts that each open their detail: «۳۵ پیدا شد»، «۱ چندتایی» (two
+  cheques of one serial: tick the right one), «۱ پیدا نشد» (in the error
+  red, with «کپی سریال‌های پیدانشده» to send back), «۱ نامطمئن» (a serial
+  run into its series: «تأیید»), «مال طرف حساب دیگر» (with a party
+  chosen), «نادیده گرفته شد». Every cheque is on the page already, so
+  finding needs no round trip.
+- **The table.** Serial in bold (the end of its sayad id under it), amount,
+  due date, party, spend date, owner, beneficiary, stage or status. What
+  the list found is ticked; «انتخاب همه» ticks all shown. ↑/↓ between
+  rows, Space ticks, Shift+Space a run, Ctrl+A all. 200 rows at a time.
+  On phones each row is a card.
+- **What changes**, beside it (under it on phones): a box a field — party,
+  beneficiary, owner, spend date, and the Sayad status when sent cheques
+  are ticked. Each opens its inputs, with HeroUI's small Tabs for the
+  mode: «تعیین» / «خالی کن»; the owner «یکی برای همه» / «ردیف به ردیف»
+  (a field beside each ticked row; Enter goes to the next) / «خالی کن».
+- **«پیش‌نمایش تغییرات»** opens a sheet (at the foot of the screen on
+  phones): how many, each change, and what to watch for — «قبلاً ذینفع
+  دیگری داشتند», registered ones left out unless «این‌ها را هم», sent ones
+  to send again («بعد از اعمال، برای ارسالِ دوباره آماده شوند»), taken
+  off the board («موافقم» before «اعمال»), no owner yet. «اعمال» does all
+  or nothing; changed elsewhere meanwhile: «این چک‌ها همین حالا جای دیگری
+  تغییر کردند: …. فهرست تازه شد؛ دوباره بررسی کن.»
+- **After.** «۳۷ چک به‌روز شد» + «برگردون» (30 seconds, Ctrl+Z); a
+  beneficiary given opens the send window on them, over bulk edit.
+  «آخرین تغییرات» in the head lists the last ten bulk changes (adds, sends,
+  edits), each with «برگردون» while none of its cheques changed since.
 
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a

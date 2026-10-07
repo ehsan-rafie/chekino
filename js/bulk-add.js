@@ -990,6 +990,7 @@
       });
     },
     open: openBulk,
+    refreshResume,
   };
 
   if (window.ChekinoPalette) {

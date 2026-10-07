@@ -2,18 +2,18 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261007c" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261007d" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261007c">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261007c">
-<link rel="stylesheet" href="/css/cheque.css?v=20261007c">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261007c">
-<link rel="stylesheet" href="/css/bulk.css?v=20261007c">
+<link rel="stylesheet" href="/css/shared.css?v=20261007d">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261007d">
+<link rel="stylesheet" href="/css/cheque.css?v=20261007d">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261007d">
+<link rel="stylesheet" href="/css/bulk.css?v=20261007d">
 </head>
 <body class="chekino-auth-pending">
 
@@ -72,6 +72,10 @@
     <button type="button" class="bulk-entry-btn" id="bulkAddBtn" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M8 20h8"/></svg>
       <span>افزودن گروهی</span>
+    </button>
+    <button type="button" class="bulk-entry-btn" id="editBtn" title="ویرایش گروهی">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span>ویرایش گروهی</span>
     </button>
     <div class="board-page-actions">
       <div class="export-cluster" id="exportCluster">
@@ -869,6 +873,150 @@
   </div>
 </div>
 
+<!-- Bulk edit (js/bulk-edit.js): which cheques (a serial list and filters),
+     the table of them, what changes; a preview before it is applied. -->
+<div class="bulk-overlay edit-overlay" id="editOverlay">
+  <div class="bulk-panel edit-panel" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <header class="bulk-head edit-head">
+      <div class="bulk-title-row">
+        <h2 id="editTitle">ویرایش گروهی</h2>
+        <span class="bulk-save"></span>
+        <div class="edit-recent-wrap">
+          <button type="button" class="bulk-btn edit-recent-btn" id="editRecentBtn" aria-haspopup="true" aria-expanded="false" aria-controls="editRecent">آخرین تغییرات</button>
+          <div class="edit-recent" id="editRecent" hidden></div>
+        </div>
+        <button type="button" class="modal-close" id="editClose" title="بستن" aria-label="بستن">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="edit-find">
+        <textarea id="editSerials" rows="1" placeholder="سریال‌ها یا شناسه‌های صیادی را این‌جا بچسبان: هر خط یکی، یا با هر جداکننده" aria-label="فهرست سریال‌ها یا شناسه‌های صیادی"></textarea>
+        <div class="edit-filters" role="group" aria-label="فیلترها">
+          <button type="button" class="edit-chip" data-stage="waiting" aria-pressed="false">منتظر ذینفع</button>
+          <button type="button" class="edit-chip" data-stage="ready" aria-pressed="false">آماده‌ی ارسال</button>
+          <button type="button" class="edit-chip" data-stage="sent" aria-pressed="false">ارسال‌شده</button>
+          <span class="edit-filter-sep" aria-hidden="true"></span>
+          <div class="form-field ac-field edit-party-filter" id="editPartyFilterField">
+            <div class="ig has-pre">
+              <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
+              <input type="text" id="editPartyFilter" class="ac-input" autocomplete="off" placeholder="طرف حساب" aria-label="فیلتر طرف حساب">
+            </div>
+          </div>
+          <button type="button" class="edit-chip" id="editNoOwner" aria-pressed="false">بدون صاحب چک</button>
+          <button type="button" class="edit-chip" id="editNoBenef" aria-pressed="false">بدون ذینفع</button>
+        </div>
+        <div class="edit-summary" id="editSummary" role="group" aria-label="نتیجه‌ی فهرست" hidden></div>
+        <div class="edit-detail" id="editDetail" aria-live="polite" hidden></div>
+      </div>
+    </header>
+    <div class="edit-main">
+      <section class="edit-table" aria-label="چک‌ها">
+        <div class="edit-table-bar">
+          <label class="edit-all"><input type="checkbox" id="editAll"><span id="editAllLabel">انتخاب همه</span></label>
+        </div>
+        <div class="edit-grid-head" aria-hidden="true">
+          <span></span><span>سریال</span><span>مبلغ</span><span>سررسید</span><span>طرف حساب</span><span>تاریخ خرج</span><span>صاحب چک</span><span>ذینفع</span><span>مرحله</span>
+        </div>
+        <div class="edit-rows" id="editRows" role="grid" aria-label="چک‌ها" tabindex="0"></div>
+        <div class="edit-empty" id="editEmpty" hidden></div>
+        <button type="button" class="bulk-add-row edit-more" id="editMore" hidden></button>
+      </section>
+      <aside class="edit-change" aria-labelledby="editChangeTitle">
+        <h3 id="editChangeTitle">چه چیزی عوض شود؟</h3>
+        <div class="edit-picks">
+          <label class="edit-pick" data-pick="party"><input type="checkbox"><span>طرف حساب</span></label>
+          <label class="edit-pick" data-pick="benef"><input type="checkbox"><span>ذینفع</span></label>
+          <label class="edit-pick" data-pick="owner"><input type="checkbox"><span>صاحب چک</span></label>
+          <label class="edit-pick" data-pick="spend"><input type="checkbox"><span>تاریخ خرج</span></label>
+          <label class="edit-pick" data-pick="status" hidden><input type="checkbox"><span>وضعیت ثبت</span></label>
+        </div>
+        <div class="edit-f" id="editF-party" hidden>
+          <div class="form-field ac-field" id="editPartyField">
+            <div class="field-head"><label for="editParty">طرف حساب</label><div class="field-msg" id="editPartyMsg"></div></div>
+            <div class="ig has-pre">
+              <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
+              <input type="text" id="editParty" class="ac-input" autocomplete="off" aria-describedby="editPartyMsg">
+            </div>
+          </div>
+        </div>
+        <div class="edit-f" id="editF-benef" hidden>
+          <div class="edit-seg" role="group" aria-label="ذینفع">
+            <button type="button" data-mode="benef:set">تعیین</button><button type="button" data-mode="benef:clear">خالی کن</button>
+          </div>
+          <div class="edit-f-inputs" id="editBenefInputs">
+            <div class="form-field ac-field" id="editBenefField">
+              <div class="field-head"><label for="editBenef">ذینفع</label><div class="field-msg" id="editBenefMsg"></div></div>
+              <div class="ig has-pre">
+                <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg></span>
+                <input type="text" id="editBenef" class="ac-input" autocomplete="off" aria-describedby="editBenefMsg">
+              </div>
+            </div>
+            <div class="form-field" id="editNidField">
+              <div class="field-head"><label for="editNid">کد / شناسه ملی <span class="hint">(۱۰ یا ۱۱ رقم)</span></label><div class="field-msg" id="editNidMsg"></div></div>
+              <div class="ig is-ltr has-pre">
+                <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><path d="M16 10h2M16 14h2"/></svg></span>
+                <input type="text" id="editNid" inputmode="numeric" autocomplete="off" aria-describedby="editNidMsg">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="edit-f" id="editF-owner" hidden>
+          <div class="edit-seg" role="group" aria-label="صاحب چک">
+            <button type="button" data-mode="owner:one">یکی برای همه</button><button type="button" data-mode="owner:rows">ردیف به ردیف</button><button type="button" data-mode="owner:clear">خالی کن</button>
+          </div>
+          <div class="form-field ac-field" id="editOwnerField">
+            <div class="field-head"><label for="editOwner">صاحب چک</label><div class="field-msg" id="editOwnerMsg"></div></div>
+            <div class="ig has-pre">
+              <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span>
+              <input type="text" id="editOwner" class="ac-input" autocomplete="off" aria-describedby="editOwnerMsg">
+            </div>
+          </div>
+          <p class="edit-note" id="editOwnerRowsNote" hidden>صاحب هر چک را در ستون «صاحب چک» جدول بنویس؛ Enter به ردیف بعد می‌رود. ردیفی که خالی بماند دست نمی‌خورد.</p>
+        </div>
+        <div class="edit-f" id="editF-spend" hidden>
+          <div class="edit-seg" role="group" aria-label="تاریخ خرج">
+            <button type="button" data-mode="spend:set">تعیین</button><button type="button" data-mode="spend:clear">خالی کن</button>
+          </div>
+          <div class="form-field date-field" id="editSpendField">
+            <div class="field-head"><label for="editSpend">تاریخ خرج</label><div class="field-msg" id="editSpendMsg"></div></div>
+            <div class="date-input-wrap">
+              <input type="text" id="editSpend" class="date-mask-input" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="روز / ماه / سال" aria-describedby="editSpendMsg">
+              <button type="button" class="date-cal-btn" id="editSpendCal" tabindex="-1" title="انتخاب از تقویم">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="edit-f" id="editF-status" hidden>
+          <div class="edit-seg" role="group" aria-label="وضعیت ثبت">
+            <button type="button" data-mode="status:pending">منتظر ثبت</button><button type="button" data-mode="status:done">ثبت شد</button><button type="button" data-mode="status:problem">مشکل در ثبت</button>
+          </div>
+          <div class="form-field" id="editReasonField" hidden>
+            <div class="field-head"><label for="editReason">علت</label></div>
+            <div class="ig"><input type="text" id="editReason" autocomplete="off" maxlength="500"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <footer class="bulk-foot">
+      <span class="bulk-count" id="editCount"></span>
+      <span class="bulk-foot-msg" id="editFootMsg" aria-live="polite"></span>
+      <button type="button" class="btn-submit bulk-commit" id="editPreview">پیش‌نمایش تغییرات</button>
+    </footer>
+  </div>
+  <div class="edit-sheet" id="editSheet" hidden>
+    <div class="edit-sheet-card" role="dialog" aria-modal="true" aria-labelledby="editSheetTitle">
+      <h3 id="editSheetTitle">پیش‌نمایش تغییرات</h3>
+      <div class="edit-sheet-body" id="editSheetBody"></div>
+      <div class="edit-sheet-err" id="editSheetErr" aria-live="polite"></div>
+      <div class="edit-sheet-actions">
+        <button type="button" class="bulk-btn" id="editSheetBack">برگرد</button>
+        <button type="button" class="btn-submit bulk-commit" id="editApply">اعمال</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- The send window (js/send-window.js): ready cheques by owner — copy the
      message and each photo, then «ارسال کردم». Above bulk add. -->
 <div class="send-overlay" id="sendOverlay">
@@ -924,21 +1072,22 @@
 <div class="app-toast app-toast-action" id="appToastAction" role="status" aria-live="polite"><span class="toast-text"></span><span class="toast-actions"></span></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261007c"></script>
-<script src="/js/shared.js?v=20261007c"></script>
-<script src="/js/palette.js?v=20261007c"></script>
-<script src="/js/nid.js?v=20261007c"></script>
-<script src="/js/dashboard.js?v=20261007c"></script>
-<script src="/js/print.js?v=20261007c"></script>
-<script src="/js/cheque-form.js?v=20261007c"></script>
-<script src="/js/date-segments.js?v=20261007c"></script>
-<script src="/js/cal-picker.js?v=20261007c"></script>
-<script src="/js/field-addons.js?v=20261007c"></script>
-<script src="/js/serials.js?v=20261007c"></script>
-<script src="/js/bulk-add.js?v=20261007c"></script>
-<script src="/js/send-window.js?v=20261007c"></script>
-<script src="/js/shell.js?v=20261007c"></script>
-<script src="/js/theme-reveal.js?v=20261007c"></script>
+<script src="/js/icons.js?v=20261007d"></script>
+<script src="/js/shared.js?v=20261007d"></script>
+<script src="/js/palette.js?v=20261007d"></script>
+<script src="/js/nid.js?v=20261007d"></script>
+<script src="/js/dashboard.js?v=20261007d"></script>
+<script src="/js/print.js?v=20261007d"></script>
+<script src="/js/cheque-form.js?v=20261007d"></script>
+<script src="/js/date-segments.js?v=20261007d"></script>
+<script src="/js/cal-picker.js?v=20261007d"></script>
+<script src="/js/field-addons.js?v=20261007d"></script>
+<script src="/js/serials.js?v=20261007d"></script>
+<script src="/js/bulk-add.js?v=20261007d"></script>
+<script src="/js/send-window.js?v=20261007d"></script>
+<script src="/js/bulk-edit.js?v=20261007d"></script>
+<script src="/js/shell.js?v=20261007d"></script>
+<script src="/js/theme-reveal.js?v=20261007d"></script>
 
 </body>
 </html>

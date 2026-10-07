@@ -553,9 +553,9 @@
 
   // ---------------------------------------------------------------
   // Over the board: «آماده‌ی ارسال ۵» opens this window; «منتظر ذینفع ۳»
-  // lists the cheques still missing their beneficiary or owner, each opening
-  // in the cheque window to fill them in. A search that matches cheques off
-  // the board says so beside them («نمایش»).
+  // opens bulk edit on the cheques still missing their beneficiary or owner.
+  // A search that matches cheques off the board says so beside them
+  // («نمایش»: the cheque, or a list of them, each opening in its window).
   // ---------------------------------------------------------------
   const chips = $('stageChips');
   const pop = $('popStage');
@@ -575,8 +575,10 @@
     waitingChip = chipButton('stage-chip');
     waitingChip.setAttribute('aria-haspopup', 'dialog');
     waitingChip.setAttribute('aria-expanded', 'false');
+    // bulk edit, on the waiting ones (js/bulk-edit.js); without it, the list
     waitingChip.addEventListener('click', (e) => {
       e.stopPropagation();   // the page's «clicked elsewhere» would close it again
+      if (window.ChekinoEdit) { window.ChekinoEdit.open({ stages: ['waiting'] }); return; }
       const ids = loadCheques().filter((c) => c.stage === 'waiting').map((c) => c.id);
       showList(ids, 'منتظر ذینفع', 'روی هر چک بزن تا ذینفع یا صاحب چکش را بنویسی', waitingChip);
     });

@@ -6,6 +6,7 @@ const authenticate = require('../middleware/auth');
 const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 const { nextStage } = require('../lib/stage');
+const { peopleResolver, PeopleLimitError } = require('../lib/people');
 
 const router = express.Router();
 
@@ -234,6 +235,159 @@ router.post('/mark-sent', [
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});
     console.error('Mark sent error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  } finally {
+    db.release();
+  }
+});
+
+// ---- bulk edit (spec 5.3, 6.3) ----
+// Many cheques at once: their party, beneficiary, owner (one for all, or
+// row by row), spend date, or Sayad status (sent ones only); the owner,
+// beneficiary and spend date can be cleared. People are named as the
+// bulk add names them (lib/people.js: by id, national id or name; added if
+// new, within the plan's limit). All or nothing: one transaction, every
+// cheque locked and at the version the client saw — or 409 with the ones
+// that changed. Each cheque's stage follows (lib/stage.js): a waiting one
+// given both its people is ready; a sent one stays sent unless `resend`
+// (its people changed, it goes back to be sent again) or `unsend` (its
+// owner or beneficiary cleared, it leaves the board). A beneficiary change
+// leaves out the cheques already registered («ثبت شد») unless
+// `include_done`. One bulk_ops row keeps what changed, for «برگردون».
+const PERSON_REF = (v) => v && typeof v === 'object' && !Array.isArray(v)
+  && (v.id !== undefined ? Number.isInteger(Number(v.id)) : typeof v.name === 'string' && v.name.trim().length > 0 && v.name.length <= 200);
+const CLEARABLE = ['owner_id', 'beneficiary_id', 'spend_date'];
+router.post('/bulk-update', [
+  ...idsValidation,
+  body('versions').isObject().withMessage('versions الزامی است'),
+  body('set').optional().isObject(),
+  body('set.party').optional().custom(PERSON_REF).withMessage('طرف حساب نامعتبر است'),
+  body('set.beneficiary').optional().custom(PERSON_REF).withMessage('ذینفع نامعتبر است'),
+  body('set.owner').optional().custom(PERSON_REF).withMessage('صاحب چک نامعتبر است'),
+  body('set.spend_date').optional().isISO8601({ strict: true }).withMessage('تاریخ خرج نامعتبر است'),
+  body('set.status').optional().isIn(STATUS_VALUES).withMessage('وضعیت نامعتبر است'),
+  body('set.status_reason').optional({ values: 'null' }).isString().isLength({ max: 500 }),
+  body('clear').optional().isArray({ max: 3 }),
+  body('clear.*').isIn(CLEARABLE).withMessage('این فیلد خالی‌شدنی نیست'),
+  body('rows').optional().isArray({ max: 500 }),
+  body('rows.*.id').isInt({ min: 1 }).toInt(),
+  body('rows.*.owner').custom(PERSON_REF).withMessage('صاحب چک نامعتبر است'),
+  body('include_done').optional().isBoolean(),
+  body('resend').optional().isBoolean(),
+  body('unsend').optional().isBoolean(),
+], validate, async (req, res) => {
+  const b = req.body;
+  const set = b.set || {};
+  const clear = new Set(b.clear || []);
+  const rowOwners = new Map((b.rows || []).map((r) => [r.id, r.owner]));
+  const touchesBenef = !!set.beneficiary || clear.has('beneficiary_id');
+  if (!set.party && !set.beneficiary && !set.owner && !set.spend_date && !set.status && !clear.size && !rowOwners.size) {
+    return res.status(400).json({ error: 'چیزی برای تغییر انتخاب نشده', code: 'nothing_to_change' });
+  }
+  if ((set.beneficiary && clear.has('beneficiary_id')) || (set.owner && clear.has('owner_id')) || (set.spend_date && clear.has('spend_date'))) {
+    return res.status(400).json({ error: 'یک فیلد را هم پر و هم خالی نمی‌شود کرد', code: 'conflicting_change' });
+  }
+  const db = await pool.connect();
+  const fail = async (status, payload) => { await db.query('ROLLBACK').catch(() => {}); return res.status(status).json(payload); };
+  try {
+    await db.query('BEGIN');
+    const plan = (await db.query(
+      `SELECT p.max_people FROM companies c LEFT JOIN plans p ON p.id = c.plan_id WHERE c.id = $1 FOR UPDATE OF c`,
+      [req.companyId]
+    )).rows[0] || {};
+    const rows = (await db.query(
+      `SELECT id, version, stage, status, status_history, owner_id, beneficiary_id, party_id,
+              spend_date::text AS spend_date, send_date::text AS send_date, copied_at
+       FROM checks WHERE company_id = $1 AND id = ANY($2::int[]) ORDER BY id FOR UPDATE`,
+      [req.companyId, b.ids]
+    )).rows;
+    const missing = b.ids.filter((id) => !rows.some((r) => r.id === id));
+    if (missing.length) return fail(404, { error: 'بعضی از این چک‌ها پیدا نشدند', code: 'not_found', missing });
+    const changedSince = rows.filter((r) => Number(b.versions[r.id]) !== r.version).map((r) => r.id);
+    if (changedSince.length) {
+      return fail(409, { error: 'این چک‌ها همین حالا جای دیگری تغییر کردند', code: 'version_conflict', changed: changedSince });
+    }
+
+    // the people, found or added (a bad national id or an unknown id stops it all)
+    const people = await peopleResolver(db, req.companyId, { maxPeople: plan.max_people });
+    const resolve = async (ref, role) => {
+      const r = await people.resolve(ref, role);
+      if (r.error) { const e = new Error(r.error.error); e.payload = r.error; throw e; }
+      return r.id;
+    };
+    const partyId = set.party ? await resolve(set.party, 'party') : undefined;
+    if (set.party && !partyId) return fail(400, { error: 'طرف حساب را نمی‌شود خالی کرد', code: 'party_required' });
+    const benefId = set.beneficiary ? await resolve(set.beneficiary, 'benef') : undefined;
+    const ownerId = set.owner ? await resolve(set.owner, 'owner') : undefined;
+    const rowOwnerIds = new Map();
+    for (const [id, ref] of rowOwners) rowOwnerIds.set(id, await resolve(ref, 'owner'));
+
+    const at = new Date().toISOString();
+    const opId = (await db.query(
+      `INSERT INTO bulk_ops (company_id, kind, request, before, after_versions)
+       VALUES ($1, 'bulk_update', '{}'::jsonb, '[]'::jsonb, '{}'::jsonb) RETURNING id`,
+      [req.companyId]
+    )).rows[0].id;
+    const before = [];
+    const after = {};
+    const unchanged = [];
+    const skippedDone = [];
+    const becameReady = [];
+    for (const r of rows) {
+      if (touchesBenef && r.status === 'done' && !b.include_done) { skippedDone.push(r.id); continue; }
+      const next = { ...r, status_reason: set.status_reason || '' };
+      if (partyId !== undefined) next.party_id = partyId;
+      if (benefId !== undefined) next.beneficiary_id = benefId;
+      if (clear.has('beneficiary_id')) next.beneficiary_id = null;
+      if (ownerId !== undefined) next.owner_id = ownerId;
+      if (rowOwnerIds.has(r.id)) next.owner_id = rowOwnerIds.get(r.id);
+      if (clear.has('owner_id')) next.owner_id = null;
+      if (set.spend_date) next.spend_date = String(set.spend_date).slice(0, 10);
+      if (clear.has('spend_date')) next.spend_date = null;
+      if (set.status && r.stage === 'sent') next.status = set.status;   // a Sayad status is a sent cheque's only
+      const sw = stageWrites(r, next, { resend: !!b.resend, unsend: !!b.unsend });
+      if (sw.error) return fail(400, { ...sw.error, id: r.id });
+      const cols = {};
+      for (const k of ['party_id', 'beneficiary_id', 'owner_id', 'spend_date']) if ((next[k] ?? null) !== (r[k] ?? null)) cols[k] = next[k] ?? null;
+      if (sw.stage !== r.stage) cols.stage = sw.stage;
+      if (sw.status !== r.status) cols.status = sw.status;
+      if ('send_date' in sw.set && (r.send_date ?? null) !== sw.set.send_date) cols.send_date = sw.set.send_date;
+      if (!Object.keys(cols).length) { unchanged.push(r.id); continue; }
+      if ('copied_at' in sw.set) cols.copied_at = null;
+      cols.status_history = JSON.stringify([...sw.history, { event: 'bulk_edit', op_id: opId, at }]);
+      const names = Object.keys(cols);
+      const u = await db.query(
+        `UPDATE checks SET ${names.map((k, i) => `${k} = $${i + 1}${k === 'status_history' ? '::jsonb' : ''}`).join(', ')},
+                version = version + 1, updated_at = now()
+         WHERE id = $${names.length + 1} AND company_id = $${names.length + 2} RETURNING version`,
+        [...names.map((k) => cols[k]), r.id, req.companyId]
+      );
+      after[r.id] = u.rows[0].version;
+      before.push({ id: r.id, version: r.version, stage: r.stage, status: r.status, owner_id: r.owner_id, beneficiary_id: r.beneficiary_id,
+        party_id: r.party_id, spend_date: r.spend_date, send_date: r.send_date, copied_at: r.copied_at });
+      if (cols.stage === 'ready') becameReady.push(r.id);
+    }
+    if (!before.length) {
+      await db.query('ROLLBACK');
+      return res.json({ op_id: null, updated: [], summary: { changed: 0, unchanged, became_ready: [], skipped_done: skippedDone } });
+    }
+    // what «آخرین تغییرات گروهی» says of it
+    const what = [set.party && 'طرف حساب', (set.beneficiary || clear.has('beneficiary_id')) && 'ذینفع',
+      (set.owner || rowOwners.size || clear.has('owner_id')) && 'صاحب چک', (set.spend_date || clear.has('spend_date')) && 'تاریخ خرج',
+      set.status && 'وضعیت'].filter(Boolean);
+    await db.query(
+      'UPDATE bulk_ops SET request = $1::jsonb, before = $2::jsonb, after_versions = $3::jsonb WHERE id = $4',
+      [JSON.stringify({ ids: b.ids, set, clear: [...clear], rows: b.rows || [], include_done: !!b.include_done, resend: !!b.resend, unsend: !!b.unsend, label: what.join('، ') }),
+        JSON.stringify(before), JSON.stringify(after), opId]
+    );
+    await db.query('COMMIT');
+    const updated = await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = ANY($1::int[]) ORDER BY c.id`, [before.map((x) => x.id)]);
+    res.json({ op_id: opId, updated: updated.rows, summary: { changed: before.length, unchanged, became_ready: becameReady, skipped_done: skippedDone } });
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => {});
+    if (err.payload) return res.status(400).json(err.payload);
+    if (err instanceof PeopleLimitError) return res.status(403).json({ error: err.message, code: err.code });
+    console.error('Bulk update error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   } finally {
     db.release();
