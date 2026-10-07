@@ -897,6 +897,10 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
   color: var(--ink);
 }
 .status-opt:hover { background: var(--bg); }
+/* the options are buttons now (a WAI-ARIA menu) */
+button.status-opt { width: 100%; border: none; background: none; font-family: inherit; text-align: start; }
+button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-revert-cancel:focus-visible { outline: none; box-shadow: var(--ring); }
+.status-revert-yes { flex: 1; min-width: 0; padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; border-radius: 8px; }
 .status-opt .st-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 /* Reverting to "منتظر ثبت" morphs this option in place, the same slide-in
@@ -3600,8 +3604,8 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
     transform: translate(-50%, -50%);
   }
   .chk-row-bottom { margin-top: 7px; padding-top: 5px; }
-  /* Dragging is off at this width, so the card must not advertise it. */
-  .check-card { cursor: default; }
+  /* Dragging is off at this width: a tap opens the cheque */
+  .check-card { cursor: pointer; }
 
   .board-search-box .search-box,
   .board-search-box .filter-pill-btn,
@@ -5541,3 +5545,21 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   :root:not([data-theme="light"]) .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
 }
 @media (prefers-reduced-motion: reduce) { .app-tooltip { transition: opacity 0.12s linear; transform: none; } }
+
+/* How long a card has waited (spec 9.4): days since it went to its owner,
+   with the channel's mark; a problem one, days without follow-up */
+.chk-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--t-micro);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chk-age-ch { display: inline-flex; width: 13px; height: 13px; flex: none; }
+.chk-age-ch svg { width: 13px; height: 13px; }
+.chk-age.is-stale { color: var(--state-bad-text); }
+/* under the search box: what a pasted list of serials found (H9) */
+.search-note { margin: -6px 0 12px; font-size: var(--t-micro); color: var(--ink-2); line-height: 1.7; }
+.search-note:empty { display: none; }

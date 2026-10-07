@@ -473,6 +473,7 @@ function enableFormButtons() {
 function openModalForView(id) {
   const c = loadCheques().find(x => x.id === id);
   if (!c) return;
+  noteOpener();
   // The eye button's click handler stops the click from bubbling to
   // document, so the document-level "click outside closes it" listener
   // that the status menu relies on never runs — without this, opening the
@@ -573,6 +574,7 @@ function exitViewEditMode() {
 }
 
 function openModal() {
+  noteOpener();
   pushBackGuard();
   // Defensive reset — guarantees a fresh "افزودن چک" state regardless of
   // whatever mode the modal was left in the last time it was open.
@@ -819,12 +821,38 @@ function closeModal(force) {
     }
   }
   const wasViewOrEdit = modalMode !== 'add';
+  const viewedId = editingChequeId;
   modalOverlay.classList.remove('show');
   document.body.style.overflow = '';
   resetAllFields();
   if (!wasViewOrEdit) clearDraft();
   if (wasViewOrEdit) exitViewEditMode();
+  returnFocus(viewedId);
 }
+// Back to where the window was opened from — or, when the board was drawn
+// again meanwhile, to that cheque's own eye button
+let modalOpener = null;
+function noteOpener() {
+  const a = document.activeElement;
+  if (a && a !== document.body && !modalOverlay.contains(a)) modalOpener = a;
+}
+function returnFocus(id) {
+  const opener = modalOpener;
+  modalOpener = null;
+  // (another layer took over: it keeps the focus)
+  if (document.querySelector('.bulk-overlay.show, .send-overlay.show, .confirm-overlay.show')) return;
+  const target = opener && opener.isConnected ? opener : (id ? document.querySelector(`[data-view="${id}"]`) : null);
+  if (target && target.offsetParent !== null) target.focus({ preventScroll: true });
+}
+
+new MutationObserver((records) => {
+  for (const rec of records) {
+    const f = rec.target;
+    if (f.classList.contains('error') || !f.classList.contains('form-field')) continue;
+    const msg = f.querySelector(':scope > .field-head .field-msg, :scope > .field-msg');
+    if (msg && msg.textContent) msg.textContent = '';
+  }
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'], attributeOldValue: false });
 
 const addCheckBtn = document.getElementById('addCheckBtn');
 addCheckBtn.addEventListener('click', openModal);
@@ -2170,14 +2198,23 @@ function positionDropdown(listEl, anchorEl) {
 // (typing, a pick, leaving it), e.g. so the cheque form can save its draft
 // — and onEnter(), what Enter does after it has picked (by default, inside
 // the cheque form, on to the next field)
+let acSeq = 0;
 function createAutocomplete(cfg) {
   const changed = () => { if (cfg.onChange) cfg.onChange(); };
   let matches = [];
   let activeIdx = -1;
   let repositionFn = null;
+  if (!cfg.list.id) cfg.list.id = `acList${++acSeq}`;
+  cfg.list.setAttribute('role', 'listbox');
+  cfg.input.setAttribute('role', 'combobox');
+  cfg.input.setAttribute('aria-autocomplete', 'list');
+  cfg.input.setAttribute('aria-controls', cfg.list.id);
+  cfg.input.setAttribute('aria-expanded', 'false');
 
   function close() {
     cfg.list.classList.remove('show');
+    cfg.input.setAttribute('aria-expanded', 'false');
+    cfg.input.removeAttribute('aria-activedescendant');
     activeIdx = -1;
     if (repositionFn) {
       window.removeEventListener('scroll', repositionFn, true);
@@ -2200,14 +2237,14 @@ function createAutocomplete(cfg) {
     matches.forEach((item, i) => {
       const main = `<span class="ac-main">${highlightMatch(cfg.primary(item), query)}</span>`;
       const sub = cfg.secondary ? `<span class="ac-tag">${escapeHtml(cfg.secondary(item))}</span>` : '';
-      html += `<div class="ac-item" data-idx="${i}">${main}${sub}</div>`;
+      html += `<div class="ac-item" role="option" aria-selected="false" id="${cfg.list.id}-${i}" data-idx="${i}">${main}${sub}</div>`;
     });
     if (cfg.allowNew && !empty && !cfg.hasExact(query)) {
       // The label can depend on the query: a name that is new to *this* field
       // may still be someone already on file under another role, and calling
       // them "new" would suggest a second record is about to be created.
       const newLabel = typeof cfg.newLabel === 'function' ? cfg.newLabel(query) : (cfg.newLabel || 'مورد جدید');
-      html += `<div class="ac-item ac-new" data-new="1"><span class="ac-main">${escapeHtml(query.trim())}</span><span class="ac-tag">${escapeHtml(newLabel)}</span></div>`;
+      html += `<div class="ac-item ac-new" role="option" aria-selected="false" id="${cfg.list.id}-new" data-new="1"><span class="ac-main">${escapeHtml(query.trim())}</span><span class="ac-tag">${escapeHtml(newLabel)}</span></div>`;
     }
     if (html === '') {
       if (cfg.hideWhenEmpty) { close(); return; }   // nothing to offer — stay out of the way
@@ -2216,6 +2253,8 @@ function createAutocomplete(cfg) {
 
     cfg.list.innerHTML = html;
     cfg.list.classList.add('show');
+    cfg.input.setAttribute('aria-expanded', 'true');
+    cfg.input.removeAttribute('aria-activedescendant');
     positionDropdown(cfg.list, cfg.input);
     if (!repositionFn) {
       repositionFn = () => positionDropdown(cfg.list, cfg.input);
@@ -2239,8 +2278,9 @@ function createAutocomplete(cfg) {
     const items = cfg.list.querySelectorAll('.ac-item');
     if (!items.length) return;
     activeIdx = (i + items.length) % items.length;
-    items.forEach((el, n) => el.classList.toggle('active', n === activeIdx));
+    items.forEach((el, n) => { el.classList.toggle('active', n === activeIdx); el.setAttribute('aria-selected', String(n === activeIdx)); });
     items[activeIdx].scrollIntoView({ block: 'nearest' });
+    cfg.input.setAttribute('aria-activedescendant', items[activeIdx].id);
   }
 
   cfg.input.addEventListener('input', () => {
@@ -4001,6 +4041,17 @@ clearFormBtn.addEventListener('click', async () => {
 // =========================================================
 const filterBar = document.getElementById('filterBar');
 const searchInput = document.getElementById('searchInput');
+const searchNote = document.getElementById('searchNote');
+// A list pasted from a message keeps its separators: one line of an <input>
+// would run the serials together
+searchInput.addEventListener('paste', (e) => {
+  const text = e.clipboardData && e.clipboardData.getData('text');
+  if (!text || !/[\r\n\t]/.test(text)) return;
+  e.preventDefault();
+  const v = text.split(/[\r\n\t]+/).map((s) => s.trim()).filter(Boolean).join('، ');
+  searchInput.setRangeText(v, searchInput.selectionStart, searchInput.selectionEnd, 'end');
+  searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+});
 const searchClearBtn = document.getElementById('searchClearBtn');
 const activeFiltersRow = document.getElementById('activeFiltersRow');
 const popDate = document.getElementById('popDate');
@@ -4236,9 +4287,48 @@ function daysSinceJalali(dateStr) {
   const now = new Date().setHours(0, 0, 0, 0);
   return Math.round((now - then) / 86400000);
 }
+// Only what was registered goes to the archive (C7): a problem cheque stays
+// on the board however old, its card counting the days without follow-up
 function isArchived(c) {
-  if (c.status !== 'done' && c.status !== 'problem') return false;
+  if (c.status !== 'done') return false;
   return daysSinceJalali(c.statusChangedAt) >= ARCHIVE_AFTER_DAYS;
+}
+
+// What the board's search box asks for, as a test of one cheque, or null:
+//   a list of serials or sayad ids (pasted from a message: two or more) —
+//     those cheques;
+//   digits — up to 6: in the serial; 16: the sayad id; in between: the
+//     sayad id, the beneficiary's national id, or the amount itself
+//     («۳٬۲۰۰٬۰۰۰» and «3200000» alike);
+//   words — in the owner, party or beneficiary's name, the notes or a
+//     problem's reason, ی/ک, half-spaces and spacing aside.
+function searchMatcher(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+  const tokens = window.ChekinoSerials ? window.ChekinoSerials.parse(text).filter((x) => x.kind !== 'invalid' && !x.uncertain) : [];
+  if (tokens.length >= 2) {
+    const serials = new Set(tokens.filter((x) => x.kind === 'serial').map((x) => x.value));
+    const sayads = new Set(tokens.filter((x) => x.kind === 'sayad').map((x) => x.value));
+    return (c) => serials.has(c.serial) || sayads.has(c.sayad);
+  }
+  const digitsOnly = /^[\d۰-۹٠-٩\s,،٬٫./-]+$/.test(text);
+  if (digitsOnly) {
+    const d = toEnDigits(text.replace(/[٠-٩]/g, (x) => String(x.charCodeAt(0) - 0x0660))).replace(/[^0-9]/g, '');
+    if (!d) return null;
+    if (d.length <= 6) return (c) => c.serial.includes(d);
+    if (d.length >= 16) return (c) => c.sayad.includes(d);
+    return (c) => c.sayad.includes(d) || toEnDigits(c.nid || '').includes(d) || String(c.amount) === d;
+  }
+  const n = normalizeName(text);
+  return (c) => [c.owner, c.party, c.benef, c.notes, c.statusReason].some((s) => s && normalizeName(s).includes(n));
+}
+// A pasted list: how much of it is on the board, and what isn't anywhere
+function searchListNote(raw) {
+  const tokens = window.ChekinoSerials ? window.ChekinoSerials.parse(String(raw || '')).filter((x) => x.kind !== 'invalid' && !x.uncertain) : [];
+  if (tokens.length < 2) return '';
+  const all = loadCheques();
+  const nowhere = tokens.filter((x) => !all.some((c) => (x.kind === 'sayad' ? c.sayad === x.value : c.serial === x.value)));
+  return `${toFa(tokens.length)} سریال در فهرست${nowhere.length ? `؛ پیدا نشد: ${nowhere.map((x) => toFa(x.value)).join('، ')}` : ''}`;
 }
 
 function getFilteredCheques() {
@@ -4248,13 +4338,9 @@ function getFilteredCheques() {
     list = list.filter(c => !isArchived(c));
   }
 
-  // live search: 1-6 digits searches the serial, more than 6 searches the sayad id
-  const q = toEnDigits(searchInput.value).replace(/[^0-9]/g, '');
-  if (q) {
-    list = q.length <= 6
-      ? list.filter(c => c.serial.includes(q))
-      : list.filter(c => c.sayad.includes(q));
-  }
+  // live search (H9): serials, sayad ids, names, amounts, notes — see searchMatcher
+  const match = searchMatcher(searchInput.value);
+  if (match) list = list.filter(match);
 
   // date range, on whichever basis the radio picks
   const basis = document.querySelector('input[name="dateBasis"]:checked').value;
@@ -4367,12 +4453,16 @@ function refreshTable() {
 
 // ---- search box ----
 searchInput.addEventListener('input', () => {
-  searchInput.value = toFa(toEnDigits(searchInput.value).replace(/[^0-9]/g, '').slice(0, 16));
+  // digits shown in Persian, whatever was typed; words as they are
+  const v = searchInput.value.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]).replace(/[٠-٩]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d.charCodeAt(0) - 0x0660]);
+  if (v !== searchInput.value) { const at = searchInput.selectionStart; searchInput.value = v; searchInput.setSelectionRange(at, at); }
   searchClearBtn.classList.toggle('show', searchInput.value.length > 0);
+  searchNote.textContent = searchListNote(searchInput.value);
   refreshTable();
 });
 searchClearBtn.addEventListener('click', () => {
   searchInput.value = '';
+  searchNote.textContent = '';
   searchClearBtn.classList.remove('show');
   refreshTable();
   searchInput.focus();
@@ -4621,6 +4711,7 @@ showArchivedCheckbox.addEventListener('change', refreshTable);
 // ---- clear all filters ----
 filterClearBtn.addEventListener('click', () => {
   searchInput.value = '';
+  searchNote.textContent = '';
   searchClearBtn.classList.remove('show');
   document.querySelector('input[name="dateBasis"][value="dueDate"]').checked = true;
   rangeFrom = null;
@@ -4779,13 +4870,20 @@ const exportCluster = document.getElementById('exportCluster');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportExcelBtn = document.getElementById('exportExcelBtn');
 
+// Closed, its two buttons are out of reach: not tabbed to, not read out
+// (they were 2px wide and still took the focus)
+function setExportReach(open) {
+  [exportPdfBtn, exportExcelBtn].forEach((b) => { if (open) b.removeAttribute('inert'); else b.setAttribute('inert', ''); });
+}
 function closeExportMenu() {
   if (!exportCluster.classList.contains('open')) return;
   exportCluster.classList.remove('open');
   reportBtn.setAttribute('aria-expanded', 'false');
+  setExportReach(false);
 }
 function openExportMenu() {
   exportCluster.classList.add('open');
+  setExportReach(true);
   reportBtn.setAttribute('aria-expanded', 'true');
   pushBackGuard();
 }
@@ -4798,6 +4896,7 @@ reportBtn.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   if (!exportCluster.contains(e.target)) closeExportMenu();
 });
+setExportReach(false);
 exportPdfBtn.addEventListener('click', () => { closeExportMenu(); generateReport(); });
 exportExcelBtn.addEventListener('click', () => { closeExportMenu(); exportChecksToExcel(); });
 
@@ -4910,7 +5009,7 @@ function statusDotTriggerHtml(c, st) {
   // The reason itself is written on the card now (chk-reason); the button's
   // tip says what the button does.
   const tip = 'تغییر وضعیت';
-  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" style="background:${st.color}" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
+  return `<button type="button" class="status-dot-btn" data-status-for="${c.id}" style="background:${st.color}" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}، الان ${escapeHtml(st.name)}" aria-haspopup="menu" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BOARD_COL_ICON[c.status || 'pending'] || ''}</svg>
   </button>`;
 }
@@ -4931,6 +5030,30 @@ const ICON_AMOUNT = icon('amount');
 // view.
 // Set for exactly one renderTable() call, by applyStatus — see there.
 let justChangedId = null;
+
+// How long it has waited — what following a cheque up is about (spec 9.4):
+// a pending one, days since it went to its owner and by which channel; a
+// problem one, days since it was found, with nothing done since
+function cardAgeHtml(c) {
+  const status = c.status || 'pending';
+  if (status === 'pending' && c.sendDate) {
+    const d = daysSinceJalali(c.sendDate);
+    if (d < 0) return '';
+    const sent = (c.history || []).filter((h) => h.event === 'sent').pop();
+    const chs = c.channels || [];
+    const chId = channelIdOf((sent && sent.channel) || chs[chs.length - 1] || '');
+    const ch = CHANNELS.find((x) => x.id === chId);
+    const text = d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
+    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}`;
+    return `<span class="chk-age" data-tip="${escapeHtml(tip)}">${ch ? `<span class="chk-age-ch" aria-hidden="true">${ch.icon}</span>` : ''}${text}</span>`;
+  }
+  if (status === 'problem' && c.statusChangedAt) {
+    const d = daysSinceJalali(c.statusChangedAt);
+    if (d < 1) return '';
+    return `<span class="chk-age is-stale" data-tip="${toFa(d)} روز بدون پیگیری">${toFa(d)} روز</span>`;
+  }
+  return '';
+}
 
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
@@ -4957,6 +5080,7 @@ function checkCardHtml(c) {
     <div class="chk-row chk-row-bottom">
       <span class="row-actions">${eyeButtonHtml(c)}</span>
       <div class="chk-icon-group">
+        ${cardAgeHtml(c)}
         ${reasonHtml}
         ${receiptButtonHtml(c)}
         ${statusDotTriggerHtml(c, st)}
@@ -5335,9 +5459,20 @@ window.addEventListener('resize', updateBoardHeight);
     scheduleFrame(e.clientX, e.clientY);
   }, { passive: true });
 
+  // a tap on a card opens it (spec 9.4); the click that ends a drag doesn't
+  let suppressClick = false;
+  boardColumns.addEventListener('click', (e) => {
+    if (suppressClick || activeReasonPrompt) return;
+    const card = cardUnderPointer(e.target);
+    if (!card || isInteractiveChild(e.target) || card.classList.contains('check-card-ghost')) return;
+    if (String(window.getSelection ? window.getSelection() : '').trim()) return;   // text being selected
+    openViewEdit(parseInt(card.dataset.id, 10));
+  });
+
   function onPointerUp(e) {
     if (pointerId === null || e.pointerId !== pointerId) return;
     const card = sourceCard, dropColumn = overColumn, wasDragging = dragging;
+    if (wasDragging) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); }
     cleanup();
     if (!wasDragging || !card || !dropColumn) return;
     const id = parseInt(card.dataset.id, 10);
@@ -5477,8 +5612,17 @@ window.addEventListener('resize', updateBoardHeight);
   }
 })();
 
-function closeStatusMenu() {
-  if (openStatusMenu) { openStatusMenu.remove(); openStatusMenu = null; }
+// focusBack: closed from the keyboard, the focus goes back to its button
+function closeStatusMenu(focusBack) {
+  if (openStatusMenu) {
+    const btn = openStatusMenu._anchorBtn;
+    openStatusMenu.remove();
+    openStatusMenu = null;
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      if (focusBack && btn.isConnected) btn.focus();
+    }
+  }
   window.removeEventListener('scroll', repositionStatusMenu, true);
   window.removeEventListener('resize', repositionStatusMenu);
 }
@@ -5496,8 +5640,11 @@ function repositionStatusMenu() {
   openStatusMenu.style.top = top + 'px';
 }
 
+// The WAI-ARIA menu button: the options are buttons, ↑/↓ (and Home/End)
+// move between them, Enter or Space picks, Escape closes back to the button
+// (the page's Escape chain), Tab leaves it
 function toggleStatusMenu(btn, id) {
-  if (openStatusMenu && openStatusMenu.dataset.for === String(id)) { closeStatusMenu(); return; }
+  if (openStatusMenu && openStatusMenu.dataset.for === String(id)) { closeStatusMenu(true); return; }
   closeStatusMenu();
 
   const cheque = loadCheques().find(c => c.id === id);
@@ -5506,28 +5653,41 @@ function toggleStatusMenu(btn, id) {
 
   const menu = document.createElement('div');
   menu.className = 'status-menu show';
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', 'تغییر وضعیت');
   menu.dataset.for = String(id);
   menu.innerHTML = STATUSES.filter(s => s.id !== current).map(s =>
-    `<div class="status-opt" data-set="${s.id}"><span class="st-dot" style="background:${s.color}"></span>${s.name}</div>`).join('');
+    `<button type="button" role="menuitem" class="status-opt" data-set="${s.id}"><span class="st-dot" style="background:${s.color}"></span>${s.name}</button>`).join('');
 
   menu.addEventListener('click', (e) => e.stopPropagation());
+  menu.addEventListener('keydown', (e) => {
+    const items = [...menu.querySelectorAll('button')].filter((b) => b.offsetParent !== null);
+    const i = items.indexOf(document.activeElement);
+    let next = -1;
+    if (e.key === 'ArrowDown') next = (i + 1) % items.length;
+    else if (e.key === 'ArrowUp') next = (i - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    else if (e.key === 'Tab') { closeStatusMenu(); return; }
+    if (next < 0 || !items.length) return;
+    e.preventDefault();
+    items[next].focus();
+  });
   document.body.appendChild(menu);
   menu._anchorBtn = btn;
+  btn.setAttribute('aria-expanded', 'true');
   openStatusMenu = menu;
   pushBackGuard();
   repositionStatusMenu();
   window.addEventListener('scroll', repositionStatusMenu, true);
   window.addEventListener('resize', repositionStatusMenu);
+  menu.querySelector('.status-opt').focus({ preventScroll: true });
 
   menu.querySelectorAll('[data-set]').forEach(opt => {
     opt.addEventListener('click', () => {
       const next = opt.dataset.set;
-      if (opt.classList.contains('confirming-revert')) {
-        applyStatus(id, 'pending', '');
-        return;
-      }
       if (next === 'problem') showReasonBox(menu, id);
-      else if (next === 'pending') showRevertConfirm(opt);
+      else if (next === 'pending') showRevertConfirm(opt, id);
       else applyStatus(id, next, '');
     });
   });
@@ -5537,22 +5697,26 @@ function toggleStatusMenu(btn, id) {
 // second thought, so this option morphs in place — the same slide-in
 // mechanic as the "بله، حذف شود" / "ذخیره تغییرات" confirmations elsewhere,
 // just scaled down to fit inside this small dropdown row.
-function showRevertConfirm(optEl) {
-  const pendingSt = statusById('pending');
-  optEl.classList.add('confirming-revert');
-  optEl.innerHTML = `
-    <span class="status-revert-text">بله، بازگردد</span>
-    <button type="button" class="status-revert-cancel">انصراف</button>`;
+// (the option makes way for two buttons of its own: a button can't hold one)
+function showRevertConfirm(optEl, id) {
+  const box = document.createElement('div');
+  box.className = 'status-opt confirming-revert';
+  box.innerHTML = `
+    <button type="button" role="menuitem" class="status-revert-yes">بله، بازگردد</button>
+    <button type="button" role="menuitem" class="status-revert-cancel">انصراف</button>`;
+  optEl.replaceWith(box);
   repositionStatusMenu();
   requestAnimationFrame(() => {
-    optEl.querySelector('.status-revert-cancel').classList.add('show');
+    box.querySelector('.status-revert-cancel').classList.add('show');
   });
-  optEl.querySelector('.status-revert-cancel').addEventListener('click', (e) => {
+  box.querySelector('.status-revert-yes').addEventListener('click', () => applyStatus(id, 'pending', ''));
+  box.querySelector('.status-revert-cancel').addEventListener('click', (e) => {
     e.stopPropagation();
-    optEl.classList.remove('confirming-revert');
-    optEl.innerHTML = `<span class="st-dot" style="background:${pendingSt.color}"></span>${pendingSt.name}`;
+    box.replaceWith(optEl);
     repositionStatusMenu();
+    optEl.focus();
   });
+  box.querySelector('.status-revert-yes').focus();
 }
 
 // "مشکل در ثبت" needs a reason, so the menu turns into a small note box
@@ -5578,7 +5742,7 @@ function showReasonBox(menu, id) {
 // render — left a dragged card sitting in its old column for a couple of
 // seconds, which reads as a failed drop. If the write is rejected the
 // card goes back where it was and the error is shown.
-async function applyStatus(id, status, reason) {
+async function applyStatus(id, status, reason, opts = {}) {
   const rec = loadCheques().find((x) => x.id === id);
   const version = rec ? rec.version : undefined;
   const before = rec
@@ -5614,6 +5778,14 @@ async function applyStatus(id, status, reason) {
     // The new version at once: a second change made before the background
     // reconcile lands must not read as a conflict with the first
     if (rec && updated && updated.version) rec.version = updated.version;
+    // what was done, and the way back (H5): the status it had, its reason with it
+    if (rec && before && !opts.quiet) {
+      const back = before.status || 'pending';
+      showToast(`چک ${toFa(rec.serial)} «${statusById(status).name}» شد`, {
+        duration: 8000,
+        action: { label: 'برگردون', run: () => applyStatus(id, back, back === 'problem' ? before.statusReason || '' : '', { quiet: true }) },
+      });
+    }
     // Reconcile in the background — the server owns the status history
     // and the exact timestamp, neither of which the guess above fills in.
     loadChecksFromApi().then(renderTable).catch(() => {});
@@ -6059,6 +6231,7 @@ document.addEventListener('keydown', (e) => {
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
   if (activePopover) { closePopover(); return; }
+  if (openStatusMenu) { closeStatusMenu(true); return; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
   if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }

@@ -943,7 +943,7 @@ body.bulk-open { overflow: hidden; }
 .e-check { display: flex; align-items: center; justify-content: center; height: 44px; }
 .e-serial { display: flex; flex-direction: column; line-height: 1.3; }
 .e-serial b { font-size: var(--t-value); color: var(--ink); font-variation-settings: var(--f-title); }
-.e-sub { font-size: var(--t-micro); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.e-sub { font-size: var(--t-micro); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .e-sub:empty { display: none; }
 .e-amount { color: var(--ink); }
 .e-owner-field { margin: 0; }

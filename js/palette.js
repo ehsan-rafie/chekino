@@ -220,7 +220,9 @@
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
 
-    if (mod && (e.key === 'k' || e.key === 'K')) {
+    // by where the key is (event.code), so Ctrl+K and the letters work on
+    // a Persian layout too («ن» is KeyK's place)
+    if (mod && (e.code === 'KeyK' || e.key === 'k' || e.key === 'K')) {
       e.preventDefault();
       isOpen() ? close() : open();
       return;
@@ -230,7 +232,8 @@
     if (typingInField(e.target)) return;
     if (anotherOverlayOpen()) return;           // a modal's Escape chain comes first
 
-    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const byPlace = /^Key[A-Z]$/.test(e.code || '') ? e.code.slice(3).toLowerCase() : e.code === 'Slash' && !e.shiftKey ? '/' : null;
+    const key = byPlace || (e.key.length === 1 ? e.key.toLowerCase() : e.key);
     const hit = visibleCommands().find(
       (c) => c.key && String(c.key).toLowerCase() === key
     );

@@ -592,11 +592,10 @@
       showList(hintIds, 'نتیجه‌ی جستجو، بیرون از بُرد', 'این چک‌ها هنوز برای صاحب چک فرستاده نشده‌اند', e.currentTarget);
     });
   }
-  // A search the board reads (1–6 digits: the serial; more: the sayad id)
+  // The board's search, on the cheques off the board (searchMatcher in dashboard.js)
   function searchMatches() {
-    const q = typeof searchInput !== 'undefined' ? toEnDigits(searchInput.value).replace(/[^0-9]/g, '') : '';
-    if (!q) return [];
-    return loadCheques().filter((c) => offBoard(c) && (q.length <= 6 ? (c.serial || '').includes(q) : (c.sayad || '').includes(q)));
+    const match = typeof searchMatcher === 'function' && typeof searchInput !== 'undefined' ? searchMatcher(searchInput.value) : null;
+    return match ? loadCheques().filter((c) => offBoard(c) && match(c)) : [];
   }
   function refreshChips() {
     if (!chips) return;
