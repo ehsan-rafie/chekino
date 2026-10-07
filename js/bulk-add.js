@@ -31,15 +31,21 @@
   const fa = (n) => toFa(String(n));
 
   // ---------------------------------------------------------------
-  // This device's copy (IndexedDB «chekino», store «batches»)
+  // This device's copy (IndexedDB «chekino»): the batches («batches»), and
+  // the photos not yet on the server and the scans they were cut from
+  // («files», key `${company}:${uuid}`)
   // ---------------------------------------------------------------
   let idbP = null;
   function idb() {
     if (!idbP) {
       idbP = new Promise((resolve) => {
         let req;
-        try { req = indexedDB.open('chekino', 1); } catch (e) { resolve(null); return; }
-        req.onupgradeneeded = () => req.result.createObjectStore('batches', { keyPath: 'key' });
+        try { req = indexedDB.open('chekino', 2); } catch (e) { resolve(null); return; }
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('batches')) db.createObjectStore('batches', { keyPath: 'key' });
+          if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+        };
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => resolve(null);
         req.onblocked = () => resolve(null);
@@ -47,13 +53,13 @@
     }
     return idbP;
   }
-  async function idbDo(mode, fn) {
+  async function idbDo(mode, fn, store = 'batches') {
     const db = await idb();
     if (!db) return null;
     return new Promise((resolve) => {
       try {
-        const tx = db.transaction('batches', mode);
-        const req = fn(tx.objectStore('batches'));
+        const tx = db.transaction(store, mode);
+        const req = fn(tx.objectStore(store));
         tx.oncomplete = () => resolve(req ? req.result : null);
         tx.onerror = () => resolve(null);
       } catch (e) { resolve(null); }
@@ -66,21 +72,31 @@
     const all = (await idbDo('readonly', (s) => s.getAll())) || [];
     return all.filter((r) => r.company === PAGE_COMPANY);
   }
+  const fileKey = () => `${PAGE_COMPANY}:${uuid()}`;
+  const filePut = (key, value) => idbDo('readwrite', (s) => s.put(value, key), 'files');
+  const fileGet = (key) => idbDo('readonly', (s) => s.get(key), 'files');
+  const fileDel = (key) => (key ? idbDo('readwrite', (s) => s.delete(key), 'files') : null);
 
   // ---------------------------------------------------------------
   // The open batch
   // ---------------------------------------------------------------
-  // st = { clientId, serverId, version, kind, header, hasBenef, rows,
+  // st = { clientId, serverId, version, kind, header, hasBenef, rows, scans,
   //        unsynced, localAt, saving, offline, savedAt, committing }
   // row = { ref, position, serial, sayad_id, amount, due_date, owner,
-  //         include, note, serverError, touched, ui }
+  //         include, note, serverError, touched, photo, ui }
+  // photo = { image_id (on the server), key (on this device, until it is),
+  //           url / thumbUrl (object URLs), full / thumb (Blobs, while here),
+  //           scan (the scan it was cut from), uploading, tries, failed, missing, error }
+  // scan = { key (the original, on this device), rotation, boxes: [{ ref, x, y, w, h }] }
   let st = null;
   const rowsEl = $('bulkRows');
 
-  const emptyRow = (o) => ({ ref: uuid(), position: 0, serial: '', sayad_id: '', amount: '', due_date: '', owner: null, include: true, note: '', serverError: '', touched: {}, ...o });
-  const isBlank = (r) => !r.serial && !r.sayad_id && !r.amount && !r.due_date && !(r.owner && r.owner.name) && !(r.ui && r.ui.due && !r.ui.due.isEmpty());
+  const emptyRow = (o) => ({ ref: uuid(), position: 0, serial: '', sayad_id: '', amount: '', due_date: '', owner: null, include: true, note: '', serverError: '', touched: {}, photo: null, ...o });
+  const isBlank = (r) => !r.serial && !r.sayad_id && !r.amount && !r.due_date && !(r.owner && r.owner.name) && !r.photo && !(r.ui && r.ui.due && !r.ui.due.isEmpty());
 
-  function draftOf(b = st) {
+  // The server's copy has each row's photo by its id; this device's copy
+  // also has the photos still waiting to go up, and the scans
+  function draftOf(b = st, local = false) {
     const h = b.header;
     return {
       header: {
@@ -94,12 +110,15 @@
         ref: r.ref, position: i + 1, serial: r.serial, sayad_id: r.sayad_id, amount: r.amount,
         due_date: r.due_date, owner: r.owner && r.owner.name ? { name: r.owner.name } : null,
         include: r.include, note: r.note || undefined,
+        image_id: r.photo && r.photo.image_id ? r.photo.image_id : undefined,
+        photo_key: local && r.photo && !r.photo.image_id && r.photo.key ? r.photo.key : undefined,
+        scan: local && r.photo && r.photo.scan ? r.photo.scan : undefined,
       })),
     };
   }
   function record(b = st) {
     return { key: mirrorKey(b.clientId), company: PAGE_COMPANY, clientId: b.clientId, serverId: b.serverId, version: b.version,
-      kind: b.kind, draft: draftOf(b), unsynced: b.unsynced, updatedAt: b.localAt || Date.now() };
+      kind: b.kind, draft: draftOf(b, true), scans: b.scans || [], unsynced: b.unsynced, updatedAt: b.localAt || Date.now() };
   }
 
   // ---------------------------------------------------------------
@@ -233,6 +252,7 @@
     el.innerHTML = `
       <label class="b-inc" title="در این ثبت" data-label=""><input type="checkbox" aria-label="در این ثبت"></label>
       <span class="b-idx" aria-hidden="true"></span>
+      <button type="button" class="b-photo" aria-label="عکس چک"></button>
       <div class="form-field b-cell b-serial" data-label="سریال"><div class="ig is-ltr"><input type="text" data-col="serial" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="سریال"></div></div>
       <div class="form-field b-cell b-sayad" data-label="شناسه صیادی"><div class="ig is-ltr"><input type="text" data-col="sayad" inputmode="numeric" maxlength="19" autocomplete="off" aria-label="شناسه صیادی"></div></div>
       <div class="form-field b-cell b-amount" data-label="مبلغ"><div class="amount-box"><input type="text" data-col="amount" class="amount-input" inputmode="numeric" autocomplete="off" aria-label="مبلغ"><span class="amount-unit" title="ریال">﷼</span></div><div class="b-words"></div></div>
@@ -242,7 +262,7 @@
       <div class="b-msg" aria-live="polite"></div>`;
     const q = (sel) => el.querySelector(sel);
     const ui = {
-      el, inc: q('.b-inc input'), idx: q('.b-idx'),
+      el, inc: q('.b-inc input'), idx: q('.b-idx'), photo: q('.b-photo'),
       serial: q('[data-col="serial"]'), sayad: q('[data-col="sayad"]'), amount: q('[data-col="amount"]'), words: q('.b-words'),
       owner: q('[data-col="owner"]'), msg: q('.b-msg'),
       cells: { serial: q('.b-serial'), sayad: q('.b-sayad'), amount: q('.b-amount'), due: q('.b-due'), owner: q('.b-owner') },
@@ -309,6 +329,13 @@
     });
     ui.inc.addEventListener('change', () => { row.include = ui.inc.checked; showCount(); changed(); });
     q('.b-del').addEventListener('click', () => removeRow(row));
+    // its photo: a click shows what can be done with it, or picks one
+    ui.photo.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setActive(row);
+      if (row.photo) openPhotoMenu(row, ui.photo); else pickFileFor(row);
+    });
+    showPhoto(row);
     // leaving a field is when it's judged
     for (const col of ['serial', 'sayad', 'amount']) ui[col].addEventListener('blur', () => { if (!isBlank(row)) { row.touched[col] = true; showRow(row); } });
     ui.due.input.addEventListener('blur', () => { if (!isBlank(row)) { row.touched.due = true; showRow(row); } });
@@ -320,6 +347,7 @@
     row.ui.ownerList.remove();
     row.ui.el.remove();
     row.ui = null;
+    if (activeRow === row) setActive(null);
   }
   function addRow(o, { focus } = {}) {
     const row = emptyRow(o);
@@ -334,6 +362,8 @@
     const i = st.rows.indexOf(row);
     if (i < 0) return;
     const next = st.rows[i + 1] || st.rows[i - 1];
+    dropPhoto(row.photo);
+    forgetInScans(row.ref);
     destroyRow(row);
     st.rows.splice(i, 1);
     if (!st.rows.length) addRow({});
@@ -369,8 +399,11 @@
     if (!row.due_date) {
       p.due = row.ui && row.ui.due && !row.ui.due.isEmpty() ? (row.ui.due.validate(), row.ui.dueMsg.textContent || 'ناقص است') : 'لازم است';
     }
+    if (row.photo && (row.photo.failed || row.photo.missing)) p.photo = row.photo.error || 'عکس این ردیف روی این دستگاه نیست؛ دوباره بگذارش';
     return p;
   }
+  // its photo still on its way up: it can be chosen, «ثبت» waits for it
+  const photoPending = (row) => !!(row.photo && !row.photo.image_id && !row.photo.failed && !row.photo.missing);
   function rowNote(row) {
     if (row.note) return row.note;
     if (row.serial && row.serial.length === 6) {
@@ -381,7 +414,9 @@
     }
     return '';
   }
-  const isComplete = (row) => !isBlank(row) && Object.keys(rowProblems(row)).length === 0;
+  const fieldsOk = (row) => !isBlank(row) && Object.keys(rowProblems(row)).length === 0;
+  const isComplete = (row) => fieldsOk(row) && !photoPending(row);
+  const canCommit = (row) => fieldsOk(row);   // a photo on its way up is waited for
   function showRow(row) {
     if (!row.ui) return;
     const p = isBlank(row) ? {} : rowProblems(row);
@@ -391,12 +426,14 @@
       row.ui.cells[col].classList.toggle('error', !!bad);
       if (bad) shown.push(`${LABELS[col]}: ${p[col]}`);
     }
-    const note = isBlank(row) ? '' : rowNote(row);
+    if (p.photo) shown.push(`عکس: ${p.photo}`);
+    const note = isBlank(row) ? '' : (rowNote(row) || (photoPending(row) && row.photo.tries ? 'عکس هنوز آپلود نشده؛ با وصل شدن دوباره می‌رود' : ''));
     const text = row.serverError || shown.join('؛ ') || note;
     row.ui.msg.textContent = text;
     row.ui.el.classList.toggle('has-error', !!(row.serverError || shown.length));
     row.ui.el.classList.toggle('has-note', !row.serverError && !shown.length && !!note);
     row.ui.el.classList.toggle('is-complete', isComplete(row));
+    showPhoto(row);
     showCount();
   }
   function revalidate() { st.rows.forEach(showRow); }
@@ -405,10 +442,13 @@
     if (!st) return;
     const filled = st.rows.filter((r) => !isBlank(r));
     const complete = filled.filter(isComplete);
-    const chosen = complete.filter((r) => r.include);
+    const uploading = filled.filter((r) => fieldsOk(r) && photoPending(r));
+    const chosen = filled.filter((r) => r.include && canCommit(r));
     const parts = [`${fa(filled.length)} ردیف`];
     if (filled.length) parts.push(`${fa(complete.length)} کامل`);
-    if (filled.length - complete.length) parts.push(`${fa(filled.length - complete.length)} ناقص`);
+    if (uploading.length) parts.push(`${fa(uploading.length)} در حال آپلود عکس`);
+    const lacking = filled.length - complete.length - uploading.length;
+    if (lacking) parts.push(`${fa(lacking)} ناقص`);
     $('bulkCount').textContent = filled.length ? parts.join('، ') : '';
     const btn = $('bulkCommit');
     if (!st.committing) btn.textContent = chosen.length ? `ثبت ${fa(chosen.length)} چک` : 'ثبت';
@@ -431,8 +471,9 @@
   }
   overlay.addEventListener('keydown', (e) => {
     if (!st) return;
-    // Escape on an open list closes the list only, not the panel
+    // Escape on an open list (or the photo's menu) closes that only, not the panel
     if (e.key === 'Escape' && anyListOpen()) { e.stopPropagation(); closeLists(); return; }
+    if (e.key === 'Escape' && closePhotoMenu()) { e.stopPropagation(); return; }
     const t = e.target;
     const col = t && t.dataset ? t.dataset.col : null;
     const rowEl = t && t.closest ? t.closest('.bulk-row') : null;
@@ -514,6 +555,468 @@
     if ((e.code === 'Enter' || e.code === 'NumpadEnter') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); makeRowsFromPaste(); }
   });
   $('bulkAddRow').addEventListener('click', () => addRow({}, { focus: true }));
+
+  // ---------------------------------------------------------------
+  // Photos (spec F1, 5.2, 6.5): a scan becomes a row per cheque found on
+  // it (js/bulk-photos.js finds and cuts them); a photo dropped or pasted on
+  // a row is that row's. Each is kept on this device until it is on the
+  // server (POST /api/images, two at a time, tried again as the connection
+  // allows), then the row carries its id.
+  // ---------------------------------------------------------------
+  const Photos = window.ChekinoPhotos;
+  const PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="m21 16-4.5-4.5L8 19"/></svg>';
+  const isImageFile = (f) => f && /^image\//.test(f.type || '');
+  const MISSING = 'عکس این ردیف روی این دستگاه نیست؛ دوباره بگذارش';
+
+  function setImg(btn, src) {
+    let img = btn.querySelector('img');
+    if (!img) { btn.innerHTML = ''; img = document.createElement('img'); img.alt = ''; img.draggable = false; btn.appendChild(img); }
+    if (img.getAttribute('src') !== src) img.src = src;
+  }
+  function showPhoto(row) {
+    const btn = row.ui && row.ui.photo;
+    if (!btn) return;
+    const p = row.photo;
+    btn.classList.toggle('has-photo', !!p);
+    btn.classList.toggle('is-uploading', photoPending(row));
+    btn.classList.toggle('is-bad', !!(p && (p.failed || p.missing)));
+    btn.title = p ? 'عکس این چک' : 'افزودن عکس';
+    btn.setAttribute('aria-label', p ? `عکس چکِ ردیف ${fa(st.rows.indexOf(row) + 1)}` : `افزودن عکس برای ردیف ${fa(st.rows.indexOf(row) + 1)}`);
+    const src = p && (p.thumbUrl || p.url);
+    if (src) setImg(btn, src);
+    else if (p && p.image_id) {
+      if (!btn.querySelector('img')) btn.innerHTML = '';
+      Photos.thumbUrl(p.image_id).then((u) => { if (row.photo === p) { p.thumbUrl = u; if (row.ui) setImg(row.ui.photo, u); } }).catch(() => {});
+    } else btn.innerHTML = p ? '' : PLUS_SVG;
+  }
+
+  // the object URLs this page made for a photo (the server's small copies
+  // are js/bulk-photos.js's to keep)
+  function releasePhoto(p) {
+    if (!p || !p.own) return;
+    for (const u of [p.url, p.thumbUrl]) if (u) { blobOfUrl.delete(u); URL.revokeObjectURL(u); }
+    p.url = p.thumbUrl = null;
+    p.full = p.thumb = null;
+    p.own = false;
+  }
+  // a photo let go of: this device's copy, and the server's if no cheque has it
+  function dropPhoto(p) {
+    if (!p) return;
+    releasePhoto(p);
+    fileDel(p.key);
+    if (p.image_id) apiFetch(`/images/${encodeURIComponent(p.image_id)}`, { method: 'DELETE' }).catch(() => {});
+  }
+  function forgetInScans(ref) {
+    if (!st || !st.scans) return;
+    for (const s of st.scans) s.boxes = s.boxes.filter((b) => b.ref !== ref);
+    for (const s of st.scans.filter((x) => !x.boxes.length)) fileDel(s.key);
+    st.scans = st.scans.filter((x) => x.boxes.length);
+    showScans();
+  }
+  function own(p, full, thumb) {
+    p.full = full; p.thumb = thumb;
+    p.url = URL.createObjectURL(full);
+    p.thumbUrl = URL.createObjectURL(thumb);
+    blobOfUrl.set(p.url, full);   // the lightbox shares and saves it from here
+    p.own = true;
+    return p;
+  }
+  // a photo waiting on this device, after the page was opened again
+  async function restorePhoto(row) {
+    const p = row.photo;
+    const v = await fileGet(p.key);
+    if (row.photo !== p) return;
+    if (v && v.full) { own(p, v.full, v.thumb || v.full); pump(); }
+    else { p.missing = true; p.error = MISSING; }
+    if (row.ui) showRow(row);
+    if (activeRow === row) showPreview();
+  }
+  // a cheque cut from an image, kept on this device until it is up
+  async function makePhoto(blob, box, rotation, scanKey) {
+    const { full, thumb } = await Photos.cut(blob, box, rotation);
+    const key = fileKey();
+    await filePut(key, { full, thumb });
+    return own({ key, scan: scanKey || null }, full, thumb);
+  }
+  function setRowPhoto(row, photo) {
+    const old = row.photo;
+    row.photo = photo;
+    if (old && old !== photo) dropPhoto(old);
+    if (row.ui) showRow(row);
+    if (activeRow === row) showPreview();
+    changed();
+    pump();
+  }
+  // the photo itself (full size), wherever it is: here, or on the server
+  async function photoBlob(p) {
+    if (p.full) return p.full;
+    if (p.key) { const v = await fileGet(p.key); if (v && v.full) return v.full; }
+    if (p.image_id) return (await loadImage(p.image_id)).blob;
+    throw new Error('no photo');
+  }
+  // one image for one row: a single cheque found on it is cut out, otherwise it's taken whole
+  async function photoForFile(file) {
+    let box = null;
+    try {
+      const d = await Photos.detect(file);
+      if (d.boxes.length === 1 && !d.rejected) box = d.boxes[0];
+    } catch (e) { /* taken whole */ }
+    return makePhoto(file, box, 0, null);
+  }
+  async function rowPhotoFromFile(row, file) {
+    if (!isImageFile(file)) { showFoot('فقط عکس'); return; }
+    try { setRowPhoto(row, await photoForFile(file)); } catch (e) { showFoot('این عکس خوانده نشد'); }
+  }
+
+  // ---- scans: a row a cheque ----
+  const dropBtn = $('bulkDropBtn'), fileInput = $('bulkFile'), rowFileInput = $('bulkRowFile');
+  dropBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => { const files = [...fileInput.files]; fileInput.value = ''; if (files.length) addScans(files); });
+  let fileFor = null;
+  function pickFileFor(row) { fileFor = row; rowFileInput.click(); }
+  rowFileInput.addEventListener('change', () => {
+    const f = rowFileInput.files[0];
+    rowFileInput.value = '';
+    if (f && fileFor && st && st.rows.includes(fileFor)) rowPhotoFromFile(fileFor, f);
+    fileFor = null;
+  });
+
+  async function addScans(files) {
+    if (!st) return;
+    const images = files.filter(isImageFile);
+    if (!images.length) { pasteNote.textContent = 'فقط عکس'; return; }
+    const made = [];
+    for (const [n, file] of images.entries()) {
+      pasteNote.textContent = images.length > 1 ? `در حال پیدا کردن چک‌ها (اسکن ${fa(n + 1)} از ${fa(images.length)})…` : 'در حال پیدا کردن چک‌ها…';
+      let found = null;
+      try { found = await Photos.detect(file); } catch (e) { found = null; }
+      if (!st) return;
+      let boxes = found ? found.boxes : [];
+      let rotation = 0;
+      if (!found) { pasteNote.textContent = 'این عکس خوانده نشد'; continue; }
+      // sure of it: rows at once; otherwise the cuts are shown to be checked
+      let check = !!found.rejected;
+      if (!boxes.length) {
+        const answer = await askChoice({
+          title: 'چکی در این عکس پیدا نکردم',
+          body: 'کل عکس را یک چک بگیرم یا خودت کادر بکشی؟',
+          choices: [{ value: 'whole', label: 'کل عکس یک چک است', tone: 'primary' }, { value: 'draw', label: 'خودم کادر می‌کشم', tone: 'neutral' }, { value: 'skip', label: 'انصراف', tone: 'neutral' }],
+          cancel: 'skip', focus: 'whole',
+        });
+        if (answer === 'skip' || !st) continue;
+        if (answer === 'whole') { boxes = [{ x: 0, y: 0, w: found.width, h: found.height }]; check = false; } else check = true;
+      }
+      if (check) {
+        const r = await Photos.editBoxes({ blob: file, boxes, rotation: 0 });
+        if (!r || !st || !r.boxes.length) continue;
+        boxes = r.boxes;
+        rotation = r.rotation;
+      }
+      const scanKey = fileKey();
+      await filePut(scanKey, file);
+      const scan = { key: scanKey, rotation, boxes: [] };
+      for (const b of boxes) {
+        const photo = await makePhoto(file, b, rotation, scanKey);
+        if (!st) { dropPhoto(photo); return; }
+        const last = st.rows[st.rows.length - 1];
+        const row = last && isBlank(last) && !made.includes(last) ? last : addRow({});
+        row.photo = photo;
+        showRow(row);
+        scan.boxes.push({ ref: row.ref, x: b.x, y: b.y, w: b.w, h: b.h });
+        made.push(row);
+      }
+      st.scans.push(scan);
+    }
+    if (!st) return;
+    pasteNote.textContent = made.length ? `${fa(made.length)} چک پیدا شد؛ ردیف‌هایشان ساخته شد` : '';
+    renumber();
+    revalidate();
+    showScans();
+    changed();
+    pump();
+    if (made.length) { setActive(made[0]); made[0].ui.serial.focus(); }
+  }
+
+  // «اصلاح برش اسکن»: the scan's frames again; what changed is cut again
+  async function fixScan(scan) {
+    const blob = await fileGet(scan.key);
+    if (!blob) { showToast('اسکن اصلی روی این دستگاه نیست'); return; }
+    const r = await Photos.editBoxes({ blob, boxes: scan.boxes, rotation: scan.rotation });
+    if (!r || !st || !st.scans.includes(scan)) return;
+    const turnedNow = r.rotation !== scan.rotation;
+    const before = new Map(scan.boxes.map((b) => [b.ref, b]));
+    const kept = [];
+    const made = [];
+    for (const b of r.boxes) {
+      const row = b.ref ? st.rows.find((x) => x.ref === b.ref) : null;
+      const was = b.ref ? before.get(b.ref) : null;
+      if (row) {
+        const moved = turnedNow || !was || ['x', 'y', 'w', 'h'].some((k) => Math.abs(was[k] - b[k]) > 1);
+        if (moved) setRowPhoto(row, await makePhoto(blob, b, r.rotation, scan.key));
+        kept.push({ ...b, ref: row.ref });
+      } else {
+        const row2 = addRow({});
+        row2.photo = await makePhoto(blob, b, r.rotation, scan.key);
+        showRow(row2);
+        made.push(row2);
+        kept.push({ ...b, ref: row2.ref });
+      }
+    }
+    // a frame taken away: its row loses the photo, and goes if nothing else is in it
+    const keptRefs = new Set(kept.map((b) => b.ref));
+    for (const ref of before.keys()) {
+      if (keptRefs.has(ref)) continue;
+      const row = st.rows.find((x) => x.ref === ref);
+      if (!row) continue;
+      dropPhoto(row.photo);
+      row.photo = null;
+      if (isBlank(row) && st.rows.length > 1) { destroyRow(row); st.rows.splice(st.rows.indexOf(row), 1); } else showRow(row);
+    }
+    scan.boxes = kept;
+    scan.rotation = r.rotation;
+    if (!kept.length) { fileDel(scan.key); st.scans.splice(st.scans.indexOf(scan), 1); }
+    renumber();
+    revalidate();
+    showScans();
+    changed();
+    pump();
+    if (made.length) made[0].ui.serial.focus();
+  }
+  function showScans() {
+    const el = $('bulkScans');
+    if (!el) return;
+    el.innerHTML = '';
+    const scans = (st && st.scans) || [];
+    el.hidden = !scans.length;
+    scans.forEach((s, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'bulk-scan';
+      const text = document.createElement('span');
+      text.textContent = `اسکن ${fa(i + 1)}، ${fa(s.boxes.length)} چک`;
+      const fix = document.createElement('button');
+      fix.type = 'button';
+      fix.className = 'bulk-scan-fix';
+      fix.textContent = 'اصلاح برش اسکن';
+      fix.addEventListener('click', () => fixScan(s));
+      chip.append(text, fix);
+      el.appendChild(chip);
+    });
+  }
+
+  // ---- dropped or pasted: on a row it's that row's, elsewhere a scan ----
+  const filesOf = (list) => [...(list || [])].filter(isImageFile);
+  overlay.addEventListener('dragover', (e) => {
+    if (!st || !e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+    e.preventDefault();
+    overlay.classList.add('is-dragging');
+    const rowEl = e.target.closest && e.target.closest('.bulk-row');
+    rowsEl.querySelectorAll('.bulk-row.is-drop').forEach((r) => { if (r !== rowEl) r.classList.remove('is-drop'); });
+    if (rowEl) rowEl.classList.add('is-drop');
+  });
+  overlay.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget && overlay.contains(e.relatedTarget)) return;
+    overlay.classList.remove('is-dragging');
+    rowsEl.querySelectorAll('.bulk-row.is-drop').forEach((r) => r.classList.remove('is-drop'));
+  });
+  overlay.addEventListener('drop', (e) => {
+    if (!st || !e.dataTransfer) return;
+    const files = filesOf(e.dataTransfer.files);
+    overlay.classList.remove('is-dragging');
+    rowsEl.querySelectorAll('.bulk-row.is-drop').forEach((r) => r.classList.remove('is-drop'));
+    if (!files.length) return;
+    e.preventDefault();
+    const rowEl = e.target.closest && e.target.closest('.bulk-row');
+    const row = rowEl ? st.rows.find((r) => r.ref === rowEl.dataset.ref) : null;
+    if (row) rowPhotoFromFile(row, files[0]);
+    else addScans(files);
+  });
+  overlay.addEventListener('paste', (e) => {
+    if (!st || !e.clipboardData) return;
+    const files = filesOf([...e.clipboardData.items].filter((it) => it.kind === 'file').map((it) => it.getAsFile()));
+    if (!files.length) return;   // text: pasted as usual
+    e.preventDefault();
+    const rowEl = document.activeElement && document.activeElement.closest && document.activeElement.closest('.bulk-row');
+    const row = rowEl ? st.rows.find((r) => r.ref === rowEl.dataset.ref) : null;
+    if (row && !row.photo) rowPhotoFromFile(row, files[0]);
+    else addScans(files);
+  });
+
+  // ---- up to the server: two at a time, again later when it fails ----
+  const inflight = new Set();
+  function pump() {
+    if (!st) return;
+    for (const row of st.rows) {
+      if (inflight.size >= 2) return;
+      const p = row.photo;
+      if (!p || p.image_id || !p.key || p.failed || p.missing || !p.full || inflight.has(p)) continue;
+      if (p.retryAt && p.retryAt > Date.now()) continue;
+      upload(row, p);
+    }
+  }
+  async function upload(row, p) {
+    inflight.add(p);
+    const me = st;
+    try {
+      if (!me.serverId) {
+        me.unsynced = true;
+        await syncNow(me);
+        if (!me.serverId) throw Object.assign(new Error('offline'), { offline: true });
+      }
+      const res = await apiFetch('/images', { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'X-Batch-Id': String(me.serverId) }, body: p.full });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw Object.assign(new Error((data && data.error) || 'خطای سرور'), { status: res.status, data });
+      await apiFetch(`/images/${data.id}/thumb`, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: p.thumb }).catch(() => {});
+      if (row.photo !== p) { apiFetch(`/images/${data.id}`, { method: 'DELETE' }).catch(() => {}); return; }   // replaced meanwhile
+      p.image_id = data.id;
+      p.tries = 0;
+      p.retryAt = 0;
+      fileDel(p.key);
+      p.key = null;
+      if (me === st) { showRow(row); changed(); }
+      else { me.unsynced = true; me.localAt = Date.now(); mirrorPut(record(me)); syncNow(me); }
+    } catch (e) {
+      if (e.sessionEnded) return;
+      if (e.status && e.status < 500 && e.status !== 429) {
+        p.failed = true;
+        p.error = e.data && e.data.code === 'batch_closed' ? 'این فهرست دیگر باز نیست' : e.message;
+      } else {
+        // no answer, or the server busy: again in 1, 2, 4 … 60 seconds
+        p.tries = (p.tries || 0) + 1;
+        const wait = Math.min(60, 2 ** (p.tries - 1)) * 1000;
+        p.retryAt = Date.now() + wait;
+        setTimeout(pump, wait + 50);
+      }
+      if (me === st && row.ui) showRow(row);
+    } finally {
+      inflight.delete(p);
+      if (st) pump();
+    }
+  }
+  window.addEventListener('online', () => { if (st) { st.rows.forEach((r) => { if (r.photo) r.photo.retryAt = 0; }); pump(); } });
+
+  // ---- what can be done with a row's photo ----
+  const photoMenu = $('bulkPhotoMenu');
+  let menuRow = null;
+  function openPhotoMenu(row, anchor) {
+    menuRow = row;
+    const p = row.photo;
+    photoMenu.querySelector('[data-act="retry"]').hidden = !(p && p.failed);
+    photoMenu.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const w = photoMenu.offsetWidth, h = photoMenu.offsetHeight;
+    let left = r.right - w;
+    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    photoMenu.style.left = left + 'px';
+    photoMenu.style.top = top + 'px';
+    const first = photoMenu.querySelector('button:not([hidden])');
+    if (first) first.focus();
+  }
+  function closePhotoMenu() {
+    if (photoMenu.hidden) return false;
+    photoMenu.hidden = true;
+    const row = menuRow;
+    menuRow = null;
+    if (row && row.ui) row.ui.photo.focus();
+    return true;
+  }
+  photoMenu.addEventListener('click', (e) => e.stopPropagation());
+  overlay.addEventListener('click', () => { if (!photoMenu.hidden) closePhotoMenu(); });
+  photoMenu.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...photoMenu.querySelectorAll('button:not([hidden])')];
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+  });
+  photoMenu.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', async () => {
+    const row = menuRow;
+    const act = b.dataset.act;
+    closePhotoMenu();
+    if (!row || !st || !st.rows.includes(row)) return;
+    const p = row.photo;
+    try {
+      if (act === 'view') {
+        const url = p.url || (p.image_id ? (await loadImage(p.image_id)).url : null);
+        if (url) openLightbox(url, `cheque-${row.serial || 'photo'}.jpg`);
+      } else if (act === 'turn') {
+        const blob = await photoBlob(p);
+        setRowPhoto(row, await makePhoto(blob, null, 90, null));
+      } else if (act === 'recrop') {
+        const blob = await photoBlob(p);
+        const r = await Photos.editBoxes({ blob, single: true });
+        if (r && st && st.rows.includes(row)) setRowPhoto(row, await makePhoto(blob, r.boxes[0], r.rotation, null));
+      } else if (act === 'replace') {
+        pickFileFor(row);
+      } else if (act === 'retry') {
+        p.failed = false; p.error = ''; p.tries = 0; p.retryAt = 0;
+        showRow(row);
+        pump();
+      } else if (act === 'remove') {
+        forgetInScans(row.ref);
+        setRowPhoto(row, null);
+      }
+    } catch (err) {
+      if (!err.sessionEnded) showToast('عکس بار نشد — اتصال را بررسی کنید');
+    }
+  }));
+
+  // ---- the large photo of the row being typed (desktop) ----
+  const preview = $('bulkPreview'), previewImg = $('bulkPreviewImg');
+  let activeRow = null;
+  const view = { zoom: 1, turn: 0 };
+  function setActive(row) {
+    if (activeRow === row) return;
+    if (activeRow && activeRow.ui) activeRow.ui.el.classList.remove('is-active');
+    activeRow = row;
+    if (row && row.ui) row.ui.el.classList.add('is-active');
+    showPreview();
+  }
+  rowsEl.addEventListener('focusin', (e) => {
+    const rowEl = e.target.closest('.bulk-row');
+    const row = rowEl && st ? st.rows.find((r) => r.ref === rowEl.dataset.ref) : null;
+    if (row) setActive(row);
+  });
+  let previewSeq = 0;
+  function showPreview() {
+    if (!preview) return;
+    const any = !!st && st.rows.some((r) => r.photo);
+    overlay.classList.toggle('has-photos', any);
+    preview.hidden = !any;
+    if (!any) return;
+    const row = activeRow && st.rows.includes(activeRow) ? activeRow : null;
+    const p = row && row.photo;
+    $('bulkPreviewTitle').textContent = row ? `ردیف ${fa(st.rows.indexOf(row) + 1)}${row.serial ? `، سریال ${toFa(row.serial)}` : ''}` : 'روی یک ردیف برو تا عکسش این‌جا بیاید';
+    view.zoom = 1;
+    view.turn = 0;
+    applyView();
+    const seq = ++previewSeq;
+    const set = (url) => { if (seq !== previewSeq) return; previewImg.src = url || ''; previewImg.hidden = !url; $('bulkPreviewEmpty').hidden = !!url || !row; };
+    if (!p) { set(''); return; }
+    if (p.url) set(p.url);
+    else if (p.image_id) { set(p.thumbUrl || ''); loadImage(p.image_id).then(({ url }) => set(url)).catch(() => {}); }
+    else set('');
+  }
+  function applyView() { previewImg.style.transform = `rotate(${view.turn}deg) scale(${view.zoom})`; }
+  if (preview) {
+    // a click zooms in at that spot (and out again); the wheel zooms by steps
+    previewImg.addEventListener('click', (e) => {
+      const r = previewImg.getBoundingClientRect();
+      previewImg.style.transformOrigin = `${((e.clientX - r.left) / r.width) * 100}% ${((e.clientY - r.top) / r.height) * 100}%`;
+      view.zoom = view.zoom > 1 ? 1 : 2.5;
+      applyView();
+    });
+    $('bulkPreviewFrame').addEventListener('wheel', (e) => {
+      if (previewImg.hidden) return;
+      e.preventDefault();
+      const r = previewImg.getBoundingClientRect();
+      if (view.zoom === 1) previewImg.style.transformOrigin = `${((e.clientX - r.left) / r.width) * 100}% ${((e.clientY - r.top) / r.height) * 100}%`;
+      view.zoom = Math.max(1, Math.min(5, view.zoom * (e.deltaY < 0 ? 1.2 : 1 / 1.2)));
+      applyView();
+    }, { passive: false });
+    $('bulkPreviewTurn').addEventListener('click', () => { view.turn = (view.turn + 90) % 360; applyView(); });
+  }
 
   // ---------------------------------------------------------------
   // Saving: this device at once, the server two seconds after typing stops
@@ -647,7 +1150,7 @@
       if (bad) bad.focus();
       return;
     }
-    const chosen = st.rows.filter((r) => r.include && isComplete(r));
+    const chosen = st.rows.filter((r) => r.include && canCommit(r));
     if (!chosen.length) {
       showFoot('ردیف کاملی برای ثبت نیست');
       const first = st.rows.find((r) => !isBlank(r) && r.include);
@@ -661,6 +1164,25 @@
     btn.textContent = 'در حال ثبت…';
     const me = st;
     try {
+      // their photos go up first: «ثبت» waits, and says how far it is
+      const withPhoto = chosen.filter((r) => r.photo);
+      if (withPhoto.some(photoPending)) {
+        pump();
+        const until = Date.now() + 120000;
+        while (me === st && withPhoto.some(photoPending) && Date.now() < until) {
+          const up = withPhoto.filter((r) => r.photo.image_id).length;
+          btn.textContent = `آپلود عکس‌ها ${fa(up)} از ${fa(withPhoto.length)}…`;
+          if (withPhoto.every((r) => !photoPending(r) || (r.photo.tries && !navigator.onLine))) break;
+          await new Promise((res) => setTimeout(res, 250));
+        }
+        if (me !== st) return;
+        const stuck = withPhoto.filter((r) => !r.photo.image_id);
+        if (stuck.length) {
+          showFoot(`عکسِ ${fa(stuck.length)} ردیف هنوز آپلود نشده؛ ${navigator.onLine ? 'کمی بعد دوباره «ثبت» را بزن' : 'اتصال را بررسی کن'}. کارت روی همین دستگاه نگه داشته شده.`);
+          return;
+        }
+        btn.textContent = 'در حال ثبت…';
+      }
       // what's on screen goes to the server first, so exactly that is saved
       // (an autosave already on its way is waited for, not raced)
       for (let i = 0; i < 100 && me.saving; i++) await new Promise((res) => setTimeout(res, 100));
@@ -677,7 +1199,8 @@
       if (me !== st) return;
       st.version = r.batch_version;
       const made = new Set(r.created.map((c) => c.ref));
-      for (const row of st.rows.filter((x) => made.has(x.ref))) destroyRow(row);
+      // (their photos are the cheques' now: only this page's copies go)
+      for (const row of st.rows.filter((x) => made.has(x.ref))) { releasePhoto(row.photo); forgetInScans(row.ref); destroyRow(row); }
       st.rows = st.rows.filter((x) => !made.has(x.ref));
       for (const f of r.failed) { const row = st.rows.find((x) => x.ref === f.ref); if (row) row.serverError = f.error; }
       for (const s of r.skipped_incomplete) { const row = st.rows.find((x) => x.ref === s.ref); if (row) row.serverError = `ناقص: ${s.missing.join('، ')}`; }
@@ -694,6 +1217,7 @@
       if (n && left) text = `${fa(n)} چک ثبت شد؛ ${fa(left)} ردیف خطا دارد و در همین صفحه ماند`;
       if (r.batch_state === 'committed') {
         const clientId = st.clientId;
+        for (const s of st.scans || []) fileDel(s.key);
         closePanel({ quiet: true });
         mirrorDel(clientId);
       } else {
@@ -769,7 +1293,9 @@
   function loadDraft(draft) {
     const d = draft || {};
     const h = d.header || {};
-    st.rows.forEach(destroyRow);
+    // a photo still on this device, not yet up, isn't in the server's copy: kept
+    const waitingHere = new Map(st.rows.filter((r) => r.photo && !r.photo.image_id && r.photo.key).map((r) => [r.ref, r.photo]));
+    st.rows.forEach((r) => { if (!waitingHere.has(r.ref)) releasePhoto(r.photo); destroyRow(r); });
     st.header = {
       party: h.party || null,
       spend_date: h.spend_date || '',
@@ -789,9 +1315,15 @@
     st.rows = (d.rows || []).map((r) => emptyRow({
       ref: r.ref, position: r.position, serial: r.serial || '', sayad_id: r.sayad_id || '', amount: r.amount || '',
       due_date: r.due_date || '', owner: r.owner || null, include: r.include !== false, note: r.note || '',
+      photo: r.image_id ? { image_id: r.image_id, scan: r.scan || null }
+        : r.photo_key ? { key: r.photo_key, scan: r.scan || null }
+          : waitingHere.get(r.ref) || null,
     }));
     rowsEl.innerHTML = '';
     st.rows.forEach((r) => rowsEl.appendChild(buildRow(r)));
+    st.rows.forEach((r) => { if (r.photo && r.photo.key && !r.photo.full) restorePhoto(r); });
+    showScans();
+    showPreview();
     if (!st.rows.length) addRow({});
     renumber();
     revalidate();
@@ -805,10 +1337,15 @@
     document.body.classList.add('bulk-open');
     showFoot('');
     pasteNote.textContent = '';
-    setTimeout(() => (partyInput.value ? (st.rows[0] && st.rows[0].ui ? st.rows[0].ui.serial : pasteInput) : partyInput).focus(), 50);
+    // «با عکس»: the scan is what comes next; «دستی»: the serials
+    overlay.classList.toggle('is-photo', st.kind === 'photo');
+    const started = st.rows.some((x) => !isBlank(x));
+    setTimeout(() => (!partyInput.value ? partyInput
+      : started && st.rows[0] && st.rows[0].ui ? st.rows[0].ui.serial
+        : st.kind === 'photo' ? dropBtn : pasteInput).focus(), 50);
   }
   function startNew(kind) {
-    st = { clientId: uuid(), serverId: null, version: null, kind: kind || 'manual', header: {}, hasBenef: false, rows: [], unsynced: false };
+    st = { clientId: uuid(), serverId: null, version: null, kind: kind || 'manual', header: {}, hasBenef: false, rows: [], scans: [], unsynced: false };
     loadDraft({ header: {}, rows: [] });
     showPanel();
   }
@@ -832,7 +1369,12 @@
       }
     }
     if (st) await leaveCurrent();
-    st = { clientId, serverId: b.id, version, kind: b.kind, header: {}, hasBenef: false, rows: [], unsynced };
+    // this device's photos not yet up, by row, and its scans
+    if (mine && draft !== mine.draft) {
+      const here = new Map(((mine.draft && mine.draft.rows) || []).filter((x) => x.photo_key).map((x) => [x.ref, x]));
+      draft = { ...draft, rows: (draft.rows || []).map((x) => (!x.image_id && here.has(x.ref) ? { ...x, photo_key: here.get(x.ref).photo_key, scan: here.get(x.ref).scan } : x)) };
+    }
+    st = { clientId, serverId: b.id, version, kind: b.kind, header: {}, hasBenef: false, rows: [], scans: (mine && mine.scans) || [], unsynced };
     loadDraft(draft);
     showPanel();
     if (unsynced) { st.localAt = Date.now(); syncNow(); }
@@ -843,7 +1385,7 @@
     if (!m) return;
     if (m.serverId) { openServerBatch(m.serverId); return; }
     if (st) await leaveCurrent();
-    st = { clientId: m.clientId, serverId: null, version: null, kind: m.kind || 'manual', header: {}, hasBenef: false, rows: [], unsynced: true };
+    st = { clientId: m.clientId, serverId: null, version: null, kind: m.kind || 'manual', header: {}, hasBenef: false, rows: [], scans: m.scans || [], unsynced: true };
     loadDraft(m.draft);
     showPanel();
     st.localAt = Date.now();
@@ -864,7 +1406,9 @@
     closeCalendar();
     const kept = hasWork();
     leaveCurrent();
-    st.rows.forEach(destroyRow);
+    closePhotoMenu();
+    st.rows.forEach((row) => { releasePhoto(row.photo); destroyRow(row); });
+    setActive(null);
     st = null;
     rowsEl.innerHTML = '';
     overlay.classList.remove('show');
@@ -891,7 +1435,22 @@
     }
     startNew(kind);
   }
-  $('bulkAddBtn').addEventListener('click', () => openBulk('manual'));
+  // «افزودن گروهی»: its two ways, in a small menu under it (spec 5.1)
+  const entryBtn = $('bulkAddBtn'), entryMenu = $('bulkEntryMenu');
+  entryBtn.setAttribute('aria-haspopup', 'menu');
+  entryBtn.setAttribute('aria-expanded', 'false');
+  entryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (togglePopover(entryMenu, entryBtn)) entryMenu.querySelector('button').focus();
+  });
+  entryMenu.addEventListener('click', (e) => e.stopPropagation());
+  entryMenu.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => { closePopover(); openBulk(b.dataset.kind); }));
+  entryMenu.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...entryMenu.querySelectorAll('button')];
+    items[(items.indexOf(document.activeElement) + 1) % items.length].focus();
+  });
 
   // ---------------------------------------------------------------
   // The bar over the board: unfinished batches
@@ -917,17 +1476,25 @@
     }
     return list.sort((a, b) => b.at - a.at);
   }
+  // a batch thrown away takes its photos and scans off this device too
+  async function dropLocalFiles(clientId) {
+    const m = (await mirrorsOfCompany()).find((x) => x.clientId === clientId);
+    if (!m) return;
+    for (const r of (m.draft && m.draft.rows) || []) if (r.photo_key) await fileDel(r.photo_key);
+    for (const s of m.scans || []) await fileDel(s.key);
+  }
   async function discardServer(serverId, clientId) {
     const ok = await askConfirm({ title: 'این افزودن گروهی حذف شود؟', body: 'ردیف‌هایی که ثبت نشده‌اند از بین می‌روند.', confirmLabel: 'حذف', cancelLabel: 'انصراف' });
     if (!ok) return;
     try { await apiJson(`/batches/${serverId}`, { method: 'DELETE' }); } catch (e) { if (e.sessionEnded) return; if (!(e.data && e.data.code === 'batch_closed')) { showToast(requestErrorText(e, 'حذف نشد')); return; } }
-    if (clientId) mirrorDel(clientId);
+    if (clientId) { await dropLocalFiles(clientId); mirrorDel(clientId); }
     if (st && st.serverId === serverId) closePanel({ quiet: true });
     refreshResume();
   }
   async function discardLocal(m) {
     const ok = await askConfirm({ title: 'این افزودن گروهی حذف شود؟', body: 'ردیف‌هایی که ثبت نشده‌اند از بین می‌روند.', confirmLabel: 'حذف', cancelLabel: 'انصراف' });
     if (!ok) return;
+    await dropLocalFiles(m.clientId);
     await mirrorDel(m.clientId);
     if (m.serverId) { try { await apiJson(`/batches/${m.serverId}`, { method: 'DELETE' }); } catch (e) {} }
     refreshResume();
@@ -979,7 +1546,7 @@
   window.ChekinoBulk = {
     isOpen: () => overlay.classList.contains('show'),
     enabled,
-    escape() { if (anyListOpen()) closeLists(); else closePanel(); },
+    escape() { if (anyListOpen()) closeLists(); else if (!closePhotoMenu()) closePanel(); },
     // signing out takes this browser's copies with it
     async clearLocal() {
       const db = idbP ? await idbP : null;
@@ -995,8 +1562,14 @@
 
   if (window.ChekinoPalette) {
     window.ChekinoPalette.register({
-      title: 'افزودن گروهی', hint: 'چند چک با هم، دستی', group: 'چک‌ها', order: 1.5,
-      keywords: 'bulk add many cheques گروهی چند چک سریال',
+      title: 'افزودن گروهی با عکس', hint: 'عکسِ چند چک را بده، خودم جدا می‌کنم', group: 'چک‌ها', order: 1.49,
+      keywords: 'bulk add photo scan cheques گروهی عکس اسکن',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="m21 16-4.5-4.5L8 19"/></svg>',
+      when: enabled, run: () => openBulk('photo'),
+    });
+    window.ChekinoPalette.register({
+      title: 'افزودن گروهی دستی', hint: 'سریال‌ها را بچسبان', group: 'چک‌ها', order: 1.5,
+      keywords: 'bulk add many cheques گروهی چند چک سریال دستی',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M8 20h8"/></svg>',
       when: enabled, run: () => openBulk('manual'),
     });

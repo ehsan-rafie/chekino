@@ -56,11 +56,12 @@ app.use(ipLimiter);
 // Bodies: 100 KB everywhere, except the cheque routes, which take up to
 // 15 MB while the cheque form still sends its photos inside the JSON (as
 // data URLs) — that comes down once photos travel to /api/images on their
-// own — and a bulk add's draft, up to 1 MB. Those are left to their own
-// routers, which read them only after the sign-in is checked: nobody
-// unknown gets the server to hold 15 MB.
+// own — a bulk add's draft, up to 1 MB, and a photo itself (/api/images,
+// the file as it is, up to 3 MB). Those are left to their own routers,
+// which read them only after the sign-in is checked: nobody unknown gets
+// the server to hold 15 MB.
 const smallBody = express.json({ limit: '100kb' });
-const OWN_PARSER = ['/api/checks', '/api/batches'];
+const OWN_PARSER = ['/api/checks', '/api/batches', '/api/images'];
 app.use((req, res, next) => {
   const p = req.path.toLowerCase();
   if (OWN_PARSER.some((r) => p === r || p.startsWith(r + '/'))) return next();
@@ -85,7 +86,8 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'مسیر پیدا �
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   if (err.type === 'entity.too.large') {
-    return res.status(413).json({ error: req.path.startsWith('/api/checks') ? 'حجم عکس‌ها بیش از حد مجاز است (حداکثر ۱۵ مگابایت)' : 'حجم درخواست بیش از حد مجاز است' });
+    return res.status(413).json({ error: req.path.startsWith('/api/checks') ? 'حجم عکس‌ها بیش از حد مجاز است (حداکثر ۱۵ مگابایت)'
+      : req.path.startsWith('/api/images') ? 'حجم عکس بیش از حد مجاز است (حداکثر ۳ مگابایت)' : 'حجم درخواست بیش از حد مجاز است' });
   }
   if (err.message === 'Not allowed by CORS') return res.status(403).json({ error: 'دسترسی از این نشانی مجاز نیست' });
   // the body couldn't be read: not JSON, an unknown charset, cut off midway
@@ -102,3 +104,10 @@ const HOST = process.env.HOST || '127.0.0.1';
 app.listen(PORT, HOST, () => {
   console.log(`Chekino server listening on ${HOST}:${PORT}`);
 });
+
+// Photos nobody will attach any more (routes/images.js): once now, then daily
+const sweep = () => imagesRoutes.sweepLooseImages()
+  .then((n) => { if (n) console.log(`swept ${n} loose photos`); })
+  .catch((e) => console.error('sweep loose photos:', e.message));
+setTimeout(sweep, 60 * 1000).unref();
+setInterval(sweep, 24 * 60 * 60 * 1000).unref();

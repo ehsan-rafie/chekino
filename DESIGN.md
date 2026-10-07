@@ -610,8 +610,12 @@ buttons at the end of its line, stays half a minute, holds still while
 the pointer or the keyboard is on it and goes on Escape; it keeps its own
 place, and a plain message that comes meanwhile shows above it.
 
-**Bulk add** (`js/bulk-add.js`, `css/bulk.css`). For adding many cheques
-at once. An outlined «افزودن گروهی» sits beside «افزودن چک».
+**Bulk add** (`js/bulk-add.js`, `css/bulk.css`; photos: `js/bulk-photos.js`,
+`js/cheque-split.js` and its worker). For adding many cheques at once. An
+outlined «افزودن گروهی» sits beside «افزودن چک»; it opens a small menu of
+its two ways, each with a line under it: «با عکس اسکن» («عکسِ چند چک را بده،
+خودم جدا می‌کنم») and «دستی با سریال» («سریال‌ها را بچسبان»). Both open the
+same window; «با عکس» puts the scan button first.
 - **The window.** A large window over the board in the cheque form's
   system: radius 24, the same fields and lists.
 - **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»
@@ -621,9 +625,33 @@ at once. An outlined «افزودن گروهی» sits beside «افزودن چک
 - **Pasting serials.** A strip under the header takes a pasted list of
   serials (js/serials.js: any digits, any separators, with or without the
   series). «ساخت ردیف‌ها» makes a row for each and says what it ignored.
+- **Scans.** Beside the serials, «عکس اسکن»: a scan is picked, dropped
+  anywhere on the window, or pasted (Ctrl+V). The cheques on it are found
+  (kraft paper around pink leaves) and each becomes a row with its own cut,
+  in reading order — top to bottom, right to left. Sure of them, the rows
+  come at once; otherwise the crop editor opens with what was found; with
+  nothing found it asks «کل عکس یک چک است» or «خودم کادر می‌کشم». Each scan
+  stays as a chip «اسکن ۱، ۴ چک» with «اصلاح برش اسکن» while it is on this
+  device.
+- **The crop editor.** The photo editor's card and dark well, a white
+  numbered frame a cheque: edges and corners drag, × takes a frame away,
+  a drag on the image draws one, «کل عکس یک چک است», a quarter turn, and
+  «تأیید ۳ چک». A frame taken away takes its row if nothing was typed in it.
 - **The rows.** A table of fields, one row per cheque: a tick «در این
-  ثبت», #, serial, sayad id in fours, amount (in words under it), due date
-  in segments, and the owner, which may stay empty.
+  ثبت», #, its photo (a small copy; a dashed place for one), serial, sayad
+  id in fours, amount (in words under it), due date in segments, and the
+  owner, which may stay empty. A photo dropped or pasted on a row is that
+  row's (the leaf found on it is cut out). A click on a photo opens its
+  menu: «بزرگ‌نمایی», «چرخش ۹۰ درجه», «برش دوباره» (one frame, only to
+  shrink), «جایگزینی عکس», «حذف عکس».
+- **The large photo.** On wide screens the row being typed shows its photo
+  large beside the rows, on the dark well: a click zooms in at that spot,
+  the wheel zooms by steps, ↻ turns the view.
+- **Photos going up.** Each is kept on this device until the server has
+  it (two at a time; without a connection, again in 1, 2, 4 … 60 seconds).
+  A thin moving line under a row's photo says it is on its way. «ثبت»
+  waits for the chosen rows' photos («آپلود عکس‌ها ۲ از ۵…») and, still
+  without them, says so and keeps the work.
 - **Judging a row.** A row is judged when a field is left. What blocks it
   shows red, in one line under the row: «شناسه صیادی: این شناسه قبلاً ثبت
   شده — چک ۴۸۲۹۱۳». What only asks for a look (a serial already on file
@@ -647,8 +675,8 @@ at once. An outlined «افزودن گروهی» sits beside «افزودن چک
   where they went («۴ چک ثبت شد و به «منتظر ذینفع» رفت»). It offers
   «برگردون», also on Ctrl+Z outside a field. Rows that failed stay, each
   with its reason.
-- **Phones.** Each row is a card with its labels, and the footer stays at
-  the bottom.
+- **Phones.** Each row is a card with its labels, its photo across the top;
+  the footer stays at the bottom. «بزرگ‌نمایی» opens the photo full screen.
 
 **Send window** (`js/send-window.js`, its part of `css/bulk.css`). The
 cheques that are ready (owner and beneficiary known, not yet sent) go to
@@ -779,4 +807,11 @@ screens the navigation becomes segmented tabs.
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
 | `js/cal-picker.js` | the calendar's title button and its year / month picker |
 | `js/field-addons.js` | the live input-group suffixes on the dashboard: digit counts, list arrows, copy buttons |
+| `css/bulk.css` | bulk add, the send window, bulk edit, the chips over the board, the crop editor |
+| `js/bulk-add.js` | bulk add: the rows, saving (this device and the server), photos going up, the large photo |
+| `js/bulk-photos.js` | finding the cheques on a scan, cutting them, the crop editor, the server's small copies |
+| `js/cheque-split.js`, `js/cheque-split.worker.js` | the cheque finder (spec 6.6), and the worker it runs in |
+| `js/serials.js` | reading a pasted list of serials (the same file as backend/lib/serials.js) |
+| `js/send-window.js` | the send window, the chips over the board, the search hint |
+| `js/bulk-edit.js` | bulk edit |
 | `js/login-art.js` | the login page's sample cheque |

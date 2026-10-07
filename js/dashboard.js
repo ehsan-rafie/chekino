@@ -6054,6 +6054,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (sessionDialogOpen()) return;   // nothing to go back to until signed in again
   if (confirmIsOpen()) { cancelConfirm(); return; }
+  if (window.ChekinoPhotos && window.ChekinoPhotos.editorOpen()) { window.ChekinoPhotos.cancelEditor(); return; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return; }
@@ -6087,6 +6088,7 @@ function closeTopmostLayer() {
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (sessionDialogOpen()) return true;   // stays: there is nothing to go back to
   if (confirmIsOpen()) { cancelConfirm(); return true; }
+  if (window.ChekinoPhotos && window.ChekinoPhotos.editorOpen()) { window.ChekinoPhotos.cancelEditor(); return true; }
   if (photoEditorOverlay.classList.contains('show')) { closePhotoEditor(); openNextInQueue(); return true; }
   if (lightboxOverlay.classList.contains('show')) { closeLightbox(); return true; }
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
@@ -6406,7 +6408,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

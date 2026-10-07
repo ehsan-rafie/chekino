@@ -2,18 +2,18 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261007d" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261007e" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
 <title>چکینو | داشبورد</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261007d">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261007d">
-<link rel="stylesheet" href="/css/cheque.css?v=20261007d">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261007d">
-<link rel="stylesheet" href="/css/bulk.css?v=20261007d">
+<link rel="stylesheet" href="/css/shared.css?v=20261007e">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261007e">
+<link rel="stylesheet" href="/css/cheque.css?v=20261007e">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261007e">
+<link rel="stylesheet" href="/css/bulk.css?v=20261007e">
 </head>
 <body class="chekino-auth-pending">
 
@@ -209,6 +209,11 @@
   <div class="stage-chips" id="stageChips" role="region" aria-label="چک‌های بیرون از بُرد" hidden></div>
   <!-- The cheques off the board (waiting / ready), one line each; a click
        opens the cheque (js/send-window.js) -->
+  <!-- «افزودن گروهی»: its two ways (js/bulk-add.js) -->
+  <div class="filter-popover bulk-entry-menu" id="bulkEntryMenu" role="menu" aria-label="افزودن گروهی">
+    <button type="button" class="bulk-entry-item" data-kind="photo" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="m21 16-4.5-4.5L8 19"/></svg><span><b>با عکس اسکن</b><small>عکسِ چند چک را بده، خودم جدا می‌کنم</small></span></button>
+    <button type="button" class="bulk-entry-item" data-kind="manual" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span><b>دستی با سریال</b><small>سریال‌ها را بچسبان</small></span></button>
+  </div>
   <div class="filter-popover stage-pop" id="popStage" role="dialog" aria-labelledby="popStageTitle">
     <div class="fp-title" id="popStageTitle"></div>
     <div class="stage-pop-hint" id="popStageHint"></div>
@@ -736,6 +741,33 @@
   </div>
 </div>
 
+<!-- Correcting where the cheques are on a scan, or one cheque's cut
+     (js/bulk-photos.js): the photo editor's card, a frame a cheque. -->
+<div class="photo-editor-overlay scan-edit-overlay" id="scanEditOverlay" aria-hidden="true">
+  <div class="pe-card se-card" role="dialog" aria-modal="true" aria-labelledby="seTitle">
+    <div class="pe-head">
+      <h2 class="pe-title" id="seTitle">اصلاح برش اسکن</h2>
+      <span class="pe-count" id="seCount"></span>
+      <button type="button" class="modal-close pe-close" id="seCancel" title="انصراف" aria-label="انصراف">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="pe-body se-body" id="seBody">
+      <div class="pe-stage se-stage" id="seStage"></div>
+    </div>
+    <p class="se-hint" id="seHint"></p>
+    <div class="pe-bar">
+      <div class="pe-tools" role="toolbar" aria-label="ابزار برش">
+        <button type="button" class="pe-tool" id="seRotate" title="چرخش به راست" aria-label="چرخش به راست">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+      </div>
+      <button type="button" class="pe-reset" id="seWhole">کل عکس یک چک است</button>
+      <button type="button" class="btn-submit pe-done" id="seDone">تأیید</button>
+    </div>
+  </div>
+</div>
+
 <!-- Viewing an attached photo: the photo editor's card, the photo in the
      same dark well, the actions below it. «ویرایش» opens the photo in the
      editor again (shown only while the form can be edited). -->
@@ -853,17 +885,47 @@
     <div class="bulk-paste">
       <textarea id="bulkPasteInput" rows="1" placeholder="سریال‌ها را این‌جا بچسبان: هر خط یکی، یا با هر جداکننده" aria-label="فهرست سریال‌ها"></textarea>
       <button type="button" class="bulk-btn" id="bulkPasteGo">ساخت ردیف‌ها</button>
+      <div class="bulk-drop" id="bulkDrop">
+        <button type="button" class="bulk-btn bulk-drop-btn" id="bulkDropBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="m21 16-4.5-4.5L8 19"/></svg><span>عکس اسکن</span></button>
+        <span class="bulk-drop-hint">بکش این‌جا، Ctrl+V، یا انتخاب کن</span>
+      </div>
+      <input type="file" id="bulkFile" accept="image/*" multiple hidden>
+      <input type="file" id="bulkRowFile" accept="image/*" hidden>
       <div class="bulk-paste-note" id="bulkPasteNote" aria-live="polite"></div>
+      <div class="bulk-scans" id="bulkScans" hidden></div>
     </div>
+    <div class="bulk-main">
     <div class="bulk-body">
       <div class="bulk-grid-head" aria-hidden="true">
-        <span></span><span>#</span><span>سریال</span><span>شناسه صیادی</span><span>مبلغ</span><span>سررسید</span><span>صاحب چک</span><span></span>
+        <span></span><span>#</span><span>عکس</span><span>سریال</span><span>شناسه صیادی</span><span>مبلغ</span><span>سررسید</span><span>صاحب چک</span><span></span>
       </div>
       <div class="bulk-rows" id="bulkRows"></div>
       <button type="button" class="bulk-add-row" id="bulkAddRow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         ردیف
       </button>
+    </div>
+    <aside class="bulk-preview" id="bulkPreview" aria-label="عکس ردیف" hidden>
+      <div class="bp-head">
+        <span class="bp-title" id="bulkPreviewTitle"></span>
+        <button type="button" class="bp-tool" id="bulkPreviewTurn" title="چرخاندن نما" aria-label="چرخاندن نما">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+      </div>
+      <div class="bp-frame" id="bulkPreviewFrame">
+        <img id="bulkPreviewImg" alt="عکس چکِ ردیف" draggable="false" hidden>
+        <div class="bp-empty" id="bulkPreviewEmpty" hidden>این ردیف عکس ندارد؛ عکسش را روی ردیف بکش یا بچسبان</div>
+      </div>
+      <div class="bp-hint">کلیک یا چرخ ماوس: بزرگ‌نمایی</div>
+    </aside>
+    </div>
+    <div class="bulk-photo-menu" id="bulkPhotoMenu" role="menu" aria-label="عکس این چک" hidden>
+      <button type="button" role="menuitem" data-act="view">بزرگ‌نمایی</button>
+      <button type="button" role="menuitem" data-act="turn">چرخش ۹۰ درجه</button>
+      <button type="button" role="menuitem" data-act="recrop">برش دوباره</button>
+      <button type="button" role="menuitem" data-act="replace">جایگزینی عکس</button>
+      <button type="button" role="menuitem" data-act="retry" hidden>آپلود دوباره</button>
+      <button type="button" role="menuitem" data-act="remove" class="is-danger">حذف عکس</button>
     </div>
     <footer class="bulk-foot">
       <span class="bulk-count" id="bulkCount"></span>
@@ -1072,22 +1134,24 @@
 <div class="app-toast app-toast-action" id="appToastAction" role="status" aria-live="polite"><span class="toast-text"></span><span class="toast-actions"></span></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261007d"></script>
-<script src="/js/shared.js?v=20261007d"></script>
-<script src="/js/palette.js?v=20261007d"></script>
-<script src="/js/nid.js?v=20261007d"></script>
-<script src="/js/dashboard.js?v=20261007d"></script>
-<script src="/js/print.js?v=20261007d"></script>
-<script src="/js/cheque-form.js?v=20261007d"></script>
-<script src="/js/date-segments.js?v=20261007d"></script>
-<script src="/js/cal-picker.js?v=20261007d"></script>
-<script src="/js/field-addons.js?v=20261007d"></script>
-<script src="/js/serials.js?v=20261007d"></script>
-<script src="/js/bulk-add.js?v=20261007d"></script>
-<script src="/js/send-window.js?v=20261007d"></script>
-<script src="/js/bulk-edit.js?v=20261007d"></script>
-<script src="/js/shell.js?v=20261007d"></script>
-<script src="/js/theme-reveal.js?v=20261007d"></script>
+<script src="/js/icons.js?v=20261007e"></script>
+<script src="/js/shared.js?v=20261007e"></script>
+<script src="/js/palette.js?v=20261007e"></script>
+<script src="/js/nid.js?v=20261007e"></script>
+<script src="/js/dashboard.js?v=20261007e"></script>
+<script src="/js/print.js?v=20261007e"></script>
+<script src="/js/cheque-form.js?v=20261007e"></script>
+<script src="/js/date-segments.js?v=20261007e"></script>
+<script src="/js/cal-picker.js?v=20261007e"></script>
+<script src="/js/field-addons.js?v=20261007e"></script>
+<script src="/js/serials.js?v=20261007e"></script>
+<script src="/js/cheque-split.js?v=20261007e"></script>
+<script src="/js/bulk-photos.js?v=20261007e"></script>
+<script src="/js/bulk-add.js?v=20261007e"></script>
+<script src="/js/send-window.js?v=20261007e"></script>
+<script src="/js/bulk-edit.js?v=20261007e"></script>
+<script src="/js/shell.js?v=20261007e"></script>
+<script src="/js/theme-reveal.js?v=20261007e"></script>
 
 </body>
 </html>
