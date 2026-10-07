@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const peopleRoutes = require('./routes/people');
 const checksRoutes = require('./routes/checks');
 const imagesRoutes = require('./routes/images');
+const batchesRoutes = require('./routes/batches');
+const bulkOpsRoutes = require('./routes/bulk-ops');
 const adminRoutes = require('./routes/admin');
 const { ipLimiter } = require('./middleware/rateLimit');
 
@@ -54,12 +56,14 @@ app.use(ipLimiter);
 // Bodies: 100 KB everywhere, except the cheque routes, which take up to
 // 15 MB while the cheque form still sends its photos inside the JSON (as
 // data URLs) — that comes down once photos travel to /api/images on their
-// own. Those are left to routes/checks.js, which reads them only after the
-// sign-in is checked: nobody unknown gets the server to hold 15 MB.
+// own — and a bulk add's draft, up to 1 MB. Those are left to their own
+// routers, which read them only after the sign-in is checked: nobody
+// unknown gets the server to hold 15 MB.
 const smallBody = express.json({ limit: '100kb' });
+const OWN_PARSER = ['/api/checks', '/api/batches'];
 app.use((req, res, next) => {
   const p = req.path.toLowerCase();
-  if (p === '/api/checks' || p.startsWith('/api/checks/')) return next();
+  if (OWN_PARSER.some((r) => p === r || p.startsWith(r + '/'))) return next();
   smallBody(req, res, next);
 });
 
@@ -71,6 +75,8 @@ app.use('/api', authRoutes);
 app.use('/api/people', peopleRoutes);
 app.use('/api/checks', checksRoutes);
 app.use('/api/images', imagesRoutes);
+app.use('/api/batches', batchesRoutes);
+app.use('/api/bulk-ops', bulkOpsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Whatever no route answered, and whatever failed, answers in JSON — never

@@ -5,9 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const nid = require('../lib/nid');
 
-test('the browser and the server use the very same file', () => {
+test('the browser and the server use the very same file', (t) => {
+  // (on the live server the browser's copy sits with the site, not beside the backend)
+  const browserPath = path.join(__dirname, '../../js/nid.js');
+  if (!fs.existsSync(browserPath)) return t.skip('no js/nid.js beside the backend here');
   const server = fs.readFileSync(path.join(__dirname, '../lib/nid.js'));
-  const browser = fs.readFileSync(path.join(__dirname, '../../js/nid.js'));
+  const browser = fs.readFileSync(browserPath);
   assert.ok(server.equals(browser), 'backend/lib/nid.js and js/nid.js differ — copy one over the other');
 });
 
