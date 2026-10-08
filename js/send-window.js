@@ -587,10 +587,13 @@
       const b = chipButton('stage-chip is-focus');
       b.title = tip;
       b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', () => setBoardFocus(boardFocus === key ? null : key));
+      b.addEventListener('click', () => {
+        if (key === 'followup' && window.ChekinoFollow && boardFocus !== key) { window.ChekinoFollow.open(); return; }
+        setBoardFocus(boardFocus === key ? null : key);
+      });
       return b;
     };
-    followChip = focusChip('followup', `منتظر ثبت، ${fa(FOLLOW_UP_DAYS)} روز یا بیشتر از ارسال: صاحب چک‌هایی که باید پیگیری شوند`);
+    followChip = focusChip('followup', `منتظر ثبت، ${fa(FOLLOW_UP_DAYS)} روز یا بیشتر بی‌خبر: صاحب چک‌هایی که باید پیگیری شوند`);
     dueChip = focusChip('due', 'منتظر ثبت، سررسید تا ۳ روز دیگر یا گذشته');
     hint = document.createElement('div');
     hint.className = 'stage-hint';

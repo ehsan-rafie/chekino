@@ -267,7 +267,9 @@ receipt button is a slip with lines of text (Lucide receipt-text — the
 plain receipt carries a dollar sign). A lane taller than the screen
 scrolls on its own and fades out at an edge with more cards past it.
 The empty board (nothing registered yet) is a dashed box with a line of
-explanation and its own «افزودن اولین چک» button.
+explanation and its own «افزودن اولین چک» button, and under it two more ways
+to start, as quiet outlined tiles with a title and a line each: «چند چک با
+هم» (opens bulk add's menu) and «اشخاص» (the people window).
 
 **People.** One record per person. A beneficiary is identified by national
 id and belongs to no single party — the same one can be paid by several;
@@ -775,6 +777,23 @@ their owners from here, so each owner can register them in Sayad.
 - **No owner yet.** A ready list can't hold these, but a bulk add can leave
   some: they sit at the end under «⚠ بدون صاحب چک», each with an owner
   field; naming one moves the cheque to its section.
+
+**Today, over the board.** The chips answer the day's question — whose
+cheques to chase: «آماده‌ی ارسال n», «منتظر ذینفع n», then «پیگیری n» (waiting
+for Sayad three days or more since sent, or since last followed up) and
+«سررسید نزدیک n» (waiting, due within three days or past due). «سررسید نزدیک»,
+pressed, narrows the board to those cards — the blue of a pick, a filter chip
+with its own ×, and on a phone the waiting lane in front; pressed again, or
+«پاک کردن فیلترها», lets go. A chip with nothing in it isn't shown.
+**«پیگیری» opens the follow-up window** (`js/follow-window.js`, in the send
+window's look): the owners to remind, the longest wait first, each with its
+cheques («۱۲ روز از ارسال» in amber), «کپی متن» — a reminder in the send
+message's voice («یادآوری: چک‌های زیر هنوز در سامانه صیاد به نام «…» با کد
+ملی … ثبت نشده‌اند:», a line a cheque, «لطفاً ثبت کنید و رسیدش را بفرستید.
+ممنون») — and «پیگیری شد», which writes a «پیگیری شد» event to their history:
+the section greys with that word, the cards say «امروز پیگیری شد» and count
+their days from today. «نمایش در بُرد» narrows the board to them instead
+(the chip then shows pressed).
 
 **Cheques off the board** (waiting / ready). Over the board, beside
 «آماده‌ی ارسال n», the chip «منتظر ذینفع n» opens bulk edit on them (below).

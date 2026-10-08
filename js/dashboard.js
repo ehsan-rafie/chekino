@@ -364,6 +364,10 @@ const HISTORY_EVENTS = {
   owner_changed: () => 'صاحب چک عوض شد',
   bulk_edit: () => 'ویرایش گروهی',
   unsent: () => 'از بُرد برداشته شد',
+  followed_up: (h) => {
+    const ch = CHANNELS.find(x => x.id === h.channel);
+    return 'پیگیری شد' + (ch ? ` (${ch.name})` : '');
+  },
   undo: () => 'تغییر قبلی برگردانده شد',
 };
 function renderVeHistory(c) {
@@ -4926,7 +4930,20 @@ function searchListNote(raw) {
 // — waiting for Sayad FOLLOW_UP_DAYS or more since sent — and which are due
 // soon or past due while still unregistered
 const FOLLOW_UP_DAYS = 3;
-const needsFollowUp = (c) => c.stage === 'sent' && (c.status || 'pending') === 'pending' && daysSinceJalali(c.sendDate) >= FOLLOW_UP_DAYS;
+// the last «پیگیری شد» after the cheque went out, if any
+function lastFollowUp(c) {
+  const f = (c.history || []).filter((h) => h.event === 'followed_up').pop();
+  return f && f.at ? f : null;
+}
+// days a waiting cheque has gone without word: since it was sent, or since
+// it was last followed up
+function chequeWaitDays(c) {
+  const sent = daysSinceJalali(c.sendDate);
+  const f = lastFollowUp(c);
+  const since = f ? daysSinceJalali(f.at) : -1;
+  return f && since >= 0 && (sent < 0 || since < sent) ? since : sent;
+}
+const needsFollowUp = (c) => c.stage === 'sent' && (c.status || 'pending') === 'pending' && chequeWaitDays(c) >= FOLLOW_UP_DAYS;
 const dueNear = (c) => c.stage === 'sent' && !!dueUrgencyClass(c);
 const BOARD_FOCUS = {
   followup: { test: needsFollowUp, label: `پیگیری: منتظر ثبتِ ${toFa(FOLLOW_UP_DAYS)} روز و بیشتر` },
@@ -5711,8 +5728,12 @@ function cardAgeHtml(c) {
     const chs = c.channels || [];
     const chId = channelIdOf((sent && sent.channel) || chs[chs.length - 1] || '');
     const ch = CHANNELS.find((x) => x.id === chId);
-    const text = d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
-    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}`;
+    const f = lastFollowUp(c);
+    const fd = f ? daysSinceJalali(f.at) : -1;
+    const followed = f && fd >= 0 && fd < d;
+    const text = followed ? (fd === 0 ? 'امروز پیگیری شد' : `${toFa(fd)} روز از پیگیری`)
+      : d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
+    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}${followed ? `؛ پیگیری ${faDate(f.at)}` : ''}`;
     return `<span class="chk-age" data-tip="${escapeHtml(tip)}">${ch ? `<span class="chk-age-ch" aria-hidden="true">${ch.icon}</span>` : ''}${text}</span>`;
   }
   if (status === 'problem' && c.statusChangedAt) {
@@ -5908,6 +5929,15 @@ function sortColumnChecks(list, statusId) {
   }
   return out;
 }
+
+// the empty board's other ways in: bulk add, the people window
+document.querySelector('.empty-steps').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-empty]');
+  if (!b) return;
+  // (the click stops here: the page's «clicked elsewhere» would close the menu it opens)
+  if (b.dataset.empty === 'bulk') { e.stopPropagation(); const bulk = document.getElementById('bulkAddBtn'); if (bulk && !bulk.hidden) bulk.click(); }
+  else openPeopleModal();
+});
 
 function renderTable() {
   if (window.ChekinoSend) window.ChekinoSend.refreshChips();
@@ -6915,6 +6945,7 @@ document.addEventListener('keydown', (e) => {
   if (activePopover) { closePopover(); return; }
   if (openStatusMenu) { closeStatusMenu(true); return; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
+  if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return; }
   if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
@@ -6951,6 +6982,7 @@ function closeTopmostLayer() {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (activePopover) { closePopover(); return true; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return true; }
+  if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return true; }
   if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return true; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
@@ -7320,7 +7352,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'followOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

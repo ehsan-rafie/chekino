@@ -255,6 +255,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         افزودن اولین چک
       </button>
+      <!-- where else to start -->
+      <ol class="empty-steps">
+        <li><button type="button" data-empty="bulk"><b>چند چک با هم</b><span>عکس اسکن دسته‌ی چک‌ها یا فهرست سریال‌ها: هر برگ یک ردیف</span></button></li>
+        <li><button type="button" data-empty="people"><b>اشخاص</b><span>صاحبان چک، طرف‌های حساب و ذینفعان را یک بار بنویس؛ فرم‌ها پیشنهادشان می‌دهند</span></button></li>
+      </ol>
     </div>
   </div>
 
@@ -1170,6 +1175,29 @@
   </div>
 </div>
 
+<!-- The follow-up window (js/follow-window.js): owners to remind, in the
+     send window's look -->
+<div class="send-overlay follow-overlay" id="followOverlay">
+  <div class="send-panel" role="dialog" aria-modal="true" aria-labelledby="followTitle">
+    <header class="send-head">
+      <div class="bulk-title-row">
+        <h2 id="followTitle">پیگیری صاحب چک‌ها</h2>
+        <span class="follow-count" id="followCount"></span>
+        <button type="button" class="modal-close" id="followClose" title="بستن" aria-label="بستن">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p class="follow-note">چک‌هایی که ۳ روز یا بیشتر از ارسال یا آخرین پیگیری‌شان گذشته و هنوز ثبت نشده‌اند</p>
+    </header>
+    <div class="send-body" id="followBody"></div>
+    <footer class="send-foot">
+      <span class="bulk-foot-msg" aria-live="polite"></span>
+      <button type="button" class="bulk-btn" id="followBoard">نمایش در بُرد</button>
+      <button type="button" class="btn-submit bulk-commit" id="followLater">بستن</button>
+    </footer>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
     <h2 id="confirmTitle"></h2>
@@ -1212,6 +1240,7 @@
 <script src="/js/bulk-photos.js?v=20261008a"></script>
 <script src="/js/bulk-add.js?v=20261008a"></script>
 <script src="/js/send-window.js?v=20261008a"></script>
+<script src="/js/follow-window.js?v=20261008a"></script>
 <script src="/js/bulk-edit.js?v=20261008a"></script>
 <script src="/js/shell.js?v=20261008a"></script>
 <script src="/js/theme-reveal.js?v=20261008a"></script>
