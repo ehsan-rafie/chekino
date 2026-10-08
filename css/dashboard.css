@@ -2666,9 +2666,6 @@ body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: n
 /* On dark, --surface sits a whisker above the page and the shadow does
    nothing, so the chip lifts on a step of tone and a stronger hairline. */
 :root[data-theme="dark"] .app-tooltip { background: var(--surface-2); border-color: var(--border-strong); box-shadow: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .app-tooltip { background: var(--surface-2); border-color: var(--border-strong); box-shadow: none; }
-}
 
 .tg-float svg { width: 27px; height: 27px; color: var(--white); }
 @media (max-width: 720px) { .tg-float { display: none; } }   /* moves into the header on mobile instead */
@@ -2942,12 +2939,6 @@ body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: n
 :root[data-theme="dark"] .confirm-overlay,
 :root[data-theme="dark"] .photo-editor-overlay,
 :root[data-theme="dark"] .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .modal-overlay,
-  :root:not([data-theme="light"]) .confirm-overlay,
-  :root:not([data-theme="light"]) .photo-editor-overlay,
-  :root:not([data-theme="light"]) .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
-}
 
 /* ── 11 · A problem row asks for attention once, not forever ──
    A slow, three-beat pulse on the status dot — not the whole row, not
@@ -3575,7 +3566,6 @@ body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: n
   box-shadow: 0 1px 2px rgba(22, 21, 17, 0.04), 0 1px 6px -2px rgba(22, 21, 17, 0.06);
 }
 :root[data-theme="dark"] .check-card { box-shadow: none; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .check-card { box-shadow: none; } }
 .check-card:hover { box-shadow: 0 2px 4px rgba(22, 21, 17, 0.06), 0 4px 14px -4px rgba(22, 21, 17, 0.1); }
 
 /* A small solid badge in the status colour, carrying the same icon as the
@@ -5719,9 +5709,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .app-tooltip.below::after { top: auto; bottom: 100%; margin: 0 0 -4px -4px; border-radius: 2px 0 0 0; }
 :root[data-theme="dark"] .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
-}
 @media (prefers-reduced-motion: reduce) { .app-tooltip { transition: opacity 0.12s linear; transform: none; } }
 
 /* How long a card has waited (spec 9.4): days since it went to its owner,
@@ -5766,3 +5753,20 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 
 /* the eraser is not a danger: a neutral hover, unlike the trash */
 .btn-clear.is-erase:hover { border-color: var(--border-strong); color: var(--ink); background: var(--surface-2); }
+
+/* A keyboard's first stop: straight to the board, past the header (9.8) */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 3100;
+  padding: 8px 14px;
+  border-radius: var(--rad-ctl);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: var(--t-cap);
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: none; outline: 2px solid var(--focus-outline); outline-offset: 2px; }
+#main:focus { outline: none; }

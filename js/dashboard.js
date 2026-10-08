@@ -407,6 +407,10 @@ let editingHadPhoto = false;
 let editingFiles = null;
 let editingFilesAtOpen = '';
 let veHasEdited = false;
+// What the form held when «ویرایش» was pressed: an edit has changes only
+// when the form differs from it (N7)
+let editStart = '';
+const editState = () => JSON.stringify(formSnapshot()) + '|' + attachedFiles.map((f) => f.id || (f.dataUrl || '').length).join();
 
 // The status block at the top of the view (HeroUI's Alert): the state as
 // the title, and one line under it with what matters for that state —
@@ -701,6 +705,7 @@ function openViewEdit(id) { openModalForView(id); }
 function enterEditMode() {
   modalMode = 'editing';
   veHasEdited = true;
+  editStart = editState();
   modalTitle.textContent = 'ویرایش چک';
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
@@ -980,7 +985,7 @@ function closeModal(force) {
   if (!force) {
     if (confirmIsOpen()) return;   // already asking — a second Escape must not stack a second dialog
     let ask = null;
-    if (modalMode === 'editing' && veHasEdited) {
+    if (modalMode === 'editing' && veHasEdited && editState() !== editStart) {
       ask = {
         title: 'تغییرات ذخیره نشده',
         body: 'اگر ببندید، ویرایش‌هایی که روی این چک انجام دادید از بین می‌رود.',
@@ -4330,6 +4335,12 @@ function handleSaveEdit() {
     return;
   }
 
+  // A change that can be undone saves at once, «برگردون» in its toast; only
+  // taking files off (they are deleted) still asks first
+  const dropsFiles = Array.isArray(editingFiles) && editingFiles.some((fid) => !rec.files.some((f) => f.id === fid));
+  saveIsDirect = !dropsFiles;
+  if (saveIsDirect) { commitSaveEdit(); return; }
+
   // valid and no conflicts — reveal the small confirm button beside "ذخیره تغییرات"
   saveConfirmSlideBtn.classList.add('show');
   submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
@@ -4350,6 +4361,45 @@ function cancelPendingSave() {
   if (c) openModalForView(editingChequeId);   // re-populate + re-lock from the saved record
 }
 
+// «برگردون» after an edit: the cheque as it was, saved over the edit — its
+// people by id, its files as they were (which only takes off the ones the
+// edit added: an edit that took files off asked first and has no way back)
+async function undoEdit(id, before, filesBefore) {
+  const now = loadCheques().find((x) => x.id === id);
+  if (!now) return;
+  const body = {
+    version: now.version,
+    serial: before.serial,
+    sayad_id: before.sayad || null,
+    amount: before.amount,
+    due_date: jalaliStrToIso(before.dueDate),
+    spend_date: before.spendDate ? jalaliStrToIso(before.spendDate) : null,
+    owner: before.ownerId ? { id: before.ownerId } : null,
+    party: { id: before.partyId },
+    beneficiary: before.benefId ? { id: before.benefId } : null,
+    notes: before.notes || null,
+  };
+  if (!isPreSend(before)) {
+    body.send_date = jalaliStrToIso(before.sendDate);
+    body.channels = before.channels;
+  }
+  if (filesBefore) body.images = filesBefore;
+  try {
+    const back = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    putCheque(back);
+    renderTable();
+    showToast(`چک ${toFa(back.serial)} مثل قبل شد`);
+  } catch (e) {
+    if (e.status === 409) {
+      loadChecksFromApi().then(renderTable).catch(() => {});
+      showToast('این چک همین حالا جای دیگری تغییر کرد؛ برگردانده نشد');
+      return;
+    }
+    showToast(requestErrorText(e, 'برگردانده نشد'));
+  }
+}
+let saveIsDirect = false;   // this save went without the confirming tap
+
 async function commitSaveEdit() {
   saveConfirmSlideBtn.classList.remove('show');
   const rec = currentFormRecord();
@@ -4360,6 +4410,10 @@ async function commitSaveEdit() {
   const version = editingVersion;
   const stored = loadCheques().find(x => x.id === id);
   if (!stored) { closeModal(true); return; }
+  // what «برگردون» goes back to: the cheque before this save, and its files
+  // as the server had them (only if none are being taken off)
+  const filesBefore = Array.isArray(editingFiles) ? editingFiles.slice() : null;
+  const undoable = !(filesBefore && filesBefore.some((fid) => !rec.files.some((f) => f.id === fid)));
 
   // The checkmark hides the instant it's clicked, but nothing here used to
   // stop a second Enter/click from firing a second PUT while the first was
@@ -4411,6 +4465,11 @@ async function commitSaveEdit() {
         if (c && c.stage === 'ready') go(); else loadChecksFromApi().then(() => { renderTable(); go(); });
       };
       showToast('چک آماده‌ی ارسال شد', window.ChekinoSend ? { action: { label: 'ارسال', run: send } } : {});
+    } else if (undoable) {
+      showToast(`تغییرات چک ${toFa(saved.serial)} ذخیره شد`, {
+        duration: 8000,
+        action: { label: 'برگردون', run: () => undoEdit(id, stored, filesBefore) },
+      });
     }
     // the cheque as saved, in the list; not every cheque again (spec 9.9)
     putCheque(saved);
@@ -4458,10 +4517,14 @@ async function commitSaveEdit() {
       return;
     }
     showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
-    // Failed — put the confirm step back so the user can just try again
-    // instead of having to re-trigger "ذخیره تغییرات" from scratch.
-    submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
-    saveConfirmSlideBtn.classList.add('show');
+    // Failed — the button as it was, so the user can just try again
+    // (the confirm step back, when this save had one)
+    if (saveIsDirect) {
+      submitCheckBtn.textContent = 'ذخیره تغییرات';
+    } else {
+      submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
+      saveConfirmSlideBtn.classList.add('show');
+    }
   }
 }
 
@@ -4621,6 +4684,29 @@ function buildReceiptMessage(c) {
   return `چک به شماره سریال ${toFa(c.serial)}، به شناسه صیادی ${toFa(c.sayad)}، به مبلغ ${amountFa} ریال و تاریخ سررسید ${faDate(c.dueDate)} در وجه ${c.benef} با کد ملی ${toFa(c.nid)} در سامانه صیاد ثبت گردید.
 ${faDate(c.statusChangedAt)}`;
 }
+// The same for several registered cheques, one line each, the oldest due
+// first: what a party is sent when it asks after a batch it handed over
+function buildGroupReceiptMessage(list) {
+  const rows = list.slice().sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+  const lines = rows.map((c, i) => `${toFa(i + 1)}. سریال ${toFa(c.serial)}، شناسه صیادی ${toFa(c.sayad)}، مبلغ ${toFa(groupDigits(c.amount || '0'))} ریال، سررسید ${faDate(c.dueDate)}، در وجه ${c.benef}${c.nid ? ` (کد ملی ${toFa(c.nid)})` : ''}، ثبت ${faDate(c.statusChangedAt)}`);
+  return `${rows.length === 1 ? 'چک زیر' : `${toFa(rows.length)} چک زیر`} در سامانه صیاد ثبت گردید:
+${lines.join('\n')}`;
+}
+// Text to the clipboard (the older way where the page isn't a secure context)
+function copyText(text) {
+  const legacy = () => new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy') ? resolve() : reject(new Error('copy')); } catch (e) { reject(e); }
+    ta.remove();
+  });
+  return navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text).catch(legacy) : legacy();
+}
+
 // Only a registered cheque has a receipt message to copy. It sits next to
 // the status-change button on the card's left — both mutate or act on the
 // record — while the eye, present on every card, stands alone on the

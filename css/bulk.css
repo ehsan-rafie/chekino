@@ -907,6 +907,9 @@ body.bulk-open { overflow: hidden; }
   --edit-cols: 24px 104px minmax(112px, 1fr) 84px minmax(100px, 1fr) 84px minmax(110px, 1.1fr) minmax(100px, 1fr) 88px;
 }
 .edit-table-bar { display: flex; align-items: center; gap: 12px; min-height: 34px; }
+.edit-receipts { display: inline-flex; align-items: center; gap: 6px; margin-inline-start: auto; }
+.edit-receipts[hidden] { display: none; }
+.edit-receipts svg { width: 14px; height: 14px; }
 .edit-all { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-cap); color: var(--ink-2); cursor: pointer; }
 .edit-all input, .e-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--hl); cursor: pointer; }
 .edit-grid-head, .edit-row {

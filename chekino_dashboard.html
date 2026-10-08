@@ -17,6 +17,7 @@
 </head>
 <body class="chekino-auth-pending">
 
+<a class="skip-link" href="#main">رفتن به چک‌ها</a>
 <header class="header">
   <div class="header-brand">
     <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -58,7 +59,7 @@
   </div>
 </header>
 
-<main class="main">
+<main class="main" id="main" tabindex="-1">
   <!-- No page title: the primary action opens the page at the start (the
        right), and the report and the people list sit at the other end. -->
   <div class="board-page-head">
@@ -1032,6 +1033,11 @@
       <section class="edit-table" aria-label="چک‌ها">
         <div class="edit-table-bar">
           <label class="edit-all"><input type="checkbox" id="editAll"><span id="editAllLabel">انتخاب همه</span></label>
+          <!-- the registered ones among the picked: one receipt message -->
+          <button type="button" class="bulk-btn edit-receipts" id="editReceipts" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2.5"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>
+            <span id="editReceiptsLabel">کپی رسید ثبت</span>
+          </button>
         </div>
         <div class="edit-grid-head" aria-hidden="true">
           <span></span><span>سریال</span><span>مبلغ</span><span>سررسید</span><span>طرف حساب</span><span>تاریخ خرج</span><span>صاحب چک</span><span>ذینفع</span><span>مرحله</span>

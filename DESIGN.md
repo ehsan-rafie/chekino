@@ -189,6 +189,9 @@ plus, black, radius 14 (not a capsule), 48px high, 16px from the right
 edge, clear of «برو به بالا» on the left; it steps aside while any window
 is open, and never shows on a wide screen.
 
+**Skip link.** The first Tab on the board shows «رفتن به چک‌ها» at the top
+right (ink, radius 12); Enter goes past the header to the board.
+
 **Toolbar.** The search field (320px), then the facet filters «تاریخ»
 «مبلغ» «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها»
 when something is filtered, and after it, in the same row, a chip per
@@ -453,7 +456,12 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   («رقم ۶»). The name pickers have no «انتخاب کنید»; their icon and
   arrow say it. Placeholders left: the date segments and the
   note's example. The save button is compact and sits at the end of the
-  footer; saving an edit asks for a one-tap confirmation in place.
+  footer. **An edit saves at once** and the toast offers «برگردون» (the
+  cheque as it was, saved over the edit — its people by id, its files as
+  they were); the one-tap confirmation in place is kept only where saving
+  can't be undone: an edit that takes files off, which deletes them.
+  Escape on an edit asks about unsaved changes only when the form differs
+  from what it held when «ویرایش» was pressed.
   **What this form saved** since it opened stays at the footer's start,
   quiet, in one line — «✓ ثبت‌شده در این نوبت: ۷۷۱۱۰۱، ۷۷۱۱۰۰» (the
   latest first, the last four, then «و ۳ چک دیگر») — so a run of cheques
@@ -787,8 +795,11 @@ window, where:
 **Bulk edit** (`js/bulk-edit.js`, its part of `css/bulk.css`). Many cheques
 at once: a party's list of serials gets its beneficiary, a stack of
 cheques its owners. «ویرایش گروهی» beside «افزودن گروهی» (on phones both
-are icons), the «منتظر ذینفع» chip, the command palette. The bulk add
-window, in three parts always in sight:
+are icons), the «منتظر ذینفع» chip, the command palette. When registered
+cheques are among the picked, «کپی رسید ثبت (۵)» beside «انتخاب همه» copies
+one message for them all — what a party is sent when it asks after a batch:
+«۵ چک زیر در سامانه صیاد ثبت گردید:» and a numbered line each, the earliest
+due first. The bulk add window, in three parts always in sight:
 - **Which cheques.** A box for serials or sayad ids as the party sent them
   (any digits, any separators, series or not: js/serials.js), and filter
   chips — «منتظر ذینفع»، «آماده‌ی ارسال»، «ارسال‌شده»، a party, «بدون

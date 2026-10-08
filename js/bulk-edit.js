@@ -349,8 +349,20 @@
     renderRows();
     showChange();
   });
+  // the registered cheques among the picked: one receipt message for them
+  const doneOf = () => [...ed.sel].map(recOf).filter((c) => c && c.stage === 'sent' && c.status === 'done');
+  $('editReceipts').addEventListener('click', () => {
+    const list = doneOf();
+    if (!list.length) return;
+    copyText(buildGroupReceiptMessage(list))
+      .then(() => showToast(`رسید ثبت ${fa(list.length)} چک کپی شد`))
+      .catch(() => showToast('کپی نشد؛ دوباره بزن'));
+  });
   function showCount() {
     const n = ed.sel.size;
+    const done = doneOf().length;
+    $('editReceipts').hidden = !done;
+    $('editReceiptsLabel').textContent = `کپی رسید ثبت (${fa(done)})`;
     $('editCount').textContent = n ? `${fa(n)} چک انتخاب شد` : 'چکی انتخاب نشده';
     $('editAllLabel').textContent = `انتخاب همه${ed.results.length ? ` (${fa(ed.results.length)})` : ''}`;
     allBox.checked = !!ed.results.length && ed.results.every((c) => ed.sel.has(c.id));
