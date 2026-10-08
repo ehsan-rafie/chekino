@@ -4400,6 +4400,15 @@ function getFilteredCheques() {
 
 function pillBtn(popId) { return document.querySelector(`.filter-pill-btn[data-pop="${popId}"]`); }
 
+let lastFilterChips = [];
+// The board's filters and search, as one line of words (bidi marks out)
+function filterSummary() {
+  const parts = lastFilterChips.map((c) => c.label.replace(/[\u2066-\u2069]/g, ''));
+  const q = searchInput.value.trim();
+  if (q) parts.push(`جستجو: «${q}»`);
+  if (showArchivedCheckbox && showArchivedCheckbox.checked) parts.push('«ثبت شد»های قدیمی هم');
+  return parts.join('؛ ');
+}
 function updateFilterUI() {
   const dateOn = !!rangeFrom;
   const amountOn = filterAmountMin.value.trim() !== '' || filterAmountMax.value.trim() !== '';
@@ -4431,6 +4440,7 @@ function updateFilterUI() {
     const f = peopleFilter[role];
     if (f.sel.length) chips.push({ key: role, label: `${f.label}: ${peopleSummary(f.sel)}` });
   });
+  lastFilterChips = chips;
   activeFiltersRow.innerHTML = chips.map(c => `
     <span class="active-chip" data-key="${c.key}">${c.html || escapeHtml(c.label)}
       <button type="button" data-clear="${c.key}" aria-label="حذف فیلتر ${escapeHtml(c.label.split(':')[0])}" title="حذف این فیلتر">
@@ -4766,6 +4776,7 @@ function generateReport(statusId) {
 
   const rowsHtml = all.map((c, i) => {
     const st = statusById(c.status || 'pending');
+    const why = c.status === 'problem' && c.statusReason ? `<div class="print-nid">${escapeHtml(c.statusReason)}</div>` : '';
     return `<tr>
       <td>${toFa(i + 1)}</td>
       <td>${toFa(c.serial)}</td>
@@ -4775,9 +4786,12 @@ function generateReport(statusId) {
       <td>${escapeHtml(c.owner)}</td>
       <td>${escapeHtml(c.party)}</td>
       <td>${escapeHtml(c.benef)}<div class="print-nid">${toFa(c.nid)}</div></td>
-      <td><span class="print-status-pill ${st.cls}">${st.name}</span></td>
+      <td>${c.sendDate ? faDate(c.sendDate) : '—'}</td>
+      <td><span class="print-status-pill ${st.cls}">${st.name}</span>${why}</td>
     </tr>`;
   }).join('');
+  const title = statusId ? `گزارش چک‌های «${statusById(statusId).name}»` : 'گزارش همه‌ی چک‌ها';
+  const filters = filterSummary();
 
   // A fully separate, self-contained document (its own <style>, since a new
   // tab shares nothing with the dashboard's own stylesheet) — opened in a
@@ -4789,7 +4803,7 @@ function generateReport(statusId) {
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>گزارش چک‌های ${statusId ? statusById(statusId).name : 'همه'} — چکینو</title>
+<title>${title} — چکینو</title>
 <style>
   @font-face {
     font-family: 'IRANSansX';
@@ -4826,6 +4840,9 @@ function generateReport(statusId) {
   .ps-item.ps-done { background: #F0FDF4; color: #15803D; }
   .ps-item.ps-problem { background: #FEF2F2; color: #B91C1C; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  .print-filters { margin: -12px 0 18px; font-size: 13px; color: #404040; line-height: 1.8; }
   th, td { border: 1px solid #E5E5E5; padding: 9px 11px; text-align: center; }
   .print-nid { font-size: 11.5px; color: #737373; margin-top: 2px; }
   th { background: #171717; color: #fff; font-weight: normal; }
@@ -4835,7 +4852,11 @@ function generateReport(statusId) {
   .print-status-pill.st-done { background: #15803D; }
   .print-status-pill.st-problem { background: #B91C1C; }
   @media print {
-    @page { size: A4 landscape; margin: 14mm; }
+    @page {
+      size: A4 landscape;
+      margin: 14mm 14mm 16mm;
+      @bottom-center { content: "صفحه‌ی " counter(page, persian) " از " counter(pages, persian); font-family: 'IRANSansX', Tahoma, sans-serif; font-size: 10pt; color: #737373; }
+    }
     html, body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
     .report-actions { display: none; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
@@ -4845,9 +4866,10 @@ function generateReport(statusId) {
 <body>
   <div class="report-brand">چکینو</div>
   <div class="report-titlebar">
-    <h1>گزارش چک‌های ${statusId ? statusById(statusId).name : 'همه'}</h1>
+    <h1>${title}${PAGE_COMPANY_NAME ? ` — ${escapeHtml(PAGE_COMPANY_NAME)}` : ''}</h1>
     <div class="print-meta">تاریخ تهیه‌ی گزارش: ${toFa(jy)}/${toFa(pad2(jm))}/${toFa(pad2(jd))}</div>
   </div>
+  ${filters ? `<div class="print-filters">فیلترها: ${escapeHtml(filters)}</div>` : ''}
   <div class="report-actions">
     <button class="report-print-btn" id="reportPrintBtn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -4865,7 +4887,7 @@ function generateReport(statusId) {
   <table>
     <thead><tr>
       <th>ردیف</th><th>شماره سریال</th><th>شناسه صیادی</th><th>تاریخ سررسید</th>
-      <th>مبلغ (ریال)</th><th>صاحب چک</th><th>طرف حساب</th><th>ذینفع</th><th>وضعیت</th>
+      <th>مبلغ (ریال)</th><th>صاحب چک</th><th>طرف حساب</th><th>ذینفع</th><th>تاریخ ارسال</th><th>وضعیت</th>
     </tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
@@ -4951,28 +4973,51 @@ async function exportChecksToExcel(statusId) {
     showToast('بارگذاری ابزار خروجی اکسل ناموفق بود. اتصال اینترنت را بررسی کنید.');
     return;
   }
+  // Every field a cheque has; the sheet right to left; the due date a real
+  // date (Excel has no Persian calendar: the Persian one beside it as text);
+  // amounts as numbers with their thousands; a filter on every column and a
+  // total under the amounts (spec 9.6). Texts stay texts: nothing typed in a
+  // note can become a formula.
   const header = [
     'ردیف', 'شماره سریال', 'شناسه صیادی', 'مبلغ (ریال)',
     'تاریخ سررسید (شمسی)', 'تاریخ سررسید (میلادی)',
-    'صاحب چک', 'طرف حساب', 'ذینفع', 'کد ملی ذینفع', 'وضعیت', 'یادداشت',
+    'صاحب چک', 'طرف حساب', 'ذینفع', 'کد ملی ذینفع',
+    'تاریخ خرج', 'تاریخ ارسال', 'کانال', 'وضعیت', 'علت مشکل', 'یادداشت',
   ];
+  const chName = (x) => { const id = channelIdOf(x); const ch = CHANNELS.find((y) => y.id === id); return ch ? ch.name : (LEGACY_CHANNEL_NAMES[x] || x); };
+  const isoDate = (s) => { const iso = jalaliStrToIso(s); return iso ? new Date(iso + 'T00:00:00Z') : ''; };
   const rows = all.map((c, i) => [
     i + 1,
     c.serial || '',
     c.sayad || '',
     parseInt(c.amount, 10) || 0,
     c.dueDate || '',
-    jalaliStrToIso(c.dueDate) || '',
+    isoDate(c.dueDate),
     c.owner || '',
     c.party || '',
     c.benef || '',
     c.nid || '',
+    c.spendDate || '',
+    c.sendDate || '',
+    (c.channels || []).map(chName).join('، '),
     statusById(c.status || 'pending').name,
+    c.status === 'problem' ? c.statusReason || '' : '',
     c.notes || '',
   ]);
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = header.map(() => ({ wch: 16 }));
+  const filters = filterSummary();
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows], { cellDates: true });
+  const last = rows.length + 1;
+  for (let i = 2; i <= last; i++) {
+    if (ws[`D${i}`]) ws[`D${i}`].z = '#,##0';
+    if (ws[`F${i}`] && ws[`F${i}`].t === 'd') ws[`F${i}`].z = 'yyyy-mm-dd';
+  }
+  // the total, under the amounts
+  XLSX.utils.sheet_add_aoa(ws, [['جمع', '', '', { t: 'n', f: `SUM(D2:D${last})`, z: '#,##0' }]], { origin: `A${last + 1}` });
+  if (filters) XLSX.utils.sheet_add_aoa(ws, [[`فیلترها: ${filters}`]], { origin: `A${last + 3}` });
+  ws['!autofilter'] = { ref: `A1:P${last}` };
+  ws['!cols'] = [6, 10, 20, 16, 13, 13, 22, 22, 22, 13, 11, 11, 14, 12, 26, 30].map((wch) => ({ wch }));
   const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
   XLSX.utils.book_append_sheet(wb, ws, statusId ? statusById(statusId).name : 'چک‌ها');
   const [jy, jm, jd] = todayJalali();
   const scope = statusId ? `-${statusId}` : '';
