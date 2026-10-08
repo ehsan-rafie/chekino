@@ -2443,6 +2443,10 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
 .btn-clear:hover { border-color: var(--error); color: var(--error); background: var(--error-bg); }
 .btn-clear svg { width: 20px; height: 20px; flex-shrink: 0; }
 .btn-clear .icon-cancel { display: none; }
+/* a new form's eraser; the trash (red under the pointer) is a saved cheque's */
+.btn-clear .icon-erase { display: none; }
+.btn-clear.is-erase .icon-erase { display: block; }
+.btn-clear.is-erase .icon-trash { display: none; }
 .btn-clear .btn-clear-text { display: none; font-size: 14px; font-variation-settings: var(--f-btn); }
 
 /* Pending a SAVE (edit flow): trash icon swaps for an × to cancel the edit. */
@@ -2522,6 +2526,31 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
   .btn-clear.confirming-delete { width: 100px; padding: 0 8px; font-size: 12px; }
   .delete-cancel-slide.show { width: 60px; font-size: 12px; padding: 0; }
 }
+
+/* ===== «افزودن چک» at the thumb (phones; dashboard.js drawAddFloat) ===== */
+.add-float {
+  position: fixed;
+  right: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 199;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 18px 0 20px;
+  border: none;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: var(--shadow-2);
+  font: inherit;
+  font-size: 15px;
+  font-variation-settings: var(--f-btn);
+  cursor: pointer;
+}
+.add-float[hidden] { display: none; }
+.add-float svg { width: 18px; height: 18px; flex-shrink: 0; }
+body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: none; }
 
 /* ===== Back-to-top button ===== */
 .totop-float {
@@ -5734,3 +5763,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .add-check-btn.shimmer-btn:focus-visible .shimmer-spark { animation: none; opacity: 1; }
 @keyframes shimmerRest { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .add-check-btn.shimmer-btn .shimmer-spark { animation: none; opacity: 0; } }
+
+/* the eraser is not a danger: a neutral hover, unlike the trash */
+.btn-clear.is-erase:hover { border-color: var(--border-strong); color: var(--ink); background: var(--surface-2); }

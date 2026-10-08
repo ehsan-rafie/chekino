@@ -183,7 +183,11 @@ beside it (40px on phones). The button is kept on whole device pixels
 any layout change): the lit edge is under a pixel thick, and with the
 label's fractional width (120.36px) one end sat between two pixels, so
 the spark faded and smeared there — on the climb up the left side, never
-on the right. It wasn't the corner.
+on the right. It wasn't the corner. **On a phone, once the page head has
+scrolled away**, the same action floats at the thumb: «افزودن چک» with its
+plus, black, radius 14 (not a capsule), 48px high, 16px from the right
+edge, clear of «برو به بالا» on the left; it steps aside while any window
+is open, and never shows on a wide screen.
 
 **Toolbar.** The search field (320px), then the facet filters «تاریخ»
 «مبلغ» «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها»
@@ -450,6 +454,14 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   arrow say it. Placeholders left: the date segments and the
   note's example. The save button is compact and sits at the end of the
   footer; saving an edit asks for a one-tap confirmation in place.
+  **What this form saved** since it opened stays at the footer's start,
+  quiet, in one line — «✓ ثبت‌شده در این نوبت: ۷۷۱۱۰۱، ۷۷۱۱۰۰» (the
+  latest first, the last four, then «و ۳ چک دیگر») — so a run of cheques
+  can be checked off at a glance; on a phone it takes a row of its own.
+  When the form closes those cards settle in on the board like a moved
+  card. **Emptying a new form** is an eraser beside the save (neutral
+  under the pointer): one press, then «فرم پاک شد» with «برگردون». The
+  red trash is only a saved cheque's «حذف چک».
 - *Size.* The form reads at the size of the board's cards (whose
   figures are 15–16px): what's typed is 15px, labels and section titles
   14px (hints 13px), and fields, the date and amount boxes and the save
@@ -473,7 +485,13 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     منتظر ثبت» — the board's own change, with its «برگردون»; «مشکل دارد»
     asks why in a plain box under the banner (Enter saves, Escape closes
     only the box). The view follows any change of the cheque, its next
-    step takes the focus, and «ویرایش» starts from the new version. This replaced a long sentence
+    step takes the focus, and «ویرایش» starts from the new version. A
+    registered cheque also has «پیوست رسید صیاد»: the Sayad registration
+    receipt the owner sends back (a screenshot, made small like any photo,
+    or a PDF) is kept with it as proof — a file of the kind «receipt».
+    Under the leaf, «پیوست‌ها» lists every file once there is more than
+    the one the leaf shows: small tiles captioned «عکس ۱»، «PDF»، «رسید
+    صیاد» (in green); a photo opens in the viewer, a PDF in a new tab. This replaced a long sentence
     («… برای آقای …»), which was slow to read and wrong for a company.
     For a waiting cheque the line says how long it has waited; how far off
     the due date is, the cheque itself says.

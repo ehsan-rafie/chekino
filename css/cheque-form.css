@@ -270,6 +270,41 @@
 .cq-view .ve-receipt-btn.copied { background: color-mix(in srgb, var(--st) 10%, var(--surface)); border-color: color-mix(in srgb, var(--st) 48%, transparent); }
 
 .cq-view .cq-cheque-wrap { width: 100%; max-width: 780px; margin-inline: auto; }
+/* every file of the cheque, under the leaf: small tiles with a caption */
+.cq-view .ve-files { width: 100%; max-width: 780px; margin-inline: auto; }
+.cq-view .ve-files[hidden] { display: none; }
+.ve-files-label { margin-bottom: 8px; font-size: var(--t-cap); color: var(--muted); }
+.ve-files-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.ve-file {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 112px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-micro);
+  cursor: pointer;
+}
+.ve-file img, .ve-file-wait, .ve-file-doc {
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 72px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  object-fit: cover;
+  color: var(--ink-2);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+}
+.ve-file:hover img, .ve-file:hover .ve-file-doc { border-color: var(--border-strong); }
+.ve-file.is-receipt .ve-file-label { color: var(--state-ok-text); }
+.ve-file-label { text-align: center; }
 .cq-body.ve-locked .cq-cheque { -webkit-user-select: text; user-select: text; }
 /* The history: a vertical timeline — a dot in the status colour per step,
    joined by a hairline; the date at the end, the reason under its step. */
@@ -338,6 +373,8 @@
   .cq-view { padding: 14px; gap: 14px; }
   .cq-view .ve-status-banner { flex-wrap: wrap; }
   .cq-view .ve-receipt-btn { margin-inline-start: 46px; }
+  /* a second button sits beside the first, not under it */
+  .cq-view .ve-receipt-btn:not([style*="none"]) ~ .ve-receipt-btn:not([style*="none"]) { margin-inline-start: 0; }
   .cq-view .ve-st-actions { margin-inline-start: 46px; }
   .cq-view .ve-st-actions .ve-receipt-btn { margin-inline-start: 0; height: 40px; }
   .cq-view .ve-history { padding: 14px 16px; }
@@ -663,6 +700,25 @@
   animation: noticeIn var(--dur-3) var(--ease-spring) both;
 }
 .form-notice[hidden] { display: none; }
+/* «ثبت‌شده در این نوبت: …» at the footer's start, quiet, one line */
+.saved-run {
+  order: -3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-inline-end: auto;
+  color: var(--ink-2);
+  font-size: var(--t-cap);
+  white-space: nowrap;
+}
+.saved-run[hidden] { display: none; }
+.saved-run svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--state-ok-text); }
+.saved-run span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 600px) {
+  #modalOverlay .modal-footer:has(.saved-run:not([hidden])) { flex-wrap: wrap; row-gap: 8px; }
+  .saved-run { flex-basis: 100%; }
+}
 .form-notice.leaving { animation: noticeOut 160ms var(--ease) both; }
 .form-notice-icon { display: grid; place-items: center; flex-shrink: 0; }
 .form-notice-icon svg { width: 16px; height: 16px; }

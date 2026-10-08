@@ -482,6 +482,7 @@ const VE_ACTIONS = {
 function showVeActions(c) {
   const preSend = isPreSend(c);
   veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
+  veProofBtn.style.display = veReceiptBtn.style.display;
   veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
   const acts = preSend ? null : VE_ACTIONS[c.status || 'pending'];
   const key = acts ? c.status || 'pending' : '';
@@ -494,7 +495,62 @@ function showVeActions(c) {
   veStActions.hidden = !acts;
   closeVeReason();
 }
+// The Sayad registration receipt the owner sent back, kept with the cheque
+// as proof (C1's «receipt»): a photo made small like any other, or a PDF;
+// uploaded on its own, then named in the cheque with its other files —
+// through the cheque's version, so an edit elsewhere isn't overwritten.
+const veProofBtn = document.getElementById('veProofBtn');
+const veProofInput = document.getElementById('veProofInput');
+veProofBtn.addEventListener('click', () => veProofInput.click());
+async function proofBlob(file) {
+  if (file.type === 'application/pdf') {
+    if (file.size > 10 * 1024 * 1024) throw Object.assign(new Error('PDF بزرگ‌تر از ۱۰ مگابایت است'), { status: 413 });
+    return file;
+  }
+  if (!file.type.startsWith('image/')) throw Object.assign(new Error('فقط عکس یا PDF'), { status: 415 });
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = url; });
+    const canvas = resizeCanvasIfNeeded(imageToCanvas(img), 1600);
+    return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  } finally { URL.revokeObjectURL(url); }
+}
+veProofInput.addEventListener('change', async () => {
+  const file = veProofInput.files && veProofInput.files[0];
+  veProofInput.value = '';
+  const id = editingChequeId;
+  if (!file || id == null) return;
+  veProofBtn.disabled = true;
+  try {
+    const c = loadCheques().find((x) => x.id === id);
+    if (editingFiles === null && c) await loadChequeFiles(c);
+    if (editingFiles === null) throw Object.assign(new Error('فایل‌های این چک از سرور نرسیدند؛ دوباره بزن'), { status: 503 });
+    const blob = await proofBlob(file);
+    const up = await apiJson('/images', { method: 'POST', headers: { 'Content-Type': blob.type, 'X-Kind': 'receipt' }, body: blob });
+    const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify({ version: editingVersion, images: [...editingFiles, up.id] }) });
+    putCheque(saved);
+    renderTable();
+    if (editingChequeId === id) {
+      editingVersion = saved.version;
+      editingFiles = [...editingFiles, up.id];
+      attachedFiles.push({ id: up.id, kind: 'receipt', name: attachmentName(blob.type, c && c.serial, 'receipt'), type: blob.type, size: blob.size, dataUrl: '' });
+      editingFilesAtOpen = attachedFiles.map((f) => f.id).join();
+      renderFileChips();
+      loadAttachedImages();
+    }
+    showToast('رسید صیاد به چک پیوست شد');
+  } catch (e) {
+    if (e && e.status === 409 && e.data && e.data.code === 'version_conflict') {
+      showToast('این چک همین حالا جای دیگری تغییر کرد؛ دوباره بازش کن و رسید را بگذار');
+      loadChecksFromApi().then(renderTable).catch(() => {});
+    } else showToast(requestErrorText(e, 'رسید پیوست نشد'));
+  } finally {
+    veProofBtn.disabled = false;
+  }
+});
+
 function hideVeActions() {
+  veProofBtn.style.display = 'none';
   veStActions.hidden = true;
   veStActions.dataset.st = '';
   veStActions.innerHTML = '';
@@ -580,7 +636,7 @@ function openModalForView(id) {
   editingChequeId = id;
   editingVersion = c.version;
   editingHadPhoto = Array.isArray(c.files) && c.files.length > 0;
-  editingFiles = (c.imageCount || 0) > 1 ? null : (c.files || []).map((f) => f.id);
+  editingFiles = (c.imageCount || 0) === (c.files || []).length ? (c.files || []).map((f) => f.id) : null;
   veHasEdited = false;
   modalTitle.textContent = 'مشاهده چک';
   enableFormButtons();
@@ -633,6 +689,8 @@ function openModalForView(id) {
   lockFormFields(true);
   submitCheckBtn.textContent = 'ویرایش';
   clearFormBtn.title = 'حذف چک';
+  clearFormBtn.setAttribute('aria-label', 'حذف چک');
+  clearFormBtn.classList.remove('is-erase');
 
   modalOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -659,6 +717,8 @@ function exitViewEditMode() {
   submitCheckBtn.textContent = 'ثبت چک';
   submitCheckBtn.classList.remove('pending-confirm', 'delete-warning');
   clearFormBtn.title = 'پاک کردن فرم';
+  clearFormBtn.setAttribute('aria-label', 'پاک کردن فرم');
+  clearFormBtn.classList.add('is-erase');
   clearFormBtn.classList.remove('confirming-delete');
   document.getElementById('deleteCancelSlideBtn').classList.remove('show');
   veStatusBanner.classList.remove('show');
@@ -673,8 +733,26 @@ function exitViewEditMode() {
   clearFormBtn.classList.remove('pending-cancel');
 }
 
+// What this add form saved since it opened: listed in its footer, and the
+// cards settle in on the board when it closes
+let savedRun = [];   // [{ id, serial }]
+let freshCards = new Set();
+const savedRunEl = document.getElementById('savedRun');
+function drawSavedRun() {
+  savedRunEl.hidden = !savedRun.length;
+  if (!savedRun.length) return;
+  const serials = savedRun.map((x) => toFa(x.serial));
+  const shown = serials.slice(-4).reverse();
+  const more = serials.length - shown.length;
+  document.getElementById('savedRunText').textContent =
+    `ثبت‌شده در این نوبت: ${shown.join('، ')}${more > 0 ? ` و ${toFa(more)} چک دیگر` : ''}`;
+  savedRunEl.title = serials.join('، ');
+}
+
 function openModal() {
   noteOpener();
+  savedRun = [];
+  drawSavedRun();
   pushBackGuard();
   // Defensive reset — guarantees a fresh "افزودن چک" state regardless of
   // whatever mode the modal was left in the last time it was open.
@@ -685,6 +763,8 @@ function openModal() {
   submitCheckBtn.classList.remove('pending-confirm', 'delete-warning');
   enableFormButtons();
   clearFormBtn.title = 'پاک کردن فرم';
+  clearFormBtn.setAttribute('aria-label', 'پاک کردن فرم');
+  clearFormBtn.classList.add('is-erase');
   clearFormBtn.classList.remove('confirming-delete');
   veStatusBanner.classList.remove('show');
   veReceiptBtn.style.display = 'none';
@@ -928,6 +1008,14 @@ function closeModal(force) {
   resetAllFields();
   if (!wasViewOrEdit) clearDraft();
   if (wasViewOrEdit) exitViewEditMode();
+  // the cheques this form saved settle in on the board, once
+  if (!wasViewOrEdit && savedRun.length) {
+    freshCards = new Set(savedRun.map((x) => x.id));
+    savedRun = [];
+    drawSavedRun();
+    renderTable();
+    freshCards = new Set();
+  }
   if (personOpen && peopleModalOverlay.classList.contains('show')) {
     renderPerson();
     const row = personBody.querySelector(`.person-cheque[data-cid="${viewedId}"]`);
@@ -3122,7 +3210,36 @@ renderChannelChips();
 const MAX_FILE_BYTES = 10 * 1024 * 1024;   // files are stored as base64 text in local storage
 let attachedFiles = [];                    // { name, type, size, dataUrl, [source, edit] } — see peSendBtn
 
+// In the view, under the leaf: every file, when there's more than the one
+// the leaf shows (a photo opens in the viewer, a PDF in a new tab)
+const veFiles = document.getElementById('veFiles');
+const veFilesList = document.getElementById('veFilesList');
+function drawVeFiles() {
+  const show = modalMode === 'view' && (attachedFiles.length > 1 || attachedFiles.some((f) => f.kind === 'receipt'));
+  veFiles.hidden = !show;
+  if (!show) { veFilesList.innerHTML = ''; return; }
+  let photoN = 0;
+  veFilesList.innerHTML = attachedFiles.map((f, i) => {
+    const isImg = (f.type || '').startsWith('image/');
+    const label = f.kind === 'receipt' ? 'رسید صیاد' : isImg ? `عکس ${toFa(++photoN)}` : 'PDF';
+    const thumb = isImg
+      ? (f.dataUrl ? `<img src="${f.dataUrl}" alt="">` : '<span class="ve-file-wait"></span>')
+      : '<span class="ve-file-doc">PDF</span>';
+    return `<button type="button" class="ve-file${f.kind === 'receipt' ? ' is-receipt' : ''}" data-i="${i}" aria-label="${label}">${thumb}<span class="ve-file-label">${label}</span></button>`;
+  }).join('');
+}
+veFilesList.addEventListener('click', (e) => {
+  const b = e.target.closest('.ve-file');
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  const f = attachedFiles[i];
+  if (!f) return;
+  if ((f.type || '').startsWith('image/')) { if (f.dataUrl) openLightbox(f.dataUrl, f.name, i); }
+  else if (f.id) openAttachment(f);
+});
+
 function renderFileChips() {
+  drawVeFiles();
   fileChips.innerHTML = '';
   attachedFiles.forEach((item, i) => {
     const chip = document.createElement('div');
@@ -3257,9 +3374,9 @@ function openAttachment(f) {
   });
 }
 // A file name for a download: «cheque-482913.jpg»
-function attachmentName(mime, serial) {
+function attachmentName(mime, serial, kind) {
   const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'application/pdf': 'pdf' }[mime] || 'jpg';
-  return `cheque-${serial || 'photo'}.${ext}`;
+  return `${kind === 'receipt' ? 'sayad-receipt' : 'cheque'}-${serial || 'photo'}.${ext}`;
 }
 // All of a cheque's files, in order (C1): the board's list names only the
 // first. The open view shows them once they arrive, and an edit then knows
@@ -3274,7 +3391,7 @@ function loadChequeFiles(c) {
     if (editingChequeId !== id || editingFiles !== null) return;
     const list = (full && full.images) || [];
     editingFiles = list.map((x) => x.id);
-    const asFile = (x) => ({ id: x.id, name: attachmentName(x.mime, c.serial), type: x.mime || '', size: 0, dataUrl: '' });
+    const asFile = (x) => ({ id: x.id, kind: x.kind || 'cheque', name: attachmentName(x.mime, c.serial, x.kind), type: x.mime || '', size: 0, dataUrl: '' });
     const have = new Map(attachedFiles.filter((f) => f.id).map((f) => [f.id, f]));
     if (attachedFiles.map((f) => f.id).join() === editingFilesAtOpen) {
       attachedFiles = list.map((x) => have.get(x.id) || asFile(x));
@@ -4153,6 +4270,7 @@ submitCheckBtn.addEventListener('click', async () => {
     stickyFieldsUntouched = true;
     renderTable();
     showFormAlert('success', `چک ${savedSerial} ثبت شد`);
+    if (created && created.id) { savedRun.push({ id: created.id, serial: rec.serial }); drawSavedRun(); }
     serialInput.focus();
   } catch (e) {
     showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
@@ -4347,7 +4465,6 @@ async function commitSaveEdit() {
   }
 }
 
-let clearConfirmPending = false;
 let deleteInFlight = false;   // one DELETE per confirmation, not one per click
 const saveConfirmSlideBtn = document.getElementById('saveConfirmSlideBtn');
 const deleteCancelSlideBtn = document.getElementById('deleteCancelSlideBtn');
@@ -4404,26 +4521,24 @@ clearFormBtn.addEventListener('click', async () => {
     return;
   }
 
-  if (!clearConfirmPending) {
-    clearConfirmPending = true;
-    clearFormBtn.title = 'برای تأیید دوباره بزنید';
-    clearFormBtn.style.borderColor = 'var(--error)';
-    clearFormBtn.style.color = 'var(--error)';
-    setTimeout(() => {
-      clearConfirmPending = false;
-      clearFormBtn.title = 'پاک کردن فرم';
-      clearFormBtn.style.borderColor = '';
-      clearFormBtn.style.color = '';
-    }, 2500);
-    return;
-  }
+  // a new form: emptied at once — nothing is lost that «برگردون» can't bring back
+  const was = formSnapshot();
+  const wasFiles = attachedFiles.slice();
+  if (!isFormDirty() && !wasFiles.length) { serialInput.focus(); return; }
   resetAllFields();
   clearDraft();
-  clearConfirmPending = false;
-  clearFormBtn.title = 'پاک کردن فرم';
-  clearFormBtn.style.borderColor = '';
-  clearFormBtn.style.color = '';
   serialInput.focus();
+  showToast('فرم پاک شد', {
+    duration: 8000,
+    action: { label: 'برگردون', run: () => {
+      if (!modalOverlay.classList.contains('show') || modalMode !== 'add') return;
+      applyFormSnapshot(was);
+      attachedFiles = wasFiles;
+      renderFileChips();
+      saveDraft();
+      serialInput.focus();
+    } },
+  });
 });
 
 // =========================================================
@@ -5500,7 +5615,7 @@ function cardAgeHtml(c) {
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const urgency = dueUrgencyClass(c);
-  const justChanged = c.id === justChangedId ? ' just-changed' : '';
+  const justChanged = c.id === justChangedId || freshCards.has(c.id) ? ' just-changed' : '';
   // A problem cheque shows why, beside its red mark, in the bottom row's
   // free space — the reason is what someone opens that lane to find out.
   const reason = c.status === 'problem' && c.statusReason ? escapeHtml(c.statusReason) : '';
@@ -6271,6 +6386,16 @@ document.getElementById('headerSupportBtn').addEventListener('click', () => {
 window.addEventListener('scroll', () => {
   toTopBtn.classList.toggle('show', window.scrollY > 400);
 });
+const addFloatBtn = document.getElementById('addFloatBtn');
+const addCheckBtnEl = document.getElementById('addCheckBtn');
+let addBtnInView = true;
+const narrowQuery = window.matchMedia('(max-width: 860px)');
+function drawAddFloat() { addFloatBtn.hidden = addBtnInView || !narrowQuery.matches; }
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver((entries) => { addBtnInView = entries[entries.length - 1].isIntersecting; drawAddFloat(); }).observe(addCheckBtnEl);
+}
+narrowQuery.addEventListener('change', drawAddFloat);
+addFloatBtn.addEventListener('click', () => addCheckBtnEl.click());
 toTopBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
