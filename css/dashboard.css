@@ -5563,3 +5563,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 /* under the search box: what a pasted list of serials found (H9) */
 .search-note { margin: -6px 0 12px; font-size: var(--t-micro); color: var(--ink-2); line-height: 1.7; }
 .search-note:empty { display: none; }
+
+/* the account menu: the plan and how much of it is used (H3) */
+.account-plan { display: flex; flex-direction: column; margin-top: 6px; font-size: var(--t-micro); color: var(--ink-2); line-height: 1.6; }
+.account-plan b { color: var(--ink); font-variation-settings: var(--f-label); }
+.account-plan[hidden] { display: none; }
+.account-plan.is-near { color: var(--state-bad-text); }

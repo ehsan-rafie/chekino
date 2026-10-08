@@ -446,19 +446,6 @@ router.post('/', createValidation, validate, async (req, res) => {
       return res.status(400).json({ error: 'owner_id، party_id یا beneficiary_id متعلق به این شرکت نیستند یا وجود ندارند' });
     }
 
-    const planCheck = await pool.query(
-      `SELECT p.max_checks, (SELECT COUNT(*) FROM checks WHERE company_id = $1) AS current_count
-       FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
-       WHERE c.id = $1`,
-      [req.companyId]
-    );
-    const { max_checks, current_count } = planCheck.rows[0];
-    if (max_checks !== null && Number(current_count) >= Number(max_checks)) {
-      return res.status(403).json({
-        error: `سقف تعداد چک‌ها طبق پلن شما (${max_checks} چک) پر شده است. برای ثبت چک جدید، یکی را حذف کنید یا پلن خود را ارتقا دهید.`,
-      });
-    }
-
     const initialStatus = status || 'pending';
     const initialHistory = initialStatus === 'pending' ? [] : [{ to: initialStatus, reason: '', at: new Date().toISOString() }];
 
@@ -467,6 +454,21 @@ router.post('/', createValidation, validate, async (req, res) => {
     let newId;
     try {
       await db.query('BEGIN');
+      // The plan's limit, counted with the company held (H3): two saves at
+      // once can't both take the last place
+      const plan = (await db.query(
+        `SELECT p.max_checks, (SELECT COUNT(*) FROM checks WHERE company_id = $1) AS current_count
+         FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
+         WHERE c.id = $1 FOR UPDATE OF c`,
+        [req.companyId]
+      )).rows[0];
+      if (plan.max_checks !== null && Number(plan.current_count) >= Number(plan.max_checks)) {
+        await db.query('ROLLBACK');
+        return res.status(403).json({
+          error: `سقف تعداد چک‌ها طبق پلن شما (${Number(plan.max_checks).toLocaleString('fa-IR')} چک) پر شده است. برای ثبت چک تازه، یکی را حذف کنید یا پلن را ارتقا دهید.`,
+          code: 'plan_limit',
+        });
+      }
       // No send date given: today in Tehran — the database runs in UTC, where
       // CURRENT_DATE is still yesterday until 03:30 Tehran time
       const result = await db.query(

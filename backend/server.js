@@ -8,6 +8,7 @@ const checksRoutes = require('./routes/checks');
 const imagesRoutes = require('./routes/images');
 const batchesRoutes = require('./routes/batches');
 const bulkOpsRoutes = require('./routes/bulk-ops');
+const accountRoutes = require('./routes/account');
 const adminRoutes = require('./routes/admin');
 const { ipLimiter } = require('./middleware/rateLimit');
 
@@ -78,6 +79,7 @@ app.use('/api/checks', checksRoutes);
 app.use('/api/images', imagesRoutes);
 app.use('/api/batches', batchesRoutes);
 app.use('/api/bulk-ops', bulkOpsRoutes);
+app.use('/api/account', accountRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Whatever no route answered, and whatever failed, answers in JSON — never

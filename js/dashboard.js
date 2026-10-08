@@ -144,7 +144,22 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   const setOpen = (open) => {
     accountMenu.classList.toggle('show', open);
     accountBtn.setAttribute('aria-expanded', String(open));
+    if (open) showPlan();
   };
+  // the plan, and how much of it is used (H3), counted when the menu opens
+  const planEl = document.getElementById('accountPlan');
+  const of = (n, max, what) => (max === null || max === undefined ? `${toFa(n)} ${what}` : `${toFa(n)} از ${toFa(max)} ${what}`);
+  function showPlan() {
+    apiJson('/account').then((a) => {
+      const parts = [of(a.checks, a.max_checks, 'چک'), of(a.people, a.max_people, 'شخص')];
+      const near = (a.max_checks && a.checks >= a.max_checks * 0.9) || (a.max_people && a.people >= a.max_people * 0.9);
+      planEl.innerHTML = '';
+      if (a.plan_name) { const n = document.createElement('b'); n.textContent = `پلن ${a.plan_name}`; planEl.appendChild(n); }
+      const u = document.createElement('span'); u.textContent = parts.join('، '); planEl.appendChild(u);
+      planEl.classList.toggle('is-near', !!near);
+      planEl.hidden = false;
+    }).catch(() => {});
+  }
   accountBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     setOpen(!accountMenu.classList.contains('show'));

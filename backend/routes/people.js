@@ -78,24 +78,36 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
     const holder = await personWithNid(req.companyId, national_id);
     if (holder) return nidTaken(res, holder);
 
-    const planCheck = await pool.query(
-      `SELECT p.max_people, (SELECT COUNT(*) FROM people WHERE company_id = $1) AS current_count
-       FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
-       WHERE c.id = $1`,
-      [req.companyId]
-    );
-    const { max_people, current_count } = planCheck.rows[0];
-    if (max_people !== null && Number(current_count) >= Number(max_people)) {
-      return res.status(403).json({
-        error: `سقف تعداد اشخاص طبق پلن شما (${max_people} نفر) پر شده است. برای افزودن شخص جدید، یکی را حذف کنید یا پلن خود را ارتقا دهید.`,
-      });
+    // the plan's limit, counted with the company held (H3)
+    const db = await pool.connect();
+    let created;
+    try {
+      await db.query('BEGIN');
+      const plan = (await db.query(
+        `SELECT p.max_people, (SELECT COUNT(*) FROM people WHERE company_id = $1) AS current_count
+         FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
+         WHERE c.id = $1 FOR UPDATE OF c`,
+        [req.companyId]
+      )).rows[0];
+      if (plan.max_people !== null && Number(plan.current_count) >= Number(plan.max_people)) {
+        await db.query('ROLLBACK');
+        return res.status(403).json({
+          error: `سقف تعداد اشخاص طبق پلن شما (${Number(plan.max_people).toLocaleString('fa-IR')} نفر) پر شده است. برای افزودن شخص تازه، یکی را حذف کنید یا پلن را ارتقا دهید.`,
+          code: 'plan_people_limit',
+        });
+      }
+      created = (await db.query(
+        'INSERT INTO people (company_id, full_name, national_id, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, national_id, phone, role, created_at',
+        [req.companyId, full_name, digitsOnly(national_id) || null, phone || null, roleOrNull(role)]
+      )).rows[0];
+      await db.query('COMMIT');
+    } catch (e) {
+      await db.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      db.release();
     }
-
-    const result = await pool.query(
-      'INSERT INTO people (company_id, full_name, national_id, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, national_id, phone, role, created_at',
-      [req.companyId, full_name, digitsOnly(national_id) || null, phone || null, roleOrNull(role)]
-    );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(created);
   } catch (err) {
     if (err.code === '23505') {                       // lost a race to the unique index
       const holder = await personWithNid(req.companyId, req.body.national_id).catch(() => null);
