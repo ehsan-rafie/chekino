@@ -6,6 +6,10 @@ const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const { loginLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
+const authenticate = require('../middleware/auth');
+const { passwordProblem } = require('../lib/passwords');
+// a password set here must be a real one (lib/passwords.js)
+const goodPassword = (field) => body(field).custom((v) => { const p = passwordProblem(v); if (p) throw new Error(p); return true; });
 
 const router = express.Router();
 
@@ -63,7 +67,7 @@ router.use(requireAdmin);
 const accountValidation = [
   body('current_password').isString().notEmpty().withMessage('رمز عبور فعلی برای تأیید هویت الزامی است'),
   body('new_username').optional({ values: 'falsy' }).trim().isLength({ max: 100 }),
-  body('new_password').optional({ values: 'falsy' }).isString().isLength({ min: 4 }).withMessage('رمز عبور جدید باید حداقل ۴ کاراکتر باشد'),
+  body('new_password').optional({ values: 'falsy' }).isString().bail().custom((v) => { const p = passwordProblem(v); if (p) throw new Error(p); return true; }),
 ];
 
 router.put('/account', accountValidation, validate, async (req, res) => {
@@ -130,7 +134,8 @@ router.get('/companies', async (req, res) => {
 const createCompanyValidation = [
   body('name').trim().notEmpty().withMessage('name الزامی است').isLength({ max: 200 }),
   body('username').trim().notEmpty().withMessage('username الزامی است').isLength({ max: 100 }),
-  body('password').isString().notEmpty().withMessage('password الزامی است').isLength({ max: 200 }),
+  body('password').isString().notEmpty().withMessage('رمز الزامی است').bail(),
+  goodPassword('password'),
   body('plan_id').optional({ values: 'falsy' }).isInt().withMessage('plan_id نامعتبر است'),
 ];
 
@@ -191,8 +196,8 @@ router.put('/companies/:id', idParamValidation, updateCompanyValidation, validat
 });
 
 const companyPasswordValidation = [
-  body('password').isString().notEmpty().withMessage('رمز عبور جدید الزامی است و باید حداقل ۴ کاراکتر باشد')
-    .isLength({ min: 4 }).withMessage('رمز عبور جدید الزامی است و باید حداقل ۴ کاراکتر باشد'),
+  body('password').isString().notEmpty().withMessage('رمز عبور جدید الزامی است').bail(),
+  goodPassword('password'),
 ];
 
 router.put('/companies/:id/password', idParamValidation, companyPasswordValidation, validate, async (req, res) => {
@@ -207,6 +212,7 @@ router.put('/companies/:id/password', idParamValidation, companyPasswordValidati
 
     const passwordHash = await bcrypt.hash(password, 10);
     await pool.query('UPDATE companies SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
+    authenticate.forget(id);   // its sessions end now
 
     res.json({ message: 'رمز عبور با موفقیت تغییر کرد' });
   } catch (err) {
@@ -228,6 +234,7 @@ router.patch('/companies/:id/status', idParamValidation, companyStatusValidation
       'UPDATE companies SET status = $1 WHERE id = $2 RETURNING id',
       [status, id]
     );
+    authenticate.forget(id);   // turned off: its sessions end now
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'شرکت یافت نشد' });
     }

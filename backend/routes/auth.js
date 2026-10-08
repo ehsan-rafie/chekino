@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 
@@ -47,10 +48,12 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
       return res.status(403).json({ error: 'حساب کاربری غیرفعال است' });
     }
 
+    // pv: the password it was signed in with — set again, the session ends
+    // (middleware/auth.js)
     const token = jwt.sign(
-      { company_id: company.id, name: company.name },
+      { company_id: company.id, name: company.name, pv: authenticate.fingerprint(company.password_hash) },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '24h', algorithm: 'HS256' }
     );
 
     res.json({ token });

@@ -1630,6 +1630,9 @@ async function apiFetch(path, opts, retried) {
     if (!retried && now && now !== token && companyOfToken(now) === PAGE_COMPANY && tokenAlive(now)) {
       return apiFetch(path, opts, true);
     }
+    // why the server said no, when it says: the password set again, or the company turned off
+    const said = await res.clone().json().catch(() => null);
+    if (said && said.code) sessionWhy = said.code;
     if (!now) sessionEnded(missingTokenReason());
     else if (companyOfToken(now) !== PAGE_COMPANY) sessionEnded('switched', now);
     else sessionEnded('expired', token);
@@ -6349,6 +6352,7 @@ function dropStash() {
   try { sessionStorage.removeItem(RESUME_KEY); } catch (e) {}
 }
 
+let sessionWhy = '';   // the server's code with a 401: password_changed, company_inactive
 function sessionEnded(reason, token) {
   if (sessionEndedReason) return;   // already said
   sessionEndedReason = reason;
@@ -6373,6 +6377,14 @@ function sessionEnded(reason, token) {
     sessionTitle.textContent = 'از حساب خارج شدی';
     sessionBody.textContent = 'در زبانه‌ی دیگری از حساب خارج شدی. برای ادامه دوباره وارد شو.';
     sessionGo.textContent = 'ورود دوباره';
+  } else if (sessionWhy === 'password_changed') {
+    sessionTitle.textContent = 'رمز این حساب عوض شده';
+    sessionBody.textContent = `رمز حساب تازه گذاشته شده؛ با رمز تازه دوباره وارد شو.${keptLine}`;
+    sessionGo.textContent = 'ورود دوباره';
+  } else if (sessionWhy === 'company_inactive') {
+    sessionTitle.textContent = 'این حساب غیرفعال شده';
+    sessionBody.textContent = `حساب این شرکت غیرفعال شده؛ برای فعال شدن با پشتیبانی تماس بگیر.${keptLine}`;
+    sessionGo.textContent = 'صفحه‌ی ورود';
   } else {
     sessionTitle.textContent = 'نشستت تمام شد';
     sessionBody.textContent = `هر ورود ۲۴ ساعت اعتبار دارد؛ برای ادامه دوباره وارد شو.${keptLine}`;

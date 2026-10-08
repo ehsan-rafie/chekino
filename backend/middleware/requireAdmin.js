@@ -10,7 +10,7 @@ function requireAdmin(req, res, next) {
   const token = authHeader.slice('Bearer '.length);
 
   try {
-    const payload = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+    const payload = jwt.verify(token, process.env.ADMIN_JWT_SECRET, { algorithms: ['HS256'] });
     if (payload.role !== 'admin') {
       return res.status(403).json({ error: 'دسترسی ادمین لازم است' });
     }

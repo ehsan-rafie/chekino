@@ -492,7 +492,10 @@ document.getElementById('editCompanySave').addEventListener('click', (ev) =>
 function randomPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   let out = '';
-  for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  // the browser's cryptographic randomness (Math.random can be predicted),
+  // fourteen characters, none that read alike
+  const bytes = crypto.getRandomValues(new Uint32Array(14));
+  for (let i = 0; i < 14; i++) out += chars[bytes[i] % chars.length];
   return out;
 }
 
@@ -518,8 +521,9 @@ document.getElementById('changePasswordSave').addEventListener('click', (ev) =>
   const id = document.getElementById('changePasswordOverlay').dataset.id;
   const newPassword = document.getElementById('newPasswordInput').value;
   hideAlert('changePasswordAlert');
-  if (!newPassword || newPassword.length < 4) {
-    showAlert('changePasswordAlert', 'رمز عبور باید حداقل ۴ کاراکتر باشد');
+  // (the server says what else it won't take: a common one, a run of keys)
+  if (!newPassword || newPassword.length < 10) {
+    showAlert('changePasswordAlert', 'رمز عبور باید دست‌کم ۱۰ نویسه باشد');
     return;
   }
   try {
