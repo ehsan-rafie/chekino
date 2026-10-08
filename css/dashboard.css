@@ -5578,3 +5578,10 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 /* Ctrl+A in a date: the whole of it marked */
 .date-field.date-all .date-input-wrap { box-shadow: var(--ring); }
 .date-field.date-all .dseg-part { background: var(--hl-soft); border-radius: 4px; }
+/* WCAG 2.2.2: the shimmer of «افزودن چک» plays for the first few seconds and
+   fades; a pointer over the button, or the keyboard on it, brings it back */
+.add-check-btn.shimmer-btn .shimmer-spark { animation: shimmerRest 5s linear 1 forwards; }
+.add-check-btn.shimmer-btn:hover .shimmer-spark,
+.add-check-btn.shimmer-btn:focus-visible .shimmer-spark { animation: none; opacity: 1; }
+@keyframes shimmerRest { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .add-check-btn.shimmer-btn .shimmer-spark { animation: none; opacity: 0; } }
