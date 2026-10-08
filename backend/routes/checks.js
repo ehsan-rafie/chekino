@@ -72,10 +72,12 @@ async function saveChequeImage(db, companyId, checkId, dataUrl) {
 // across banks.
 const DUPLICATE_SAYAD = 'چکی با این شناسه صیادی قبلاً برای این شرکت ثبت شده است';
 
-async function ensureOwnedPeople(companyId, ids) {
+// (inside a transaction, its own client: a person it has just added is
+// only visible there)
+async function ensureOwnedPeople(companyId, ids, client = pool) {
   const uniqueIds = [...new Set(ids.filter((x) => x !== undefined && x !== null))];
   if (uniqueIds.length === 0) return true;
-  const result = await pool.query(
+  const result = await client.query(
     'SELECT id FROM people WHERE company_id = $1 AND id = ANY($2::int[])',
     [companyId, uniqueIds]
   );
@@ -690,7 +692,7 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
       return res.status(400).json(sw.error);
     }
     const ids = ['owner_id', 'party_id', 'beneficiary_id'].filter((k) => has(k) && b[k] !== null).map((k) => b[k]);
-    if (!(await ensureOwnedPeople(req.companyId, ids))) {
+    if (!(await ensureOwnedPeople(req.companyId, ids, db))) {
       await db.query('ROLLBACK');
       return res.status(400).json({ error: 'owner_id، party_id یا beneficiary_id متعلق به این شرکت نیستند یا وجود ندارند' });
     }
