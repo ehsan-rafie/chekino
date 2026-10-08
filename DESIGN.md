@@ -222,7 +222,19 @@ in the notes) — beside the amount. The party and the beneficiary are only
 in the view. The footer, under a hairline on a faint band: the tinted
 status square (radius 8) with the problem reason or the copy-receipt
 button beside it, and the eye at the other end — 28px buttons, 44px tap
-areas on touch.
+areas on touch. How long it has waited sits in the footer too, small and
+muted: a pending card «۴ روز از ارسال» with its channel's mark (the
+follow-up's own number), a problem card «۱۲ روز» in the error red («۱۲ روز
+بدون پیگیری» in its tip). A click on a card's body opens it (not the click
+that ends a drag); the status square is a WAI-ARIA menu button — its
+options are buttons, ↑/↓ between them, Escape back to the square — and a
+change of status offers «برگردون». Only «ثبت شد» goes to the archive after
+30 days («نمایش «ثبت شد»های قدیمی‌تر از ۳۰ روز» in the date filter); a
+problem stays however old. The search finds serials, sayad ids, names,
+amounts, national ids, notes and reasons; a list of serials pasted into it
+shows those cheques, and a line under it says what wasn't found anywhere.
+After a change of one cheque only that cheque is fetched (its row from the
+save); the whole list again when the page is come back to after a minute.
 **When the list can't be fetched** the board never says «هنوز چکی ثبت نشده»: with nothing loaded yet, a panel takes its place (a no-signal icon, «چک‌ها بارگذاری نشدند», «تلاش دوباره»); when a refresh fails, the last list stays and a slim red alert bar over it says «فهرست به‌روز نشد … مال ساعت ۹:۰۶ است» with the same button. Coming back online retries by itself.
 **Tooltips** (HeroUI's Tooltip, `#appTooltip`): ink, small, above what
 they explain with a little arrow (below, flipped, only without room); they
@@ -791,8 +803,7 @@ link under the form («به پشتیبانی پیام بدهید»). A username 
 Persian keyboard is read back by key («زمشعیفثسف» → «claudtest») and said
 under the field; Caps Lock is said under the password; a password with
 Persian digits is tried with Latin ones too. A wrong field is marked
-(aria-invalid), described by the alert and focused. Signed in already,
-/login goes to the board.
+(aria-invalid), described by the alert and focused.
 
 **Admin.** Same system: a top bar with a hairline, a side navigation whose
 active item is a grey wash, bordered cards, outlined fields, ink buttons,

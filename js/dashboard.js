@@ -1795,6 +1795,12 @@ async function ensurePerson(name, nid, role) {
 // that introduced new names. They go together now — except when two of the
 // fields name the same *new* person, where firing parallel creates would race
 // and insert them twice; those share one call and reuse its id.
+// The form's people as the server takes them (H14): by name, the
+// beneficiary with its national id; an empty one is none
+function peopleRefs(rec) {
+  const ref = (name, nid) => (String(name || '').trim() ? { name: String(name).trim(), ...(nid ? { national_id: nidDigits(nid) } : {}) } : null);
+  return { owner: ref(rec.owner), party: ref(rec.party), beneficiary: ref(rec.benef, rec.nid) };
+}
 async function ensurePeople(rec) {
   const slots = [
     { name: rec.owner, nid: null, role: 'owner' },
@@ -3614,6 +3620,20 @@ window.addEventListener('online', () => { if (checksLoadFailed) retryLoad(); });
 // synchronous getter — it's simply a view over checksCache, refreshed by
 // loadChecksFromApi() after every create/edit/delete/status-change.
 function loadCheques() { return checksCache; }
+// One cheque as the server now has it, in the list (a new array: the
+// board's views of it are recomputed) — instead of the whole list again
+function putCheque(row) {
+  if (!row || !row.id) return;
+  const rec = apiCheckToRec(row);
+  const i = checksCache.findIndex((c) => c.id === rec.id);
+  checksCache = i < 0 ? [rec, ...checksCache] : checksCache.map((c, n) => (n === i ? rec : c));
+}
+// Back to a page left a while: the list again, quietly (what other devices did)
+let checksSeenAt = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { checksSeenAt = Date.now(); return; }
+  if (Date.now() - checksSeenAt > 60 * 1000 && !checksLoadFailed) loadChecksFromApi().then(renderTable).catch(() => {});
+});
 // The cheques on the board: sent to their owner. The board, its counts and
 // filters, the reports and «nothing registered yet» read these; duplicates,
 // people's roles and lookups by id read every stage (loadCheques).
@@ -3786,9 +3806,9 @@ submitCheckBtn.addEventListener('click', async () => {
   submitCheckBtn.disabled = true;
   submitCheckBtn.textContent = 'در حال ثبت…';
   try {
-    const [ownerId, partyId, benefId] = await ensurePeople(rec);
-
-    await apiJson('/checks', {
+    // the people go by name: the server finds or adds them with the cheque,
+    // in one transaction (H14) — a cheque that fails leaves no one behind
+    const created = await apiJson('/checks', {
       method: 'POST',
       body: JSON.stringify({
         serial: rec.serial,
@@ -3797,19 +3817,18 @@ submitCheckBtn.addEventListener('click', async () => {
         due_date: jalaliStrToIso(rec.dueDate),
         send_date: jalaliStrToIso(rec.sendDate),
         spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
-        owner_id: ownerId,
-        party_id: partyId,
-        beneficiary_id: benefId,
+        ...peopleRefs(rec),
         notes: rec.notes || null,
         receipt_image: newPhotoOf(rec),
         channels: rec.channels,
         status: 'pending',
       }),
     });
-    // The board refresh is not on the path between "saved" and the form
-    // being ready for the next cheque — at this round-trip time waiting
-    // for it added a second and a half of dead time to every save.
-    loadChecksFromApi().then(renderTable).catch(() => {});
+    // The new cheque as the server saved it goes in the list — not the
+    // whole list again (spec 9.9), which also kept the form waiting
+    putCheque(created);
+    renderTable();
+    fetchPeopleCache();   // whoever the server added
 
     clearDraft();
     const savedSerial = toFa(rec.serial);
@@ -3917,8 +3936,6 @@ async function commitSaveEdit() {
   submitCheckBtn.disabled = true;
   submitCheckBtn.textContent = 'در حال ذخیره…';
   try {
-    const [ownerId, partyId, benefId] = await ensurePeople(rec);
-
     // PATCH: an emptied notes or spend date goes as null and is cleared (the
     // old PUT kept whatever was there); the photo goes only when it changed
     // — a new one, or null when the one it had was taken away
@@ -3929,9 +3946,7 @@ async function commitSaveEdit() {
       amount: rec.amount,
       due_date: jalaliStrToIso(rec.dueDate),
       spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
-      owner_id: ownerId,
-      party_id: partyId,
-      beneficiary_id: benefId,
+      ...peopleRefs(rec),
       notes: rec.notes || null,
     };
     // the send date and channels are «ارسال کردم»'s to write, not a cheque's
@@ -3945,6 +3960,7 @@ async function commitSaveEdit() {
     if (photo) body.receipt_image = photo;
     else if (editingHadPhoto && !rec.files.length) body.receipt_image = null;
     const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    fetchPeopleCache();   // whoever the server added
     // its owner and beneficiary both known now: it can go to the owner
     if (preSend && stored.stage !== 'ready' && saved && saved.stage === 'ready') {
       const send = () => {
@@ -3954,10 +3970,9 @@ async function commitSaveEdit() {
       };
       showToast('چک آماده‌ی ارسال شد', window.ChekinoSend ? { action: { label: 'ارسال', run: send } } : {});
     }
-    // Same rule the create path already follows: the board refresh is not on
-    // the path between "saved" and the modal being done with. Awaiting a full
-    // re-download of every cheque here is what made saving an edit feel slow.
-    loadChecksFromApi().then(renderTable).catch(() => {});
+    // the cheque as saved, in the list; not every cheque again (spec 9.9)
+    putCheque(saved);
+    renderTable();
     // The button was disabled for the round trip; it has to come back on
     // here too, not only on failure — the modal closed with it still off,
     // and the next form opened (add, view or edit) inherited a dead button.
@@ -4054,7 +4069,6 @@ clearFormBtn.addEventListener('click', async () => {
       // sitting on the board.
       checksCache = checksCache.filter((c) => c.id !== editingChequeId);
       renderTable();
-      loadChecksFromApi().then(renderTable).catch(() => {});
       closeModal(true);
     } catch (e) {
       showFormAlert('error', requestErrorText(e, 'حذف نشد'));
@@ -4988,7 +5002,7 @@ function loadXlsx() {
   if (!xlsxLoader) {
     xlsxLoader = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = '/js/vendor/xlsx.full.min.js';
+      s.src = '/js/vendor/xlsx.full.min.js?v=0.20.3';
       s.onload = () => resolve();
       s.onerror = () => { xlsxLoader = null; reject(new Error('xlsx load failed')); };
       document.head.appendChild(s);
@@ -5883,9 +5897,10 @@ async function applyStatus(id, status, reason, opts = {}) {
         action: { label: 'برگردون', run: () => applyStatus(id, back, back === 'problem' ? before.statusReason || '' : '', { quiet: true }) },
       });
     }
-    // Reconcile in the background — the server owns the status history
-    // and the exact timestamp, neither of which the guess above fills in.
-    loadChecksFromApi().then(renderTable).catch(() => {});
+    // The server's row — its status history and exact time, which the guess
+    // above doesn't have — in place of the guess; nothing else fetched
+    putCheque(updated);
+    renderTable();
   } catch (e) {
     if (rec && before) Object.assign(rec, before);
     renderTable();

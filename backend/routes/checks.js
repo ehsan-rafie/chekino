@@ -98,6 +98,22 @@ const receiptImageValidator = (name) =>
 
 const STATUS_VALUES = ['pending', 'done', 'problem'];
 
+// The people of one cheque by name (H14): { id } or { name, national_id },
+// found or added inside the cheque's own transaction (lib/people.js)
+const isRef = (v) => v === null || (v && typeof v === 'object' && !Array.isArray(v)
+  && (v.id !== undefined ? Number.isInteger(Number(v.id)) : typeof v.name === 'string' && v.name.trim().length > 0 && v.name.length <= 200));
+const personRefValidation = ['owner', 'party', 'beneficiary'].map((k) => body(k).optional({ values: 'undefined' }).custom(isRef).withMessage('شخص نامعتبر است'));
+async function resolveRefs(db, companyId, b, maxPeople) {
+  const want = [['owner', 'owner_id', 'owner'], ['party', 'party_id', 'party'], ['beneficiary', 'beneficiary_id', 'benef']].filter(([k]) => b[k] !== undefined);
+  if (!want.length) return;
+  const people = await peopleResolver(db, companyId, { maxPeople });
+  for (const [k, col, role] of want) {
+    const r = b[k] === null ? { id: null } : await people.resolve(b[k], role);
+    if (r.error) { const e = new Error(r.error.error); e.payload = r.error; throw e; }
+    b[col] = r.id;
+  }
+}
+
 const createValidation = [
   body('serial').trim().notEmpty().withMessage('serial الزامی است').isLength({ max: 50 }),
   body('sayad_id').optional({ values: 'falsy' }).isString().isLength({ max: 50 }),
@@ -105,9 +121,10 @@ const createValidation = [
   body('due_date').notEmpty().withMessage('due_date الزامی است').isISO8601().withMessage('due_date نامعتبر است'),
   body('send_date').optional({ values: 'falsy' }).isISO8601().withMessage('send_date نامعتبر است'),
   body('spend_date').optional({ values: 'falsy' }).isISO8601().withMessage('spend_date نامعتبر است'),
-  body('owner_id').notEmpty().withMessage('owner_id الزامی است').isInt().withMessage('owner_id نامعتبر است'),
-  body('party_id').notEmpty().withMessage('party_id الزامی است').isInt().withMessage('party_id نامعتبر است'),
-  body('beneficiary_id').notEmpty().withMessage('beneficiary_id الزامی است').isInt().withMessage('beneficiary_id نامعتبر است'),
+  body('owner_id').if(body('owner').not().exists()).notEmpty().withMessage('owner_id الزامی است').isInt().withMessage('owner_id نامعتبر است'),
+  body('party_id').if(body('party').not().exists()).notEmpty().withMessage('party_id الزامی است').isInt().withMessage('party_id نامعتبر است'),
+  body('beneficiary_id').if(body('beneficiary').not().exists()).notEmpty().withMessage('beneficiary_id الزامی است').isInt().withMessage('beneficiary_id نامعتبر است'),
+  ...personRefValidation,
   body('notes').optional({ values: 'falsy' }).isString().isLength({ max: 2000 }),
   receiptImageValidator('receipt_image'),
   body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
@@ -441,7 +458,8 @@ router.post('/', createValidation, validate, async (req, res) => {
       owner_id, party_id, beneficiary_id, notes, receipt_image, channels, status,
     } = req.body;
 
-    const peopleOk = await ensureOwnedPeople(req.companyId, [owner_id, party_id, beneficiary_id]);
+    const byRef = ['owner', 'party', 'beneficiary'].some((k) => req.body[k] !== undefined);
+    const peopleOk = await ensureOwnedPeople(req.companyId, [owner_id, party_id, beneficiary_id].filter((x) => x !== undefined && x !== null && x !== ''));
     if (!peopleOk) {
       return res.status(400).json({ error: 'owner_id، party_id یا beneficiary_id متعلق به این شرکت نیستند یا وجود ندارند' });
     }
@@ -457,7 +475,7 @@ router.post('/', createValidation, validate, async (req, res) => {
       // The plan's limit, counted with the company held (H3): two saves at
       // once can't both take the last place
       const plan = (await db.query(
-        `SELECT p.max_checks, (SELECT COUNT(*) FROM checks WHERE company_id = $1) AS current_count
+        `SELECT p.max_checks, p.max_people, (SELECT COUNT(*) FROM checks WHERE company_id = $1) AS current_count
          FROM companies c LEFT JOIN plans p ON p.id = c.plan_id
          WHERE c.id = $1 FOR UPDATE OF c`,
         [req.companyId]
@@ -468,6 +486,13 @@ router.post('/', createValidation, validate, async (req, res) => {
           error: `سقف تعداد چک‌ها طبق پلن شما (${Number(plan.max_checks).toLocaleString('fa-IR')} چک) پر شده است. برای ثبت چک تازه، یکی را حذف کنید یا پلن را ارتقا دهید.`,
           code: 'plan_limit',
         });
+      }
+      // named people: found or added now, inside this transaction
+      const ids = { owner_id, party_id, beneficiary_id, owner: req.body.owner, party: req.body.party, beneficiary: req.body.beneficiary };
+      if (byRef) await resolveRefs(db, req.companyId, ids, plan.max_people);
+      if (!ids.owner_id || !ids.party_id || !ids.beneficiary_id) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'صاحب چک، طرف حساب و ذینفع لازم‌اند', code: 'people_required' });
       }
       // No send date given: today in Tehran — the database runs in UTC, where
       // CURRENT_DATE is still yesterday until 03:30 Tehran time
@@ -481,7 +506,7 @@ router.post('/', createValidation, validate, async (req, res) => {
          ) RETURNING id`,
         [
           req.companyId, serial, sayad_id || null, amount, due_date, send_date || null, spend_date || null,
-          owner_id, party_id, beneficiary_id, notes || null, receipt_image || null,
+          ids.owner_id, ids.party_id, ids.beneficiary_id, notes || null, receipt_image || null,
           channels ? JSON.stringify(channels) : null, initialStatus, JSON.stringify(initialHistory),
         ]
       );
@@ -501,6 +526,8 @@ router.post('/', createValidation, validate, async (req, res) => {
     if (err.code === '23505') {
       return res.status(409).json({ error: DUPLICATE_SAYAD });
     }
+    if (err.payload) return res.status(400).json(err.payload);
+    if (err instanceof PeopleLimitError) return res.status(403).json({ error: err.message, code: err.code });
     console.error('Create check error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }
@@ -619,6 +646,7 @@ const patchValidation = [
   body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
   body('status').optional().isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
   body('status_reason').optional({ values: 'null' }).isString().isLength({ max: 500 }),
+  ...personRefValidation,
 ];
 
 router.patch('/:id', idParamValidation, patchValidation, validate, async (req, res) => {
@@ -634,6 +662,12 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
       return res.status(404).json({ error: 'چک یافت نشد' });
     }
     const current = found.rows[0];
+    // named people (H14): found or added in this transaction, then weighed as ids
+    if (['owner', 'party', 'beneficiary'].some((k) => b[k] !== undefined)) {
+      const plan = (await db.query('SELECT p.max_people FROM companies c LEFT JOIN plans p ON p.id = c.plan_id WHERE c.id = $1 FOR UPDATE OF c', [req.companyId])).rows[0] || {};
+      if (current.version === b.version) await resolveRefs(db, req.companyId, b, plan.max_people);
+      if (b.party !== undefined && !b.party_id) { await db.query('ROLLBACK'); return res.status(400).json({ error: 'طرف حساب را نمی‌شود خالی کرد' }); }
+    }
     if (current.version !== b.version) {
       await db.query('ROLLBACK');
       return res.status(409).json({
@@ -703,6 +737,8 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
     await db.query('ROLLBACK').catch(() => {});
     if (err.code === '23505') return res.status(409).json({ error: DUPLICATE_SAYAD });
     if (err.code === '23514') return res.status(400).json({ error: 'این تغییر با مرحله‌ی چک نمی‌خواند' });
+    if (err.payload) return res.status(400).json(err.payload);
+    if (err instanceof PeopleLimitError) return res.status(403).json({ error: err.message, code: err.code });
     console.error('Patch check error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   } finally {
