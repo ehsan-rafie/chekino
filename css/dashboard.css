@@ -5569,3 +5569,12 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .account-plan b { color: var(--ink); font-variation-settings: var(--f-label); }
 .account-plan[hidden] { display: none; }
 .account-plan.is-near { color: var(--state-bad-text); }
+
+/* an optional date's «پاک کن», on its label's line (spec 9.5) */
+.date-clear-btn { display: inline-flex; align-items: center; gap: 3px; height: 20px; margin-inline-start: auto; padding: 0 6px; flex-shrink: 0; border: none; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: var(--t-micro); cursor: pointer; }
+.date-clear-btn[hidden] { display: none; }
+.date-clear-btn svg { width: 11px; height: 11px; }
+.date-clear-btn:hover { background: var(--accent-wash); color: var(--ink); }
+/* Ctrl+A in a date: the whole of it marked */
+.date-field.date-all .date-input-wrap { box-shadow: var(--ring); }
+.date-field.date-all .dseg-part { background: var(--hl-soft); border-radius: 4px; }

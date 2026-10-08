@@ -1157,6 +1157,26 @@ function createDateField(cfg) {
     api.render();
   };
 
+  // A date that may stay empty gets a «پاک کن» on its label's line while it
+  // holds one (inside the field it would crowd out the year)
+  if (!cfg.required && cfg.calBtn) {
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'date-clear-btn';
+    x.tabIndex = -1;   // (from the keyboard: Ctrl+Backspace)
+    x.title = 'پاک کردن تاریخ';
+    x.setAttribute('aria-label', 'پاک کردن تاریخ');
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span>پاک کن</span>';
+    const head = cfg.field.querySelector('.field-head');
+    if (head) head.appendChild(x); else cfg.calBtn.parentNode.insertBefore(x, cfg.calBtn);
+    x.addEventListener('mousedown', (e) => e.preventDefault());   // the field keeps the focus it has
+    x.addEventListener('click', () => { api.clear(); api.notify(); });
+    const drawn = api.render;
+    api.render = () => { drawn(); x.hidden = api.isEmpty(); };
+    x.hidden = true;
+  }
+  api.input.addEventListener('blur', () => { api.allSel = false; api.field.classList.remove('date-all'); });
+
   // If the user clears this field and forgets it, fall back to today on submit.
   api.fillTodayIfEmpty = () => {
     if (api.slots.every(x => x === null)) {
@@ -1332,6 +1352,20 @@ function createDateField(cfg) {
   });
 
   api.input.addEventListener('keydown', (e) => {
+    // the whole date at once: Ctrl+A marks it, then Backspace / Delete
+    // empties it; Ctrl+Backspace empties it straight away
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.code === 'KeyA') { e.preventDefault(); api.allSel = true; api.field.classList.add('date-all'); return; }
+    if ((api.allSel || (mod && e.key === 'Backspace')) && (e.key === 'Backspace' || e.key === 'Delete')) {
+      e.preventDefault();
+      api.allSel = false;
+      api.field.classList.remove('date-all');
+      api.clear();
+      api.selectSeg(0);
+      api.notify();
+      return;
+    }
+    if (api.allSel && !['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) { api.allSel = false; api.field.classList.remove('date-all'); }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Tab') {
       // A mobile keyboard's own "Next" action often behaves like a native
