@@ -568,7 +568,7 @@
     chips.appendChild(b);
     return b;
   }
-  let readyChip = null, waitingChip = null, hint = null, hintIds = [];
+  let readyChip = null, waitingChip = null, followChip = null, dueChip = null, hint = null, hintIds = [];
   if (chips) {
     readyChip = chipButton('stage-chip');
     readyChip.addEventListener('click', () => open(loadCheques().filter((c) => c.stage === 'ready').map((c) => c.id)));
@@ -582,6 +582,16 @@
       const ids = loadCheques().filter((c) => c.stage === 'waiting').map((c) => c.id);
       showList(ids, 'منتظر ذینفع', 'روی هر چک بزن تا ذینفع یا صاحب چکش را بنویسی', waitingChip);
     });
+    // today's two (dashboard.js BOARD_FOCUS): pressed, the board narrows to them
+    const focusChip = (key, tip) => {
+      const b = chipButton('stage-chip is-focus');
+      b.title = tip;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => setBoardFocus(boardFocus === key ? null : key));
+      return b;
+    };
+    followChip = focusChip('followup', `منتظر ثبت، ${fa(FOLLOW_UP_DAYS)} روز یا بیشتر از ارسال: صاحب چک‌هایی که باید پیگیری شوند`);
+    dueChip = focusChip('due', 'منتظر ثبت، سررسید تا ۳ روز دیگر یا گذشته');
     hint = document.createElement('div');
     hint.className = 'stage-hint';
     hint.innerHTML = '<span class="stage-hint-text"></span><button type="button" class="stage-hint-btn" aria-haspopup="dialog" aria-expanded="false">نمایش</button>';
@@ -607,6 +617,15 @@
     readyChip.hidden = !ready;
     waitingChip.innerHTML = `<span>منتظر ذینفع</span><b>${fa(waiting)}</b>`;
     waitingChip.hidden = !waiting;
+    const board = sentCheques();
+    const follow = board.filter(needsFollowUp).length;
+    const due = board.filter(dueNear).length;
+    followChip.innerHTML = `<span>پیگیری</span><b>${fa(follow)}</b>`;
+    followChip.hidden = !follow && boardFocus !== 'followup';
+    followChip.setAttribute('aria-pressed', String(boardFocus === 'followup'));
+    dueChip.innerHTML = `<span>سررسید نزدیک</span><b>${fa(due)}</b>`;
+    dueChip.hidden = !due && boardFocus !== 'due';
+    dueChip.setAttribute('aria-pressed', String(boardFocus === 'due'));
     const found = searchMatches();
     hintIds = found.map((c) => c.id);
     if (found.length === 1) {
@@ -616,7 +635,7 @@
       hint.firstChild.textContent = `${fa(found.length)} چک با این جستجو در ${where} است`;
     }
     hint.hidden = !found.length;
-    chips.hidden = !ready && !waiting && !found.length;
+    chips.hidden = !ready && !waiting && !found.length && followChip.hidden && dueChip.hidden;
     if (pop && pop.classList.contains('show') && pop._btn && (pop._btn.hidden || pop._btn.closest('[hidden]'))) closePopover();
   }
 

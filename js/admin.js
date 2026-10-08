@@ -226,6 +226,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ==================== PLANS ====================
 let plansCache = [];
 
+// a count in Persian digits, grouped («۱٬۲۰۰»), like the prices
+const faN = (n) => Number(n || 0).toLocaleString('fa-IR');
+
 function featuresLabel(features) {
   const map = { export: 'خروجی', reports: 'گزارش', multi_user: 'چندکاربره' };
   const on = Object.keys(map).filter(k => features && features[k]);
@@ -246,8 +249,8 @@ async function loadPlans() {
   body.innerHTML = plansCache.map(p => `
     <tr data-id="${p.id}">
       <td>${escapeHtml(p.name)}</td>
-      <td>${p.max_people ?? 'نامحدود'}</td>
-      <td>${p.max_checks ?? 'نامحدود'}</td>
+      <td>${p.max_people != null ? faN(p.max_people) : 'نامحدود'}</td>
+      <td>${p.max_checks != null ? faN(p.max_checks) : 'نامحدود'}</td>
       <td>${Number(p.price).toLocaleString('fa-IR')}</td>
       <td>${featuresLabel(p.features)}</td>
       <td class="row-actions">
@@ -383,8 +386,8 @@ async function loadCompanies() {
       <td>${escapeHtml(c.name)}</td>
       <td dir="ltr" style="text-align:left">${escapeHtml(c.username)}</td>
       <td>${escapeHtml(c.plan_name || '—')}</td>
-      <td>${c.people_count}${c.max_people != null ? ' / ' + c.max_people : ''}</td>
-      <td>${c.checks_count}${c.max_checks != null ? ' / ' + c.max_checks : ''}</td>
+      <td>${faN(c.people_count)}${c.max_people != null ? ' از ' + faN(c.max_people) : ''}</td>
+      <td>${faN(c.checks_count)}${c.max_checks != null ? ' از ' + faN(c.max_checks) : ''}</td>
       <td><span class="badge ${c.status}">${c.status === 'active' ? 'فعال' : 'غیرفعال'}</span></td>
       <td>${new Date(c.created_at).toLocaleDateString('fa-IR')}</td>
       <td class="row-actions">

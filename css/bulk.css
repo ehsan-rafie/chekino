@@ -709,6 +709,8 @@ body.bulk-open { overflow: hidden; }
 .stage-chip:hover { background: var(--surface-sunken); color: var(--ink); }
 .stage-chip[hidden] { display: none; }
 .stage-chip.open { background: var(--surface-sunken); color: var(--ink); }
+/* a chip that narrows the board: pressed, it's the blue of a pick */
+.stage-chip.is-focus[aria-pressed="true"] { background: var(--hl-soft, var(--seg-active)); color: var(--hl-text, var(--ink)); box-shadow: inset 0 0 0 1px var(--focus-edge); }
 .stage-chip:focus-visible, .stage-hint-btn:focus-visible { outline: none; box-shadow: var(--ring); }
 /* a search that found cheques off the board: one quiet line beside the chips */
 .stage-hint { display: inline-flex; align-items: center; gap: 10px; min-height: 32px; color: var(--ink-2); font-size: var(--t-cap); }

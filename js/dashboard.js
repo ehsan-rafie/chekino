@@ -4922,12 +4922,34 @@ function searchListNote(raw) {
   return `${toFa(tokens.length)} سریال در فهرست${nowhere.length ? `؛ پیدا نشد: ${nowhere.map((x) => toFa(x.value)).join('، ')}` : ''}`;
 }
 
+// Today's two questions (the chips over the board): which owners to chase
+// — waiting for Sayad FOLLOW_UP_DAYS or more since sent — and which are due
+// soon or past due while still unregistered
+const FOLLOW_UP_DAYS = 3;
+const needsFollowUp = (c) => c.stage === 'sent' && (c.status || 'pending') === 'pending' && daysSinceJalali(c.sendDate) >= FOLLOW_UP_DAYS;
+const dueNear = (c) => c.stage === 'sent' && !!dueUrgencyClass(c);
+const BOARD_FOCUS = {
+  followup: { test: needsFollowUp, label: `پیگیری: منتظر ثبتِ ${toFa(FOLLOW_UP_DAYS)} روز و بیشتر` },
+  due: { test: dueNear, label: 'سررسید نزدیک: تا ۳ روز دیگر یا گذشته، هنوز ثبت‌نشده' },
+};
+let boardFocus = null;   // 'followup' | 'due' | null
+function setBoardFocus(key) {
+  boardFocus = BOARD_FOCUS[key] ? key : null;
+  // on a phone the waiting lane is the one to look at
+  if (boardFocus && isSingleColumnBoard() && mobileBoardStatus !== 'pending') {
+    mobileBoardStatus = 'pending';
+    applyMobileBoardStatus();
+  }
+  refreshTable();
+}
+
 function getFilteredCheques() {
   let list = sentCheques();
 
   if (!showArchivedCheckbox || !showArchivedCheckbox.checked) {
     list = list.filter(c => !isArchived(c));
   }
+  if (boardFocus) list = list.filter(BOARD_FOCUS[boardFocus].test);
 
   // live search (H9): serials, sayad ids, names, amounts, notes — see searchMatcher
   const match = searchMatcher(searchInput.value);
@@ -4994,10 +5016,11 @@ function updateFilterUI() {
   pillBtn('popAmount').classList.toggle('active', amountOn);
   pillBtn('popPeople').classList.toggle('active', peopleOn);
 
-  filterClearBtn.classList.toggle('show', dateOn || amountOn || peopleOn);
+  filterClearBtn.classList.toggle('show', dateOn || amountOn || peopleOn || !!boardFocus);
 
   const basisLabel = document.querySelector('input[name="dateBasis"]:checked').value === 'dueDate' ? 'تاریخ سررسید' : 'تاریخ ثبت';
   const chips = [];
+  if (boardFocus) chips.push({ key: 'focus', label: BOARD_FOCUS[boardFocus].label });
   if (dateOn) {
     const LRI = '\u2066', RLI = '\u2067', PDI = '\u2069';
     const f = rangeFrom ? `${LRI}${toFa(rangeFrom.y)}/${toFa(pad2(rangeFrom.m))}/${toFa(pad2(rangeFrom.d))}${PDI}` : '…';
@@ -5030,6 +5053,7 @@ function clearOneFilter(key) {
   if (key === 'date') { rangeFrom = null; rangeTo = null; updateRangeDisplay(); filterRangeField.classList.remove('error'); }
   else if (key === 'amount') { filterAmountMin.value = ''; filterAmountMax.value = ''; setActivePreset(null); }
   else if (peopleFilter[key]) clearPeopleFilter(key);
+  else if (key === 'focus') boardFocus = null;
   refreshTable();
 }
 
@@ -5311,6 +5335,7 @@ showArchivedCheckbox.addEventListener('change', refreshTable);
 
 // ---- clear all filters ----
 filterClearBtn.addEventListener('click', () => {
+  boardFocus = null;
   searchInput.value = '';
   searchNote.textContent = '';
   searchClearBtn.classList.remove('show');
