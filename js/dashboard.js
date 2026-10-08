@@ -401,6 +401,11 @@ let editingChequeId = null;
 // whether it had a photo (so taking the photo away clears it on save)
 let editingVersion = null;
 let editingHadPhoto = false;
+// …and the ids of all its files, once known (null until the cheque's full
+// list arrives — the board's list names only the first); what the form
+// showed when it opened, to tell whether they were touched meanwhile
+let editingFiles = null;
+let editingFilesAtOpen = '';
 let veHasEdited = false;
 
 // The status block at the top of the view (HeroUI's Alert): the state as
@@ -575,6 +580,7 @@ function openModalForView(id) {
   editingChequeId = id;
   editingVersion = c.version;
   editingHadPhoto = Array.isArray(c.files) && c.files.length > 0;
+  editingFiles = (c.imageCount || 0) > 1 ? null : (c.files || []).map((f) => f.id);
   veHasEdited = false;
   modalTitle.textContent = 'مشاهده چک';
   enableFormButtons();
@@ -616,6 +622,8 @@ function openModalForView(id) {
   attachedFiles = Array.isArray(c.files) ? c.files.map(f => ({ id: f.id, name: f.name, type: f.type, size: 0, dataUrl: f.dataUrl })) : [];
   renderFileChips();
   loadAttachedImages();
+  editingFilesAtOpen = attachedFiles.map((f) => f.id).join();
+  if (editingFiles === null) loadChequeFiles(c);
   fileMsg.textContent = '';
   fileField.classList.remove('error');
 
@@ -3253,12 +3261,66 @@ function attachmentName(mime, serial) {
   const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'application/pdf': 'pdf' }[mime] || 'jpg';
   return `cheque-${serial || 'photo'}.${ext}`;
 }
-// The photo a form saves: only one picked or re-cut in this form (a data:
-// URL). One that came from the server has an object URL instead; sending
-// nothing keeps it as it is, rather than uploading it again.
-function newPhotoOf(rec) {
-  const f = rec.files && rec.files[0];
-  return f && /^data:/.test(f.dataUrl || '') ? f.dataUrl : null;
+// All of a cheque's files, in order (C1): the board's list names only the
+// first. The open view shows them once they arrive, and an edit then knows
+// what it started from. If the form's files were changed meanwhile, the
+// ones it never showed are added after them — a file is only ever taken
+// off a cheque by someone who saw it.
+let chequeFilesLoading = null;   // { id, p }: one request per cheque at a time
+function loadChequeFiles(c) {
+  const id = c.id;
+  if (chequeFilesLoading && chequeFilesLoading.id === id) return chequeFilesLoading.p;
+  const p = apiJson('/checks/' + id).then((full) => {
+    if (editingChequeId !== id || editingFiles !== null) return;
+    const list = (full && full.images) || [];
+    editingFiles = list.map((x) => x.id);
+    const asFile = (x) => ({ id: x.id, name: attachmentName(x.mime, c.serial), type: x.mime || '', size: 0, dataUrl: '' });
+    const have = new Map(attachedFiles.filter((f) => f.id).map((f) => [f.id, f]));
+    if (attachedFiles.map((f) => f.id).join() === editingFilesAtOpen) {
+      attachedFiles = list.map((x) => have.get(x.id) || asFile(x));
+    } else {
+      const shown = new Set(editingFilesAtOpen.split(','));
+      attachedFiles = attachedFiles.concat(list.filter((x) => !shown.has(x.id) && !have.has(x.id)).map(asFile));
+    }
+    editingFilesAtOpen = attachedFiles.map((f) => f.id).join();
+    renderFileChips();
+    loadAttachedImages();
+  }).catch(() => {}).then(() => { if (chequeFilesLoading && chequeFilesLoading.p === p) chequeFilesLoading = null; });
+  chequeFilesLoading = { id, p };
+  return p;
+}
+// A data: URL as the bytes it holds (fetch() of a data: URL is outside the
+// page's connect-src)
+function dataUrlBlob(u) {
+  const comma = u.indexOf(',');
+  const mime = u.slice(5, comma).split(';')[0];
+  const bin = atob(u.slice(comma + 1));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+// The form's files on the server, in order: one there already by its id,
+// each new one (picked, pasted or re-cut here: a data: URL) uploaded first.
+// The cheque then names them all; a file the cheque had and isn't named
+// any more is taken off it. Throws with a sentence for the form.
+async function uploadFormFiles(files) {
+  const ids = [];
+  for (const f of files || []) {
+    const fresh = /^data:/.test(f.dataUrl || '');
+    if (!fresh) { if (f.id) ids.push(f.id); continue; }
+    try {
+      const up = await apiJson('/images', { method: 'POST', headers: { 'Content-Type': f.type || 'image/jpeg' }, body: dataUrlBlob(f.dataUrl) });
+      f.id = up.id;
+      // the form's own copy too: saved again (a failed save), it isn't sent twice
+      const same = attachedFiles.find((x) => x.dataUrl === f.dataUrl);
+      if (same) { same.id = up.id; }
+      ids.push(up.id);
+    } catch (e) {
+      if (e && (e.status === 401 || e.sessionEnded)) throw e;
+      throw Object.assign(new Error(`«${f.name || 'فایل'}» بارگذاری نشد${e && e.message ? '؛ ' + e.message : ''}`), { status: e && e.status, data: e && e.data });
+    }
+  }
+  return ids;
 }
 function updateLightboxNav() {
   const imgs = lightboxIndex === null ? [] : lightboxImages();
@@ -3812,6 +3874,7 @@ function apiCheckToRec(c) {
     // The photo itself isn't in the list — only its id and type. It is
     // fetched when the cheque is opened (loadImage); until then dataUrl is ''.
     files: c.image_id ? [{ id: c.image_id, name: attachmentName(c.image_mime, c.serial), type: c.image_mime || '', dataUrl: '' }] : [],
+    imageCount: c.image_count || (c.image_id ? 1 : 0),
   };
 }
 
@@ -3913,7 +3976,7 @@ function currentFormRecord() {
     sendDate: sendDate.yearStr() + '/' + sendDate.monthStr() + '/' + sendDate.dayStr(),
     channels: channelsValue(),
     notes: notesInput.value.trim(),
-    files: attachedFiles.map(f => ({ name: f.name, type: f.type, dataUrl: f.dataUrl }))
+    files: attachedFiles.map(f => ({ id: f.id, name: f.name, type: f.type, dataUrl: f.dataUrl }))
   };
 }
 
@@ -4071,7 +4134,7 @@ submitCheckBtn.addEventListener('click', async () => {
         spend_date: rec.spendDate ? jalaliStrToIso(rec.spendDate) : null,
         ...peopleRefs(rec),
         notes: rec.notes || null,
-        receipt_image: newPhotoOf(rec),
+        images: await uploadFormFiles(rec.files),
         channels: rec.channels,
         status: 'pending',
       }),
@@ -4208,9 +4271,18 @@ async function commitSaveEdit() {
       body.send_date = jalaliStrToIso(rec.sendDate);
       body.channels = rec.channels;
     }
-    const photo = newPhotoOf(rec);
-    if (photo) body.receipt_image = photo;
-    else if (editingHadPhoto && !rec.files.length) body.receipt_image = null;
+    // its files by id (C1), sent only when they changed — and only once
+    // the cheque's whole list is known: naming fewer would take the rest off
+    const touched = rec.files.some((f) => /^data:/.test(f.dataUrl || '')) || rec.files.map((f) => f.id).join() !== editingFilesAtOpen;
+    if (editingFiles === null && touched) {
+      const stored0 = loadCheques().find((x) => x.id === id);
+      if (stored0) loadChequeFiles(stored0);
+      throw Object.assign(new Error('فایل‌های این چک هنوز از سرور نرسیده‌اند؛ چند لحظه بعد دوباره ذخیره کن'), { status: 409 });
+    }
+    if (editingFiles !== null) {
+      const fileIds = await uploadFormFiles(rec.files);
+      if (fileIds.join() !== editingFiles.join()) body.images = fileIds;
+    }
     const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
     fetchPeopleCache();   // whoever the server added
     // its owner and beneficiary both known now: it can go to the owner
@@ -6701,7 +6773,7 @@ function stashWork() {
   if (!modalOverlay.classList.contains('show')) return '';
   let state = null;
   if (modalMode === 'editing') {
-    state = { kind: 'edit', id: editingChequeId, version: editingVersion, hadPhoto: editingHadPhoto, form: formSnapshot() };
+    state = { kind: 'edit', id: editingChequeId, version: editingVersion, hadPhoto: editingHadPhoto, shown: editingFilesAtOpen, form: formSnapshot() };
   } else if (modalMode === 'view') {
     state = { kind: 'view', id: editingChequeId };
   } else {
@@ -6861,6 +6933,9 @@ function resumeStashedWork() {
     editingVersion = w.version;
     editingHadPhoto = !!w.hadPhoto;
     attachedFiles = files;
+    // the stashed files stand; the cheque's own list (on its way) adds only
+    // what that edit had never shown
+    editingFilesAtOpen = typeof w.shown === 'string' ? w.shown : files.map((f) => f.id).join();
     renderFileChips();
     loadAttachedImages();
     showToast('ویرایش نیمه‌کاره‌ات برگشت — ذخیره‌اش کن' + dropped);

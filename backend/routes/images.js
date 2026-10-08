@@ -14,8 +14,10 @@ const validate = require('../middleware/validate');
 //
 // Photos arrive here on their own too (spec 6.3): a bulk add uploads each
 // cheque it cut from a scan while the rows are being typed (X-Batch-Id),
-// and the commit attaches it to its cheque. The body is the file itself,
-// not JSON: up to 3 MB, its first bytes must say what its type says.
+// and the commit attaches it to its cheque; the single form uploads each of
+// a cheque's files and then names them in the cheque (C1). The body is the
+// file itself, not JSON: a photo up to 3 MB, a PDF up to 10, its first
+// bytes saying what its type says.
 const router = express.Router();
 router.use(authenticate, companyLimiter);
 
@@ -26,7 +28,8 @@ const SIGNATURE = {
   'image/webp': (b) => b.length > 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP',
   'application/pdf': (b) => b.length > 4 && b.toString('latin1', 0, 4) === '%PDF',
 };
-const rawFile = express.raw({ type: TYPES, limit: '3mb' });
+const rawFile = express.raw({ type: TYPES, limit: '10mb' });
+const PHOTO_MAX = 3 * 1024 * 1024;
 const rawThumb = express.raw({ type: 'image/jpeg', limit: '200kb' });
 const mimeOf = (req) => String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
 const idParam = [param('id').isUUID().withMessage('شناسه نامعتبر است')];
@@ -37,6 +40,7 @@ router.post('/', rawFile, async (req, res) => {
   const bytes = req.body;
   if (!Buffer.isBuffer(bytes) || !bytes.length) return res.status(400).json({ error: 'فایلی نرسید', code: 'empty' });
   if (!SIGNATURE[mime](bytes)) return res.status(400).json({ error: 'فایل با نوعی که گفته شده نمی‌خواند', code: 'bad_signature' });
+  if (mime !== 'application/pdf' && bytes.length > PHOTO_MAX) return res.status(413).json({ error: 'عکس بزرگ‌تر از ۳ مگابایت است', code: 'too_large' });
   const kind = req.headers['x-kind'] === 'receipt' ? 'receipt' : 'cheque';
   const batchId = req.headers['x-batch-id'] ? Number(req.headers['x-batch-id']) : null;
   const checkId = req.headers['x-check-id'] ? Number(req.headers['x-check-id']) : null;

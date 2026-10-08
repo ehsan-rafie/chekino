@@ -89,7 +89,7 @@ app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   if (err.type === 'entity.too.large') {
     return res.status(413).json({ error: req.path.startsWith('/api/checks') ? 'حجم عکس‌ها بیش از حد مجاز است (حداکثر ۱۵ مگابایت)'
-      : req.path.startsWith('/api/images') ? 'حجم عکس بیش از حد مجاز است (حداکثر ۳ مگابایت)' : 'حجم درخواست بیش از حد مجاز است' });
+      : req.path.startsWith('/api/images') ? 'حجم فایل بیش از حد مجاز است (عکس تا ۳ و PDF تا ۱۰ مگابایت)' : 'حجم درخواست بیش از حد مجاز است' });
   }
   if (err.message === 'Not allowed by CORS') return res.status(403).json({ error: 'دسترسی از این نشانی مجاز نیست' });
   // the body couldn't be read: not JSON, an unknown charset, cut off midway

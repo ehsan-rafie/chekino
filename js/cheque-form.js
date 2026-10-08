@@ -168,7 +168,8 @@
     photoBtn.classList.toggle('is-doc', !isImage(first) && !first.id);
     photoBtn.dataset.index = String(at);
     const n = list.length;
-    $('cqcPhotoLabel').textContent = n > 1 ? `${toFa(n)} عکس` : 'عکس چک';
+    const word = list.every(isImage) ? 'عکس' : 'فایل';
+    $('cqcPhotoLabel').textContent = n > 1 ? `${toFa(n)} ${word}` : 'عکس چک';
     photoBtn.setAttribute('aria-label', n > 1 ? `دیدن عکس‌های چک، ${toFa(n)} عکس` : 'دیدن عکس چک');
   }
   photoBtn.addEventListener('click', () => {

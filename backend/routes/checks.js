@@ -16,7 +16,8 @@ router.use(authenticate, companyLimiter, express.json({ limit: '15mb' }));
 
 // What a cheque looks like to the dashboard: everything but its photos. A
 // photo is fetched on its own from /api/images/:id when the cheque is
-// opened; the list only names the first one and says how many there are.
+// opened; the list only names the first photo and says how many files there
+// are, receipts included (the page asks for the rest when there are more).
 // (With photos inline, 43 cheques with two photos already weighed 1.1 MB,
 // and every new photo made each visit to the board heavier.) Owner and
 // beneficiary are LEFT JOINs: a cheque waiting for them (migration 007)
@@ -37,11 +38,11 @@ const JOIN_CLAUSE = `
   JOIN people p ON p.id = c.party_id
   LEFT JOIN people b ON b.id = c.beneficiary_id
   LEFT JOIN LATERAL (
-    SELECT (array_agg(i.id ORDER BY i.position, i.created_at))[1] AS image_id,
-           (array_agg(i.mime ORDER BY i.position, i.created_at))[1] AS image_mime,
+    SELECT (array_agg(i.id ORDER BY i.position, i.created_at) FILTER (WHERE i.kind = 'cheque'))[1] AS image_id,
+           (array_agg(i.mime ORDER BY i.position, i.created_at) FILTER (WHERE i.kind = 'cheque'))[1] AS image_mime,
            count(*) AS image_count
     FROM check_images i
-    WHERE i.check_id = c.id AND i.kind = 'cheque'
+    WHERE i.check_id = c.id
   ) img ON true
 `;
 
@@ -67,6 +68,49 @@ async function saveChequeImage(db, companyId, checkId, dataUrl) {
     [companyId, checkId, mime, bytes, bytes.length, sha256]
   );
 }
+
+// A cheque's files, in order (C1): the ids of the ones it keeps and of new
+// uploads (POST /api/images: this company's, attached to nothing yet). The
+// ones it had and isn't given any more go; the first photo is what the list
+// shows, and checks.receipt_image follows it (rollback_007 still reads it).
+// A file of another cheque, of a bulk add's batch, or of another company is
+// refused — as not found. Returns an error payload, or null.
+async function setChequeImages(db, companyId, checkId, ids) {
+  const want = [...new Set(ids.map(String))];
+  if (want.length !== ids.length) return { code: 'bad_images', error: 'یک فایل دو بار آمده' };
+  if (want.length) {
+    const rows = (await db.query(
+      'SELECT id, check_id, batch_id FROM check_images WHERE company_id = $1 AND id = ANY($2::uuid[]) FOR UPDATE',
+      [companyId, want]
+    )).rows;
+    const usable = rows.filter((r) => r.check_id === checkId || (r.check_id === null && r.batch_id === null));
+    if (usable.length !== want.length) return { code: 'bad_images', error: 'فایلی که فرستاده شد پیدا نشد؛ دوباره بگذارش' };
+  }
+  await db.query(
+    'DELETE FROM check_images WHERE company_id = $1 AND check_id = $2 AND NOT (id = ANY($3::uuid[]))',
+    [companyId, checkId, want]
+  );
+  await db.query(
+    `UPDATE check_images i SET check_id = $2, position = x.n - 1
+     FROM unnest($3::uuid[]) WITH ORDINALITY AS x(id, n)
+     WHERE i.id = x.id AND i.company_id = $1`,
+    [companyId, checkId, want]
+  );
+  await db.query(
+    `UPDATE checks SET receipt_image = (
+       SELECT 'data:' || i.mime || ';base64,' || translate(encode(i.bytes, 'base64'), E'\\n', '')
+       FROM check_images i WHERE i.check_id = $1 AND i.kind = 'cheque'
+       ORDER BY i.position, i.created_at LIMIT 1)
+     WHERE id = $1`,
+    [checkId]
+  );
+  return null;
+}
+const imagesValidation = [
+  body('images').optional().isArray({ max: 10 }).withMessage('حداکثر ۱۰ فایل برای یک چک'),
+  body('images.*').isUUID().withMessage('شناسه‌ی فایل نامعتبر است'),
+];
+const imagesError = (payload) => { const e = new Error(payload.error); e.payload = payload; return e; };
 
 // Since migration 007 only the sayad id is unique: a 6-digit serial repeats
 // across banks.
@@ -129,6 +173,7 @@ const createValidation = [
   ...personRefValidation,
   body('notes').optional({ values: 'falsy' }).isString().isLength({ max: 2000 }),
   receiptImageValidator('receipt_image'),
+  ...imagesValidation,
   body('channels').optional().isArray().withMessage('channels باید آرایه باشد'),
   body('status').optional({ values: 'falsy' }).isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
 ];
@@ -513,7 +558,10 @@ router.post('/', createValidation, validate, async (req, res) => {
         ]
       );
       newId = result.rows[0].id;
-      if (receipt_image) await saveChequeImage(db, req.companyId, newId, receipt_image);
+      if (Array.isArray(req.body.images)) {
+        const bad = await setChequeImages(db, req.companyId, newId, req.body.images);
+        if (bad) throw imagesError(bad);
+      } else if (receipt_image) await saveChequeImage(db, req.companyId, newId, receipt_image);
       await db.query('COMMIT');
     } catch (e) {
       await db.query('ROLLBACK').catch(() => {});
@@ -649,6 +697,7 @@ const patchValidation = [
   body('status').optional().isIn(STATUS_VALUES).withMessage('status نامعتبر است'),
   body('status_reason').optional({ values: 'null' }).isString().isLength({ max: 500 }),
   ...personRefValidation,
+  ...imagesValidation,
 ];
 
 router.patch('/:id', idParamValidation, patchValidation, validate, async (req, res) => {
@@ -715,9 +764,20 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
     if (sw.status !== current.status) set('status', sw.status);
     if (sw.historyChanged) set('status_history', JSON.stringify(sw.history), '::jsonb');
     if ('copied_at' in sw.set) set('copied_at', null);
-    const photo = has('receipt_image') ? b.receipt_image : undefined;   // null: remove; a data URL: replace
+    // the files by id (this page), or one photo as a data URL (an older one)
+    let imagesChanged = false;
+    if (Array.isArray(b.images)) {
+      const had = (await db.query('SELECT id FROM check_images WHERE check_id = $1 ORDER BY position, created_at', [id])).rows.map((r) => r.id);
+      if (had.join() !== b.images.map(String).join()) {
+        const bad = await setChequeImages(db, req.companyId, id, b.images);
+        if (bad) throw imagesError(bad);
+        imagesChanged = true;
+      }
+    }
+    const photo = !Array.isArray(b.images) && has('receipt_image') ? b.receipt_image : undefined;   // null: remove; a data URL: replace
     if (photo === null) set('receipt_image', null);
     else if (photo) set('receipt_image', photo);
+    if (imagesChanged && !sets.length) sets.push('notes = notes');   // only the files: a new version all the same
 
     if (sets.length) {
       vals.push(id, req.companyId);

@@ -324,7 +324,16 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   beside it behind a hairline, always shown, red under the pointer;
   «PDF» and its icon for a PDF; as tall as «انتخاب فایل», so the row never
   grows — a drop hint until then, «انتخاب فایل» at the
-  end, after 21st.dev's File Upload). **A copied photo or PDF pastes in**:
+  end, after 21st.dev's File Upload). **Every file is kept** (C1): on
+  save each new one is uploaded on its own (`/api/images`; a photo up to
+  3 MB after its crop, a PDF up to 10), then the cheque names all its
+  files by id, in order — the first is the board's photo; one taken off
+  in the form is taken off the cheque. The view asks for the whole list
+  when it opens (the board's list names only the first) and the leaf
+  then says «۳ عکس» or «۳ فایل». A file is only taken off by someone who
+  saw it: if the list arrives after the files were touched, the ones
+  never shown are added after them, and a save before it arrives says to
+  wait a moment. **A copied photo or PDF pastes in**:
   Ctrl+V in the open form while no field has the caret (after clicking
   an empty spot, or on a button), or on the photo row itself (click it,
   or right-click → Paste there) — a screenshot, an image copied from a
