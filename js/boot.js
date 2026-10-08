@@ -102,7 +102,16 @@
   };
   apply();
 
-  if (mode === 'login') return;
+  // already signed in (a token not yet run out) and not sent here by a dead
+  // session: straight to the board
+  if (mode === 'login') {
+    try {
+      var t = localStorage.getItem('chekino_token');
+      var p = t && JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (p && p.exp * 1000 > Date.now() + 60000 && !/[?&]expired=/.test(window.location.search)) window.location.replace('/');
+    } catch (e) {}
+    return;
+  }
 
   // ---- 2 · auth guard ----
   function decodeJwtPayload(token) {

@@ -782,9 +782,17 @@ only when some was kept. If the same account signs in again in another
 tab, the dialog goes by itself.
 
 **Login.** Two panes: the form in a bordered card with a Border Beam (a
-short bright arc of the edge, turning once every seven seconds), and a
-faint grey panel with the sample cheque over a fading Grid Pattern and one
-line of copy. Below 960px the panel becomes a band above the form.
+short bright arc of the edge, going round once as the page opens, then
+resting — WCAG 2.2.2), and a faint grey panel with the sample cheque over a
+fading Grid Pattern and one line of copy («چکی که از مشتری می‌گیرید، تا ثبت
+به نام ذینفع در صیاد، زیر نظر شماست»). Below 960px the form comes first and
+the panel is a band under it; the floating support button gives way to a
+link under the form («به پشتیبانی پیام بدهید»). A username typed on a
+Persian keyboard is read back by key («زمشعیفثسف» → «claudtest») and said
+under the field; Caps Lock is said under the password; a password with
+Persian digits is tried with Latin ones too. A wrong field is marked
+(aria-invalid), described by the alert and focused. Signed in already,
+/login goes to the board.
 
 **Admin.** Same system: a top bar with a hairline, a side navigation whose
 active item is a grey wash, bordered cards, outlined fields, ink buttons,

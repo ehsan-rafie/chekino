@@ -43,15 +43,16 @@
           <label for="username">نام کاربری</label>
           <div class="ig has-pre">
             <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-            <input type="text" id="username" placeholder="نام کاربری شرکت" autocomplete="username" dir="ltr">
+            <input type="text" id="username" placeholder="نام کاربری شرکت" autocomplete="username" dir="ltr" autocapitalize="off" spellcheck="false">
           </div>
+          <div class="field-hint" id="userHint" aria-live="polite"></div>
         </div>
 
         <div class="field" id="passField">
           <label for="password">رمز عبور</label>
           <div class="ig has-pre has-suf">
             <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <input type="password" id="password" placeholder="رمز عبور" autocomplete="current-password" dir="ltr">
+            <input type="password" id="password" placeholder="رمز عبور" autocomplete="current-password" dir="ltr" aria-describedby="passHint">
             <span class="ig-suf has-btn">
               <button type="button" class="ig-btn toggle-eye" id="eyeToggle" aria-label="نمایش رمز عبور" aria-pressed="false">
                 <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -63,11 +64,12 @@
           </div>
         </div>
 
+        <div class="field-hint" id="passHint" aria-live="polite"></div>
         <button type="submit" class="submit">ورود به سیستم</button>
       </form>
     </div>
 
-    <p class="auth-foot">حساب ندارید یا رمز را فراموش کرده‌اید؟ از دکمه‌ی پشتیبانی پایین صفحه پیام بدهید.</p>
+    <p class="auth-foot">حساب ندارید یا رمز را فراموش کرده‌اید؟ <a href="https://t.me/ehsanrafie" target="_blank" rel="noopener noreferrer">به پشتیبانی پیام بدهید</a>.</p>
   </section>
 
   <!-- The art pane: a sample cheque on a quiet panel. Decorative —
@@ -138,7 +140,7 @@
       </div>
 
       <div class="auth-copy">
-        <h2>هر چکی که صادر می‌کنید، تا ثبت در سامانه‌ی صیاد جلوی چشم شماست.</h2>
+        <h2>چکی که از مشتری می‌گیرید، تا ثبت به نام ذینفع در صیاد، زیر نظر شماست.</h2>
         <p>ثبت چک، پیگیری ثبت ذینفع و یادآوری سررسید، در یک صفحه.</p>
       </div>
     </div>
@@ -146,12 +148,12 @@
 
 </main>
 
-<button class="tg-float" id="tgBtn" aria-label="پشتیبانی تلگرام">
+<a class="tg-float" id="tgBtn" href="https://t.me/ehsanrafie" target="_blank" rel="noopener noreferrer" aria-label="پشتیبانی تلگرام">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
   </svg>
-</button>
+</a>
 <div class="tg-tooltip" id="tgTooltip">پشتیبانی تلگرام</div>
 
 <script src="/js/shared.js?v=20261007g"></script>

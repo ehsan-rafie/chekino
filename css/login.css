@@ -247,6 +247,11 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease);
 }
 .tg-float:hover { color: var(--ink); transform: translateY(-1px); }
+.tg-float:focus-visible { outline: none; box-shadow: var(--ring), var(--shadow-lift); }
+@media (max-width: 960px) { .tg-float, .tg-tooltip { display: none; } }
+.auth-foot a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.field-hint { min-height: 0; margin-top: 4px; font-size: var(--t-micro); color: var(--ink-2); }
+.field-hint:empty { display: none; }
 .tg-float svg { width: 20px; height: 20px; }
 .tg-tooltip {
   position: fixed;
@@ -268,16 +273,16 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
 
 /* ═══ Narrow screens: the art becomes a band above the form ═══ */
 @media (max-width: 960px) {
-  .auth { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .auth { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
   .auth-art {
-    order: -1;
-    margin: 10px 10px 0;
+    order: 2;
+    margin: 0 10px 10px;
     padding: 26px 20px 24px;
     border-radius: 16px;
   }
   .auth-art-inner { max-width: 420px; gap: var(--s4); }
   .auth-copy { display: none; }
-  .auth-pane { justify-content: flex-start; gap: var(--s5); padding: 28px 22px 96px; }
+  .auth-pane { justify-content: flex-start; gap: var(--s5); padding: 28px 22px 24px; }
   .auth-brand { display: none; }
   .brand h1 { font-size: 26px; }
 }
@@ -306,8 +311,8 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
 .brand h1 { font-size: 24px; margin-bottom: 6px; }
 .brand p { font-size: var(--t-cap); line-height: 1.9; }
 
-/* Border Beam: a short bright arc of the border, turning once every
-   seven seconds. */
+/* Border Beam: a short bright arc of the border, going round once as the
+   page opens, then resting (WCAG 2.2.2). */
 @property --beam-turn { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .card::after {
   content: '';
@@ -319,7 +324,7 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  animation: beamTurn 7s linear infinite;
+  animation: beamTurn 4s var(--ease-out) 0.4s 1 both;
   pointer-events: none;
 }
 @keyframes beamTurn { to { --beam-turn: 360deg; } }

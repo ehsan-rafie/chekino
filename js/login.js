@@ -83,22 +83,84 @@ function hideAlert() { alertBox.classList.remove('show', 'success', 'info'); }
 })();
 
 
-username.addEventListener('input', () => usernameField.classList.remove('error'));
-password.addEventListener('input', () => passField.classList.remove('error'));
+// What went wrong is the field's description while it is wrong, and the
+// focus goes to it (WCAG 3.3.1)
+function markBad(field, input) {
+  field.classList.add('error');
+  input.setAttribute('aria-invalid', 'true');
+  input.setAttribute('aria-describedby', [input === password ? 'passHint' : '', 'alertText'].filter(Boolean).join(' '));
+}
+function markOk(field, input) {
+  field.classList.remove('error');
+  input.removeAttribute('aria-invalid');
+  if (input === password) input.setAttribute('aria-describedby', 'passHint'); else input.removeAttribute('aria-describedby');
+}
+username.addEventListener('input', () => { markOk(usernameField, username); showLayoutHint(); });
+password.addEventListener('input', () => markOk(passField, password));
+
+// A username is Latin. Typed on a Persian keyboard, its letters are where
+// the Latin ones are — «زمشعیفثسف» is «claudtest» — so it is read back.
+const FA_KEYS = { 'ض': 'q', 'ص': 'w', 'ث': 'e', 'ق': 'r', 'ف': 't', 'غ': 'y', 'ع': 'u', 'ه': 'i', 'خ': 'o', 'ح': 'p', 'ج': '[', 'چ': ']',
+  'ش': 'a', 'س': 's', 'ی': 'd', 'ي': 'd', 'ب': 'f', 'ل': 'g', 'ا': 'h', 'ت': 'j', 'ن': 'k', 'م': 'l', 'ک': ';', 'ك': ';', 'گ': "'",
+  'ظ': 'z', 'ط': 'x', 'ز': 'c', 'ر': 'v', 'ذ': 'b', 'د': 'n', 'پ': 'm', 'و': ',', '.': '.', '/': '/' };
+const FA_DIGITS = (s) => s.replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0)).replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+const hasPersian = (s) => /[\u0600-\u06FF]/.test(s);
+function fromPersianLayout(s) {
+  const out = [...FA_DIGITS(s)].map((ch) => (/[\u0600-\u06FF]/.test(ch) ? FA_KEYS[ch] : ch));
+  return out.every((x) => x !== undefined) ? out.join('') : null;
+}
+const userHint = document.getElementById('userHint');
+const passHint = document.getElementById('passHint');
+function showLayoutHint() {
+  const v = username.value;
+  const latin = hasPersian(v) ? fromPersianLayout(v) : null;
+  userHint.textContent = hasPersian(v) ? (latin ? `صفحه‌کلید فارسی است؛ «${latin}» را می‌فرستم` : 'نام کاربری با حروف انگلیسی است؛ زبان صفحه‌کلید را عوض کن') : '';
+}
+// Caps Lock, said while it is on
+function capsHint(e) {
+  if (!e.getModifierState) return;
+  passHint.textContent = e.getModifierState('CapsLock') ? 'Caps Lock روشن است' : '';
+}
+password.addEventListener('keydown', capsHint);
+password.addEventListener('keyup', capsHint);
+password.addEventListener('blur', () => { passHint.textContent = ''; });
+
+// Signing in: the password as typed; if that fails and it had Persian
+// digits, the same with Latin ones (the admin sets passwords in Latin)
+async function signIn(u, p) {
+  const send = (pw) => fetch(`${API_BASE_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: pw }) })
+    .then(async (res) => ({ res, data: await res.json().catch(() => ({})) }));
+  let r = await send(p);
+  const latin = FA_DIGITS(p);
+  if (r.res.status === 401 && latin !== p) r = await send(latin);
+  return r;
+}
 
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideAlert();
-  const u = username.value.trim();
+  let u = username.value.trim();
   if (!u) {
-    usernameField.classList.add('error');
     showError('لطفاً نام کاربری خود را وارد کنید');
+    markBad(usernameField, username);
+    username.focus();
     return;
+  }
+  if (hasPersian(u)) {
+    const latin = fromPersianLayout(u);
+    if (!latin) {
+      showError('نام کاربری با حروف انگلیسی است؛ زبان صفحه‌کلید را عوض کن');
+      markBad(usernameField, username);
+      username.focus();
+      return;
+    }
+    u = latin;
   }
   const p = password.value;
   if (!p) {
-    passField.classList.add('error');
     showError('لطفاً رمز عبور را وارد کنید');
+    markBad(passField, password);
+    password.focus();
     return;
   }
 
@@ -110,17 +172,12 @@ loginForm.addEventListener('submit', async (e) => {
   submitBtn.textContent = 'در حال ورود…';
 
   try {
-    const res = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: u, password: p }),
-    });
-    const data = await res.json();
+    const { res, data } = await signIn(u, p);
 
     if (!res.ok || !data.token) {
-      usernameField.classList.add('error');
-      passField.classList.add('error');
       showError(data.error || 'نام کاربری یا رمز عبور اشتباه است');
+      markBad(usernameField, username);
+      markBad(passField, password);
       focusAndSelect(password);
       return;
     }
@@ -143,8 +200,13 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
+// (the support button is a link now: no script opens it)
 const tgBtn = document.getElementById('tgBtn');
 const tgTooltip = document.getElementById('tgTooltip');
-tgBtn.addEventListener('click', () => { window.open('https://t.me/ehsanrafie', '_blank'); });
 tgBtn.addEventListener('mouseenter', () => tgTooltip.classList.add('show'));
 tgBtn.addEventListener('mouseleave', () => tgTooltip.classList.remove('show'));
+tgBtn.addEventListener('focus', () => tgTooltip.classList.add('show'));
+tgBtn.addEventListener('blur', () => tgTooltip.classList.remove('show'));
+
+// The username field to type in at once, where there's a keyboard to type with
+if (window.matchMedia && window.matchMedia('(pointer: fine)').matches && !username.value) username.focus();
