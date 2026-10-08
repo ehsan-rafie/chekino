@@ -28,6 +28,9 @@
   </div>
 
   <div class="header-utility">
+    <button type="button" class="header-palette-btn" id="headerPaletteBtn" title="جستجو و فرمان‌ها" aria-label="جستجو و فرمان‌ها" aria-keyshortcuts="Control+K">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </button>
     <button class="header-support-btn" id="headerSupportBtn" title="پشتیبانی" aria-label="پشتیبانی">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>
     </button>
@@ -319,10 +322,18 @@
           </svg>
         </button>
       </div>
+      <!-- one search over the three tabs, and their order -->
+      <div class="people-tools">
+        <div class="ig has-pre people-search"><span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><input type="search" id="peopleSearch" placeholder="جستجوی نام یا کد ملی" aria-label="جستجو در اشخاص" autocomplete="off" spellcheck="false"></div>
+        <div class="people-sort" role="radiogroup" aria-label="ترتیب">
+          <button type="button" role="radio" data-sort="count" aria-checked="true">بیشترین چک</button>
+          <button type="button" role="radio" data-sort="name" aria-checked="false">الفبا</button>
+        </div>
+      </div>
       <div class="people-tabs" role="tablist" aria-label="دسته‌بندی اشخاص">
-        <button type="button" class="people-tab active" data-people-tab="owners" role="tab" aria-selected="true" aria-controls="peoplePanelOwners">صاحبان چک</button>
-        <button type="button" class="people-tab" data-people-tab="parties" role="tab" aria-selected="false" aria-controls="peoplePanelParties">طرف‌های حساب</button>
-        <button type="button" class="people-tab" data-people-tab="benef" role="tab" aria-selected="false" aria-controls="peoplePanelBenef">ذینفعان</button>
+        <button type="button" class="people-tab active" data-people-tab="owners" role="tab" aria-selected="true" aria-controls="peoplePanelOwners">صاحبان چک<span class="people-tab-n" data-n="owner"></span></button>
+        <button type="button" class="people-tab" data-people-tab="parties" role="tab" aria-selected="false" aria-controls="peoplePanelParties">طرف‌های حساب<span class="people-tab-n" data-n="party"></span></button>
+        <button type="button" class="people-tab" data-people-tab="benef" role="tab" aria-selected="false" aria-controls="peoplePanelBenef">ذینفعان<span class="people-tab-n" data-n="benef"></span></button>
       </div>
       <div class="modal-body people-modal-body">
         <div class="people-panel" id="peoplePanelOwners" role="tabpanel">
@@ -347,6 +358,14 @@
           </div>
           <div class="people-list" id="benefListBox"></div>
         </div>
+      </div>
+      <!-- one person: in place of the lists (dashboard.js openPerson) -->
+      <div class="person-pane" id="personPane" hidden>
+        <button type="button" class="person-back" id="personBack">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          <span>همه‌ی اشخاص</span>
+        </button>
+        <div class="person-body" id="personBody"></div>
       </div>
     </div>
   </div>
@@ -393,6 +412,18 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
             <span>ارسال برای صاحب چک</span>
           </button>
+          <!-- the status changed right here: the next ones for this
+               cheque (dashboard.js showVeActions) -->
+          <div class="ve-st-actions" id="veStActions" hidden></div>
+        </div>
+        <!-- «مشکل دارد» asks why, under the banner (outside its live region) -->
+        <div class="ve-reason" id="veReason" hidden>
+          <label class="ve-reason-label" for="veReasonText">چرا ثبت نشد؟</label>
+          <textarea id="veReasonText" rows="2" maxlength="500" placeholder="دلیل مشکل در ثبت را بنویسید"></textarea>
+          <div class="ve-reason-actions">
+            <button type="button" class="ve-reason-save" id="veReasonSave">ثبت وضعیت</button>
+            <button type="button" class="ve-reason-cancel" id="veReasonCancel">انصراف</button>
+          </div>
         </div>
 
         <!-- The cheque, and everything Chekino knows about it, on one leaf

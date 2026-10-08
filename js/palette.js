@@ -16,6 +16,7 @@
 */
 (function () {
   const commands = [];
+  const sources = [];   // (query) => items found by what's typed (cheques, people)
   let root = null, input = null, listEl = null, emptyEl = null;
   let matches = [];
   let cursor = 0;
@@ -70,7 +71,7 @@
       <div class="cp-box" role="dialog" aria-modal="true" aria-label="پالت دستور">
         <div class="cp-search">
           <svg class="cp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="cpInput" autocomplete="off" spellcheck="false" placeholder="دستور یا جستجو…" aria-label="جستجوی دستور">
+          <input type="text" id="cpInput" autocomplete="off" spellcheck="false" placeholder="سریال، نام یا دستور…" aria-label="جستجو در چک‌ها، اشخاص و دستورها">
           <kbd class="cp-esc">Esc</kbd>
         </div>
         <div class="cp-list" id="cpList" role="listbox"></div>
@@ -99,12 +100,15 @@
   function render() {
     const q = input.value.trim();
     const pool = visibleCommands();
-    matches = pool
+    // what the page finds by the query comes first; the commands after it,
+    // under their own heading
+    const found = q.length >= 2 ? sources.flatMap((fn) => { try { return fn(q) || []; } catch (err) { return []; } }) : [];
+    const cmds = pool
       .map((c) => ({ c, s: Math.max(score(c.title, q), score(c.keywords || '', q) * 0.9) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || (a.c.order || 0) - (b.c.order || 0))
-      .map((x) => x.c)
-      .slice(0, 40);
+      .map((x) => (found.length ? Object.assign({}, x.c, { group: 'دستورها' }) : x.c));
+    matches = found.concat(cmds).slice(0, 40);
 
     if (cursor >= matches.length) cursor = Math.max(0, matches.length - 1);
     emptyEl.style.display = matches.length ? 'none' : 'block';
@@ -249,6 +253,7 @@
         if (c && c.title && typeof c.run === 'function') commands.push(c);
       });
     },
+    registerSource(fn) { if (typeof fn === 'function') sources.push(fn); },
     open, close, isOpen,
     modLabel: MOD_LABEL,
   };

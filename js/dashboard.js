@@ -462,6 +462,82 @@ veSendBtn.addEventListener('click', () => {
   window.ChekinoSend.open([id]);
 });
 
+// The status from the view itself (spec 9.5): a cheque waiting for Sayad
+// can be marked registered or not; one that wasn't, registered or back to
+// waiting. A registered one has its receipt to copy instead, one not yet
+// sent its «ارسال». The change is the board's (applyStatus, with its
+// «برگردون»); the view follows it (refreshVeStatus).
+const veStActions = document.getElementById('veStActions');
+const veReason = document.getElementById('veReason');
+const veReasonText = document.getElementById('veReasonText');
+const VE_ACTIONS = {
+  pending: [['done', 'check', 'ثبت شد'], ['problem', 'alert', 'مشکل دارد']],
+  problem: [['done', 'check', 'ثبت شد'], ['pending', 'clock', 'دوباره منتظر ثبت']],
+};
+function showVeActions(c) {
+  const preSend = isPreSend(c);
+  veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
+  veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
+  const acts = preSend ? null : VE_ACTIONS[c.status || 'pending'];
+  const key = acts ? c.status || 'pending' : '';
+  // drawn again only when they change: a press keeps its focus
+  if (veStActions.dataset.st !== key) {
+    veStActions.dataset.st = key;
+    veStActions.innerHTML = (acts || []).map(([to, ic, label]) =>
+      `<button type="button" class="ve-receipt-btn" data-ve-set="${to}">${icon(ic)}<span>${label}</span></button>`).join('');
+  }
+  veStActions.hidden = !acts;
+  closeVeReason();
+}
+function hideVeActions() {
+  veStActions.hidden = true;
+  veStActions.dataset.st = '';
+  veStActions.innerHTML = '';
+  closeVeReason();
+}
+// After a status change made anywhere (here, the board, a «برگردون»):
+// the open view shows it, and an edit starts from the new version
+function refreshVeStatus(id) {
+  if (modalMode !== 'view' || editingChequeId !== id) return;
+  const c = loadCheques().find((x) => x.id === id);
+  if (!c) return;
+  editingVersion = c.version;
+  fillVeStatus(c);
+  showVeActions(c);
+  renderVeHistory(c);
+}
+function veReasonOpen() { return !veReason.hidden; }
+function closeVeReason(focusBack) {
+  if (veReason.hidden) return;
+  veReason.hidden = true;
+  veReasonText.value = '';
+  const b = veStActions.querySelector('[data-ve-set="problem"]');
+  if (focusBack && b) b.focus();
+}
+function veSetStatus(to, reason) {
+  const id = editingChequeId;
+  if (id == null) return;
+  closeVeReason();
+  applyStatus(id, to, reason || '');
+  // the press's own result in focus: the next step, or the banner's text
+  const next = [...veStatusBanner.querySelectorAll('.ve-receipt-btn')].find((b) => b.offsetParent !== null);
+  (next || modalBody).focus({ preventScroll: true });
+}
+veStActions.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ve-set]');
+  if (!b) return;
+  if (b.dataset.veSet !== 'problem') { veSetStatus(b.dataset.veSet); return; }
+  veReason.hidden = false;
+  veReasonText.focus();
+});
+document.getElementById('veReasonSave').addEventListener('click', () => veSetStatus('problem', veReasonText.value.trim()));
+document.getElementById('veReasonCancel').addEventListener('click', () => closeVeReason(true));
+// Enter saves the reason (Shift+Enter for a second line); Escape is the
+// page's Escape chain
+veReasonText.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); veSetStatus('problem', veReasonText.value.trim()); }
+});
+
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
 const veFieldsWrapA2 = document.getElementById('veFieldsWrapA2');
 const veFieldsWrapB = document.getElementById('veFieldsWrapB');
@@ -506,8 +582,7 @@ function openModalForView(id) {
   fillVeStatus(c);
   const preSend = isPreSend(c);
   modalBody.classList.toggle('pre-send', preSend);
-  veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
-  veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
+  showVeActions(c);
   renderVeHistory(c);
 
   serialInput.value = toFa(c.serial);
@@ -564,6 +639,7 @@ function enterEditMode() {
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
   submitCheckBtn.textContent = 'ذخیره تغییرات';
+  closeVeReason();
   cancelPendingDelete();
 }
 
@@ -580,6 +656,7 @@ function exitViewEditMode() {
   veStatusBanner.classList.remove('show');
   veReceiptBtn.style.display = 'none';
   veSendBtn.style.display = 'none';
+  hideVeActions();
   modalBody.classList.remove('pre-send');
   veHistory.classList.remove('show', 'open');
   lockFormFields(false);
@@ -604,6 +681,7 @@ function openModal() {
   veStatusBanner.classList.remove('show');
   veReceiptBtn.style.display = 'none';
   veSendBtn.style.display = 'none';
+  hideVeActions();
   modalBody.classList.remove('pre-send');
   veHistory.classList.remove('show', 'open');
   lockFormFields(false);
@@ -838,10 +916,17 @@ function closeModal(force) {
   const wasViewOrEdit = modalMode !== 'add';
   const viewedId = editingChequeId;
   modalOverlay.classList.remove('show');
-  document.body.style.overflow = '';
+  document.body.style.overflow = peopleModalOverlay.classList.contains('show') ? 'hidden' : '';
   resetAllFields();
   if (!wasViewOrEdit) clearDraft();
   if (wasViewOrEdit) exitViewEditMode();
+  if (personOpen && peopleModalOverlay.classList.contains('show')) {
+    renderPerson();
+    const row = personBody.querySelector(`.person-cheque[data-cid="${viewedId}"]`);
+    modalOpener = null;
+    (row || document.getElementById('personName') || personPane).focus({ preventScroll: true });
+    return;
+  }
   returnFocus(viewedId);
 }
 // Back to where the window was opened from — or, when the board was drawn
@@ -962,7 +1047,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.shiftKey) return;
   const t = e.target;
-  if (t === notesInput) return;
+  if (t === notesInput || t === veReasonText) return;
   if (dueDateCal.classList.contains('show')) return;
   const openList = document.querySelector('.ac-list.show');
   if (openList && openList.querySelector('.ac-item.active')) return;
@@ -1835,6 +1920,12 @@ function normalizeName(str) {
     .trim();
 }
 
+// For finding, not storing: a name as it sounds — no spaces or half-spaces,
+// ئ as ی, آ/أ/إ as ا, ة as ه, ؤ as و
+function looseName(str) {
+  return normalizeName(str).replace(/\s+/g, '').replace(/ئ/g, 'ی').replace(/[آأإ]/g, 'ا').replace(/ة/g, 'ه').replace(/ؤ/g, 'و');
+}
+
 function readStore(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -1994,11 +2085,11 @@ function peopleItemHtml(person, count, showNid) {
     <button type="button" class="people-item-cancel" title="لغو" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <div class="people-item-display">
+    <button type="button" class="people-item-display" title="چک‌های ${escapeHtml(person.full_name)}">
       <span class="people-item-name-text">${escapeHtml(person.full_name)}</span>
       ${hasNid ? `<span class="people-item-nid">${toFa(nid)}</span>` : ''}
       ${partiesHtml}
-    </div>
+    </button>
     <div class="people-item-edit-fields" style="display:none">
       <input type="text" class="people-item-name-input" value="${escapeHtml(person.full_name)}">
       ${hasNid ? `<input type="text" class="people-item-nid-input" value="${toFa(nid)}" inputmode="numeric" maxlength="11">` : ''}
@@ -2014,12 +2105,170 @@ function peopleItemHtml(person, count, showNid) {
 // only appears where the person really has no cheque holding them.
 function renderRoleList(box, role, showNid, rerender, emptyText) {
   const roleIdx = buildRoleIndex();
-  const rows = peopleCache.filter(p => personInRole(p, role, roleIdx));
+  const count = (p) => (roleIdx.get(p.id) || {})[role] || 0;
+  const all = peopleCache.filter(p => personInRole(p, role, roleIdx));
+  const q = peopleQuery();
+  const rows = q ? all.filter(q) : all.slice();
+  const byName = (a, b) => a.full_name.localeCompare(b.full_name, 'fa');
+  rows.sort(peopleSort === 'name' ? byName : (a, b) => count(b) - count(a) || byName(a, b));
   box.innerHTML = rows.length
-    ? rows.map(p => peopleItemHtml(p, (roleIdx.get(p.id) || {})[role] || 0, showNid)).join('')
-    : `<div class="people-empty">${emptyText}</div>`;
-  box.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender }));
+    ? rows.map(p => peopleItemHtml(p, count(p), showNid)).join('')
+    : `<div class="people-empty">${all.length ? 'کسی با این نام در این دسته نیست' : emptyText}</div>`;
+  box.querySelectorAll('.people-item').forEach(item => wirePeopleItem(item, { rerender, role }));
+  const n = document.querySelector(`.people-tab-n[data-n="${role}"]`);
+  if (n) n.textContent = all.length ? toFa(rows.length) : '';
 }
+
+// ---- Finding someone (spec 9.6): one search over the three tabs ----
+// A name as it sounds (looseName) or a national id's digits; the tabs then
+// count what each one found. The order is the viewer's: most cheques first
+// or by name (kept in this browser).
+const peopleSearch = document.getElementById('peopleSearch');
+const PEOPLE_SORT_KEY = 'chekino_people_sort';
+let peopleSort = 'count';
+try { if (localStorage.getItem(PEOPLE_SORT_KEY) === 'name') peopleSort = 'name'; } catch (e) {}
+function peopleQuery() {
+  const raw = peopleSearch.value.trim();
+  if (!raw) return null;
+  const digits = toEnDigits(raw.replace(/[٠-٩]/g, (x) => String(x.charCodeAt(0) - 0x0660))).replace(/[^0-9]/g, '');
+  if (digits && /^[\d۰-۹٠-٩\s-]+$/.test(raw)) return (p) => toEnDigits(p.national_id || '').includes(digits);
+  const n = looseName(raw);
+  return (p) => looseName(p.full_name).includes(n);
+}
+function drawPeopleSort() {
+  document.querySelectorAll('.people-sort [data-sort]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.sort === peopleSort)));
+}
+drawPeopleSort();
+peopleSearch.addEventListener('input', () => renderAllPeopleLists());
+peopleSearch.addEventListener('keydown', (e) => {
+  // Escape empties the search first, then (a second one) closes the window
+  if (e.key === 'Escape' && peopleSearch.value) { e.preventDefault(); e.stopPropagation(); peopleSearch.value = ''; renderAllPeopleLists(); }
+});
+document.querySelector('.people-sort').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-sort]');
+  if (!b || b.dataset.sort === peopleSort) return;
+  peopleSort = b.dataset.sort;
+  try { localStorage.setItem(PEOPLE_SORT_KEY, peopleSort); } catch (err) {}
+  drawPeopleSort();
+  renderAllPeopleLists();
+});
+// a radio group: ←/→ move the choice
+document.querySelector('.people-sort').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  const other = document.querySelector(`.people-sort [data-sort="${peopleSort === 'name' ? 'count' : 'name'}"]`);
+  other.click();
+  other.focus();
+});
+
+// ---- One person (spec 9.6) ----
+// In place of the lists: who they are, how their cheques stand, how long
+// the registered ones took from being sent, how many had a problem, and
+// every cheque of theirs — each opens in its own window; «نمایش در بُرد»
+// filters the board to them.
+const personPane = document.getElementById('personPane');
+const personBody = document.getElementById('personBody');
+const peopleBox = peopleModalOverlay.querySelector('.people-box');
+const ROLE_FIELDS = { owner: 'ownerId', party: 'partyId', benef: 'benefId' };
+const ROLE_LABELS = { owner: 'صاحب چک', party: 'طرف حساب', benef: 'ذینفع' };
+let personOpen = null;   // { id, role }
+function personFacts(id, role) {
+  const all = loadCheques().filter((c) => c[ROLE_FIELDS[role]] === id);
+  const sent = all.filter((c) => c.stage === 'sent');
+  const of = (st) => sent.filter((c) => (c.status || 'pending') === st);
+  const pending = of('pending'), done = of('done'), problem = of('problem');
+  const took = done.filter((c) => c.sendDate && c.statusChangedAt)
+    .map((c) => daysSinceJalali(c.sendDate) - daysSinceJalali(c.statusChangedAt))
+    .filter((n) => n >= 0);
+  const hadProblem = sent.filter((c) => c.status === 'problem' || (c.history || []).some((h) => h.to === 'problem')).length;
+  return {
+    all, sent, pending, done, problem, hadProblem,
+    avg: took.length ? Math.round(took.reduce((a, b) => a + b, 0) / took.length) : null,
+    oldest: pending.length ? Math.max(...pending.map((c) => daysSinceJalali(c.sendDate))) : -1,
+  };
+}
+function renderPerson() {
+  if (!personOpen) return;
+  const p = findPersonById(personOpen.id);
+  if (!p) { closePerson(); return; }
+  const role = personOpen.role;
+  const f = personFacts(p.id, role);
+  const idx = buildRoleIndex().get(p.id) || {};
+  const roles = Object.keys(ROLE_FIELDS).filter((r) => idx[r] > 0)
+    .map((r) => `${ROLE_LABELS[r]} در ${toFa(idx[r])} چک`);
+  const tile = (st, n, sub) => `<div class="person-tile">
+      <span class="person-tile-k"><span class="st-dot" style="background:${statusById(st).color}"></span>${statusById(st).name}</span>
+      <b class="person-tile-v">${toFa(n)}</b>
+      <span class="person-tile-sub">${sub}</span>
+    </div>`;
+  const avgText = f.avg === null ? '' : f.avg === 0 ? 'همان روزِ ارسال ثبت می‌شوند' : `میانگین ${toFa(f.avg)} روز تا ثبت`;
+  const oldText = f.oldest > 0 ? `قدیمی‌ترین: ${toFa(f.oldest)} روز` : '';
+  const probText = f.sent.length ? `${toFa(Math.round((f.hadProblem / f.sent.length) * 100))}٪ مشکل داشته‌اند` : '';
+  // the open ones first: a problem, waiting for Sayad, not sent yet, then registered
+  const rank = (c) => (c.stage !== 'sent' ? 2 : { problem: 0, pending: 1, done: 3 }[c.status || 'pending']);
+  const rows = f.all.slice().sort((a, b) => rank(a) - rank(b) || (b.dueDate || '').localeCompare(a.dueDate || ''));
+  const stateOf = (c) => (c.stage === 'sent'
+    ? `<span class="st-dot" style="background:${statusById(c.status).color}"></span>${statusById(c.status).name}`
+    : `<span class="st-dot is-stage"></span>${c.stage === 'ready' ? 'آماده‌ی ارسال' : 'منتظر ذینفع'}`);
+  personBody.innerHTML = `
+    <div class="person-head">
+      <h3 class="person-name" id="personName" tabindex="-1">${escapeHtml(p.full_name)}</h3>
+      ${p.national_id ? `<span class="person-nid">${toFa(p.national_id)}</span>` : ''}
+      <p class="person-roles">${roles.length ? escapeHtml(roles.join('، ')) : 'هنوز چکی ندارد'}</p>
+    </div>
+    ${f.sent.length ? `<div class="person-tiles">
+      ${tile('pending', f.pending.length, oldText)}
+      ${tile('done', f.done.length, avgText)}
+      ${tile('problem', f.problem.length, probText)}
+    </div>` : ''}
+    ${f.all.length - f.sent.length ? `<p class="person-note">${toFa(f.all.length - f.sent.length)} چک هنوز برای صاحبش فرستاده نشده</p>` : ''}
+    ${f.all.length ? `<div class="person-list-head">
+        <span>چک‌ها، به‌عنوان ${ROLE_LABELS[role]}</span>
+        <button type="button" class="person-board" id="personBoard">نمایش در بُرد</button>
+      </div>
+      <div class="person-cheques">${rows.map((c) => `<button type="button" class="person-cheque" data-cid="${c.id}">
+          <span class="pc-serial">${toFa(c.serial)}</span>
+          <span class="pc-amount">${faAmountRial(c.amount)}</span>
+          <span class="pc-due">${faDate(c.dueDate)}</span>
+          <span class="pc-state">${stateOf(c)}</span>
+        </button>`).join('')}</div>` : ''}`;
+}
+function openPerson(id, role) {
+  personOpen = { id, role };
+  renderPerson();
+  peopleBox.classList.add('person-open');
+  personPane.hidden = false;
+  personPane.scrollTop = 0;
+  const h = document.getElementById('personName');
+  if (h) h.focus({ preventScroll: true });
+}
+function closePerson() {
+  if (!personOpen) return;
+  const { id } = personOpen;
+  personOpen = null;
+  personPane.hidden = true;
+  peopleBox.classList.remove('person-open');
+  const row = peopleBox.querySelector(`.people-panel:not([style*="none"]) .people-item[data-id="${id}"] .people-item-display`);
+  if (row) row.focus({ preventScroll: true });
+}
+document.getElementById('personBack').addEventListener('click', closePerson);
+personBody.addEventListener('click', (e) => {
+  const row = e.target.closest('.person-cheque');
+  if (row) { openModalForView(parseInt(row.dataset.cid, 10)); return; }
+  if (e.target.closest('#personBoard') && personOpen) {
+    const p = findPersonById(personOpen.id);
+    const role = personOpen.role;
+    const f = peopleFilter[role];
+    if (!p || !f) return;
+    Object.keys(peopleFilter).forEach(clearPeopleFilter);
+    f.sel = [{ name: p.full_name, key: role === 'benef' ? benefKey(p.full_name, p.national_id) : normalizeName(p.full_name) }];
+    renderPeopleTags(role);
+    refreshTable();
+    closePerson();
+    closePeopleModal();
+    showToast(`بُرد فقط چک‌های «${p.full_name}» را نشان می‌دهد`);
+  }
+});
 
 function renderOwnersList() {
   renderRoleList(ownersListBox, 'owner', false, renderOwnersList, 'هنوز صاحب چکی ثبت نشده');
@@ -2102,6 +2351,7 @@ function wirePeopleItem(item, cfg) {
     cfg.rerender();
   }
   editBtn.addEventListener('click', enterEdit);
+  if (cfg.role) display.addEventListener('click', () => openPerson(personId, cfg.role));
   confirmBtn.addEventListener('click', () => exitEdit(true));
   cancelBtn.addEventListener('click', () => exitEdit(false));
   nameInput.addEventListener('keydown', (e) => {
@@ -2198,12 +2448,14 @@ document.querySelectorAll('.people-tab').forEach(tab => {
 
 function openPeopleModal() {
   pushBackGuard();
+  closePerson();
   renderAllPeopleLists();
   peopleModalOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
   fetchPeopleCache().then(renderAllPeopleLists);
 }
 function closePeopleModal() {
+  if (personOpen) { personOpen = null; personPane.hidden = true; peopleBox.classList.remove('person-open'); }
   peopleModalOverlay.classList.remove('show');
   document.body.style.overflow = modalOverlay.classList.contains('show') ? 'hidden' : '';
 }
@@ -4385,8 +4637,8 @@ function searchMatcher(raw) {
     if (d.length >= 16) return (c) => c.sayad.includes(d);
     return (c) => c.sayad.includes(d) || toEnDigits(c.nid || '').includes(d) || String(c.amount) === d;
   }
-  const n = normalizeName(text);
-  return (c) => [c.owner, c.party, c.benef, c.notes, c.statusReason].some((s) => s && normalizeName(s).includes(n));
+  const n = looseName(text);
+  return (c) => [c.owner, c.party, c.benef, c.notes, c.statusReason].some((s) => s && looseName(s).includes(n));
 }
 // A pasted list: how much of it is on the board, and what isn't anywhere
 function searchListNote(raw) {
@@ -5095,6 +5347,13 @@ function dueTip(c) {
   if (pending) return d === -1 ? 'یک روز از سررسید گذشته' : `${toFa(-d)} روز از سررسید گذشته`;
   return d === -1 ? 'سررسید: دیروز' : `سررسید: ${toFa(-d)} روز پیش`;
 }
+// The same, in two or three words on the card (only when it's urgent)
+function dueRelHtml(c) {
+  if (!dueUrgencyClass(c)) return '';
+  const d = daysUntilDue(c.dueDate);
+  const t = d === 0 ? 'امروز' : d === 1 ? 'فردا' : d > 1 ? `${toFa(d)} روز دیگر` : d === -1 ? 'دیروز' : `${toFa(-d)} روز گذشته`;
+  return `<span class="chk-due-rel">${t}</span>`;
+}
 function dueUrgencyClass(c) {
   if (c.status !== 'pending') return '';
   const days = daysUntilDue(c.dueDate);
@@ -5181,7 +5440,7 @@ function checkCardHtml(c) {
   // keyboard path to the same change is the status button inside.
   return `<div class="check-card ${st.cls}${justChanged}" data-id="${c.id}">
     <div class="chk-row">
-      <span class="chk-due${urgency}" data-tip="${dueTip(c)}">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
+      <span class="chk-due${urgency}" data-tip="${dueTip(c)}">${ICON_CALENDAR}${faDate(c.dueDate)}${dueRelHtml(c)}</span>
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
@@ -5880,6 +6139,7 @@ async function applyStatus(id, status, reason, opts = {}) {
   justChangedId = id;
   renderTable();
   justChangedId = null;
+  refreshVeStatus(id);
 
   try {
     const updated = await apiJson(`/checks/${id}`, {
@@ -5901,9 +6161,11 @@ async function applyStatus(id, status, reason, opts = {}) {
     // above doesn't have — in place of the guess; nothing else fetched
     putCheque(updated);
     renderTable();
+    refreshVeStatus(id);
   } catch (e) {
     if (rec && before) Object.assign(rec, before);
     renderTable();
+    refreshVeStatus(id);
     if (e.status === 409 && e.data && e.data.code === 'version_conflict') {
       // changed elsewhere: show what it is now rather than overwrite it
       loadChecksFromApi().then(renderTable).catch(() => {});
@@ -6349,7 +6611,9 @@ document.addEventListener('keydown', (e) => {
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
+  if (veReasonOpen()) { closeVeReason(true); return; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
+  if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return; }
 });
 
@@ -6383,7 +6647,9 @@ function closeTopmostLayer() {
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
+  if (veReasonOpen()) { closeVeReason(); return true; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
+  if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return true; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return true; }
   return false;
 }
@@ -6631,6 +6897,47 @@ function resumeWhenReady() {
   const click = (id) => () => { const el = document.getElementById(id); if (el) el.click(); };
   const icon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 
+  // the header's own way in (a phone has no Ctrl+K)
+  const paletteBtn = document.getElementById('headerPaletteBtn');
+  paletteBtn.title = `جستجو و فرمان‌ها (${window.ChekinoPalette.modLabel}+K)`;
+  paletteBtn.addEventListener('click', () => window.ChekinoPalette.open());
+
+  // Cheques and people by what's typed: the board search's own matcher
+  // (serial, sayad id, a name, an amount, a pasted list) — every stage, the
+  // cheque opening in its window — and people by name, opening their page
+  const STAGE_NAMES = { waiting: 'منتظر ذینفع', ready: 'آماده‌ی ارسال' };
+  window.ChekinoPalette.registerSource((q) => {
+    const out = [];
+    const m = searchMatcher(q);
+    if (m) {
+      loadCheques().filter(m).slice(0, 6).forEach((c) => out.push({
+        group: 'چک‌ها',
+        title: `چک ${toFa(c.serial)}، ${c.owner || 'صاحب چک نامعلوم'}`,
+        hint: c.stage === 'sent' ? statusById(c.status).name : STAGE_NAMES[c.stage] || '',
+        icon: icon('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h8M6 14h5"/>'),
+        run: () => openModalForView(c.id),
+      }));
+    }
+    if (!/^[\d۰-۹٠-٩\s,،٬٫./-]+$/.test(q)) {
+      const n = looseName(q);
+      const idx = buildRoleIndex();
+      peopleCache.filter((p) => looseName(p.full_name).includes(n)).slice(0, 5).forEach((p) => {
+        const used = idx.get(p.id) || {};
+        const top = ['owner', 'party', 'benef'].sort((a, b) => (used[b] || 0) - (used[a] || 0))[0];
+        const role = used[top] ? top : (ROLE_LABELS[p.role] ? p.role : 'owner');
+        const total = (used.owner || 0) + (used.party || 0) + (used.benef || 0);
+        out.push({
+          group: 'اشخاص',
+          title: p.full_name,
+          hint: total ? `${ROLE_LABELS[role]}، ${toFa(total)} چک` : ROLE_LABELS[role],
+          icon: icon('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+          run: () => { openPeopleModal(); openPerson(p.id, role); },
+        });
+      });
+    }
+    return out;
+  });
+
   window.ChekinoPalette.register([
     {
       title: 'افزودن چک جدید', group: 'چک‌ها', key: 'n', shortcut: 'N', order: 1,
@@ -6706,6 +7013,7 @@ function resumeWhenReady() {
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {
+    if (modalOverlay.classList.contains('show') && peopleModalOverlay.classList.contains('show')) return modalOverlay;
     for (const id of OVERLAYS) {
       const el = document.getElementById(id);
       if (el && el.classList.contains('show')) return el;

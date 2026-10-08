@@ -221,6 +221,51 @@
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .cq-view .ve-receipt-btn svg { width: 14px; height: 14px; }
+.cq-view .ve-st-actions { display: flex; flex-shrink: 0; gap: 8px; }
+.cq-view .ve-st-actions[hidden] { display: none; }
+.cq-view .ve-st-actions .ve-receipt-btn { display: flex; }
+/* «مشکل دارد»: why, in a plain box right under the banner */
+.cq-view .ve-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.cq-view .ve-reason[hidden] { display: none; }
+.ve-reason-label { font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-label); }
+.ve-reason textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-value);
+  line-height: 1.7;
+  resize: vertical;
+}
+.ve-reason textarea:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
+.ve-reason-actions { display: flex; gap: 8px; }
+.ve-reason-actions button {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+}
+.ve-reason-actions .ve-reason-save { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.ve-reason-actions button:hover { background: var(--surface-2); }
+.ve-reason-actions .ve-reason-save:hover { background: color-mix(in srgb, var(--ink) 86%, var(--surface)); }
 .cq-view .ve-receipt-btn:hover,
 .cq-view .ve-receipt-btn.copied { background: color-mix(in srgb, var(--st) 10%, var(--surface)); border-color: color-mix(in srgb, var(--st) 48%, transparent); }
 
@@ -293,6 +338,8 @@
   .cq-view { padding: 14px; gap: 14px; }
   .cq-view .ve-status-banner { flex-wrap: wrap; }
   .cq-view .ve-receipt-btn { margin-inline-start: 46px; }
+  .cq-view .ve-st-actions { margin-inline-start: 46px; }
+  .cq-view .ve-st-actions .ve-receipt-btn { margin-inline-start: 0; height: 40px; }
   .cq-view .ve-history { padding: 14px 16px; }
   #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }

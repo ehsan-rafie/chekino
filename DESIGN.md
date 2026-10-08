@@ -142,8 +142,8 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 
 **Header.** 56px, white glass with one hairline under it. Brand mark +
 wordmark (the mark's strokes are drawn in the page colour, so it inverts)
-at the start; ghost square icon buttons (support, theme, account) at the
-end. **Theme** follows the sun over Tehran on the day: light from sunrise
+at the start; ghost square icon buttons (search, support, theme,
+account) at the end — 34px, 44px under 860px where a finger presses them. **Theme** follows the sun over Tehran on the day: light from sunrise
 to sunset, dark after (sunset runs from about 17:00 in winter to 20:30
 in summer; SunCalc's method in `js/boot.js`, applied before the first
 paint so nothing flashes). The button is a plain toggle — the sun or the moon — and a press
@@ -155,8 +155,11 @@ sunrise, sunset, the end of a choice, another tab — is a soft fade. Saved
 as `chekino_theme_v3` ({theme, until}), shared by the dashboard, the admin
 panel and the login page.
 
-Nothing in the middle: the Ctrl+K palette has no button, only its
-shortcut. The floating support button is hidden on the dashboard, since
+Nothing in the middle: the Ctrl+K palette's button is the search icon
+among the others (a phone has no Ctrl+K). The palette finds cheques (by
+the board search's own rules: serial, sayad id, name, amount — every
+stage) and people by name before its commands; a cheque opens in its
+window, a person on their page. The floating support button is hidden on the dashboard, since
 the header already has one. The bar spans the window but its content is
 set to the page's width (1320px, 32px in), so the brand sits over
 «افزودن چک» and the icons over «مدیریت اشخاص». The account button opens
@@ -215,7 +218,9 @@ the status colour — dot, name, and an outlined count (no totals). On the
 phone's lane tabs the chosen tab takes its lane's tint.
 Cards (HeroUI's Card: a body and a footer): white, 1px edge, radius 16,
 16px in. The body: the serial on top with the due date as an outlined
-badge (amber / red wash with a dot when due soon / overdue), and the owner
+badge (amber / red wash with a dot when due soon / overdue, and then how
+far in words after a hairline: «فردا»، «۳ روز دیگر»، «۲ روز گذشته» — a
+tooltip a finger can't open), and the owner
 — the customer the cheque was received from, the one to follow up with
 (not necessarily the account holder; the name printed on the cheque goes
 in the notes) — beside the amount. The party and the beneficiary are only
@@ -272,6 +277,17 @@ on file folds onto that record, and a national id the form fills in is
 selected when the field is entered, so typing it again replaces it instead
 of running on into an 11-digit id. The people panel's beneficiaries tab
 shows each beneficiary's parties under its name.
+**The people window** has one search over its three tabs (a name as it
+sounds — «رضائی» is «رضایی», a half-space is a space — or a national id's
+digits), each tab counting what it found, and an order beside it:
+«بیشترین چک» or «الفبا», kept in the browser. A person's name opens their
+page in place of the lists: who they are and in which roles, three tiles
+(waiting for Sayad with the oldest's days, registered with the average
+days from sending to registration, problem with the share of their
+cheques that ever had one), how many aren't sent yet, then every cheque
+of theirs in that role — the open ones first — each opening in its window
+over the page, and «نمایش در بُرد», which filters the board to them.
+Escape goes back one step: the cheque, the page, the window.
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
 two faces, switched by the `.ve-locked` class dashboard.js puts on
@@ -443,7 +459,12 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     parted by a short hairline, never a middle dot: beside Persian digits a
     dot reads as a zero. «کپی رسید ثبت» sits at its end once the cheque is
     registered (it used to be in the header; the header is now just the
-    title and the close button). This replaced a long sentence
+    title and the close button). A cheque waiting for Sayad has «ثبت شد»
+    and «مشکل دارد» there instead, one that wasn't «ثبت شد» and «دوباره
+    منتظر ثبت» — the board's own change, with its «برگردون»; «مشکل دارد»
+    asks why in a plain box under the banner (Enter saves, Escape closes
+    only the box). The view follows any change of the cheque, its next
+    step takes the focus, and «ویرایش» starts from the new version. This replaced a long sentence
     («… برای آقای …»), which was slow to read and wrong for a company.
     For a waiting cheque the line says how long it has waited; how far off
     the due date is, the cheque itself says.
