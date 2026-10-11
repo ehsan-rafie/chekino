@@ -4968,6 +4968,20 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .people-item-display { flex: 1; min-width: 0; border: none; background: none; padding: 0; color: inherit; font: inherit; text-align: start; cursor: pointer; }
 .people-item-display:hover .people-item-name-text { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); }
 
+/* «۲ نام احتمالاً تکراری» over the tabs, and their list */
+.people-dups { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 20px 10px; padding: 6px 6px 6px 12px; border-radius: var(--rad-ctl); background: var(--state-warn-bg, var(--surface-2)); color: var(--state-warn-text, var(--ink-2)); font-size: var(--t-cap); }
+.people-dups[hidden] { display: none; }
+.people-box.person-open > .people-dups { display: none; }
+.dup-body { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.dup-group { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--rad-ctl); background: var(--surface); }
+.dup-person { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.dup-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.dup-who b { font-variation-settings: var(--f-label); color: var(--ink); }
+.dup-n { color: var(--muted); font-size: var(--t-cap); }
+.dup-not { align-self: flex-start; margin: 6px 8px; padding: 4px 6px; border: none; background: none; color: var(--ink-2); font: inherit; font-size: var(--t-cap); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); }
+.dup-not:hover { color: var(--ink); }
+@media (max-width: 600px) { .people-dups { margin: 0 14px 10px; } }
+
 /* One person, in place of the lists */
 .people-box.person-open > .people-tools,
 .people-box.person-open > .people-tabs,

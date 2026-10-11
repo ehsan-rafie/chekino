@@ -2269,6 +2269,110 @@ document.querySelector('.people-sort').addEventListener('keydown', (e) => {
   other.focus();
 });
 
+// ---- Names that may be one person (spec 9.6) ----
+// The same name as it sounds (looseName) under two or more records, unless
+// they carry different national ids (namesakes). Shown as a line over the
+// tabs; «بررسی» lists them; «این بماند» moves the others' cheques to that
+// record (POST /people/:id/merge — asked first, no way back); «تکراری
+// نیستند» is remembered in this browser.
+const DUPS_KEY = () => `chekino_people_notdup_${PAGE_COMPANY}`;
+function notDups() { try { return new Set(JSON.parse(localStorage.getItem(DUPS_KEY()) || '[]')); } catch (e) { return new Set(); } }
+function dupGroups() {
+  const by = new Map();
+  for (const p of peopleCache) {
+    const k = looseName(p.full_name || '');
+    if (!k) continue;
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(p);
+  }
+  const skip = notDups();
+  const out = [];
+  for (const list of by.values()) {
+    if (list.length < 2) continue;
+    if (new Set(list.map((p) => p.national_id).filter(Boolean)).size > 1) continue;
+    const key = list.map((p) => p.id).sort((a, b) => a - b).join('-');
+    if (!skip.has(key)) out.push({ key, people: list });
+  }
+  return out;
+}
+const peopleDups = document.getElementById('peopleDups');
+const dupPane = document.getElementById('dupPane');
+const dupBody = document.getElementById('dupBody');
+function drawDupLine() {
+  const n = dupGroups().length;
+  document.getElementById('peopleDups').hidden = !n;
+  document.getElementById('peopleDupsText').textContent = `${toFa(n)} نام احتمالاً تکراری`;
+}
+function renderDups() {
+  const groups = dupGroups();
+  const idx = buildRoleIndex();
+  const used = (p) => { const u = idx.get(p.id) || {}; return (u.owner || 0) + (u.party || 0) + (u.benef || 0); };
+  dupBody.innerHTML = groups.length ? groups.map((g) => `<section class="dup-group" data-key="${g.key}">
+      ${g.people.map((p) => `<div class="dup-person">
+        <div class="dup-who"><b>${escapeHtml(p.full_name)}</b>${p.national_id ? `<span class="person-nid">${toFa(p.national_id)}</span>` : ''}<span class="dup-n">${used(p) ? toFa(used(p)) + ' چک' : 'بدون چک'}</span></div>
+        <button type="button" class="person-board" data-keep="${p.id}">این بماند</button>
+      </div>`).join('')}
+      <button type="button" class="dup-not" data-not="${g.key}">تکراری نیستند</button>
+    </section>`).join('') : '<p class="person-note">نامِ احتمالاً تکراری‌ای نمانده</p>';
+}
+function dupOpen() { return !dupPane.hidden; }
+function openDups() {
+  renderDups();
+  peopleBox.classList.add('person-open');
+  dupPane.hidden = false;
+  document.getElementById('dupTitle').focus({ preventScroll: true });
+}
+function closeDups() {
+  if (dupPane.hidden) return;
+  dupPane.hidden = true;
+  peopleBox.classList.remove('person-open');
+  drawDupLine();
+  (peopleDups.hidden ? peopleSearch : document.getElementById('peopleDupsBtn')).focus({ preventScroll: true });
+}
+document.getElementById('peopleDupsBtn').addEventListener('click', openDups);
+document.getElementById('dupBack').addEventListener('click', closeDups);
+dupBody.addEventListener('click', async (e) => {
+  const not = e.target.closest('[data-not]');
+  if (not) {
+    const s = notDups();
+    s.add(not.dataset.not);
+    try { localStorage.setItem(DUPS_KEY(), JSON.stringify([...s])); } catch (err) {}
+    renderDups();
+    return;
+  }
+  const keepBtn = e.target.closest('[data-keep]');
+  if (!keepBtn) return;
+  const keepId = Number(keepBtn.dataset.keep);
+  const group = dupGroups().find((g) => g.people.some((p) => p.id === keepId));
+  if (!group) return;
+  const into = group.people.find((p) => p.id === keepId);
+  const others = group.people.filter((p) => p.id !== keepId);
+  const ok = await askConfirm({
+    title: 'یکی کردن',
+    body: `چک‌های ${others.map((p) => `«${p.full_name}»`).join(' و ')} به «${into.full_name}» می‌رسد و ${others.length > 1 ? 'آن‌ها' : 'آن'} حذف می‌شود. این کار برگشت ندارد.`,
+    confirmLabel: 'یکی کن',
+    cancelLabel: 'انصراف',
+  });
+  if (!ok) return;
+  let moved = 0;
+  try {
+    for (const p of others) {
+      const r = await apiJson(`/people/${p.id}/merge`, { method: 'POST', body: JSON.stringify({ into: into.id }) });
+      moved += r.moved || 0;
+    }
+    showToast(`یکی شد؛ ${toFa(moved)} چک به «${into.full_name}» رسید`);
+  } catch (err) {
+    showToast(requestErrorText(err, 'یکی نشد'));
+  }
+  await fetchPeopleCache();
+  await loadChecksFromApi().catch(() => {});
+  renderTable();
+  renderAllPeopleLists();
+  renderDups();
+  const next = dupBody.querySelector('[data-keep]');
+  (next || document.getElementById('dupBack')).focus({ preventScroll: true });
+});
+
 // ---- One person (spec 9.6) ----
 // In place of the lists: who they are, how their cheques stand, how long
 // the registered ones took from being sent, how many had a problem, and
@@ -2394,6 +2498,7 @@ function renderBenefList() {
 // add/edit/delete refreshes all of them at once (plus the cheque table, since
 // names may be shown there).
 function renderAllPeopleLists() {
+  drawDupLine();
   renderOwnersList();
   renderPartiesList();
   renderBenefList();
@@ -2564,6 +2669,7 @@ function openPeopleModal() {
 }
 function closePeopleModal() {
   if (personOpen) { personOpen = null; personPane.hidden = true; peopleBox.classList.remove('person-open'); }
+  if (dupOpen()) { dupPane.hidden = true; peopleBox.classList.remove('person-open'); }
   peopleModalOverlay.classList.remove('show');
   document.body.style.overflow = modalOverlay.classList.contains('show') ? 'hidden' : '';
 }
@@ -6956,6 +7062,7 @@ document.addEventListener('keydown', (e) => {
   if (veReasonOpen()) { closeVeReason(true); return; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
   if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return; }
+  if (dupOpen() && peopleModalOverlay.classList.contains('show')) { closeDups(); return; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return; }
 });
 
@@ -6993,6 +7100,7 @@ function closeTopmostLayer() {
   if (veReasonOpen()) { closeVeReason(); return true; }
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
   if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return true; }
+  if (dupOpen() && peopleModalOverlay.classList.contains('show')) { closeDups(); return true; }
   if (peopleModalOverlay.classList.contains('show')) { closePeopleModal(); return true; }
   return false;
 }

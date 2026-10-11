@@ -298,6 +298,14 @@ cheques that ever had one), how many aren't sent yet, then every cheque
 of theirs in that role — the open ones first — each opening in its window
 over the page, and «نمایش در بُرد», which filters the board to them.
 Escape goes back one step: the cheque, the page, the window.
+**Names that may be one person** — the same name as it sounds under two
+records, «رضائی» and «رضایی», with and without a half-space, unless their
+national ids differ (namesakes) — are counted on an amber line over the tabs
+(«۲ نام احتمالاً تکراری» + «بررسی»). The list shows each group with every
+record's id and cheque count; «این بماند» asks first (there is no way back)
+and moves the others' cheques to it (POST /people/:id/merge: their national
+id stays, the cheques get a new version, the others go); «تکراری نیستند»
+takes the group off the list in this browser. Nothing is merged on its own.
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
 two faces, switched by the `.ve-locked` class dashboard.js puts on

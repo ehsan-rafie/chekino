@@ -180,4 +180,59 @@ router.delete('/:id', idParamValidation, validate, async (req, res) => {
   }
 });
 
+// Two records of one person (spec 9.6: «رضائی» and «رضایی», with and without
+// a half-space): the cheques of :id move to `into`, and :id goes, in one
+// transaction. A national id on the one that goes stays on the one that
+// stays; two different national ids are two people — refused. The cheques
+// moved get a new version (an edit open on one is told it changed). Never
+// automatic: the page asks first.
+router.post('/:id/merge', idParamValidation, [
+  body('into').isInt({ min: 1 }).withMessage('شخص مقصد نامعتبر است').toInt(),
+], validate, async (req, res) => {
+  const id = Number(req.params.id);
+  const into = req.body.into;
+  if (id === into) return res.status(400).json({ error: 'یک شخص با خودش یکی نمی‌شود' });
+  const db = await pool.connect();
+  try {
+    await db.query('BEGIN');
+    const rows = (await db.query(
+      'SELECT id, full_name, national_id FROM people WHERE company_id = $1 AND id = ANY($2::int[]) FOR UPDATE',
+      [req.companyId, [id, into]]
+    )).rows;
+    const drop = rows.find((r) => r.id === id);
+    const keep = rows.find((r) => r.id === into);
+    if (!drop || !keep) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'شخص یافت نشد' });
+    }
+    if (drop.national_id && keep.national_id && drop.national_id !== keep.national_id) {
+      await db.query('ROLLBACK');
+      return res.status(409).json({ error: 'کد ملی این دو فرق دارد؛ دو نفرند و یکی نمی‌شوند', code: 'different_nid' });
+    }
+    const moved = (await db.query(
+      `UPDATE checks SET
+         owner_id = CASE WHEN owner_id = $1 THEN $2 ELSE owner_id END,
+         party_id = CASE WHEN party_id = $1 THEN $2 ELSE party_id END,
+         beneficiary_id = CASE WHEN beneficiary_id = $1 THEN $2 ELSE beneficiary_id END,
+         version = version + 1, updated_at = now()
+       WHERE company_id = $3 AND (owner_id = $1 OR party_id = $1 OR beneficiary_id = $1)
+       RETURNING id`,
+      [id, into, req.companyId]
+    )).rows.length;
+    await db.query('DELETE FROM people WHERE id = $1 AND company_id = $2', [id, req.companyId]);
+    // (after the delete: the national id is unique per company)
+    if (drop.national_id && !keep.national_id) {
+      await db.query('UPDATE people SET national_id = $1 WHERE id = $2 AND company_id = $3', [drop.national_id, into, req.companyId]);
+    }
+    await db.query('COMMIT');
+    res.json({ kept: into, moved });
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => {});
+    console.error('Merge people error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  } finally {
+    db.release();
+  }
+});
+
 module.exports = router;
