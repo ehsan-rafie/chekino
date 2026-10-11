@@ -113,6 +113,31 @@ function isHolidayDate(jy, jm, jd, weekdayIdx) {
 // ---- Theme: by the sun unless the button was pressed — js/boot.js applies
 // it before the first paint, js/theme-reveal.js runs the button ----
 
+// Everything this company has here, saved as one file (spec 9.10)
+document.getElementById('exportAllBtn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  try {
+    const res = await apiFetch('/account/export');
+    if (!res.ok) throw Object.assign(new Error('خطای سرور'), { status: res.status });
+    const blob = await res.blob();
+    const name = (/filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '') || [])[1] || 'chekino-export.json';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    showToast('همه‌ی داده‌ها در یک فایل ذخیره شد');
+  } catch (err) {
+    showToast(requestErrorText(err, 'فایل ساخته نشد'));
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   // Signing out takes this browser's unsaved form with it — say so first
   // when there is one
@@ -1749,15 +1774,17 @@ function numberToPersianWords(num) {
   return out.join(' و ');
 }
 
+// thousands grouped with the Persian separator «٬» — the one standard for
+// every amount on the page, as on the leaf
 function groupDigits(str) {
-  return str.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
 }
 
 function amountRawDigits() {
   return toEnDigits(amountInput.value).replace(/[^0-9]/g, '');
 }
 
-// keep the caret sensible while commas are inserted as the user types
+// keep the caret sensible while separators are inserted as the user types
 function setAmountValue(rawDigits, digitsBeforeCaret) {
   const trimmed = rawDigits.replace(/^0+(?=\d)/, '');
   const formatted = trimmed === '' ? '' : toFa(groupDigits(trimmed));
@@ -1765,7 +1792,7 @@ function setAmountValue(rawDigits, digitsBeforeCaret) {
   if (typeof digitsBeforeCaret === 'number' && document.activeElement === amountInput) {
     let seen = 0, pos = formatted.length;
     for (let i = 0; i < formatted.length; i++) {
-      if (formatted[i] !== ',') seen++;
+      if (/[0-9۰-۹]/.test(formatted[i])) seen++;
       if (seen === digitsBeforeCaret) { pos = i + 1; break; }
     }
     if (digitsBeforeCaret === 0) pos = 0;
@@ -2374,6 +2401,10 @@ dupBody.addEventListener('click', async (e) => {
 });
 
 // ---- A person's mobile, and a chat opened with it ----
+// Switched off for now (the owner's call): the mobile is kept on the
+// server, but the person's page and the send / follow-up windows show none
+// of it. true brings it all back.
+const SHOW_PHONE = false;
 // Kept as 09xxxxxxxxx (the server's rule too); shown in groups, left to right
 function mobileDigits(v) {
   let d = toEnDigits(String(v || '').replace(/[٠-٩]/g, (x) => String(x.charCodeAt(0) - 0x0660))).replace(/[^0-9]/g, '');
@@ -2383,7 +2414,7 @@ function mobileDigits(v) {
   return /^09\d{9}$/.test(d) ? d : '';
 }
 const mobileShown = (d) => toFa(`${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`);
-function phoneOfPerson(id) { const p = id && findPersonById(id); return p ? mobileDigits(p.phone) : ''; }
+function phoneOfPerson(id) { const p = SHOW_PHONE && id && findPersonById(id); return p ? mobileDigits(p.phone) : ''; }
 // WhatsApp's own link: the chat with that number, the message written in
 function chatLink(phone, text) {
   return `https://wa.me/98${phone.slice(1)}${text ? '?text=' + encodeURIComponent(text) : ''}`;
@@ -2454,9 +2485,9 @@ function renderPerson() {
       <h3 class="person-name" id="personName" tabindex="-1">${escapeHtml(p.full_name)}</h3>
       ${p.national_id ? `<span class="person-nid">${toFa(p.national_id)}</span>` : ''}
       <p class="person-roles">${roles.length ? escapeHtml(roles.join('، ')) : 'هنوز چکی ندارد'}</p>
-      <div class="person-phone" id="personPhone">${mobileDigits(p.phone)
+      ${!SHOW_PHONE ? '' : `<div class="person-phone" id="personPhone">${mobileDigits(p.phone)
         ? `<span class="person-phone-k">موبایل</span><a class="person-phone-v" dir="ltr" href="${chatLink(mobileDigits(p.phone))}" target="_blank" rel="noopener" title="باز کردن چت در واتس‌اپ">${mobileShown(mobileDigits(p.phone))}</a><button type="button" class="dup-not" data-phone="edit">ویرایش</button>`
-        : `<button type="button" class="dup-not" data-phone="edit">افزودن موبایل</button>`}</div>
+        : `<button type="button" class="dup-not" data-phone="edit">افزودن موبایل</button>`}</div>`}
     </div>
     ${f.sent.length ? `<div class="person-tiles">
       ${tile('pending', f.pending.length, oldText)}
@@ -5226,7 +5257,7 @@ function updateFilterUI() {
   }
   if (amountOn) {
     const loLabel = filterAmountMin.value.trim() || '۰';
-    const hiLabel = filterAmountMax.value.trim() || '۱۰,۰۰۰,۰۰۰,۰۰۰';
+    const hiLabel = filterAmountMax.value.trim() || '۱۰٬۰۰۰٬۰۰۰٬۰۰۰';
     chips.push({ key: 'amount', label: `مبلغ: ${loLabel} تا ${hiLabel} ریال` });
   }
   ['owner', 'party', 'benef'].forEach((role) => {

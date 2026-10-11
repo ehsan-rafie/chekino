@@ -300,7 +300,7 @@
   function messageFor(s) {
     const d = nidOf(s.benef.nid);
     const idLine = d ? ` با ${d.length === 11 ? 'شناسه ملی' : 'کد ملی'} ${d}` : '';
-    const lines = s.recs.map((c) => `• سریال ${toFa(c.serial)} — ${toFa(groupDigits(String(c.amount || '0'))).replace(/,/g, '٬')} ریال — سررسید ${faDate(c.dueDate)}`);
+    const lines = s.recs.map((c) => `• سریال ${toFa(c.serial)} — ${money(c.amount)} ریال — سررسید ${faDate(c.dueDate)}`);
     return `سلام، وقت بخیر\nلطفاً چک‌های زیر را در سامانه صیاد به نام «${s.benef.name}»${idLine} ثبت کنید:\n${lines.join('\n')}\nممنون`;
   }
   async function copySectionText(s, btn) {

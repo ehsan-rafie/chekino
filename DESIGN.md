@@ -165,8 +165,10 @@ the header already has one. The bar spans the window but its content is
 set to the page's width (1320px, 32px in), so the brand sits over
 «افزودن چک» and the icons over «مدیریت اشخاص». The account button opens
 a menu with a header section («وارد شده با حساب» and the company name)
-and a labelled «خروج از حساب» item, red under the pointer (HeroUI's
-Dropdown).
+and two items: «دریافت همه‌ی داده‌ها» (grey under the pointer; saves one
+JSON file — the company's people, and its cheques with their history and the
+list of their files, the photos themselves left out) and «خروج از حساب»,
+red under the pointer (HeroUI's Dropdown).
 
 **Page head.** No title and no summary line. The one primary action,
 «افزودن چک», opens the page at the start (the right); «گزارش‌گیری»
@@ -306,7 +308,7 @@ record's id and cheque count; «این بماند» asks first (there is no way 
 and moves the others' cheques to it (POST /people/:id/merge: their national
 id stays, the cheques get a new version, the others go); «تکراری نیستند»
 takes the group off the list in this browser. Nothing is merged on its own.
-**A person's mobile** sits on their page under their roles — «افزودن
+**A person's mobile** — *switched off for now (the owner's call, 2026-10-11): kept in the database with its rules, shown nowhere; `SHOW_PHONE` in dashboard.js brings back what follows.* It sits on their page under their roles — «افزودن
 موبایل», or the number in groups, left to right («۰۹۱۲ ۱۲۳ ۴۵۶۷»), which opens
 their WhatsApp chat — edited in place (Enter saves, Escape lets go; an empty
 field clears it). Anything typed becomes 09…: Persian digits, +98, 0098; a
@@ -535,6 +537,8 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
 The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
 makes inert in view mode; `#sayadField` stays outside them. The wrappers
 are `display: contents`, so they never affect the grid.
+
+**Numbers.** Persian digits, grouped by the Persian thousands separator «٬» (U+066C) everywhere — cards, the form, filters, messages, the leaf, reports — never a Latin comma; decimals would take «٫». One helper (`groupDigits`) does it; the amount field keeps the caret by counting digits, not separators.
 
 **Fields as input groups** (shared.css "INPUT GROUP", `js/field-addons.js`).
 HeroUI's InputGroup: the label above, a prefix at the start (the right)
