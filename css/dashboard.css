@@ -5792,3 +5792,20 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .skip-link:focus { transform: none; outline: 2px solid var(--focus-outline); outline-offset: 2px; }
 #main:focus { outline: none; }
+
+/* whose board: the company beside the logo, after a hairline (9.4) */
+.header-company {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 260px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: var(--t-body);
+  font-variation-settings: var(--f-label);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.header-company::before { content: ''; flex-shrink: 0; width: 1px; height: 16px; background: var(--border-strong); }
+.header-company[hidden] { display: none; }
+@media (max-width: 720px) { .header-company { display: none; } }

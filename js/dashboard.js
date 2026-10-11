@@ -190,6 +190,9 @@ function decodeJwtPayload(token) {
   const payload = token ? decodeJwtPayload(token) : null;
   if (payload && payload.name) {
     document.getElementById('companyNameLabel').textContent = payload.name;
+    const hc = document.getElementById('headerCompany');
+    hc.textContent = payload.name || '';
+    hc.hidden = !payload.name;
   }
 })();
 

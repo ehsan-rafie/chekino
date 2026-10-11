@@ -79,6 +79,13 @@
   function apply() {
     document.documentElement.setAttribute('data-theme', currentTheme(new Date()));
   }
+  // the browser's own bar (and an installed app's) in the page's colour
+  function syncBar() {
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', document.documentElement.getAttribute('data-theme') === 'dark' ? '#0A0A0A' : '#FFFFFF');
+  }
+  if (window.MutationObserver) new MutationObserver(syncBar).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  document.addEventListener('DOMContentLoaded', syncBar);
   window.chekinoTheme = {
     KEY: THEME_KEY,
     current: function () { return currentTheme(new Date()); },

@@ -142,7 +142,8 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
 
 **Header.** 56px, white glass with one hairline under it. Brand mark +
 wordmark (the mark's strokes are drawn in the page colour, so it inverts)
-at the start; ghost square icon buttons (search, support, theme,
+at the start, then — on wide screens — the company's name after a hairline,
+in ink-2 (whose board this is; on a phone it stays in the account menu); ghost square icon buttons (search, support, theme,
 account) at the end — 34px, 44px under 860px where a finger presses them. **Theme** follows the sun over Tehran on the day: light from sunrise
 to sunset, dark after (sunset runs from about 17:00 in winter to 20:30
 in summer; SunCalc's method in `js/boot.js`, applied before the first
@@ -886,7 +887,17 @@ Persian digits is tried with Latin ones too. A wrong field is marked
 **Admin.** Same system: a top bar with a hairline, a side navigation whose
 active item is a grey wash, bordered cards, outlined fields, ink buttons,
 tables with a faint header row, status badges with a dot. On narrow
-screens the navigation becomes segmented tabs.
+screens the navigation becomes segmented tabs. Its words are Persian
+throughout (a plan's «دسترسی خروجی گرفتن», a company's «دسترسی … برای این
+شرکت»), and its counts Persian digits, «۶ از ۲۰۰».
+
+**On a phone's home screen.** `manifest.webmanifest` (name «چکینو», right to
+left, standalone) and icons drawn from the brand mark on white
+(`icons/`: 192 and 512, a maskable 512 with the mark in the safe zone,
+Apple's 180). The browser's bar takes the page's own colour — white, or
+#0A0A0A in the dark theme — following the sun theme as it turns (boot.js).
+Pages are served `no-cache` (a 304 when unchanged), files with `?v=` for a
+year, `immutable`.
 
 ## Files
 
