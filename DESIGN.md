@@ -306,6 +306,13 @@ record's id and cheque count; «این بماند» asks first (there is no way 
 and moves the others' cheques to it (POST /people/:id/merge: their national
 id stays, the cheques get a new version, the others go); «تکراری نیستند»
 takes the group off the list in this browser. Nothing is merged on its own.
+**A person's mobile** sits on their page under their roles — «افزودن
+موبایل», or the number in groups, left to right («۰۹۱۲ ۱۲۳ ۴۵۶۷»), which opens
+their WhatsApp chat — edited in place (Enter saves, Escape lets go; an empty
+field clears it). Anything typed becomes 09…: Persian digits, +98, 0098; a
+landline is refused, said under the field. With it, the send and follow-up
+windows give that owner's section «باز کردن چت»: WhatsApp with the message
+already written in (the photos are still copied by hand).
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
 two faces, switched by the `.ve-locked` class dashboard.js puts on

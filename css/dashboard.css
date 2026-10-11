@@ -5010,6 +5010,15 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .person-name { margin: 0; font-size: 17px; color: var(--ink); font-variation-settings: var(--f-title); outline: none; }
 .person-nid { direction: ltr; color: var(--ink-2); font-size: var(--t-cap); }
 .person-roles { flex-basis: 100%; margin: 0; color: var(--muted); font-size: var(--t-cap); }
+/* the mobile, under the roles: the number opens the chat */
+.person-phone { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 4px; font-size: var(--t-cap); }
+.person-phone-k { color: var(--muted); }
+.person-phone-v { color: var(--ink); font-variation-settings: var(--f-value); text-decoration: none; }
+.person-phone-v:hover { text-decoration: underline; text-underline-offset: 3px; }
+.person-phone-input { width: 150px; height: 32px; padding: 0 10px; border: 1px solid var(--field-border); border-radius: var(--rad-ctl); background: var(--field-bg); color: var(--ink); font: inherit; }
+.person-phone-input:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
+.person-phone-msg { flex-basis: 100%; color: var(--state-bad-text); }
+.person-phone-msg:empty { display: none; }
 .person-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .person-tile { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--rad-ctl); background: var(--surface); }
 .person-tile-k { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: var(--t-cap); }

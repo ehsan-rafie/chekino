@@ -710,6 +710,8 @@ body.bulk-open { overflow: hidden; }
 .stage-chip[hidden] { display: none; }
 .stage-chip.open { background: var(--surface-sunken); color: var(--ink); }
 /* the follow-up window: the send window's look, a quiet note under the title */
+/* «باز کردن چت»: a link in a button's dress */
+.send-btn.chat-btn { text-decoration: none; }
 .follow-count { margin-inline-start: 10px; color: var(--muted); font-size: var(--t-cap); }
 .follow-note { margin: 4px 0 0; color: var(--ink-2); font-size: var(--t-cap); }
 .follow-wait { color: var(--state-warn-text, var(--ink-2)); }

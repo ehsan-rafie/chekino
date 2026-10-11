@@ -144,6 +144,8 @@
       txt.innerHTML = (sw.textCopied.has(s.key) ? CHECK_SVG : COPY_SVG) + '<span>کپی متن</span>';
       txt.addEventListener('click', () => copySectionText(s, txt));
       head.appendChild(txt);
+      const ph = phoneOfPerson(s.recs[0] && s.recs[0].ownerId);
+      if (ph) head.appendChild(chatButton(ph, messageFor(s)));
       if (shareInstead()) {
         const sh = document.createElement('button');
         sh.type = 'button';

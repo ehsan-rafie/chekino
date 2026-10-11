@@ -2373,6 +2373,33 @@ dupBody.addEventListener('click', async (e) => {
   (next || document.getElementById('dupBack')).focus({ preventScroll: true });
 });
 
+// ---- A person's mobile, and a chat opened with it ----
+// Kept as 09xxxxxxxxx (the server's rule too); shown in groups, left to right
+function mobileDigits(v) {
+  let d = toEnDigits(String(v || '').replace(/[٠-٩]/g, (x) => String(x.charCodeAt(0) - 0x0660))).replace(/[^0-9]/g, '');
+  if (d.startsWith('0098')) d = '0' + d.slice(4);
+  else if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2);
+  else if (d.length === 10 && d.startsWith('9')) d = '0' + d;
+  return /^09\d{9}$/.test(d) ? d : '';
+}
+const mobileShown = (d) => toFa(`${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`);
+function phoneOfPerson(id) { const p = id && findPersonById(id); return p ? mobileDigits(p.phone) : ''; }
+// WhatsApp's own link: the chat with that number, the message written in
+function chatLink(phone, text) {
+  return `https://wa.me/98${phone.slice(1)}${text ? '?text=' + encodeURIComponent(text) : ''}`;
+}
+// «باز کردن چت» as a link button for a section of the send / follow-up window
+function chatButton(phone, text) {
+  const a = document.createElement('a');
+  a.className = 'send-btn chat-btn';
+  a.href = chatLink(phone, text);
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.title = `واتس‌اپ ${mobileShown(phone)}`;
+  a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg><span>باز کردن چت</span>';
+  return a;
+}
+
 // ---- One person (spec 9.6) ----
 // In place of the lists: who they are, how their cheques stand, how long
 // the registered ones took from being sent, how many had a problem, and
@@ -2427,6 +2454,9 @@ function renderPerson() {
       <h3 class="person-name" id="personName" tabindex="-1">${escapeHtml(p.full_name)}</h3>
       ${p.national_id ? `<span class="person-nid">${toFa(p.national_id)}</span>` : ''}
       <p class="person-roles">${roles.length ? escapeHtml(roles.join('، ')) : 'هنوز چکی ندارد'}</p>
+      <div class="person-phone" id="personPhone">${mobileDigits(p.phone)
+        ? `<span class="person-phone-k">موبایل</span><a class="person-phone-v" dir="ltr" href="${chatLink(mobileDigits(p.phone))}" target="_blank" rel="noopener" title="باز کردن چت در واتس‌اپ">${mobileShown(mobileDigits(p.phone))}</a><button type="button" class="dup-not" data-phone="edit">ویرایش</button>`
+        : `<button type="button" class="dup-not" data-phone="edit">افزودن موبایل</button>`}</div>
     </div>
     ${f.sent.length ? `<div class="person-tiles">
       ${tile('pending', f.pending.length, oldText)}
@@ -2464,7 +2494,48 @@ function closePerson() {
   if (row) row.focus({ preventScroll: true });
 }
 document.getElementById('personBack').addEventListener('click', closePerson);
+// the mobile on a person's page: a field and «ذخیره» in its place
+function editPersonPhone() {
+  const p = personOpen && findPersonById(personOpen.id);
+  const box = document.getElementById('personPhone');
+  if (!p || !box) return;
+  box.innerHTML = `<label class="person-phone-k" for="personPhoneInput">موبایل</label>
+    <input type="tel" id="personPhoneInput" class="person-phone-input" dir="ltr" inputmode="tel" autocomplete="off" placeholder="۰۹۱۲ ۳۴۵ ۶۷۸۹" value="${mobileDigits(p.phone) ? toFa(mobileDigits(p.phone)) : ''}">
+    <button type="button" class="person-board" data-phone="save">ذخیره</button>
+    <button type="button" class="dup-not" data-phone="cancel">انصراف</button>
+    <span class="person-phone-msg" id="personPhoneMsg" aria-live="polite"></span>`;
+  const input = document.getElementById('personPhoneInput');
+  input.focus();
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); savePersonPhone(); }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); renderPerson(); }
+  });
+}
+async function savePersonPhone() {
+  const p = personOpen && findPersonById(personOpen.id);
+  const input = document.getElementById('personPhoneInput');
+  if (!p || !input) return;
+  const raw = input.value.trim();
+  const d = mobileDigits(raw);
+  if (raw && !d) { document.getElementById('personPhoneMsg').textContent = 'شماره‌ی موبایل درست نیست (۰۹ و ۹ رقم دیگر)'; input.focus(); return; }
+  try {
+    await apiJson(`/people/${p.id}`, { method: 'PUT', body: JSON.stringify({ phone: d || null }) });
+    p.phone = d || null;
+    renderPerson();
+    showToast(d ? `موبایل «${p.full_name}» ذخیره شد` : `موبایل «${p.full_name}» برداشته شد`);
+  } catch (err) {
+    document.getElementById('personPhoneMsg').textContent = requestErrorText(err, 'ذخیره نشد');
+  }
+}
+
 personBody.addEventListener('click', (e) => {
+  const ph = e.target.closest('[data-phone]');
+  if (ph) {
+    if (ph.dataset.phone === 'edit') editPersonPhone();
+    else if (ph.dataset.phone === 'save') savePersonPhone();
+    else renderPerson();
+    return;
+  }
   const row = e.target.closest('.person-cheque');
   if (row) { openModalForView(parseInt(row.dataset.cid, 10)); return; }
   if (e.target.closest('#personBoard') && personOpen) {

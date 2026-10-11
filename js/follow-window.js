@@ -93,7 +93,9 @@
       mark.className = 'send-btn follow-done';
       mark.innerHTML = CHECK_SVG + '<span>پیگیری شد</span>';
       mark.addEventListener('click', () => markFollowed(s, mark));
-      head.append(txt, mark);
+      const ph = phoneOfPerson(s.recs[0] && s.recs[0].ownerId);
+      if (ph) head.append(txt, chatButton(ph, messageFor(s)), mark);
+      else head.append(txt, mark);
     }
     el.dataset.key = s.key;
     el.appendChild(head);

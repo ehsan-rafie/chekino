@@ -28,17 +28,27 @@ const nationalIdValidator = () => body('national_id').optional({ values: 'falsy'
     return true;
   });
 
+// An Iranian mobile as 09xxxxxxxxx, from what was typed; null if it isn't one
+function mobileOf(v) {
+  let d = String(v || '').replace(/[۰-۹]/g, (x) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(x)).replace(/[٠-٩]/g, (x) => '٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/[^0-9]/g, '');
+  if (d.startsWith('0098')) d = '0' + d.slice(4);
+  else if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2);
+  else if (d.length === 10 && d.startsWith('9')) d = '0' + d;
+  return /^09\d{9}$/.test(d) ? d : null;
+}
+const phoneValidator = () => body('phone').optional({ values: 'falsy' }).custom((v) => mobileOf(v) !== null).withMessage('شماره‌ی موبایل درست نیست (۰۹ و ۹ رقم دیگر)');
+
 const personBodyValidation = [
   body('full_name').trim().notEmpty().withMessage('full_name الزامی است').isLength({ max: 200 }),
   nationalIdValidator(),
-  body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
+  phoneValidator(),
   body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
 const personBodyValidationOptional = [
   body('full_name').optional({ values: 'falsy' }).trim().isLength({ max: 200 }),
   nationalIdValidator(),
-  body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }).withMessage('phone نامعتبر است'),
+  phoneValidator(),
   body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('role نامعتبر است'),
 ];
 
@@ -98,7 +108,7 @@ router.post('/', personBodyValidation, validate, async (req, res) => {
       }
       created = (await db.query(
         'INSERT INTO people (company_id, full_name, national_id, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, national_id, phone, role, created_at',
-        [req.companyId, full_name, digitsOnly(national_id) || null, phone || null, roleOrNull(role)]
+        [req.companyId, full_name, digitsOnly(national_id) || null, mobileOf(phone), roleOrNull(role)]
       )).rows[0];
       await db.query('COMMIT');
     } catch (e) {
@@ -135,9 +145,13 @@ router.put('/:id', idParamValidation, personBodyValidationOptional, validate, as
     const holder = await personWithNid(req.companyId, national_id, Number(id));
     if (holder) return nidTaken(res, holder);
 
+    // the phone, when sent, is set — an empty one or null clears it
+    const setPhone = Object.prototype.hasOwnProperty.call(req.body, 'phone');
     const result = await pool.query(
-      'UPDATE people SET full_name = COALESCE($1, full_name), national_id = COALESCE($2, national_id), phone = COALESCE($3, phone), role = COALESCE($4, role) WHERE id = $5 AND company_id = $6 RETURNING id, full_name, national_id, phone, role, created_at',
-      [full_name || null, digitsOnly(national_id) || null, phone || null, roleOrNull(role), id, req.companyId]
+      `UPDATE people SET full_name = COALESCE($1, full_name), national_id = COALESCE($2, national_id),
+         phone = CASE WHEN $7 THEN $3 ELSE phone END, role = COALESCE($4, role)
+       WHERE id = $5 AND company_id = $6 RETURNING id, full_name, national_id, phone, role, created_at`,
+      [full_name || null, digitsOnly(national_id) || null, mobileOf(phone), roleOrNull(role), id, req.companyId, setPhone]
     );
     res.json(result.rows[0]);
   } catch (err) {
