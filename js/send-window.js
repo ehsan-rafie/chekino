@@ -5,13 +5,9 @@
 // At the end, the channel and «ارسال کردم»: the cheques go onto the board,
 // sent today. Closed without it, the window asks what was sent.
 //
-// A cheque whose owner is still unknown sits at the top («بدون صاحب چک»)
-// with a field to name them; named, it joins its owner's section (ready on
-// the server).
-//
 // Opened from the board's «آماده‌ی ارسال» chip (every ready cheque), or by
-// a bulk add saved with a beneficiary (those cheques), or from a ready
-// cheque's own window («ارسال برای صاحب چک»).
+// a bulk add once saved (those cheques), or from a ready cheque's own
+// window («ارسال برای صاحب چک»).
 (function () {
   const overlay = document.getElementById('sendOverlay');
   if (!overlay) return;
@@ -32,10 +28,8 @@
   // ---------------------------------------------------------------
   const recOf = (id) => loadCheques().find((c) => c.id === id);
   function groups() {
-    const recs = [...sw.ids].map(recOf).filter(Boolean).filter((c) => c.stage === 'ready' || (c.stage === 'waiting' && c.benefId && !c.ownerId));
-    const noOwner = recs.filter((c) => !c.ownerId);
-    const ready = recs.filter((c) => c.ownerId && c.stage === 'ready');
-    const benefs = new Set(ready.concat(noOwner).map((c) => c.benefId));
+    const ready = [...sw.ids].map(recOf).filter(Boolean).filter((c) => c.stage === 'ready' && c.ownerId);
+    const benefs = new Set(ready.map((c) => c.benefId));
     const mixed = benefs.size > 1;
     const map = new Map();
     for (const c of ready) {
@@ -46,8 +40,8 @@
     const coll = new Intl.Collator('fa');
     const sections = [...map.values()].sort((a, b) => coll.compare(a.owner || '', b.owner || '') || coll.compare(a.benef.name || '', b.benef.name || ''));
     for (const s of sections) s.recs.sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || '') || (a.serial || '').localeCompare(b.serial || ''));
-    const one = !mixed && (ready[0] || noOwner[0]);
-    return { sections, noOwner, mixed, benef: one ? { name: one.benef, nid: one.nid } : null, all: ready };
+    const one = !mixed && ready[0];
+    return { sections, mixed, benef: one ? { name: one.benef, nid: one.nid } : null, all: ready };
   }
   const isCopied = (c) => sw.copied.has(c.id) || !!c.copiedAt;
 
@@ -57,11 +51,7 @@
   const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
   const SHARE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>';
-  let acs = [];   // the owner fields of «بدون صاحب چک»
-
   function render() {
-    acs.forEach((a) => { a.ac.close(); a.list.remove(); });
-    acs = [];
     const g = groups();
     // the beneficiary, once, at the top — each part copies on its own
     const head = $('sendBenef');
@@ -78,9 +68,8 @@
       ask.textContent = 'برای کدام صاحب چک‌ها فرستادی؟ تیک بزن و «ثبت ارسالِ این‌ها» را بزن.';
       bodyEl.appendChild(ask);
     }
-    if (g.noOwner.length && !sw.choosing) bodyEl.appendChild(noOwnerSection(g.noOwner));
     for (const s of g.sections) bodyEl.appendChild(sectionEl(s, g.mixed));
-    if (!g.sections.length && !g.noOwner.length) {
+    if (!g.sections.length) {
       const empty = document.createElement('p');
       empty.className = 'send-empty';
       empty.textContent = 'چکی برای ارسال نمانده';
@@ -209,68 +198,6 @@
       m.innerHTML = CHECK_SVG + '<span>در متن آمد</span>';
       el.appendChild(m);
     }
-    return el;
-  }
-
-  // «بدون صاحب چک»: a field each; named, the cheque moves to its section
-  function noOwnerSection(list) {
-    const el = document.createElement('section');
-    el.className = 'send-sec send-sec-noowner';
-    const head = document.createElement('div');
-    head.className = 'send-sec-head';
-    const t = document.createElement('div');
-    t.className = 'send-sec-title';
-    const b = document.createElement('b'); b.textContent = `⚠ بدون صاحب چک (${fa(list.length)})`;
-    const m = document.createElement('span'); m.className = 'send-sec-meta'; m.textContent = 'صاحب چک را بنویس تا به بخش خودش برود';
-    t.append(b, m);
-    head.appendChild(t);
-    el.appendChild(head);
-    const cards = document.createElement('div');
-    cards.className = 'send-cards';
-    for (const c of list) {
-      const field = document.createElement('div');
-      field.className = 'form-field ac-field send-owner';
-      field.innerHTML = '<div class="ig"><input type="text" class="ac-input" autocomplete="off" aria-label="صاحب چک"></div>';
-      const input = field.querySelector('input');
-      const listEl = document.createElement('div');
-      listEl.className = 'ac-list';
-      document.body.appendChild(listEl);
-      let busy = false;
-      const assign = async () => {
-        const name = input.value.trim();
-        if (!name || busy) return;
-        busy = true;
-        input.disabled = true;
-        try {
-          const ownerId = await ensurePerson(name, null, 'owner');
-          if (!ownerId) throw new Error('صاحب چک ساخته نشد');
-          await apiJson(`/checks/${c.id}`, { method: 'PATCH', body: JSON.stringify({ version: c.version, owner_id: ownerId }) });
-          await loadChecksFromApi();
-          renderTable();
-          if (sw) render();
-        } catch (e) {
-          if (e.sessionEnded) return;
-          input.disabled = false;
-          busy = false;
-          if (e.status === 409) { await loadChecksFromApi(); if (sw) render(); }
-          showFoot(requestErrorText(e, 'صاحب چک ذخیره نشد'));
-        }
-      };
-      const ac = createAutocomplete({
-        input, list: listEl, field,
-        search: (q) => allOwners().filter((x) => normalizeName(x).includes(normalizeName(q))),
-        primary: (x) => x,
-        allowNew: true, newLabel: newPersonLabel,
-        hasExact: (q) => allOwners().some((x) => normalizeName(x) === normalizeName(q)),
-        pick: (x) => { input.value = x; },
-        onBlur: () => { foldOntoKnownPerson(input); assign(); },
-        onEnter: assign,
-      });
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !listEl.classList.contains('show')) { e.preventDefault(); assign(); } });
-      acs.push({ ac, list: listEl });
-      cards.appendChild(cardEl(c, field));
-    }
-    el.appendChild(cards);
     return el;
   }
 
@@ -427,7 +354,7 @@
       } else if (!n) showToast('این چک‌ها قبلاً ارسال شده بودند');
       if (sw) {
         r.updated.forEach((c) => sw.ids.delete(c.id));
-        if (!groups().sections.length && !groups().noOwner.length) close();
+        if (!groups().sections.length) close();
         else { sw.choosing = false; render(); }
       }
       return true;
@@ -541,11 +468,9 @@
     document.body.classList.add('bulk-open');
     // every photo ready to copy before it's asked for
     [...sw.ids].map(recOf).filter(Boolean).forEach((c) => { const f = (c.files || [])[0]; if (isImage(f)) pngFor(f.id).catch(() => {}); });
-    setTimeout(() => { const first = overlay.querySelector('.send-owner input, .send-sec .send-btn'); if (first) first.focus(); }, 60);
+    setTimeout(() => { const first = overlay.querySelector('.send-sec .send-btn'); if (first) first.focus(); }, 60);
   }
   function close() {
-    acs.forEach((a) => { a.ac.close(); a.list.remove(); });
-    acs = [];
     sw = null;
     pngs.clear();
     overlay.classList.remove('show');
@@ -554,15 +479,14 @@
   }
 
   // ---------------------------------------------------------------
-  // Over the board: «آماده‌ی ارسال ۵» opens this window; «منتظر ذینفع ۳»
-  // opens bulk edit on the cheques still missing their beneficiary or owner.
-  // A search that matches cheques off the board says so beside them
+  // Over the board: «آماده‌ی ارسال ۵» opens this window. A search that
+  // matches cheques off the board says so beside them
   // («نمایش»: the cheque, or a list of them, each opening in its window).
   // ---------------------------------------------------------------
   const chips = $('stageChips');
   const pop = $('popStage');
-  const offBoard = (c) => c.stage === 'waiting' || c.stage === 'ready';
-  const STAGE_NAME = { waiting: 'منتظر ذینفع', ready: 'آماده‌ی ارسال' };
+  const offBoard = (c) => c.stage === 'ready';
+  const STAGE_NAME = { ready: 'آماده‌ی ارسال' };
   function chipButton(cls) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -570,20 +494,10 @@
     chips.appendChild(b);
     return b;
   }
-  let readyChip = null, waitingChip = null, followChip = null, dueChip = null, hint = null, hintIds = [];
+  let readyChip = null, followChip = null, dueChip = null, hint = null, hintIds = [];
   if (chips) {
     readyChip = chipButton('stage-chip');
     readyChip.addEventListener('click', () => open(loadCheques().filter((c) => c.stage === 'ready').map((c) => c.id)));
-    waitingChip = chipButton('stage-chip');
-    waitingChip.setAttribute('aria-haspopup', 'dialog');
-    waitingChip.setAttribute('aria-expanded', 'false');
-    // bulk edit, on the waiting ones (js/bulk-edit.js); without it, the list
-    waitingChip.addEventListener('click', (e) => {
-      e.stopPropagation();   // the page's «clicked elsewhere» would close it again
-      if (window.ChekinoEdit) { window.ChekinoEdit.open({ stages: ['waiting'] }); return; }
-      const ids = loadCheques().filter((c) => c.stage === 'waiting').map((c) => c.id);
-      showList(ids, 'منتظر ذینفع', 'روی هر چک بزن تا ذینفع یا صاحب چکش را بنویسی', waitingChip);
-    });
     // today's two (dashboard.js BOARD_FOCUS): pressed, the board narrows to them
     const focusChip = (key, tip) => {
       const b = chipButton('stage-chip is-focus');
@@ -617,11 +531,8 @@
     if (!enabled()) { chips.hidden = true; return; }
     const all = loadCheques();
     const ready = all.filter((c) => c.stage === 'ready').length;
-    const waiting = all.filter((c) => c.stage === 'waiting').length;
     readyChip.innerHTML = `<span>آماده‌ی ارسال</span><b>${fa(ready)}</b>`;
     readyChip.hidden = !ready;
-    waitingChip.innerHTML = `<span>منتظر ذینفع</span><b>${fa(waiting)}</b>`;
-    waitingChip.hidden = !waiting;
     const board = sentCheques();
     const follow = board.filter(needsFollowUp).length;
     const due = board.filter(dueNear).length;
@@ -640,7 +551,7 @@
       hint.firstChild.textContent = `${fa(found.length)} چک با این جستجو در ${where} است`;
     }
     hint.hidden = !found.length;
-    chips.hidden = !ready && !waiting && !found.length && followChip.hidden && dueChip.hidden;
+    chips.hidden = !ready && !found.length && followChip.hidden && dueChip.hidden;
     if (pop && pop.classList.contains('show') && pop._btn && (pop._btn.hidden || pop._btn.closest('[hidden]'))) closePopover();
   }
 
@@ -656,7 +567,6 @@
     const list = $('popStageList');
     list.innerHTML = '';
     for (const c of recs) {
-      const missing = [!c.benefId && 'بدون ذینفع', !c.ownerId && 'بدون صاحب چک'].filter(Boolean);
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'stage-item';
@@ -666,7 +576,7 @@
       b.querySelector('.stage-item-amt').textContent = `${money(c.amount)} ریال`;
       b.querySelector('.stage-item-due').textContent = c.dueDate ? `سررسید ${faDate(c.dueDate)}` : '';
       b.querySelector('.stage-item-party').textContent = c.party || '';
-      b.querySelector('.stage-item-tag').textContent = c.stage === 'ready' ? 'آماده‌ی ارسال' : missing.join('، ');
+      b.querySelector('.stage-item-tag').textContent = 'آماده‌ی ارسال';
       b.addEventListener('click', () => { closePopover(); openModalForView(c.id); });
       list.appendChild(b);
     }
@@ -691,19 +601,9 @@
     });
   }
 
-  // Escape on an open name list closes the list only — caught before the
-  // field's own handler closes it and the page's Escape closes the window
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    const listOpen = acs.find((a) => a.list.classList.contains('show'));
-    if (listOpen) { e.stopPropagation(); listOpen.ac.close(); }
-  }, true);
-
   window.ChekinoSend = {
     isOpen: () => overlay.classList.contains('show'),
     escape() {
-      const listOpen = acs.find((a) => a.list.classList.contains('show'));
-      if (listOpen) { listOpen.ac.close(); return; }
       if (window.confirmIsOpen && confirmIsOpen()) return;
       requestClose();
     },

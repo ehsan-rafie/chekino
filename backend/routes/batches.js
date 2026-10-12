@@ -9,7 +9,7 @@ const { peopleResolver, PeopleLimitError } = require('../lib/people');
 
 // A bulk add (spec 6.3): a draft autosaved here as it's typed, so a power
 // cut or a closed browser loses nothing, and committed row by row into
-// cheques — «waiting» for their owner or beneficiary, or «ready» to send.
+// cheques «ready» to send: each with its owner, all with the beneficiary.
 const router = express.Router();
 // Drafts run to a few hundred rows: 1 MB, read after the sign-in (server.js)
 router.use(authenticate, companyLimiter, express.json({ limit: '1mb' }));
@@ -178,9 +178,8 @@ router.post('/:id/commit', idParam, [
     const people = await peopleResolver(db, req.companyId, { maxPeople: plan.max_people });
     const party = await people.resolve(header.party, 'party');
     if (party.error || !party.id) return fail(400, { error: party.error ? party.error.error : 'طرف حساب لازم است', code: party.error ? party.error.code : 'header_incomplete' });
-    const benef = header.beneficiary && (header.beneficiary.id || String(header.beneficiary.name || '').trim())
-      ? await people.resolve(header.beneficiary, 'benef') : { id: null };
-    if (benef.error) return fail(400, { error: benef.error.error, code: benef.error.code });
+    const benef = await people.resolve(header.beneficiary, 'benef');
+    if (benef.error || !benef.id) return fail(400, { error: benef.error ? benef.error.error : 'ذینفع لازم است', code: benef.error ? benef.error.code : 'header_incomplete' });
 
     const created = [];
     const failed = [];
@@ -198,13 +197,13 @@ router.post('/:id/commit', idParam, [
       mark = people.mark();
       await db.query('SAVEPOINT r');
       try {
-        const owner = src.owner && (src.owner.id || String(src.owner.name || '').trim()) ? await people.resolve(src.owner, 'owner') : { id: null };
-        if (owner.error) {
+        const owner = await people.resolve(src.owner, 'owner');
+        if (owner.error || !owner.id) {
           await undoRow();
-          failed.push({ ref: src.ref, code: owner.error.code, error: owner.error.error });
+          failed.push({ ref: src.ref, code: owner.error ? owner.error.code : 'owner_required', error: owner.error ? owner.error.error : 'صاحب چک لازم است' });
           continue;
         }
-        const stage = owner.id && benef.id ? 'ready' : 'waiting';
+        const stage = 'ready';
         const ins = await db.query(
           `INSERT INTO checks (company_id, serial, sayad_id, amount, due_date, spend_date, owner_id, party_id, beneficiary_id,
                                channels, status, status_history, stage, client_ref, batch_id)

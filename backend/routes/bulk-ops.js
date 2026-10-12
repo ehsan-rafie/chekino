@@ -115,35 +115,6 @@ router.post('/:id/undo', [param('id').isInt().toInt()], validate, async (req, re
       await db.query('COMMIT');
       return res.json({ ok: true, kind: op.kind, restored: op.before.length });
     }
-    if (op.kind === 'bulk_update') {
-      // Each cheque's people, party, spend date, stage and status as they
-      // were. The history keeps the edit and gains the undo; a status put
-      // back is written as a change of its own, so the last status change
-      // still says what the status is.
-      const at = new Date().toISOString();
-      const cur = (await db.query(
-        'SELECT id, status FROM checks WHERE company_id = $1 AND id = ANY($2::int[])',
-        [req.companyId, ids]
-      )).rows;
-      for (const b of op.before) {
-        const now = cur.find((x) => x.id === b.id);
-        const events = [];
-        if (now && now.status !== b.status) events.push({ to: b.status, reason: '', at });
-        events.push({ event: 'undo', op_id: op.id, at });
-        await db.query(
-          `UPDATE checks SET stage = $1, status = $2, owner_id = $3, beneficiary_id = $4, party_id = $5,
-                  spend_date = $6, send_date = $7, copied_at = $8,
-                  status_history = COALESCE(status_history, '[]'::jsonb) || $9::jsonb,
-                  version = version + 1, updated_at = now()
-           WHERE id = $10 AND company_id = $11`,
-          [b.stage, b.status, b.owner_id, b.beneficiary_id, b.party_id, b.spend_date, b.send_date, b.copied_at,
-            JSON.stringify(events), b.id, req.companyId]
-        );
-      }
-      await db.query('UPDATE bulk_ops SET undone_at = now() WHERE id = $1', [op.id]);
-      await db.query('COMMIT');
-      return res.json({ ok: true, kind: op.kind, restored: op.before.length });
-    }
     return fail(400, { error: 'برگرداندن این نوع تغییر هنوز ممکن نیست', code: 'not_supported' });
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});

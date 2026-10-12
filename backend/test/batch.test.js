@@ -28,20 +28,22 @@ test('a draft that isn\'t one: refused, with a reason', () => {
 });
 
 test('a complete row: its digits read in any script, amount and due date checked', () => {
-  const r = rowForCommit({ ref: REF, serial: '۴۱۲۵۸۷', sayad_id: '1234 5678 9012 3456', amount: '۱٬۸۰۰٬۰۰۰٬۰۰۰', due_date: '2026-11-11' });
+  const r = rowForCommit({ ref: REF, serial: '۴۱۲۵۸۷', sayad_id: '1234 5678 9012 3456', amount: '۱٬۸۰۰٬۰۰۰٬۰۰۰', due_date: '2026-11-11', owner: { name: 'آرمان' } });
   assert.deepStrictEqual(r, { row: { serial: '412587', sayad_id: '1234567890123456', amount: '1800000000', due_date: '2026-11-11' } });
 });
 
 test('an incomplete row says what it lacks, in column order', () => {
   assert.deepStrictEqual(rowForCommit({ serial: '41258', sayad_id: '', amount: '0', due_date: '2026-02-30' }).missing,
-    ['سریال', 'شناسه صیادی', 'مبلغ', 'سررسید']);
-  assert.deepStrictEqual(rowForCommit({ serial: '412587', sayad_id: '1234567890123456', amount: '99999999999999', due_date: '2026-11-11' }).missing, ['مبلغ']);
+    ['سریال', 'شناسه صیادی', 'مبلغ', 'سررسید', 'صاحب چک']);
+  assert.deepStrictEqual(rowForCommit({ serial: '412587', sayad_id: '1234567890123456', amount: '99999999999999', due_date: '2026-11-11', owner: { id: 3 } }).missing, ['مبلغ']);
+  assert.deepStrictEqual(rowForCommit({ serial: '412587', sayad_id: '1234567890123456', amount: '5000', due_date: '2026-11-11', owner: { name: '  ' } }).missing, ['صاحب چک']);
 });
 
-test('the header needs a party and a spend date', () => {
-  assert.deepStrictEqual(headerProblems({}), ['طرف حساب', 'تاریخ خرج']);
-  assert.deepStrictEqual(headerProblems({ party: { name: '  ' }, spend_date: '2026-09-26' }), ['طرف حساب']);
-  assert.deepStrictEqual(headerProblems({ party: { id: 3 }, spend_date: '2026-09-26' }), []);
+test('the header needs a party, a spend date and the beneficiary', () => {
+  assert.deepStrictEqual(headerProblems({}), ['طرف حساب', 'تاریخ خرج', 'ذینفع']);
+  assert.deepStrictEqual(headerProblems({ party: { name: '  ' }, spend_date: '2026-09-26', beneficiary: { id: 7 } }), ['طرف حساب']);
+  assert.deepStrictEqual(headerProblems({ party: { id: 3 }, spend_date: '2026-09-26' }), ['ذینفع']);
+  assert.deepStrictEqual(headerProblems({ party: { id: 3 }, spend_date: '2026-09-26', beneficiary: { name: 'مریم کاظمی' } }), []);
 });
 
 test('names compare the way the form compares them', () => {

@@ -743,9 +743,11 @@ same window; «با عکس» puts the scan button first.
 - **The window.** A large window over the board in the cheque form's
   system: radius 24, the same fields and lists.
 - **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»
-  (today) and a switch «ذینفع رو هم دارم». The switch is on in the picking
-  blue; it shows the beneficiary and their national id, which is checked
-  by its check digit.
+  (today), «ذینفع» and its national id (checked by its check digit). All
+  four are needed: a cheque's fate is settled when it is added — there is
+  no «منتظر ذینفع» (the owner's call, 2026-10-12).
+- **Each row** needs its owner too («صاحب چک: لازم است» under a row
+  without one; such a row isn't saved, and the server holds the same line).
 - **Pasting serials.** A strip under the header takes a pasted list of
   serials (js/serials.js: any digits, any separators, with or without the
   series). «ساخت ردیف‌ها» makes a row for each and says what it ignored.
@@ -796,9 +798,9 @@ same window; «با عکس» puts the scan button first.
   («کارت ذخیره شد، هر وقت خواستی ادامه بده»). A grey bar over the board
   then offers what is unfinished: «ادامه» / «حذف».
 - **Saving the cheques.** Saved rows leave the list, and a toast says
-  where they went («۴ چک ثبت شد و به «منتظر ذینفع» رفت»). It offers
-  «برگردون», also on Ctrl+Z outside a field. Rows that failed stay, each
-  with its reason.
+  where they went («۴ چک ثبت شد و آماده‌ی ارسال است»); the send window opens
+  on them. The toast offers «برگردون», also on Ctrl+Z outside a field. Rows
+  that failed stay, each with its reason.
 - **Phones.** Each row is a card with its labels, its photo across the top;
   the footer stays at the bottom. «بزرگ‌نمایی» opens the photo full screen.
 
@@ -807,7 +809,7 @@ cheques that are ready (owner and beneficiary known, not yet sent) go to
 their owners from here, so each owner can register them in Sayad.
 - **Opening it.** The chip «آماده‌ی ارسال n» over the board, the command
   palette, «ارسال برای صاحب چک» in a ready cheque's window, or by itself
-  after a bulk add with a beneficiary.
+  after a bulk add.
 - **Layout.** The beneficiary once at the top («ذینفع: …، کد ملی …»),
   each part with a copy button; the national id in Latin digits, as Sayad
   takes it. Then one section per owner (Persian order; owner + beneficiary
@@ -828,12 +830,9 @@ their owners from here, so each owner can register them in Sayad.
 - **Closing** with nothing copied just closes. Otherwise it asks «همه رو
   برای صاحب چک‌ها فرستادی؟»: «آره، همه» / «بعضی‌ها رو» (checkboxes on the
   sections, then «ثبت ارسالِ این‌ها») / «نه، بعداً».
-- **No owner yet.** A ready list can't hold these, but a bulk add can leave
-  some: they sit at the end under «⚠ بدون صاحب چک», each with an owner
-  field; naming one moves the cheque to its section.
 
 **Today, over the board.** The chips answer the day's question — whose
-cheques to chase: «آماده‌ی ارسال n», «منتظر ذینفع n», then «پیگیری n» (waiting
+cheques to chase: «آماده‌ی ارسال n», then «پیگیری n» (waiting
 for Sayad three days or more since sent, or since last followed up) and
 «سررسید نزدیک n» (waiting, due within three days or past due). «سررسید نزدیک»,
 pressed, narrows the board to those cards — the blue of a pick, a filter chip
@@ -849,61 +848,25 @@ the section greys with that word, the cards say «امروز پیگیری شد»
 their days from today. «نمایش در بُرد» narrows the board to them instead
 (the chip then shows pressed).
 
-**Cheques off the board** (waiting / ready). Over the board, beside
-«آماده‌ی ارسال n», the chip «منتظر ذینفع n» opens bulk edit on them (below).
-A board search that matches cheques off the board says so beside the chips:
-«چک ۱۲۳۴۵۶ در «منتظر ذینفع» است» + «نمایش», which opens it; several open a
-list (a filter popover with HeroUI's ListBox inside): one line a cheque —
-serial, amount, due date; its party and what it lacks («بدون ذینفع»، «بدون
-صاحب چک») under it; by party, then due date. A cheque opens in its own
-window, where:
-- the banner says where it stands, in grey («منتظر ذینفع — ذینفع هنوز معلوم
-  نیست؛ «ویرایش» را بزن و بنویس», or «آماده‌ی ارسال» with «ارسال برای صاحب
-  چک»); the leaf has no stamp, and «—» for the send date and channel;
-- editing it has no send date and no channels (the owner takes the row),
-  and its owner and beneficiary may stay empty; a beneficiary still goes
-  with its national id;
-- once both are known it is ready: «چک آماده‌ی ارسال شد» with «ارسال».
+**Cheques off the board** (ready to send). A board search that matches
+cheques off the board says so beside the chips: «چک ۱۲۳۴۵۶ در «آماده‌ی
+ارسال» است» + «نمایش», which opens it; several open a list (a filter
+popover with HeroUI's ListBox inside): one line a cheque — serial, amount,
+due date, its party under it; by party, then due date. A cheque opens in
+its own window, where:
+- the banner says where it stands, in grey («آماده‌ی ارسال — هنوز برای صاحب
+  چک فرستاده نشده», with «ارسال برای صاحب چک»); the leaf has no stamp, and
+  «—» for the send date and channel;
+- editing it has no send date and no channels (the owner takes the row);
+  its owner and beneficiary are needed, as for every cheque (the server
+  refuses to clear either: `people_required`).
 
-**Bulk edit** (`js/bulk-edit.js`, its part of `css/bulk.css`). Many cheques
-at once: a party's list of serials gets its beneficiary, a stack of
-cheques its owners. «ویرایش گروهی» beside «افزودن گروهی» (on phones both
-are icons), the «منتظر ذینفع» chip, the command palette. When registered
-cheques are among the picked, «کپی رسید ثبت (۵)» beside «انتخاب همه» copies
-one message for them all — what a party is sent when it asks after a batch:
-«۵ چک زیر در سامانه صیاد ثبت گردید:» and a numbered line each, the earliest
-due first. The bulk add window, in three parts always in sight:
-- **Which cheques.** A box for serials or sayad ids as the party sent them
-  (any digits, any separators, series or not: js/serials.js), and filter
-  chips — «منتظر ذینفع»، «آماده‌ی ارسال»، «ارسال‌شده»، a party, «بدون
-  صاحب چک»، «بدون ذینفع» (picked: the picking blue). What the list found,
-  in parts that each open their detail: «۳۵ پیدا شد»، «۱ چندتایی» (two
-  cheques of one serial: tick the right one), «۱ پیدا نشد» (in the error
-  red, with «کپی سریال‌های پیدانشده» to send back), «۱ نامطمئن» (a serial
-  run into its series: «تأیید»), «مال طرف حساب دیگر» (with a party
-  chosen), «نادیده گرفته شد». Every cheque is on the page already, so
-  finding needs no round trip.
-- **The table.** Serial in bold (the end of its sayad id under it), amount,
-  due date, party, spend date, owner, beneficiary, stage or status. What
-  the list found is ticked; «انتخاب همه» ticks all shown. ↑/↓ between
-  rows, Space ticks, Shift+Space a run, Ctrl+A all. 200 rows at a time.
-  On phones each row is a card.
-- **What changes**, beside it (under it on phones): a box a field — party,
-  beneficiary, owner, spend date, and the Sayad status when sent cheques
-  are ticked. Each opens its inputs, with HeroUI's small Tabs for the
-  mode: «تعیین» / «خالی کن»; the owner «یکی برای همه» / «ردیف به ردیف»
-  (a field beside each ticked row; Enter goes to the next) / «خالی کن».
-- **«پیش‌نمایش تغییرات»** opens a sheet (at the foot of the screen on
-  phones): how many, each change, and what to watch for — «قبلاً ذینفع
-  دیگری داشتند», registered ones left out unless «این‌ها را هم», sent ones
-  to send again («بعد از اعمال، برای ارسالِ دوباره آماده شوند»), taken
-  off the board («موافقم» before «اعمال»), no owner yet. «اعمال» does all
-  or nothing; changed elsewhere meanwhile: «این چک‌ها همین حالا جای دیگری
-  تغییر کردند: …. فهرست تازه شد؛ دوباره بررسی کن.»
-- **After.** «۳۷ چک به‌روز شد» + «برگردون» (30 seconds, Ctrl+Z); a
-  beneficiary given opens the send window on them, over bulk edit.
-  «آخرین تغییرات» in the head lists the last ten bulk changes (adds, sends,
-  edits), each with «برگردون» while none of its cheques changed since.
+**Bulk edit is gone** (the owner's call, 2026-10-12): a cheque is added with
+its owner and beneficiary, so there is nothing left to fill in later in
+bulk. Its window, `js/bulk-edit.js`, `POST /api/checks/bulk-update` and its
+«برگردون» went with it, and so did the party's group receipt («کپی رسید
+ثبت (۵)») that lived in it. A cheque is still changed one at a time, in its
+own window.
 
 **When the session ends** (the 24-hour sign-in ran out, or another tab signed
 out or into another account), the page doesn't jump to the login page: a
@@ -995,10 +958,9 @@ year, `immutable`.
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |
 | `js/cal-picker.js` | the calendar's title button and its year / month picker |
 | `js/field-addons.js` | the live input-group suffixes on the dashboard: digit counts, list arrows, copy buttons |
-| `css/bulk.css` | bulk add, the send window, bulk edit, the chips over the board, the crop editor |
+| `css/bulk.css` | bulk add, the send window, the chips over the board, the crop editor |
 | `js/bulk-add.js` | bulk add: the rows, saving (this device and the server), photos going up, the large photo |
 | `js/bulk-photos.js` | finding the cheques on a scan, cutting them, the crop editor, the server's small copies |
 | `js/cheque-split.js`, `js/cheque-split.worker.js` | the cheque finder (spec 6.6), and the worker it runs in |
 | `js/serials.js` | reading a pasted list of serials (the same file as backend/lib/serials.js) |
 | `js/send-window.js` | the send window, the chips over the board, the search hint |
-| `js/bulk-edit.js` | bulk edit |

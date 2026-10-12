@@ -1,10 +1,10 @@
 // Bulk add (spec F2–F4, 5.2): many cheques at once, in a panel over the
-// board. One party and one spend date at the top for all of them; a row per
-// cheque — serial, sayad id, amount, due date, and its owner when known; the
-// beneficiary at the top too, when the user has one. Saved rows become
-// cheques «منتظر ذینفع» (waiting: owner or beneficiary still unknown) or
-// «آماده‌ی ارسال» (ready: both known) — never straight onto the board, which
-// shows only cheques sent to their owner.
+// board. One party, one spend date and the beneficiary at the top for all of
+// them; a row per cheque — serial, sayad id, amount, due date and its owner.
+// Saved rows become cheques «آماده‌ی ارسال» — never straight onto the board,
+// which shows only cheques sent to their owner. A cheque's fate is settled
+// when it is added: without its owner or the beneficiary a row isn't saved
+// (no «منتظر ذینفع» since 2026-10-12, the owner's call).
 //
 // Nothing typed is lost: every change goes at once to this device
 // (IndexedDB, keyed by company) and, two seconds after the typing stops, to
@@ -80,7 +80,7 @@
   // ---------------------------------------------------------------
   // The open batch
   // ---------------------------------------------------------------
-  // st = { clientId, serverId, version, kind, header, hasBenef, rows, scans,
+  // st = { clientId, serverId, version, kind, header, rows, scans,
   //        unsynced, localAt, saving, offline, savedAt, committing }
   // row = { ref, position, serial, sayad_id, amount, due_date, owner,
   //         include, note, serverError, touched, photo, ui }
@@ -102,9 +102,8 @@
       header: {
         party: h.party && h.party.name ? { name: h.party.name } : null,
         spend_date: h.spend_date || '',
-        beneficiary: b.hasBenef && h.beneficiary && (h.beneficiary.name || h.beneficiary.national_id)
+        beneficiary: h.beneficiary && (h.beneficiary.name || h.beneficiary.national_id)
           ? { name: h.beneficiary.name || '', national_id: h.beneficiary.national_id || '' } : null,
-        has_beneficiary: b.hasBenef,
       },
       rows: b.rows.filter((r) => !isBlank(r)).map((r, i) => ({
         ref: r.ref, position: i + 1, serial: r.serial, sayad_id: r.sayad_id, amount: r.amount,
@@ -127,7 +126,6 @@
   const partyInput = $('bulkParty'), partyField = $('bulkPartyField'), partyMsg = $('bulkPartyMsg');
   const benefInput = $('bulkBenef'), benefField = $('bulkBenefField'), benefMsg = $('bulkBenefMsg');
   const nidInput = $('bulkNid'), nidField = $('bulkNidField'), nidMsg = $('bulkNidMsg');
-  const benefSwitch = $('bulkHasBenef');
 
   const partyAC = createAutocomplete({
     input: partyInput, list: $('bulkPartyList'), field: partyField,
@@ -204,25 +202,13 @@
     nidField.classList.remove('error');
     return true;
   }
-  benefSwitch.addEventListener('click', () => {
-    const on = benefSwitch.getAttribute('aria-checked') !== 'true';
-    setBenefSwitch(on);
-    if (st) { st.hasBenef = on; changed(); }
-    if (on) benefInput.focus();
-  });
-  function setBenefSwitch(on) {
-    benefSwitch.setAttribute('aria-checked', String(on));
-    overlay.classList.toggle('has-benef', on);
-    benefField.hidden = !on;
-    nidField.hidden = !on;
-  }
 
   // ---------------------------------------------------------------
   // Rows
   // ---------------------------------------------------------------
   // The columns in order, for Enter, Shift+Enter and Alt+↑/↓
   const COLS = ['serial', 'sayad', 'amount', 'due', 'owner'];
-  const LABELS = { serial: 'سریال', sayad: 'شناسه صیادی', amount: 'مبلغ', due: 'سررسید' };
+  const LABELS = { serial: 'سریال', sayad: 'شناسه صیادی', amount: 'مبلغ', due: 'سررسید', owner: 'صاحب چک' };
   const CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
@@ -323,8 +309,9 @@
       allowNew: true, newLabel: newPersonLabel,
       hasExact: (qq) => allOwners().some((x) => normalizeName(x) === normalizeName(qq)),
       pick: (x) => { ui.owner.value = x; },
-      onBlur: () => { foldOntoKnownPerson(ui.owner); },
-      onChange: () => { row.owner = ui.owner.value.trim() ? { name: ui.owner.value.trim() } : null; changed(); },
+      // (the owner is needed now: judged like the other fields)
+      onBlur: () => { foldOntoKnownPerson(ui.owner); if (!isBlank(row)) { row.touched.owner = true; showRow(row); } },
+      onChange: () => { row.owner = ui.owner.value.trim() ? { name: ui.owner.value.trim() } : null; edited('owner'); },
       onEnter: () => moveFrom(row, 'owner', 1),
     });
     ui.inc.addEventListener('change', () => { row.include = ui.inc.checked; showCount(); changed(); });
@@ -395,6 +382,8 @@
     }
     const amountProblem = ChekinoRules.amount(row.amount);
     if (amountProblem) p.amount = amountProblem;
+    // every cheque is added with its owner (no «منتظر ذینفع»)
+    if (!(row.owner && row.owner.name)) p.owner = 'لازم است';
     if (!row.due_date) {
       p.due = row.ui && row.ui.due && !row.ui.due.isEmpty() ? (row.ui.due.validate(), row.ui.dueMsg.textContent || 'ناقص است') : 'لازم است';
     }
@@ -420,7 +409,7 @@
     if (!row.ui) return;
     const p = isBlank(row) ? {} : rowProblems(row);
     const shown = [];
-    for (const col of ['serial', 'sayad', 'amount', 'due']) {
+    for (const col of ['serial', 'sayad', 'amount', 'due', 'owner']) {
       const bad = p[col] && row.touched[col];
       row.ui.cells[col].classList.toggle('error', !!bad);
       if (bad) shown.push(`${LABELS[col]}: ${p[col]}`);
@@ -482,7 +471,7 @@
       // the header: party → spend date → beneficiary → national id → the rows
       if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || !t || !t.id) return;
       if ((t.id === 'bulkParty' || t.id === 'bulkBenef') && anyListOpen()) return;
-      const order = ['bulkParty', 'bulkSpend'].concat(st.hasBenef ? ['bulkBenef', 'bulkNid'] : []);
+      const order = ['bulkParty', 'bulkSpend', 'bulkBenef', 'bulkNid'];
       const i = order.indexOf(t.id);
       if (i < 0) return;
       e.preventDefault();
@@ -1132,10 +1121,8 @@
     let ok = true;
     if (!partyInput.value.trim()) { partyField.classList.add('error'); partyMsg.textContent = 'لازم است'; ok = false; }
     if (!spendDate.validate()) ok = false;
-    if (st.hasBenef) {
-      if (!benefInput.value.trim()) { benefField.classList.add('error'); benefMsg.textContent = 'لازم است'; ok = false; }
-      if (!checkNid()) ok = false;
-    }
+    if (!benefInput.value.trim()) { benefField.classList.add('error'); benefMsg.textContent = 'لازم است'; ok = false; }
+    if (!checkNid()) ok = false;
     return ok;
   }
   async function commit() {
@@ -1144,7 +1131,7 @@
     st.rows.forEach((r) => { if (!isBlank(r) && r.include) COLS.forEach((c) => { r.touched[c] = true; }); });
     revalidate();
     if (!headerOk()) {
-      showFoot('طرف حساب، تاریخ خرج' + (st.hasBenef ? ' و ذینفع' : '') + ' را کامل کن');
+      showFoot('طرف حساب، تاریخ خرج و ذینفع را کامل کن');
       const bad = overlay.querySelector('.bulk-common .form-field.error input');
       if (bad) bad.focus();
       return;
@@ -1157,7 +1144,6 @@
       return;
     }
     const btn = $('bulkCommit');
-    const hadBenef = st.hasBenef;
     st.committing = true;
     btn.disabled = true;
     btn.textContent = 'در حال ثبت…';
@@ -1203,16 +1189,12 @@
       st.rows = st.rows.filter((x) => !made.has(x.ref));
       for (const f of r.failed) { const row = st.rows.find((x) => x.ref === f.ref); if (row) row.serverError = f.error; }
       for (const s of r.skipped_incomplete) { const row = st.rows.find((x) => x.ref === s.ref); if (row) row.serverError = `ناقص: ${s.missing.join('، ')}`; }
-      // saved with a beneficiary: the send window opens on them (F4), once the list has them
-      const sendNow = hadBenef && r.created.length ? r.created.map((c) => c.id) : null;
+      // saved: the send window opens on them (F4), once the list has them
+      const sendNow = r.created.length ? r.created.map((c) => c.id) : null;
       loadChecksFromApi().then(() => { renderTable(); if (st) revalidate(); if (sendNow && window.ChekinoSend) window.ChekinoSend.open(sendNow); });
       const n = r.created.length;
-      const ready = r.created.filter((c) => c.stage === 'ready').length;
       const left = r.failed.length + r.skipped_incomplete.length;
-      let text = !n ? 'چکی ثبت نشد'
-        : ready === n ? `${fa(n)} چک ثبت شد و آماده‌ی ارسال است`
-          : ready ? `${fa(n)} چک ثبت شد: ${fa(ready)} آماده‌ی ارسال، ${fa(n - ready)} منتظر ذینفع`
-            : `${fa(n)} چک ثبت شد و به «منتظر ذینفع» رفت`;
+      let text = !n ? 'چکی ثبت نشد' : `${fa(n)} چک ثبت شد و آماده‌ی ارسال است`;
       if (n && left) text = `${fa(n)} چک ثبت شد؛ ${fa(left)} ردیف خطا دارد و در همین صفحه ماند`;
       if (r.batch_state === 'committed') {
         const clientId = st.clientId;
@@ -1300,14 +1282,12 @@
       spend_date: h.spend_date || '',
       beneficiary: h.beneficiary || null,
     };
-    st.hasBenef = !!(h.has_beneficiary || h.beneficiary);
     partyInput.value = h.party && h.party.name ? h.party.name : '';
     spendDate.reset();
     if (h.spend_date) {
       const [jy, jm, jd] = isoToJalaliStr(h.spend_date).split('/').map(Number);
       spendDate.setDate(jy, jm, jd);
     } else st.header.spend_date = spendDateIso();
-    setBenefSwitch(st.hasBenef);
     benefInput.value = h.beneficiary ? h.beneficiary.name || '' : '';
     nidInput.value = h.beneficiary && h.beneficiary.national_id ? toFa(h.beneficiary.national_id) : '';
     [partyField, benefField, nidField].forEach((f) => f.classList.remove('error'));
@@ -1344,7 +1324,7 @@
         : st.kind === 'photo' ? dropBtn : pasteInput).focus(), 50);
   }
   function startNew(kind) {
-    st = { clientId: uuid(), serverId: null, version: null, kind: kind || 'manual', header: {}, hasBenef: false, rows: [], scans: [], unsynced: false };
+    st = { clientId: uuid(), serverId: null, version: null, kind: kind || 'manual', header: {}, rows: [], scans: [], unsynced: false };
     loadDraft({ header: {}, rows: [] });
     showPanel();
   }
@@ -1373,7 +1353,7 @@
       const here = new Map(((mine.draft && mine.draft.rows) || []).filter((x) => x.photo_key).map((x) => [x.ref, x]));
       draft = { ...draft, rows: (draft.rows || []).map((x) => (!x.image_id && here.has(x.ref) ? { ...x, photo_key: here.get(x.ref).photo_key, scan: here.get(x.ref).scan } : x)) };
     }
-    st = { clientId, serverId: b.id, version, kind: b.kind, header: {}, hasBenef: false, rows: [], scans: (mine && mine.scans) || [], unsynced };
+    st = { clientId, serverId: b.id, version, kind: b.kind, header: {}, rows: [], scans: (mine && mine.scans) || [], unsynced };
     loadDraft(draft);
     showPanel();
     if (unsynced) { st.localAt = Date.now(); syncNow(); }
@@ -1384,7 +1364,7 @@
     if (!m) return;
     if (m.serverId) { openServerBatch(m.serverId); return; }
     if (st) await leaveCurrent();
-    st = { clientId: m.clientId, serverId: null, version: null, kind: m.kind || 'manual', header: {}, hasBenef: false, rows: [], scans: m.scans || [], unsynced: true };
+    st = { clientId: m.clientId, serverId: null, version: null, kind: m.kind || 'manual', header: {}, rows: [], scans: m.scans || [], unsynced: true };
     loadDraft(m.draft);
     showPanel();
     st.localAt = Date.now();

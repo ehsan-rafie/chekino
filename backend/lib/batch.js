@@ -63,15 +63,18 @@ function rowForCommit(r) {
   if (rules.sayad(sayad)) missing.push('شناسه صیادی');
   if (rules.amount(amount)) missing.push('مبلغ');
   if (!validDate(r.due_date)) missing.push('سررسید');
+  // (the owner too: a cheque is added with its fate settled — no «منتظر ذینفع»)
+  if (!(r.owner && (r.owner.id || String(r.owner.name || '').trim()))) missing.push('صاحب چک');
   if (missing.length) return { missing };
   return { row: { serial, sayad_id: sayad, amount, due_date: r.due_date } };
 }
 
-// The header a commit needs: a party and a spend date
+// The header a commit needs: a party, a spend date and the beneficiary
 function headerProblems(h) {
   const missing = [];
   if (!h || !h.party || !(h.party.id || String(h.party.name || '').trim())) missing.push('طرف حساب');
   if (!h || !validDate(h.spend_date)) missing.push('تاریخ خرج');
+  if (!h || !h.beneficiary || !(h.beneficiary.id || String(h.beneficiary.name || '').trim())) missing.push('ذینفع');
   return missing;
 }
 

@@ -464,13 +464,10 @@ function fillVeStatus(c) {
   // Not sent to its owner yet: where it stands instead of a Sayad status
   // (a neutral wash; the leaf then has no stamp)
   if (isPreSend(c)) {
-    const missing = [!c.benefId && 'ذینفع', !c.ownerId && 'صاحب چک'].filter(Boolean);
     veStatusBanner.className = 've-status-banner show st-stage';
     veStIcon.innerHTML = icon('clock');
-    veStTitle.textContent = c.stage === 'ready' ? 'آماده‌ی ارسال' : 'منتظر ذینفع';
-    const desc = c.stage === 'ready' ? 'هنوز برای صاحب چک فرستاده نشده'
-      : `${missing.join(' و ')} ${missing.length > 1 ? 'هنوز معلوم نیستند' : 'هنوز معلوم نیست'}؛ «ویرایش» را بزن و بنویس`;
-    veStDesc.innerHTML = `<span>${escapeHtml(desc)}</span>`;
+    veStTitle.textContent = 'آماده‌ی ارسال';
+    veStDesc.innerHTML = '<span>هنوز برای صاحب چک فرستاده نشده</span>';
     return;
   }
   const st = statusById(c.status);
@@ -495,9 +492,9 @@ function fillVeStatus(c) {
   veStDesc.innerHTML = parts.map(t => `<span>${escapeHtml(t)}</span>`).join('<i class="ve-st-sep">، </i>');
 }
 
-// Added in bulk and not yet sent to its owner (waiting / ready): the form
-// shows it without a send date, channels or a status, and lets its owner
-// and beneficiary stay empty (lib/stage.js moves it along on save)
+// Added in bulk and not yet sent to its owner (ready): the form shows it
+// without a send date, channels or a status. Its owner and beneficiary are
+// there from the start and stay (no «منتظر ذینفع» since 2026-10-12)
 function isPreSend(c) { return !!c && !!c.stage && c.stage !== 'sent'; }
 const veSendBtn = document.getElementById('veSendBtn');
 veSendBtn.addEventListener('click', () => {
@@ -1126,8 +1123,7 @@ document.getElementById('emptyAddBtn').addEventListener('click', openModal);
 // Insert opens the add-cheque form from anywhere on the dashboard.
 // (the bulk-add panel, js/bulk-add.js, is a layer of its own)
 const bulkPanelOpen = () => !!(window.ChekinoBulk && window.ChekinoBulk.isOpen())
-  || !!(window.ChekinoSend && window.ChekinoSend.isOpen())
-  || !!(window.ChekinoEdit && window.ChekinoEdit.isOpen());
+  || !!(window.ChekinoSend && window.ChekinoSend.isOpen());
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Insert') return;
   if (modalOverlay.classList.contains('show') || bulkPanelOpen()) return;
@@ -2460,7 +2456,7 @@ function renderPerson() {
   const rows = f.all.slice().sort((a, b) => rank(a) - rank(b) || (b.dueDate || '').localeCompare(a.dueDate || ''));
   const stateOf = (c) => (c.stage === 'sent'
     ? `<span class="st-dot" style="background:${statusById(c.status).color}"></span>${statusById(c.status).name}`
-    : `<span class="st-dot is-stage"></span>${c.stage === 'ready' ? 'آماده‌ی ارسال' : 'منتظر ذینفع'}`);
+    : '<span class="st-dot is-stage"></span>آماده‌ی ارسال');
   personBody.innerHTML = `
     <div class="person-head">
       <h3 class="person-name" id="personName" tabindex="-1">${escapeHtml(p.full_name)}</h3>
@@ -4516,22 +4512,18 @@ submitCheckBtn.addEventListener('click', async () => {
 function handleSaveEdit() {
   hideFormAlert();
 
-  // Not sent yet: its owner, and its beneficiary with the national id, may
-  // still be empty — but a beneficiary goes with its id, as everywhere
+  // Not sent yet: no send date or channels to check — but its owner and
+  // beneficiary, as for every cheque
   const preSend = isPreSend(loadCheques().find(x => x.id === editingChequeId));
-  const blank = (input, field) => { field.classList.remove('error'); return input.value.trim() === ''; };
-  const ownerOk = preSend && blank(ownerInput, ownerField) ? true : validateOwner();
-  const noBenef = preSend && toEnDigits(nidInput.value).replace(/[^0-9]/g, '') === '' && blank(benefInput, benefField);
-  if (noBenef) nidField.classList.remove('error');
   const checks = [
     [validateSerial(), serialInput],
     [validateSayad(), sayadInput],
     [dueDate.validate(), dueDateInput],
     [validateAmount(), amountInput],
-    [ownerOk, ownerInput],
+    [validateOwner(), ownerInput],
     [validateParty(), partyInput],
-    [noBenef || validateBenef(), benefInput],
-    [noBenef || validateNid(), nidInput],
+    [validateBenef(), benefInput],
+    [validateNid(), nidInput],
     [spendDate.validate(), spendDateInput]
   ];
   if (!preSend) {
@@ -4683,15 +4675,7 @@ async function commitSaveEdit() {
     }
     const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
     fetchPeopleCache();   // whoever the server added
-    // its owner and beneficiary both known now: it can go to the owner
-    if (preSend && stored.stage !== 'ready' && saved && saved.stage === 'ready') {
-      const send = () => {
-        const go = () => window.ChekinoSend.open([id]);
-        const c = loadCheques().find(x => x.id === id);
-        if (c && c.stage === 'ready') go(); else loadChecksFromApi().then(() => { renderTable(); go(); });
-      };
-      showToast('چک آماده‌ی ارسال شد', window.ChekinoSend ? { action: { label: 'ارسال', run: send } } : {});
-    } else if (undoable) {
+    if (undoable) {
       showToast(`تغییرات چک ${toFa(saved.serial)} ذخیره شد`, {
         duration: 8000,
         action: { label: 'برگردون', run: () => undoEdit(id, stored, filesBefore) },
@@ -5367,7 +5351,8 @@ function repositionActivePopover() {
 }
 
 // Opens `pop` under `btn`, or closes it when it's the one open (also used by
-// the «منتظر ذینفع» list, js/send-window.js). Returns whether it opened.
+// the list of a search's cheques off the board, js/send-window.js). Returns
+// whether it opened.
 function togglePopover(pop, btn) {
   if (activePopover === pop) { closePopover(); return false; }
   closePopover();
@@ -7236,7 +7221,6 @@ document.addEventListener('keydown', (e) => {
   if (openStatusMenu) { closeStatusMenu(true); return; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
   if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return; }
-  if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
@@ -7274,7 +7258,6 @@ function closeTopmostLayer() {
   if (activePopover) { closePopover(); return true; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return true; }
   if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return true; }
-  if (window.ChekinoEdit && window.ChekinoEdit.isOpen()) { window.ChekinoEdit.escape(); return true; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
@@ -7540,7 +7523,7 @@ function resumeWhenReady() {
   // Cheques and people by what's typed: the board search's own matcher
   // (serial, sayad id, a name, an amount, a pasted list) — every stage, the
   // cheque opening in its window — and people by name, opening their page
-  const STAGE_NAMES = { waiting: 'منتظر ذینفع', ready: 'آماده‌ی ارسال' };
+  const STAGE_NAMES = { ready: 'آماده‌ی ارسال' };
   window.ChekinoPalette.registerSource((q) => {
     const out = [];
     const m = searchMatcher(q);
@@ -7644,7 +7627,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'followOverlay', 'sendOverlay', 'editOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'followOverlay', 'sendOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {
