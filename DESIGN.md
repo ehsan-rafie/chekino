@@ -520,38 +520,47 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   the window, grow in step by their own rules. On a phone every field's
   text is 16px, since below that Safari on iOS zooms the page when a
   field is tapped.
-- *View — the cheque itself.* Top to bottom:
-  - **The status**, as HeroUI's Alert: a soft wash of the status colour,
-    the icon in a tinted square (tick / warning / clock), the state as the
-    title and one line under it with what matters for that state —
-    «تاریخ ثبت … | ۴ روز پس از ارسال», the problem's reason and date, or
-    «۱۱ روز پیش برای ثبت ارسال شد | سررسید: ۱۴ روز دیگر». The parts are
-    parted by a short hairline, never a middle dot: beside Persian digits a
-    dot reads as a zero. «کپی رسید ثبت» sits at its end once the cheque is
-    registered (it used to be in the header; the header is now just the
-    title and the close button). A cheque waiting for Sayad has «ثبت شد»
-    and «مشکل دارد» there instead, one that wasn't «ثبت شد» and «دوباره
-    منتظر ثبت» — the board's own change, with its «برگردون»; «مشکل دارد»
-    asks why in a plain box under the banner (Enter saves, Escape closes
-    only the box). The view follows any change of the cheque, its next
-    step takes the focus, and «ویرایش» starts from the new version. A
-    registered cheque also has «پیوست رسید صیاد»: the Sayad registration
-    receipt the owner sends back (a screenshot, made small like any photo,
-    or a PDF) is kept with it as proof — a file of the kind «receipt».
-    Under the leaf, «پیوست‌ها» lists every file once there is more than
-    the one the leaf shows: small tiles captioned «عکس ۱»، «PDF»، «رسید
-    صیاد» (in green); a photo opens in the viewer, a PDF in a new tab. This replaced a long sentence
-    («… برای آقای …»), which was slow to read and wrong for a company.
-    For a waiting cheque the line says how long it has waited; how far off
-    the due date is, the cheque itself says.
-  - **The cheque**, carrying everything Chekino has about it — see «The
-    cheque» below. There is no separate card of facts any more: each value
-    sits where the printed leaf keeps its counterpart, under the word the
-    form uses for it.
-  - **The status history**, a vertical timeline (a dot in the status colour
-    per step, joined by a hairline, the date at the end, the reason under
-    its step) — only once there has been more than one change; a single
-    change is already the status block's own line.
+- *View — the cheque, plainly* (the owner's ask, 2026-10-12: the drawn
+  leaf was too busy; someone new to Chekino should see at once where a
+  cheque came from and where it went, with few words). The window is
+  named for its serial («چک ۴۴۰۱۲۲»), 640px wide, on a white body:
+  - **«مشخصات چک»**, a small title with «مشاهده عکس» at its other end
+    (with a count when there are more files; «مشاهده فایل‌ها» / «مشاهده PDF»
+    as they are — it opens the viewer, a PDF a new tab), over one neat
+    rectangle: four cells alike, two by two, parted by hairlines, each a
+    small icon and caption over its value — «مبلغ» (its words on hover),
+    «سررسید» (how far off in a small outlined badge: amber when close, red
+    when past, while it waits for Sayad), «سریال», «شناسه صیادی» (left to
+    right, with a copy button). No value is larger than another (the owner's
+    ask: the amount needn't lead). On a phone the cells are rows, caption at
+    the start and value at the end.
+  - **«روند چک»**, its way so far: a line down the start edge with a round mark per
+    step, and beside each a few words, who, and when (after a hairline):
+    «گرفته شد از» the owner (a person), «خرج شد برای» the party (a shop)
+    and the spend date, «ثبت به نام» the beneficiary with «کد ملی» /
+    «شناسه ملی» (copyable), «فرستاده شد به صاحب چک» with the send date and
+    each messenger's logo and name (a message bubble for one written in),
+    and «ثبت در صیاد» — Sayad's answer as the title in its colour
+    (green tick, red warning, slate clock), its date, and one line: «۳ روز
+    پس از ارسال», the problem's reason, or «۱۵ روز از ارسال». A step's
+    tooltip names its role (صاحب چک، طرف حساب، ذینفع). Done steps have an
+    ink mark on grey; a ready cheque's send step is where it stands (ringed
+    in ink, «هنوز فرستاده نشده», «ارسال برای صاحب چک»), and Sayad's step is
+    still to come (dashed mark, dashed line to it). Reminders sent show
+    under the send step («۲ بار پیگیری شد، آخرین بار …»).
+  - **The step's own buttons** under it: «ثبت شد» / «مشکل دارد» (or «ثبت
+    شد» / «دوباره منتظر ثبت»), each in its status colour — the board's own
+    change, with its «برگردون»; «مشکل دارد» asks why right there (Enter
+    saves, Escape closes only the box). A registered cheque has «کپی رسید
+    ثبت» and «پیوست رسید صیاد» (the Sayad receipt the owner sends back, kept
+    as a file of the kind «receipt»). A status set while the window is open
+    makes Sayad's mark settle in (0.45s; not with less motion). The view
+    follows any change of the cheque, its next step takes the focus, and
+    «ویرایش» starts from the new version.
+  - **Then**, only when there is one: the note on a faint panel; «پیوست‌ها»
+    when there is more than the one photo (tiles captioned «عکس ۱»، «PDF»،
+    «رسید صیاد» in green); the status history once there has been more than
+    one change.
 
   «ویرایش» switches to the form.
 
@@ -663,49 +672,9 @@ columns, the chosen year solid blue); picking a year shows the twelve
 months, and picking a month goes back to the days. It writes to the two
 hidden `<select>`s dashboard.js reads, so the calendar logic is unchanged.
 
-**The cheque** (`css/cheque.css`, `js/print.js`). Modelled on the
-uniform Sayad cheque every bank now prints — pale pink paper with an
-eight-pointed star (a شمسه) in the middle, a lilac band with a chain of
-rings down the binding edge carrying the serial and the name reading
-upward («331010-CHEKINO», as the leaf prints its series and bank), and a
-line of microprint along the foot — but laid out around what Chekino knows
-about a cheque, each value where the leaf keeps its counterpart and
-captioned with the word the form uses:
-- top, at the start: «سررسید» in three boxes, the date in words under it,
-  and how far off it is («۱۴ روز دیگر», «۳ روز گذشته» — amber when close
-  and red when past, while the cheque still waits to be registered);
-  in the middle «چک صیادی» with a bank emblem; at the end «سریال» and
-  «شناسه صیادی» (caption above value) with «کپی», and the cheque's photo
-  where the leaf has its QR («۲ عکس» when there are more; it opens the
-  photo viewer);
-- the payment sentence: «به موجب این چک مبلغ … ریال», «در وجه [the
-  beneficiary, captioned ذینفع] به کد ملی (or به شناسه ملی, by the
-  number's length) … پرداخت نمایید.»;
-- the middle: the status stamp where a signature would go, and «مبلغ به
-  عدد» boxed at the end;
-- the foot, where the leaf names its account holder: «صاحب چک», «تاریخ
-  ارسال» and «از طریق» (the request to register went to the owner); at the
-  end, under the amount, «طرف حساب» and «تاریخ خرج»; then «توضیحات».
-Printed words are a grey violet and whatever was filled in is blue ink, so
-the cheque's data stands apart from its print at a glance; an empty value
-is a muted «—». The paper, print and ink are the cheque's own colours,
-dimmed in dark mode. The stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت») is in
-the status colours — slate for waiting. A status set while the leaf is open
-comes down on it as a rubber stamp does: from above and askew, past its
-size, settling at its tilt, the leaf giving a pixel under it (0.5s); a leaf
-opening just has its stamp. Both movements are off when the system asks for
-less motion. The leaf keeps a cheque's
-proportions at the least and grows when what it carries needs more room.
-Everything is sized in em: 14px in the view; on the login page the leaf
-scales with its container as one object. Below 540px the view reflows the
-same zones into one column — the numbers and the photo, the due date, the
-amount with the stamp beside it (or under it, when the amount is long),
-the sentence flowing as text, the people, the notes. The photo itself is not in the cheque list — only its id — and arrives
-from /api/images when the cheque is opened; until then its tile pulses
-faintly. A PDF shows as «PDF» and opens in a new tab. There is no stub, no
-MICR line and no signature: the leaf people hold has none of the first
-two, and a drawn signature said nothing true. Used in the view face and on
-the login page.
+The drawn Sayad leaf (`css/cheque.css`, `js/print.js`: pink paper, the
+eight-pointed star, the lilac band, the stamp) is gone with it (2026-10-12),
+as the login page's sample cheque went before it.
 
 **Floating surfaces.** No border of their own: `--shadow-2` plus the 1px
 ring, radius 16–20, a 280ms rise. Menu items are radius 10 with a grey
@@ -948,11 +917,9 @@ year, `immutable`.
 |---|---|
 | `css/shared.css` | tokens (both themes), baseline, command palette, the theme-switch view transition |
 | `css/dashboard.css` | dashboard; the **VISUAL LAYER — Monochrome** section at the end decides the look |
-| `css/cheque.css` | the cheque leaf |
 | `css/cheque-form.css` | the add / view / edit modal |
 | `css/login.css`, `css/admin.css` | the two other pages (each ends with a "Monochrome finish" section) |
-| `js/print.js` | guilloche + the star medallion |
-| `js/cheque-form.js` | view face: fills the cheque from the form's fields (read-only) |
+| `js/cheque-form.js` | view face: the cheque at a glance and its way so far, from the form's fields (read-only) |
 | `js/shell.js` | card spotlight, first-load blur-fade, tooltip tidy-up (read-only) |
 | `js/theme-reveal.js` | the circular theme switch (dashboard and admin) |
 | `js/date-segments.js` | the day / month / year segments drawn over each date field (read-only) |

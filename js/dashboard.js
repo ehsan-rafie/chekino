@@ -455,35 +455,43 @@ const editState = () => JSON.stringify(formSnapshot()) + '|' + attachedFiles.map
 const veStIcon = document.getElementById('veStIcon');
 const veStTitle = document.getElementById('veStTitle');
 const veStDesc = document.getElementById('veStDesc');
-function daysAgoText(days, verb) {
-  if (days === 0) return `امروز ${verb}`;
-  if (days === 1) return `دیروز ${verb}`;
-  return `${toFa(days)} روز پیش ${verb}`;
-}
+const veStDate = document.getElementById('veStDate');
+const cvSend = document.getElementById('cvSend');
+const cvFollow = document.getElementById('cvFollow');
+// The view's last two steps (2026-10-12): sent to its owner — done, or the
+// step it is at, with «ارسال برای صاحب چک» — and Sayad's answer: its status
+// as the title, its date at the end of the label, one line under it, and
+// the next steps (showVeActions). Not sent yet, the last is still to come.
 function fillVeStatus(c) {
-  // Not sent to its owner yet: where it stands instead of a Sayad status
-  // (a neutral wash; the leaf then has no stamp)
-  if (isPreSend(c)) {
-    veStatusBanner.className = 've-status-banner show st-stage';
+  const pre = isPreSend(c);
+  cvSend.classList.toggle('is-current', pre);   // not sent yet: the step it is at
+  cvSend.classList.toggle('is-done', !pre);
+  // the reminders sent since (the follow-up window's «پیگیری شد»)
+  const ups = (c.history || []).filter((h) => h.event === 'followed_up');
+  cvFollow.hidden = !ups.length || pre;
+  if (ups.length) cvFollow.textContent = `${ups.length === 1 ? 'یک بار' : toFa(ups.length) + ' بار'} پیگیری شد، آخرین بار ${faDate(ups[ups.length - 1].at)}`;
+  veStDate.textContent = '';
+  if (pre) {
+    veStatusBanner.className = 'cv-step ve-status-banner show st-stage is-next';
     veStIcon.innerHTML = icon('clock');
-    veStTitle.textContent = 'آماده‌ی ارسال';
-    veStDesc.innerHTML = '<span>هنوز برای صاحب چک فرستاده نشده</span>';
+    veStTitle.textContent = '';
+    veStDesc.innerHTML = '';
     return;
   }
   const st = statusById(c.status);
   const sent = daysSinceJalali(c.sendDate);
   const parts = [];
   if (c.status === 'done') {
-    if (c.statusChangedAt) parts.push(`تاریخ ثبت ${faDate(c.statusChangedAt)}`);
+    if (c.statusChangedAt) veStDate.textContent = faDate(c.statusChangedAt);
     const took = sent >= 0 ? sent - Math.max(0, daysSinceJalali(c.statusChangedAt)) : -1;
     if (took > 0) parts.push(`${toFa(took)} روز پس از ارسال`);
   } else if (c.status === 'problem') {
     if (c.statusReason) parts.push(c.statusReason);
-    if (c.statusChangedAt) parts.push(faDate(c.statusChangedAt));
-  } else {
-    parts.push(sent >= 0 ? daysAgoText(sent, 'برای ثبت ارسال شد') : `ارسال برای ثبت ${faDate(c.sendDate)}`);
+    if (c.statusChangedAt) veStDate.textContent = faDate(c.statusChangedAt);
+  } else if (sent >= 0) {
+    parts.push(sent === 0 ? 'امروز فرستاده شد' : `${toFa(sent)} روز از ارسال`);
   }
-  veStatusBanner.className = 've-status-banner show ' + st.cls;
+  veStatusBanner.className = 'cv-step ve-status-banner show ' + st.cls;
   veStIcon.innerHTML = icon(c.status === 'done' ? 'check' : c.status === 'problem' ? 'alert' : 'clock');
   veStTitle.textContent = st.name;
   // each part isolated, so a date and a count side by side never merge
@@ -618,7 +626,7 @@ function veSetStatus(to, reason) {
   closeVeReason();
   applyStatus(id, to, reason || '');
   // the press's own result in focus: the next step, or the banner's text
-  const next = [...veStatusBanner.querySelectorAll('.ve-receipt-btn')].find((b) => b.offsetParent !== null);
+  const next = [...veStatusBanner.querySelectorAll('.ve-receipt-btn, .cv-btn')].find((b) => b.offsetParent !== null);
   (next || modalBody).focus({ preventScroll: true });
 }
 veStActions.addEventListener('click', (e) => {
@@ -675,7 +683,7 @@ function openModalForView(id) {
   editingHadPhoto = Array.isArray(c.files) && c.files.length > 0;
   editingFiles = (c.imageCount || 0) === (c.files || []).length ? (c.files || []).map((f) => f.id) : null;
   veHasEdited = false;
-  modalTitle.textContent = 'مشاهده چک';
+  modalTitle.textContent = `چک ${toFa(c.serial)}`;
   enableFormButtons();
   hideFormAlert();
   fillVeStatus(c);
@@ -1757,7 +1765,7 @@ function numberToPersianWords(num) {
 }
 
 // thousands grouped with the Persian separator «٬» — the one standard for
-// every amount on the page, as on the leaf
+// every amount on the page
 function groupDigits(str) {
   return str.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
 }
@@ -3401,18 +3409,20 @@ renderChannelChips();
 const MAX_FILE_BYTES = 10 * 1024 * 1024;   // files are stored as base64 text in local storage
 let attachedFiles = [];                    // { name, type, size, dataUrl, [source, edit] } — see peSendBtn
 
-// In the view, under the leaf: every file, when there's more than the one
-// the leaf shows (a photo opens in the viewer, a PDF in a new tab)
+// In the view's details: every file of the cheque as a small tile (a
+// photo opens in the viewer, a PDF in a new tab)
 const veFiles = document.getElementById('veFiles');
 const veFilesList = document.getElementById('veFilesList');
 function drawVeFiles() {
-  const show = modalMode === 'view' && (attachedFiles.length > 1 || attachedFiles.some((f) => f.kind === 'receipt'));
+  const show = modalMode === 'view' && attachedFiles.length > 0;
   veFiles.hidden = !show;
   if (!show) { veFilesList.innerHTML = ''; return; }
   let photoN = 0;
+  const photos = attachedFiles.filter((f) => f.kind !== 'receipt' && (f.type || '').startsWith('image/')).length;
+  document.getElementById('veFilesLabel').textContent = attachedFiles.length > 1 ? 'عکس‌ها و فایل‌ها' : 'عکس';
   veFilesList.innerHTML = attachedFiles.map((f, i) => {
     const isImg = (f.type || '').startsWith('image/');
-    const label = f.kind === 'receipt' ? 'رسید صیاد' : isImg ? `عکس ${toFa(++photoN)}` : 'PDF';
+    const label = f.kind === 'receipt' ? 'رسید صیاد' : isImg ? (photos > 1 ? `عکس ${toFa(++photoN)}` : 'عکس چک') : 'PDF';
     const thumb = isImg
       ? (f.dataUrl ? `<img src="${f.dataUrl}" alt="">` : '<span class="ve-file-wait"></span>')
       : '<span class="ve-file-doc">PDF</span>';

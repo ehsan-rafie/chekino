@@ -1,5 +1,8 @@
-// View face of the cheque modal: the drawn Sayad cheque, carrying
-// everything Chekino knows about the cheque (css/cheque.css has the map).
+// View face of the cheque modal (2026-10-12): the cheque at a glance —
+// amount, due date, serial, sayad id, photo — and its way so far, step by
+// step: who it came from, who it went to, whose name it is registered to,
+// when it was sent to its owner (css/cheque-form.css, «View»). The last
+// step, Sayad's answer, is dashboard.js's (fillVeStatus).
 //
 // Read-only on purpose: it never writes to a form field or touches the
 // modal's own state, it only mirrors what dashboard.js already put in the
@@ -16,8 +19,8 @@
   const $ = (id) => document.getElementById(id);
   const overlay = $('modalOverlay');
   const body = $('modalBody');
-  const cheque = $('cqCheque');
-  if (!overlay || !body || !cheque) return;
+  const view = $('cqView');
+  if (!overlay || !body || !view) return;
 
   // ---- digits ------------------------------------------------------------
   const FA = '۰۱۲۳۴۵۶۷۸۹';
@@ -95,14 +98,6 @@
     return { text, cls };
   }
 
-  // ---- security print (js/print.js) ---------------------------------------
-  function drawPrint() {
-    const Print = window.ChekinoPrint;
-    if (!Print) return;
-    Print.guilloche($('cqcGuilloche'));
-    Print.star($('cqcStar'));
-  }
-
   // ---- small DOM helpers ---------------------------------------------------
   // setFill writes a value into its place on the cheque and plays the "ink"
   // entrance only when the text actually changes.
@@ -113,11 +108,6 @@
     if (el.textContent === v) return;
     el.textContent = v;
     el.classList.toggle('is-empty', !value);
-    if (value) {
-      el.classList.remove('ink-in');
-      void el.offsetWidth;
-      el.classList.add('ink-in');
-    }
   }
   // The chosen tags by name: the messengers, then the user's own entries
   function channelNames() {
@@ -133,94 +123,70 @@
     if (b.classList.contains('st-pending')) return 'pending';
     return '';
   }
-  const STAMP = { done: 'ثبت شد', problem: 'ثبت نشد', pending: 'منتظر ثبت' };
-  let stampSeen = false;   // the leaf has shown a status since it opened
-  function landStamp() {
+  // A status set while the window is open: its mark settles in (not when a
+  // window opens: it is there already)
+  let statusSeen = false;
+  // (the mark, not its step: dashboard.js rewrites the step's classes on
+  // every refresh, the server's answer included)
+  const mark = $('veStIcon');
+  function landStatus() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const s = $('cqcStamp');
-    s.classList.remove('is-landing'); cheque.classList.remove('is-stamped');
-    void s.offsetWidth;   // a second change in a row starts it over
-    s.classList.add('is-landing'); cheque.classList.add('is-stamped');
+    mark.classList.remove('is-landing');
+    void mark.offsetWidth;   // a second change in a row starts it over
+    mark.classList.add('is-landing');
   }
-  $('cqcStamp').addEventListener('animationend', (e) => {
-    if (e.animationName === 'cqcStampLand') { e.target.classList.remove('is-landing'); cheque.classList.remove('is-stamped'); }
-  });
+  mark.addEventListener('animationend', () => mark.classList.remove('is-landing'));
 
-  // ---- the photo, where the leaf has its QR ------------------------------
-  // (dashboard.js keeps the attachments in the global `attachedFiles`)
-  function files() {
-    try { return Array.isArray(attachedFiles) ? attachedFiles : []; } catch (e) { return []; }
-  }
-  const isImage = (f) => (f.type || '').startsWith('image/');
-  const photoBtn = $('cqcPhoto');
-  let photoKey = null;
-  function renderPhoto() {
-    const list = files();
-    const key = list.map((f) => f.name + ':' + (f.dataUrl || '').length).join('|');
-    if (key === photoKey) return;
-    photoKey = key;
-    const i = list.findIndex(isImage);
-    const at = i >= 0 ? i : 0;
-    const first = list[at];
-    photoBtn.hidden = !first;
-    if (!first) return;
-    const box = $('cqcPhotoImg');
-    box.textContent = '';
-    // a server photo is on its way until its object URL arrives
-    box.classList.toggle('is-loading', isImage(first) && !first.dataUrl);
-    if (isImage(first) && first.dataUrl) {
-      const img = document.createElement('img');
-      img.src = first.dataUrl;
-      img.alt = '';
-      box.appendChild(img);
-    } else if (!isImage(first)) {
-      box.textContent = 'PDF';
+  const MESSAGE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L3 21l2-6.2A8 8 0 1 1 21 12Z"/></svg>';
+  // The chosen ways it went to its owner: each messenger's logo and name
+  function channelsInto(el) {
+    const g = $('channelGroup');
+    const tags = g ? [...g.querySelectorAll('.ch-tag[aria-pressed="true"]')] : [];
+    const key = tags.map((x) => x.textContent.trim()).join('|');
+    if (el.dataset.key === key) return;
+    el.dataset.key = key;
+    el.textContent = '';
+    for (const tag of tags) {
+      const name = (tag.querySelector('.ch-name') || {}).textContent || '';
+      if (!name.trim()) continue;
+      const s = document.createElement('span');
+      s.className = 'cv-ch';
+      // the messengers' own logos (from the page); one written in, a plain message
+      const logo = tag.querySelector('.ch-logo');
+      s.innerHTML = logo ? logo.innerHTML : MESSAGE_ICON;
+      s.appendChild(document.createTextNode(name.trim()));
+      el.appendChild(s);
     }
-    photoBtn.classList.toggle('is-doc', !isImage(first) && !first.id);
-    photoBtn.dataset.index = String(at);
-    const n = list.length;
-    const word = list.every(isImage) ? 'عکس' : 'فایل';
-    $('cqcPhotoLabel').textContent = n > 1 ? `${toFa(n)} ${word}` : 'عکس چک';
-    photoBtn.setAttribute('aria-label', n > 1 ? `دیدن عکس‌های چک، ${toFa(n)} عکس` : 'دیدن عکس چک');
   }
-  photoBtn.addEventListener('click', () => {
-    const i = Number(photoBtn.dataset.index);
-    const f = files()[i];
-    if (!f) return;
-    if (!isImage(f)) {
-      if (f.id && typeof openAttachment === 'function') openAttachment(f);   // a PDF: a new tab
-      return;
-    }
-    if (!f.dataUrl || typeof openLightbox !== 'function') return;   // still on its way
-    openLightbox(f.dataUrl, f.name, i);
-  });
 
-  // ---- copy the sayad id ----------------------------------------------------
+  // ---- copying the sayad id and the national id ------------------------------
+  function copyButton(btn, read, what) {
+    btn.addEventListener('click', () => {
+      const text = read();
+      if (!text) return;
+      const done = () => {
+        btn.classList.add('is-done');
+        setTimeout(() => btn.classList.remove('is-done'), 1400);
+        if (typeof showToast === 'function') showToast(`${what} کپی شد`);
+      };
+      const legacy = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        ta.remove();
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(legacy);
+      else legacy();
+    });
+  }
   const copyBtn = $('cqcCopySayad');
-  copyBtn.addEventListener('click', () => {
-    const text = digits(val('sayadInput'));
-    if (!text) return;
-    const done = () => {
-      copyBtn.textContent = 'کپی شد';
-      setTimeout(() => { copyBtn.textContent = 'کپی'; }, 1400);
-      if (typeof showToast === 'function') showToast('شناسه صیادی کپی شد');
-    };
-    const legacy = () => {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) {}
-      ta.remove();
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done).catch(legacy);
-    } else {
-      legacy();
-    }
-  });
+  const copyNid = $('cqcCopyNid');
+  copyButton(copyBtn, () => digits(val('sayadInput')), 'شناسه صیادی');
+  copyButton(copyNid, () => digits(val('nidInput')), 'کد ملی');
 
   // ---- render ---------------------------------------------------------------
   let last = '';
@@ -237,10 +203,9 @@
     const nid = digits(val('nidInput'));
     const send = jalaliParts(val('sendDateInput'));
     const spend = jalaliParts(val('spendDateInput'));
-    const channels = channelNames().join('، ');
+    const channels = channelNames().join('، ');   // (in the snapshot: a change redraws)
     const notes = val('notesInput');
     const status = statusOf();
-    renderPhoto();
     const snapshot = [
       serial, sayad, amount, due && due.raw, owner, party, benef, nid,
       send && send.raw, spend && spend.raw, channels, notes, status,
@@ -249,50 +214,45 @@
     if (snapshot === last) return;
     last = snapshot;
 
-    // Top: the due date boxed, in words, and how far off it is
-    const dueEl = $('cqcDue');
-    const boxes = (due ? [toFa(due.y), toFa(pad(due.m)), toFa(pad(due.d))] : ['––––', '––', '––'])
-      .map((p) => `<i>${p}</i>`).join('');
-    if (dueEl.innerHTML !== boxes) dueEl.innerHTML = boxes;
-    setFill('cqcDueWords', due && dateWords(due), '—');
+    // At a glance: the amount (and in words), the due date and how far off
+    // it is, the serial, the sayad id
+    setFill('cqcAmount', amount && toFa(group(amount)), '—');
+    $('cqcAmount').title = amount ? `${numberWords(amount)} ریال` : '';   // in words, on hover
+    setFill('cqcDue', due && faDate(due), '—');
     const dist = dueDistance(due, status);
     const distEl = $('cqcDueRel');
     distEl.hidden = !dist;
     if (dist) {
       distEl.textContent = dist.text;
-      distEl.className = 'cqc-due-rel' + (dist.cls ? ' ' + dist.cls : '');
+      distEl.className = 'cv-rel' + (dist.cls ? ' ' + dist.cls : '');
     }
-
-    // The numbers, and the band that repeats the serial like a leaf's series
     setFill('cqcSerial', serial && toFa(serial), '—');
     setFill('cqcSayad', sayad && toFa(sayad.replace(/(\d{4})(?=\d)/g, '$1 ')), '—');
     copyBtn.hidden = !sayad;
-    $('cqcBand').textContent = (serial ? serial + '-' : '') + 'CHEKINO';
 
-    // The payment sentence
-    setFill('cqcWords', amount && numberWords(amount), '—');
-    setFill('cqcBenef', benef, '—');
-    $('cqcNidLabel').textContent = nid.length === 11 ? 'به شناسه ملی' : 'به کد ملی';
-    setFill('cqcNid', nid && toFa(nid), '—');
-    setFill('cqcAmount', amount && toFa(group(amount)), '');
-
-    // The stamp. A status set while the leaf is open lands on it, the way a
-    // rubber stamp comes down — not when a leaf opens (it is there already)
-    const was = cheque.dataset.status;
-    $('cqcStamp').textContent = STAMP[status] || '';
-    cheque.dataset.status = status;
-    if (stampSeen && was && status && was !== status) landStamp();
-    stampSeen = true;
-
-    // The people, and when the cheque went where
+    // Its way: from whom, to whom, whose name, sent when and how
     setFill('cqcOwner', owner, '—');
-    setFill('cqcSend', send && faDate(send), '—');
-    setFill('cqcChannels', channels, '—');
     setFill('cqcParty', party, '—');
-    setFill('cqcSpend', spend && faDate(spend), '—');
+    setFill('cqcSpend', spend && faDate(spend), '');
+    setFill('cqcBenef', benef, '—');
+    $('cqcNidLabel').textContent = nid.length === 11 ? 'شناسه ملی' : 'کد ملی';
+    setFill('cqcNid', nid && toFa(nid), '');
+    copyNid.hidden = !nid;
+    $('cqcNid').parentElement.hidden = !nid;
+    setFill('cqcSend', send && faDate(send), '');
+    const ch = $('cqcChannels');
+    if (send) channelsInto(ch);
+    else { ch.dataset.key = ''; ch.textContent = 'هنوز فرستاده نشده'; }
+    ch.classList.toggle('is-empty', !send);
     setFill('cqcNotes', notes, '');
     $('cqcNotesRow').hidden = !notes;
+
+    // A status set while the window is open: its mark settles in
+    if (statusSeen && was && status && was !== status) landStatus();
+    was = status;
+    statusSeen = true;
   }
+  let was = '';
 
   // ---- wiring ---------------------------------------------------------------
   let raf = 0;
@@ -308,10 +268,9 @@
   const watchOpen = () => {
     const open = overlay.classList.contains('show');
     if (open && !timer) {
-      drawPrint();
       last = '';
-      photoKey = null;
-      stampSeen = false;
+      statusSeen = false;
+      was = '';
       render();
       timer = setInterval(render, 300);
     } else if (!open && timer) {
