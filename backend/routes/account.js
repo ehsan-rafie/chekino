@@ -12,6 +12,8 @@ router.get('/', async (req, res) => {
   try {
     const r = (await pool.query(
       `SELECT c.name, p.name AS plan_name, p.max_checks, p.max_people,
+              c.subscription_ends_at::text AS subscription_ends_at,
+              ((now() AT TIME ZONE 'Asia/Tehran')::date)::text AS today,
               (SELECT COUNT(*) FROM checks WHERE company_id = c.id)::int AS checks,
               (SELECT COUNT(*) FROM people WHERE company_id = c.id)::int AS people
        FROM companies c LEFT JOIN plans p ON p.id = c.plan_id

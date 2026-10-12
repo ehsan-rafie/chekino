@@ -177,6 +177,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   function showPlan() {
     apiJson('/account').then((a) => {
       const parts = [of(a.checks, a.max_checks, 'چک'), of(a.people, a.max_people, 'شخص')];
+      if (a.subscription_ends_at) parts.push(`تا ${subscriptionDay(a.subscription_ends_at)}`);
+      showSubscription(a);
       const near = (a.max_checks && a.checks >= a.max_checks * 0.9) || (a.max_people && a.people >= a.max_people * 0.9);
       planEl.innerHTML = '';
       if (a.plan_name) { const n = document.createElement('b'); n.textContent = `پلن ${a.plan_name}`; planEl.appendChild(n); }
@@ -4272,6 +4274,42 @@ window.addEventListener('online', () => { if (checksLoadFailed) retryLoad(); });
 // synchronous getter — it's simply a view over checksCache, refreshed by
 // loadChecksFromApi() after every create/edit/delete/status-change.
 function loadCheques() { return checksCache; }
+// ---- The subscription's end (H8) ----
+// Fourteen days before it, an amber bar over the board; once it has passed,
+// a red one — nothing is cut off. Closed, it stays closed for this session
+// (and that end date).
+const SUB_WARN_DAYS = 14;
+const subscriptionDay = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' });   // ۱۴۰۵/۰۸/۱۵, as the board writes dates
+function subscriptionDaysLeft(ends, today) {
+  const at = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  return Math.round((at(ends) - at(today)) / 86400000);
+}
+function showSubscription(a) {
+  const bar = document.getElementById('subBar');
+  if (!bar) return;
+  const ends = a && a.subscription_ends_at;
+  const today = (a && a.today) || new Date().toISOString().slice(0, 10);
+  const n = ends ? subscriptionDaysLeft(ends, today) : null;
+  let closed = false;
+  try { closed = sessionStorage.getItem('chekino_sub_bar_closed') === ends; } catch (e) {}
+  if (n === null || n > SUB_WARN_DAYS || closed) { bar.hidden = true; return; }
+  const day = subscriptionDay(ends);
+  document.getElementById('subBarText').textContent = n < 0
+    ? `اشتراک شما از ${day} تمام شده است؛ برای تمدید به پشتیبانی پیام بدهید.`
+    : n === 0 ? `اشتراک شما امروز (${day}) تمام می‌شود؛ برای تمدید به پشتیبانی پیام بدهید.`
+    : `اشتراک شما ${toFa(n)} روز دیگر (${day}) تمام می‌شود؛ برای تمدید به پشتیبانی پیام بدهید.`;
+  bar.classList.toggle('is-over', n < 0);
+  bar.hidden = false;
+  bar._ends = ends;
+}
+document.getElementById('subBarClose').addEventListener('click', () => {
+  const bar = document.getElementById('subBar');
+  try { sessionStorage.setItem('chekino_sub_bar_closed', bar._ends || ''); } catch (e) {}
+  bar.hidden = true;
+});
+// asked once when the board opens (the account menu asks again when opened)
+apiJson('/account').then(showSubscription).catch(() => {});
+
 // One cheque as the server now has it, in the list (a new array: the
 // board's views of it are recomputed) — instead of the whole list again
 function putCheque(row) {

@@ -98,7 +98,11 @@
       </div>
 
       <div class="card card-table">
-        <div class="card-head-strip"><h2>لیست شرکت‌ها</h2></div>
+        <div class="card-head-strip companies-head">
+          <h2>لیست شرکت‌ها</h2>
+          <input type="search" id="companySearch" class="company-search" placeholder="جستجوی نام یا نام کاربری" aria-label="جستجوی شرکت" autocomplete="off">
+          <button type="button" class="expiring-toggle" id="expiringToggle" aria-pressed="false" hidden></button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -109,6 +113,7 @@
                 <th>اشخاص</th>
                 <th>چک‌ها</th>
                 <th>وضعیت</th>
+                <th>اشتراک</th>
                 <th>تاریخ ثبت</th>
                 <th>عملیات</th>
               </tr>
@@ -231,6 +236,17 @@
         <option value="true">فعال (اجباری)</option>
         <option value="false">غیرفعال (اجباری)</option>
       </select>
+    </div>
+    <div class="field subscription-field">
+      <span class="field-label">اشتراک</span>
+      <div class="subscription-now" id="subscriptionNow"></div>
+      <div class="subscription-actions" role="group" aria-label="تمدید اشتراک">
+        <button type="button" data-months="1">تمدید ۱ ماه</button>
+        <button type="button" data-months="3">۳ ماه</button>
+        <button type="button" data-months="6">۶ ماه</button>
+        <button type="button" data-months="12">۱ سال</button>
+        <button type="button" data-clear="1">بدون پایان</button>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" id="editCompanyCancel">انصراف</button>

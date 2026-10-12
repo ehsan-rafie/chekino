@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const guard = require('../lib/loginGuard');
 const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const { loginLimiter } = require('../middleware/rateLimit');
@@ -37,6 +38,12 @@ const loginValidation = [
 router.post('/login', loginLimiter, loginValidation, validate, async (req, res) => {
   try {
     const { username, password } = req.body;
+    const key = guard.keyOf('admin', username);
+    const wait = await guard.lockedFor(key);
+    if (wait) {
+      res.set('Retry-After', String(wait * 60));
+      return res.status(429).json({ error: guard.lockedMessage(wait), code: 'locked' });
+    }
 
     const result = await pool.query(
       'SELECT id, username, password_hash FROM admin_users WHERE username = $1',
@@ -45,14 +52,17 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
 
     if (result.rows.length === 0) {
       await bcrypt.compare(password, DUMMY_HASH);   // keep both paths equally slow
+      await guard.failed(key);
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
 
     const admin = result.rows[0];
     const passwordMatch = await bcrypt.compare(password, admin.password_hash);
     if (!passwordMatch) {
+      await guard.failed(key);
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
+    await guard.succeeded(key);
 
     const token = signAdminToken(admin);
     res.json({ token });
@@ -114,12 +124,42 @@ router.put('/account', accountValidation, validate, async (req, res) => {
 
 const COMPANY_SELECT = `
   SELECT c.id, c.name, c.username, c.status, c.plan_id, c.permissions, c.created_at,
+         c.subscription_ends_at::text AS subscription_ends_at,
          p.name AS plan_name, p.max_people, p.max_checks, p.features AS plan_features,
          (SELECT COUNT(*) FROM people WHERE people.company_id = c.id) AS people_count,
          (SELECT COUNT(*) FROM checks WHERE checks.company_id = c.id) AS checks_count
   FROM companies c
   LEFT JOIN plans p ON p.id = c.plan_id
 `;
+
+// «تمدید» (H8): the subscription goes on by whole months, from its end, or
+// from today when it has ended or never had one (Tehran's today); or it
+// stops having an end. Nothing else is cut off at the end — the dashboard
+// warns, and turning a company off stays the admin's own step.
+router.post('/companies/:id/subscription', idParamValidation, [
+  body('months').optional().isIn([1, 3, 6, 12]).withMessage('ماه‌ها نامعتبر است').toInt(),
+  body('clear').optional().isBoolean(),
+], validate, async (req, res) => {
+  const { months, clear } = req.body;
+  if (!months && !clear) return res.status(400).json({ error: 'چند ماه تمدید شود؟' });
+  try {
+    const r = await pool.query(
+      clear
+        ? 'UPDATE companies SET subscription_ends_at = NULL WHERE id = $1 RETURNING id'
+        : `UPDATE companies SET subscription_ends_at = (
+             GREATEST(COALESCE(subscription_ends_at, (now() AT TIME ZONE 'Asia/Tehran')::date), (now() AT TIME ZONE 'Asia/Tehran')::date)
+             + make_interval(months => $2))::date
+           WHERE id = $1 RETURNING id`,
+      clear ? [req.params.id] : [req.params.id, months]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'شرکت یافت نشد' });
+    const updated = await pool.query(`${COMPANY_SELECT} WHERE c.id = $1`, [req.params.id]);
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error('Admin subscription error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  }
+});
 
 router.get('/companies', async (req, res) => {
   try {

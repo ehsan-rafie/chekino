@@ -250,6 +250,11 @@ amounts, national ids, notes and reasons; a list of serials pasted into it
 shows those cheques, and a line under it says what wasn't found anywhere.
 After a change of one cheque only that cheque is fetched (its row from the
 save); the whole list again when the page is come back to after a minute.
+**When the subscription ends** (H8): two weeks before, an amber bar over
+the board — «اشتراک شما ۵ روز دیگر (۱۴۰۵/۰۸/۱۵) تمام می‌شود؛ برای تمدید به
+پشتیبانی پیام بدهید.» with «پیام به پشتیبانی» and a × that closes it for the
+session; once it has ended, the same bar in red. Nothing is cut off. The
+account menu adds «تا ۱۴۰۵/۰۸/۱۵» to the plan line.
 **When the list can't be fetched** the board never says «هنوز چکی ثبت نشده»: with nothing loaded yet, a panel takes its place (a no-signal icon, «چک‌ها بارگذاری نشدند», «تلاش دوباره»); when a refresh fails, the last list stays and a slim red alert bar over it says «فهرست به‌روز نشد … مال ساعت ۹:۰۶ است» with the same button. Coming back online retries by itself.
 **Tooltips** (HeroUI's Tooltip, `#appTooltip`): ink, small, above what
 they explain with a little arrow (below, flipped, only without room); they
@@ -901,14 +906,23 @@ link under the form («به پشتیبانی پیام بدهید»). A username 
 Persian keyboard is read back by key («زمشعیفثسف» → «claudtest») and said
 under the field; Caps Lock is said under the password; a password with
 Persian digits is tried with Latin ones too. A wrong field is marked
-(aria-invalid), described by the alert and focused.
+(aria-invalid), described by the alert and focused. Five wrong passwords in a
+row for one username lock it for a minute, then two, four, eight, up to a
+quarter of an hour (the database counts them, for known names and unknown
+alike); the alert says how long: «چند رمز اشتباه پشت سر هم برای این نام
+کاربری زده شد؛ ۳ دقیقه‌ی دیگر دوباره امتحان کن». A good sign-in clears it.
 
 **Admin.** Same system: a top bar with a hairline, a side navigation whose
 active item is a grey wash, bordered cards, outlined fields, ink buttons,
 tables with a faint header row, status badges with a dot. On narrow
 screens the navigation becomes segmented tabs. Its words are Persian
 throughout (a plan's «دسترسی خروجی گرفتن», a company's «دسترسی … برای این
-شرکت»), and its counts Persian digits, «۶ از ۲۰۰».
+شرکت»), and its counts Persian digits, «۶ از ۲۰۰». **Subscriptions** (H8): each
+company's row says until when («تا ۱۴۰۵/۰۸/۱۵», «۵ روز مانده» in amber within
+two weeks, «تمام شده» in red after) or «بدون پایان»; over the list, a search
+(name or username) and «در حال انقضا n», a toggle to see only those. In a
+company's window, «تمدید ۱ ماه / ۳ ماه / ۶ ماه / ۱ سال» or «بدون پایان», each
+saved at once — months added to its end, or to today once it has ended.
 
 **On a phone's home screen.** `manifest.webmanifest` (name «چکینو», right to
 left, standalone) and icons drawn from the brand mark on white

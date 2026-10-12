@@ -561,3 +561,53 @@ tbody tr:hover { background: var(--surface-2); }
 .field .ig > input[type="number"] { direction: ltr; text-align: left; }
 .field .ig > input[dir="ltr"]::placeholder,
 .field .ig > input[type="number"]::placeholder { text-align: right; }
+
+/* ═══ Subscriptions (H8) ═══ */
+.companies-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.companies-head h2 { margin-inline-end: auto; }
+.company-search {
+  width: 240px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-cap);
+}
+.company-search:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.expiring-toggle {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--state-warn-text, var(--ink-2));
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+}
+.expiring-toggle[hidden] { display: none; }
+.expiring-toggle[aria-pressed="true"] { border-color: var(--accent); box-shadow: var(--ring); color: var(--ink); }
+.sub-cell { white-space: nowrap; }
+.sub-cell span, .subscription-now span { display: block; }
+.sub-none { color: var(--muted); }
+.sub-left { font-size: var(--t-micro); }
+.sub-left.is-near { color: var(--state-warn-text, #a15c00); }
+.sub-left.is-over, .sub-end.is-over { color: var(--state-bad-text); }
+.subscription-field .field-label { display: block; margin-bottom: 6px; font-size: var(--t-cap); color: var(--ink-2); }
+.subscription-now { margin-bottom: 8px; font-size: var(--t-body); }
+.subscription-now span { display: inline; margin-inline-end: 10px; }
+.subscription-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.subscription-actions button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-cap);
+}
+.subscription-actions button:hover { border-color: var(--border-strong); background: var(--surface-2, var(--surface)); }
+.subscription-actions button[data-clear] { color: var(--ink-2); }
+@media (max-width: 720px) { .company-search { width: 100%; } }

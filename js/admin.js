@@ -372,6 +372,28 @@ async function deletePlan(id) {
 
 // ==================== COMPANIES ====================
 let companiesCache = [];
+let expiringOnly = false;
+
+// A company's subscription (H8): days from today to its end — negative once
+// it has ended — or null when it has none; and the words for it
+const EXPIRING_DAYS = 14;
+function daysLeft(ends) {
+  if (!ends) return null;
+  const t = new Date(); const today = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+  const [y, m, d] = ends.split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - today) / 86400000);
+}
+const FA_DAY = { year: 'numeric', month: '2-digit', day: '2-digit' };   // ۱۴۰۵/۰۸/۱۵
+const faDay = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('fa-IR', FA_DAY);
+function subscriptionHtml(c) {
+  const n = daysLeft(c.subscription_ends_at);
+  if (n === null) return '<span class="sub-none">بدون پایان</span>';
+  const when = `تا ${faDay(c.subscription_ends_at)}`;
+  if (n < 0) return `<span class="sub-end is-over">${when}</span><span class="sub-left is-over">تمام شده</span>`;
+  if (n <= EXPIRING_DAYS) return `<span class="sub-end">${when}</span><span class="sub-left is-near">${n === 0 ? 'امروز تمام می‌شود' : faN(n) + ' روز مانده'}</span>`;
+  return `<span class="sub-end">${when}</span>`;
+}
+const isExpiring = (c) => { const n = daysLeft(c.subscription_ends_at); return n !== null && n <= EXPIRING_DAYS; };
 
 async function loadCompanies() {
   try {
@@ -380,8 +402,19 @@ async function loadCompanies() {
     showToast(e.message);
     return;
   }
+  drawCompanies();
+}
+// the list as it is now: searched, and the expiring ones alone when asked
+function drawCompanies() {
+  const q = document.getElementById('companySearch').value.trim().toLowerCase();
+  const expiring = companiesCache.filter(isExpiring).length;
+  const toggle = document.getElementById('expiringToggle');
+  toggle.hidden = !expiring && !expiringOnly;
+  toggle.textContent = `در حال انقضا ${faN(expiring)}`;
+  toggle.setAttribute('aria-pressed', String(expiringOnly));
+  const shown = companiesCache.filter((c) => (!q || c.name.toLowerCase().includes(q) || c.username.toLowerCase().includes(q)) && (!expiringOnly || isExpiring(c)));
   const body = document.getElementById('companiesBody');
-  body.innerHTML = companiesCache.map(c => `
+  body.innerHTML = shown.map(c => `
     <tr data-id="${c.id}">
       <td>${escapeHtml(c.name)}</td>
       <td dir="ltr" style="text-align:left">${escapeHtml(c.username)}</td>
@@ -389,7 +422,8 @@ async function loadCompanies() {
       <td>${faN(c.people_count)}${c.max_people != null ? ' از ' + faN(c.max_people) : ''}</td>
       <td>${faN(c.checks_count)}${c.max_checks != null ? ' از ' + faN(c.max_checks) : ''}</td>
       <td><span class="badge ${c.status}">${c.status === 'active' ? 'فعال' : 'غیرفعال'}</span></td>
-      <td>${new Date(c.created_at).toLocaleDateString('fa-IR')}</td>
+      <td class="sub-cell">${subscriptionHtml(c)}</td>
+      <td>${new Date(c.created_at).toLocaleDateString('fa-IR', FA_DAY)}</td>
       <td class="row-actions">
         <button class="edit-company-btn">ویرایش</button>
         <button class="change-password-btn">تغییر رمز عبور</button>
@@ -397,7 +431,7 @@ async function loadCompanies() {
         <button class="danger delete-company-btn">حذف</button>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="8">هنوز شرکتی ثبت نشده</td></tr>';
+  `).join('') || `<tr><td colspan="9">${companiesCache.length ? 'شرکتی با این جستجو نیست' : 'هنوز شرکتی ثبت نشده'}</td></tr>`;
 
   body.querySelectorAll('.change-password-btn').forEach(btn => {
     btn.addEventListener('click', () => openChangePassword(Number(btn.closest('tr').dataset.id)));
@@ -412,6 +446,33 @@ async function loadCompanies() {
     btn.addEventListener('click', () => deleteCompany(Number(btn.closest('tr').dataset.id)));
   });
 }
+
+document.getElementById('companySearch').addEventListener('input', drawCompanies);
+document.getElementById('expiringToggle').addEventListener('click', () => { expiringOnly = !expiringOnly; drawCompanies(); });
+
+// «تمدید» in a company's window: saved at once, the window and the list follow
+function drawSubscriptionNow(c) {
+  document.getElementById('subscriptionNow').innerHTML = subscriptionHtml(c);
+}
+document.querySelector('.subscription-actions').addEventListener('click', async (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const id = Number(document.getElementById('editCompanyOverlay').dataset.id);
+  const body = b.dataset.clear ? { clear: true } : { months: Number(b.dataset.months) };
+  b.disabled = true;
+  try {
+    const updated = await adminFetch(`/admin/companies/${id}/subscription`, { method: 'POST', body: JSON.stringify(body) });
+    const i = companiesCache.findIndex((x) => x.id === id);
+    if (i >= 0) companiesCache[i] = updated;
+    drawSubscriptionNow(updated);
+    drawCompanies();
+    showToast(updated.subscription_ends_at ? `اشتراک تا ${faDay(updated.subscription_ends_at)}` : 'اشتراک بدون پایان شد');
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    b.disabled = false;
+  }
+});
 
 document.getElementById('addCompanyBtn').addEventListener('click', (ev) =>
   withBusy(ev.currentTarget, 'در حال افزودن…', async () => {
@@ -455,6 +516,7 @@ function openEditCompany(id) {
   setOverride('editPermExport', 'export');
   setOverride('editPermReports', 'reports');
   setOverride('editPermMultiUser', 'multi_user');
+  drawSubscriptionNow(c);
 
   hideAlert('editCompanyAlert');
   document.getElementById('editCompanyOverlay').classList.add('show');

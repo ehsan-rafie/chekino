@@ -6,6 +6,7 @@ const pool = require('../db');
 const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
+const guard = require('../lib/loginGuard');
 
 const router = express.Router();
 
@@ -24,6 +25,13 @@ const loginValidation = [
 router.post('/login', loginLimiter, loginValidation, validate, async (req, res) => {
   try {
     const { username, password } = req.body;
+    // this username's wrong passwords in a row (lib/loginGuard.js)
+    const key = guard.keyOf('company', username);
+    const wait = await guard.lockedFor(key);
+    if (wait) {
+      res.set('Retry-After', String(wait * 60));
+      return res.status(429).json({ error: guard.lockedMessage(wait), code: 'locked' });
+    }
 
     const result = await pool.query(
       'SELECT id, name, password_hash, status FROM companies WHERE username = $1',
@@ -32,6 +40,7 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
 
     if (result.rows.length === 0) {
       await bcrypt.compare(password, DUMMY_HASH);   // keep both paths equally slow
+      await guard.failed(key);
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
 
@@ -39,8 +48,10 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
     const passwordMatch = await bcrypt.compare(password, company.password_hash);
 
     if (!passwordMatch) {
+      await guard.failed(key);
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
+    await guard.succeeded(key);
 
     // Checked after the password, so a wrong password on a disabled account
     // can't be told apart from a wrong password on an active one.
