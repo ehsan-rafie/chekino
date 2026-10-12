@@ -5506,16 +5506,27 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .icon-action:disabled:hover { background: var(--surface); color: var(--ink); }
 
 /* A lane's scrollbar: on the right (the list runs left to right for the
-   browser, its cards right to left as ever), narrow and faint; a shade
-   darker while the pointer is on the lane. Chrome draws the narrow
-   ::-webkit-scrollbar only where scrollbar-width / -color are left at
-   auto; Firefox gets its own thin one. */
+   browser, its cards right to left as ever), a hairline 3px wide, faint; a
+   shade darker while the pointer is on the lane. Every lane keeps the bar's
+   room whether it scrolls or not (scrollbar-gutter), so the cards are one
+   width in all three lanes; the room sits in the lane's own right padding
+   (the list reaches into it), and the thumb keeps 5px from the cards. Chrome
+   draws the ::-webkit-scrollbar only where scrollbar-width / -color are
+   left at auto; Firefox gets its own thin one. */
 .board-col-list { direction: ltr; scrollbar-width: auto; scrollbar-color: auto; }
 .board-col-list > * { direction: rtl; }
-.board-col-list::-webkit-scrollbar { width: 5px; }
+@media (min-width: 861px) {
+  .board-col-list { scrollbar-gutter: stable; margin-right: -10px; }
+}
+.board-col-list::-webkit-scrollbar { width: 12px; }
 .board-col-list::-webkit-scrollbar-track { background: transparent; }
-.board-col-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 12%, transparent); border: 0; border-radius: 5px; }
-.board-column:hover .board-col-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 24%, transparent); }
+.board-col-list::-webkit-scrollbar-thumb {
+  border: solid transparent;
+  border-width: 0 4px 0 5px;          /* 5px from the cards, 4px from the lane's edge */
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent) padding-box;
+}
+.board-column:hover .board-col-list::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--ink) 24%, transparent); }
 @supports not selector(::-webkit-scrollbar) {
   .board-col-list { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 16%, transparent) transparent; }
 }

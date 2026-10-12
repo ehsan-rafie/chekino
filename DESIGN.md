@@ -235,8 +235,11 @@ colour. Not on a phone's one-lane board, not behind the cheque window.
 The white cards read clearly on it; a lane taking a dragged card turns
 the blue "pick" wash with a dashed edge. A lane that scrolls has its own
 scrollbar on the right (the page is right to left; the lane's list is set
-left to right for it, its cards right to left as ever): 5px, the ink at 12%,
-24% while the pointer is on the lane, no track (Firefox: its thin one). Each head is a small badge in
+left to right for it, its cards right to left as ever): a 3px thumb, the ink
+at 12%, 24% while the pointer is on the lane, no track, 5px clear of the
+cards (Firefox: its thin one). Every lane keeps the bar's room whether it
+scrolls or not, inside its own right padding, so a card is one size in all
+three lanes — before, a lane with a scrollbar had cards 5px narrower. Each head is a small badge in
 the status colour — dot, name, and an outlined count (no totals). On the
 phone's lane tabs the chosen tab takes its lane's tint.
 Cards (HeroUI's Card: a body and a footer): white, 1px edge, radius 16,
