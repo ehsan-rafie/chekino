@@ -223,7 +223,10 @@ red for «مشکل در ثبت» — the same three carry the view's status bloc
 the PDF report's tiles and pills. Nothing glows or moves (a glow and a line along the
 top were tried and dropped: too loud).
 The white cards read clearly on it; a lane taking a dragged card turns
-the blue "pick" wash with a dashed edge. Each head is a small badge in
+the blue "pick" wash with a dashed edge. A lane that scrolls has its own
+scrollbar on the right (the page is right to left; the lane's list is set
+left to right for it, its cards right to left as ever): 5px, the ink at 12%,
+24% while the pointer is on the lane, no track (Firefox: its thin one). Each head is a small badge in
 the status colour — dot, name, and an outlined count (no totals). On the
 phone's lane tabs the chosen tab takes its lane's tint.
 Cards (HeroUI's Card: a body and a footer): white, 1px edge, radius 16,
@@ -895,6 +898,16 @@ edit never writes it. The login page then says why in a plain grey note
 with an «i», never in the red of an error, and promises the work back
 only when some was kept. If the same account signs in again in another
 tab, the dialog goes by itself.
+**Where the sign-in lives** (9.10): the signed token is an HttpOnly cookie —
+Secure, SameSite=Strict, for `/api` only, a day (the admin's its own, for
+`/api/admin`, twelve hours) — that the page's code can't read. The browser
+keeps only a hint (`chekino_token`: the token without its signature — who,
+until when), which is how the page shows the company and knows a session
+ran out. Every request names the page's account (`X-Company`; the admin
+panel `X-Admin`): without it the server won't lean on the cookie, and a page
+opened for one account gets «switched» if another signed in since. Signing
+out asks the server to clear the cookie. A signed Bearer token is still
+taken (scripts, and sessions from before the cookie until they run out).
 
 **Login.** Two panes: the form in a bordered card with a Border Beam (a
 short bright arc of the edge, going round once as the page opens, then
@@ -923,6 +936,15 @@ two weeks, «تمام شده» in red after) or «بدون پایان»; over th
 (name or username) and «در حال انقضا n», a toggle to see only those. In a
 company's window, «تمدید ۱ ماه / ۳ ماه / ۶ ماه / ۱ سال» or «بدون پایان», each
 saved at once — months added to its end, or to today once it has ended.
+**«فعالیت‌ها»** (migration_009): what the admin did, newest first (the last
+300) — the day and, quieter, the hour (Tehran), who, what in Persian («ساخت
+شرکت»، «غیرفعال کردن شرکت»، «تمدید اشتراک»، «ورود ناموفق» in the red of a
+bad state…), the company or plan (its name stays after it is deleted; a
+click shows only its rows), and a word of detail («۳ ماه، تا ۱۴۰۵/۱۰/۲۲»،
+«۵ شخص، ۱۲ چک»). A search and «همه / شرکت‌ها / پلن‌ها / ورود و حساب». Read
+afresh each time the tab opens; the palette has it too (L). Passwords are
+never in it — only that one was set. On a phone the four tabs keep their
+words and drop their icons.
 
 **On a phone's home screen.** `manifest.webmanifest` (name «چکینو», right to
 left, standalone) and icons drawn from the brand mark on white

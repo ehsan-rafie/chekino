@@ -18,8 +18,12 @@ async function adminFetch(path, opts) {
   const token = getToken();
   const res = await fetch(API_BASE_URL + path, {
     ...opts,
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
+      // the key is an HttpOnly cookie (backend lib/session.js); this says the
+      // request is the panel's own, which the server needs to lean on it
+      'X-Admin': '1',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(opts && opts.headers ? opts.headers : {}),
     },
@@ -179,6 +183,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem(TOKEN_KEY);
+  fetch(API_BASE_URL + '/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
   showLogin();
 });
 
@@ -220,7 +225,90 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.add('active');
+    if (btn.dataset.tab === 'log') loadLog();   // read afresh each time: the other tabs add to it
   });
+});
+
+// ==================== ACTIVITY LOG (migration_009) ====================
+// What the admin did, newest first (the server keeps the last 300 here):
+// who, when, what, to which company or plan. A company's name stays in the
+// log after the company is deleted.
+let logCache = [];
+let logLoaded = false;
+const LOG_WHAT = {
+  'company.create': 'ساخت شرکت',
+  'company.update': 'ویرایش شرکت',
+  'company.password': 'تغییر رمز شرکت',
+  'company.delete': 'حذف شرکت',
+  'plan.create': 'ساخت پلن',
+  'plan.update': 'ویرایش پلن',
+  'plan.delete': 'حذف پلن',
+  'admin.account': 'تغییر حساب مدیر',
+  'admin.login': 'ورود',
+  'admin.login_failed': 'ورود ناموفق',
+};
+function logWhat(r) {
+  const d = r.details || {};
+  if (r.action === 'company.status') return d.status === 'inactive' ? 'غیرفعال کردن شرکت' : 'فعال کردن شرکت';
+  if (r.action === 'company.subscription') return d.cleared ? 'برداشتن پایان اشتراک' : 'تمدید اشتراک';
+  return LOG_WHAT[r.action] || r.action;
+}
+function logDetail(r) {
+  const d = r.details || {};
+  switch (r.action) {
+    case 'company.create': return [d.username && `نام کاربری ${d.username}`, d.plan && `پلن ${d.plan}`].filter(Boolean).join('، ');
+    case 'company.update': return [d.name && `نام: ${d.name}`, d.plan && `پلن: ${d.plan}`, d.permissions && 'دسترسی‌ها'].filter(Boolean).join('، ');
+    case 'company.subscription': return d.cleared ? '' : `${faN(d.months)} ماه${d.ends_at ? '، تا ' + faDay(d.ends_at) : ''}`;
+    case 'company.delete': return `${faN(d.people)} شخص، ${faN(d.checks)} چک`;
+    case 'admin.account': return [d.username_changed && 'نام کاربری', d.password_changed && 'رمز'].filter(Boolean).join(' و ');
+    default: return '';
+  }
+}
+const logOn = (r) => r.company_name || (r.details && r.details.plan) || '';
+const LOG_TZ = { timeZone: 'Asia/Tehran' };
+
+async function loadLog() {
+  if (!logLoaded) document.getElementById('logBody').innerHTML = '<tr><td colspan="5">در حال خواندن…</td></tr>';
+  try {
+    logCache = await adminFetch('/admin/log');
+    logLoaded = true;
+  } catch (e) {
+    showToast(e.message);
+    return;
+  }
+  drawLog();
+}
+function drawLog() {
+  const q = document.getElementById('logSearch').value.trim().toLowerCase();
+  const kind = document.getElementById('logKind').value;
+  const shown = logCache.filter((r) => (!kind || r.action.split('.')[0] === kind)
+    && (!q || [r.admin_username, logWhat(r), logOn(r), logDetail(r)].some((s) => String(s || '').toLowerCase().includes(q))));
+  document.getElementById('logBody').innerHTML = shown.map((r) => {
+    const at = new Date(r.at);
+    const on = logOn(r);
+    return `
+    <tr class="${r.action === 'admin.login_failed' ? 'is-failed' : ''}">
+      <td>${at.toLocaleDateString('fa-IR', { ...FA_DAY, ...LOG_TZ })} <span class="log-time">${at.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', ...LOG_TZ })}</span></td>
+      <td dir="ltr" style="text-align:left">${escapeHtml(r.admin_username)}</td>
+      <td class="log-what">${escapeHtml(logWhat(r))}</td>
+      <td>${on ? `<button type="button" class="log-on" data-q="${escapeHtml(on)}" title="فقط کارهای همین">${escapeHtml(on)}</button>` : '—'}</td>
+      <td class="log-detail">${escapeHtml(logDetail(r))}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="5">${logCache.length ? 'فعالیتی با این جستجو نیست' : 'هنوز فعالیتی ثبت نشده'}</td></tr>`;
+  const note = document.getElementById('logNote');
+  note.hidden = logCache.length < 300;
+  note.textContent = `فقط ${faN(300)} کار آخر اینجاست.`;
+}
+document.getElementById('logSearch').addEventListener('input', drawLog);
+document.getElementById('logKind').addEventListener('change', drawLog);
+// a company's or plan's name: just its rows
+document.getElementById('logBody').addEventListener('click', (e) => {
+  const b = e.target.closest('.log-on');
+  if (!b) return;
+  const s = document.getElementById('logSearch');
+  s.value = b.dataset.q;
+  drawLog();
+  s.focus();
 });
 
 // ==================== PLANS ====================
@@ -710,6 +798,12 @@ if (getToken()) {
       keywords: 'plans پلن اشتراک',
       icon: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>'),
       run: tab('plans'),
+    },
+    {
+      title: 'فعالیت‌ها', group: 'بخش‌ها', key: 'l', shortcut: 'L', order: 3, when: panelUp,
+      keywords: 'log activity history لاگ فعالیت تاریخچه کارها',
+      icon: icon('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>'),
+      run: tab('log'),
     },
     {
       title: 'تنظیمات حساب من', group: 'بخش‌ها', key: 'a', shortcut: 'A', order: 3, when: panelUp,

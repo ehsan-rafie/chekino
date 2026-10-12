@@ -3,6 +3,8 @@ const { body, param } = require('express-validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const guard = require('../lib/loginGuard');
+const session = require('../lib/session');
+const { adminLog, companyName } = require('../lib/adminLog');
 const pool = require('../db');
 const requireAdmin = require('../middleware/requireAdmin');
 const { loginLimiter } = require('../middleware/rateLimit');
@@ -53,6 +55,7 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
     if (result.rows.length === 0) {
       await bcrypt.compare(password, DUMMY_HASH);   // keep both paths equally slow
       await guard.failed(key);
+      await adminLog(req, 'admin.login_failed', { username: String(username).slice(0, 100) });
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
 
@@ -60,16 +63,24 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
     const passwordMatch = await bcrypt.compare(password, admin.password_hash);
     if (!passwordMatch) {
       await guard.failed(key);
+      await adminLog(req, 'admin.login_failed', { username: admin.username });
       return res.status(401).json({ error: 'نام کاربری یا رمز عبور اشتباه است' });
     }
     await guard.succeeded(key);
+    await adminLog(req, 'admin.login', { username: admin.username });
 
     const token = signAdminToken(admin);
-    res.json({ token });
+    session.setSession(res, 'admin', token, 12 * 60 * 60 * 1000);
+    res.json({ token: session.hintOf(token) });
   } catch (err) {
     console.error('Admin login error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }
+});
+
+router.post('/logout', (req, res) => {
+  session.clearSession(res, 'admin');
+  res.json({ ok: true });
 });
 
 router.use(requireAdmin);
@@ -112,7 +123,9 @@ router.put('/account', accountValidation, validate, async (req, res) => {
     );
 
     const token = signAdminToken(updated.rows[0]);
-    res.json({ message: 'اطلاعات حساب با موفقیت به‌روزرسانی شد', token, username: updated.rows[0].username });
+    await adminLog(req, 'admin.account', { username: updated.rows[0].username, details: { username_changed: !!newUsername && newUsername !== admin.username, password_changed: !!newPasswordHash } });
+    session.setSession(res, 'admin', token, 12 * 60 * 60 * 1000);
+    res.json({ message: 'اطلاعات حساب با موفقیت به‌روزرسانی شد', token: session.hintOf(token), username: updated.rows[0].username });
   } catch (err) {
     if (err.code === '23505') {
       return res.status(409).json({ error: 'این نام کاربری قبلاً استفاده شده است' });
@@ -154,7 +167,9 @@ router.post('/companies/:id/subscription', idParamValidation, [
     );
     if (!r.rows.length) return res.status(404).json({ error: 'شرکت یافت نشد' });
     const updated = await pool.query(`${COMPANY_SELECT} WHERE c.id = $1`, [req.params.id]);
-    res.json(updated.rows[0]);
+    const c = updated.rows[0];
+    await adminLog(req, 'company.subscription', { companyId: c.id, companyName: c.name, details: clear ? { cleared: true } : { months, ends_at: c.subscription_ends_at } });
+    res.json(c);
   } catch (err) {
     console.error('Admin subscription error:', err);
     res.status(500).json({ error: 'خطای سرور' });
@@ -192,7 +207,9 @@ router.post('/companies', createCompanyValidation, validate, async (req, res) =>
     );
 
     const created = await pool.query(`${COMPANY_SELECT} WHERE c.id = $1`, [result.rows[0].id]);
-    res.status(201).json(created.rows[0]);
+    const c = created.rows[0];
+    await adminLog(req, 'company.create', { companyId: c.id, companyName: c.name, details: { username: c.username, plan: c.plan_name || null } });
+    res.status(201).json(c);
   } catch (err) {
     if (err.code === '23505') {
       return res.status(409).json({ error: 'این نام کاربری قبلاً استفاده شده است' });
@@ -228,7 +245,9 @@ router.put('/companies/:id', idParamValidation, updateCompanyValidation, validat
     );
 
     const updated = await pool.query(`${COMPANY_SELECT} WHERE c.id = $1`, [id]);
-    res.json(updated.rows[0]);
+    const c = updated.rows[0];
+    await adminLog(req, 'company.update', { companyId: c.id, companyName: c.name, details: { ...(name ? { name } : {}), ...(plan_id ? { plan: c.plan_name } : {}), ...(permissions ? { permissions } : {}) } });
+    res.json(c);
   } catch (err) {
     console.error('Admin update company error:', err);
     res.status(500).json({ error: 'خطای سرور' });
@@ -253,6 +272,7 @@ router.put('/companies/:id/password', idParamValidation, companyPasswordValidati
     const passwordHash = await bcrypt.hash(password, 10);
     await pool.query('UPDATE companies SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
     authenticate.forget(id);   // its sessions end now
+    await adminLog(req, 'company.password', { companyId: Number(id), companyName: await companyName(id) });
 
     res.json({ message: 'رمز عبور با موفقیت تغییر کرد' });
   } catch (err) {
@@ -280,7 +300,9 @@ router.patch('/companies/:id/status', idParamValidation, companyStatusValidation
     }
 
     const updated = await pool.query(`${COMPANY_SELECT} WHERE c.id = $1`, [id]);
-    res.json(updated.rows[0]);
+    const c = updated.rows[0];
+    await adminLog(req, 'company.status', { companyId: c.id, companyName: c.name, details: { status } });
+    res.json(c);
   } catch (err) {
     console.error('Admin toggle status error:', err);
     res.status(500).json({ error: 'خطای سرور' });
@@ -315,10 +337,32 @@ router.delete('/companies/:id', idParamValidation, validate, async (req, res) =>
       });
     }
 
+    const gone = await companyName(id);
     await pool.query('DELETE FROM companies WHERE id = $1', [id]);
+    await adminLog(req, 'company.delete', { companyId: Number(id), companyName: gone, details: { people: Number(people_count), checks: Number(checks_count) } });
     res.json({ message: 'شرکت با موفقیت حذف شد' });
   } catch (err) {
     console.error('Admin delete company error:', err);
+    res.status(500).json({ error: 'خطای سرور' });
+  }
+});
+
+// What the admin did (migration_009), newest first: the last 300, or one
+// company's
+router.get('/log', [
+  require('express-validator').query('company_id').optional().isInt().toInt(),
+], validate, async (req, res) => {
+  try {
+    const cid = req.query.company_id;
+    const r = await pool.query(
+      `SELECT id, at, admin_username, action, company_id, company_name, details FROM admin_log
+       ${cid ? 'WHERE company_id = $1' : ''} ORDER BY at DESC, id DESC LIMIT 300`,
+      cid ? [cid] : []
+    );
+    res.json(r.rows);
+  } catch (err) {
+    if (err.code === '42P01') return res.json([]);   // no table yet
+    console.error('Admin log error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }
 });
@@ -351,6 +395,7 @@ router.post('/plans', createPlanValidation, validate, async (req, res) => {
        RETURNING *`,
       [name, max_people ?? null, max_checks ?? null, JSON.stringify(features || {}), price || 0]
     );
+    await adminLog(req, 'plan.create', { details: { plan: result.rows[0].name } });
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -397,6 +442,7 @@ router.put('/plans/:id', idParamValidation, updatePlanValidation, validate, asyn
         id,
       ]
     );
+    await adminLog(req, 'plan.update', { details: { plan: result.rows[0].name } });
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -410,12 +456,13 @@ router.put('/plans/:id', idParamValidation, updatePlanValidation, validate, asyn
 router.delete('/plans/:id', idParamValidation, validate, async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await pool.query('SELECT id FROM plans WHERE id = $1', [id]);
+    const existing = await pool.query('SELECT id, name FROM plans WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'پلن یافت نشد' });
     }
 
     await pool.query('DELETE FROM plans WHERE id = $1', [id]);
+    await adminLog(req, 'plan.delete', { details: { plan: existing.rows[0].name } });
     res.json({ message: 'پلن با موفقیت حذف شد' });
   } catch (err) {
     if (err.code === '23503') {

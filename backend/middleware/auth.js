@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const session = require('../lib/session');
 
 // A token is good while it verifies (HS256, ours, not expired) — and while
 // its company is still active and its password the one it was signed in
@@ -25,19 +26,21 @@ async function companyNow(id) {
 }
 
 async function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'توکن احراز هویت ارسال نشده است' });
+  // a signed Bearer token, or the session cookie (lib/session.js)
+  const found = session.tokenOf(req, 'company', (t) => jwt.verify(t, process.env.JWT_SECRET, { algorithms: ['HS256'] }));
+  if (!found) {
+    const sent = (req.headers.authorization || '').startsWith('Bearer ') || session.cookieOf(req, 'company');
+    return res.status(401).json({ error: sent ? 'توکن نامعتبر یا منقضی شده است' : 'توکن احراز هویت ارسال نشده است' });
   }
-
-  const token = authHeader.slice('Bearer '.length);
-
-  let payload;
-  try {
-    payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-  } catch (err) {
-    return res.status(401).json({ error: 'توکن نامعتبر یا منقضی شده است' });
+  const payload = found.payload;
+  // leaning on the cookie, the page names its own account: a request no
+  // other site can make, and never one company's page acting as another's
+  if (found.viaCookie) {
+    const asked = req.headers['x-company'];
+    if (!asked) return res.status(401).json({ error: 'درخواست بی‌نام حساب پذیرفته نمی‌شود', code: 'no_company' });
+    if (String(asked) !== String(payload.company_id)) {
+      return res.status(401).json({ error: 'در زبانه‌ی دیگری با حساب دیگری وارد شده‌ای', code: 'switched' });
+    }
   }
   try {
     const c = await companyNow(payload.company_id);

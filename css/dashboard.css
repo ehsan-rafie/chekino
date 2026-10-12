@@ -5482,6 +5482,21 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .icon-action:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
 .icon-action:disabled:hover { background: var(--surface); color: var(--ink); }
 
+/* A lane's scrollbar: on the right (the list runs left to right for the
+   browser, its cards right to left as ever), narrow and faint; a shade
+   darker while the pointer is on the lane. Chrome draws the narrow
+   ::-webkit-scrollbar only where scrollbar-width / -color are left at
+   auto; Firefox gets its own thin one. */
+.board-col-list { direction: ltr; scrollbar-width: auto; scrollbar-color: auto; }
+.board-col-list > * { direction: rtl; }
+.board-col-list::-webkit-scrollbar { width: 5px; }
+.board-col-list::-webkit-scrollbar-track { background: transparent; }
+.board-col-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 12%, transparent); border: 0; border-radius: 5px; }
+.board-column:hover .board-col-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 24%, transparent); }
+@supports not selector(::-webkit-scrollbar) {
+  .board-col-list { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 16%, transparent) transparent; }
+}
+
 /* A lane that scrolls fades out at an edge with more cards past it */
 .board-col-list.fade-bottom {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);

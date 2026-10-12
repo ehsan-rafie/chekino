@@ -154,6 +154,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   }
   try { localStorage.setItem(SIGNED_OUT_KEY, String(Date.now())); } catch (e) {}
   localStorage.removeItem('chekino_token');
+  // the cookie is the server's to clear (a moment at most)
+  await Promise.race([fetch(API_BASE_URL + '/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
   clearAllDrafts();
   // the bulk add's copies on this device go too (a moment at most)
   if (window.ChekinoBulk) await Promise.race([window.ChekinoBulk.clearLocal(), new Promise((r) => setTimeout(r, 500))]);
@@ -1874,6 +1876,10 @@ function validateAmount() {
 // ---- Backend API: auth + fetch wrapper ----
 // =========================================================
 
+// What this browser keeps of the sign-in: the hint the server gave (who and
+// until when). The key itself is an HttpOnly cookie the page can't read
+// (backend lib/session.js); a session from before the cookie still holds
+// its signed token here, and that is sent as before until it runs out.
 function getAuthToken() { return localStorage.getItem('chekino_token'); }
 
 // Every request goes out with this page's account, or not at all. A 401 —
@@ -1890,9 +1896,13 @@ async function apiFetch(path, opts, retried) {
   if (companyOfToken(token) !== PAGE_COMPANY) { sessionEnded('switched', token); throw sessionError(); }
   const res = await fetch(API_BASE_URL + path, {
     ...opts,
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      // the account this page is for: the server won't lean on the cookie
+      // without it, nor for another account signed in since
+      'X-Company': PAGE_COMPANY,
       ...(opts && opts.headers ? opts.headers : {}),
     },
   });

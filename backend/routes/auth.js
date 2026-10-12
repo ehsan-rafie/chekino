@@ -7,6 +7,7 @@ const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 const guard = require('../lib/loginGuard');
+const session = require('../lib/session');
 
 const router = express.Router();
 
@@ -67,11 +68,19 @@ router.post('/login', loginLimiter, loginValidation, validate, async (req, res) 
       { expiresIn: '24h', algorithm: 'HS256' }
     );
 
-    res.json({ token });
+    // the token itself in an HttpOnly cookie; the page gets its hint
+    session.setSession(res, 'company', token, 24 * 60 * 60 * 1000);
+    res.json({ token: session.hintOf(token) });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'خطای سرور' });
   }
+});
+
+// Signing out: the cookie goes (the page can't reach it itself)
+router.post('/logout', (req, res) => {
+  session.clearSession(res, 'company');
+  res.json({ ok: true });
 });
 
 module.exports = router;
