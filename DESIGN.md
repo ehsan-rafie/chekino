@@ -126,6 +126,11 @@ motion: { press: 100ms, default: 180ms, enter: 280ms }
    sit in `fonts/` on the owner's PC and on the server, and must not be
    committed or copied anywhere public. A fresh clone falls back to Tahoma
    until `IRANSansXVFaNum.woff2` / `.woff` are put back in `fonts/`.
+   What is typed in Latin — usernames and passwords, in their fields and
+   the admin's lists and log (`.latin-digits`) — shows the digits typed:
+   the same face's standard cut (`IRANSansXVF.woff2` / `.woff`, git-ignored
+   too) as «IRANSansX Latin Digits», for 0–9 only (unicode-range), fetched
+   the first time such a digit is drawn. Everything else keeps Persian digits.
 7. **Motion answers the user, with two exceptions.** Magic UI moments tied
    to something the user did or to the page arriving: the spotlight that
    follows the pointer across a cheque card, the blur-fade the first cards
@@ -221,7 +226,12 @@ lanes and names their state at once: slate grey for «منتظر ثبت» (waiti
 is the neutral state; blue stays for focus and picks), green for «ثبت شد»,
 red for «مشکل در ثبت» — the same three carry the view's status block and
 the PDF report's tiles and pills. Nothing glows or moves (a glow and a line along the
-top were tried and dropped: too loud).
+top were tried and dropped: too loud) — except a card whose status changes:
+it travels to its new lane (0.46s, decelerating; a lifted copy above the
+lanes, since a lane clips what it holds — from where it was, or from where
+a dragged ghost was let go, tilt and all; «برگردون» flies it back), and its
+lane scrolls to show where it lands; there it rings once in the lane's
+colour. Not on a phone's one-lane board, not behind the cheque window.
 The white cards read clearly on it; a lane taking a dragged card turns
 the blue "pick" wash with a dashed edge. A lane that scrolls has its own
 scrollbar on the right (the page is right to left; the lane's list is set
@@ -579,6 +589,15 @@ it. The
 amount and the other numeric fields keep their suffix on the left, next
 to the digits; the search box turns left-to-right once something is
 typed. Generated passwords use a monospace face with Latin digits.
+What a serial, a sayad id, an amount and the channels must be is one file,
+`js/rules.js` — the same bytes as the server's `backend/lib/rules.js` (H13;
+a test fails if they differ) — so a field's note and the API's refusal say
+the same thing: «باید ۶ رقم باشد», «باید ۱۶ رقم باشد», «بیشتر از صفر باشد»,
+«مبلغ غیرعادی است؛ صفر اضافه نیست؟» (from ten trillion rials, H7),
+«یکی را انتخاب کنید». The API names the field (`field`, code
+`invalid_field`) and keeps what passes in Latin digits; a change is held to
+the rule only in what it sends, so rows older than the rule still take a
+status change.
 
 **Drop-down lists** (people suggestions) follow HeroUI's ListBox: one
 column, short rows, no boxes inside boxes. People show the name with the
@@ -668,7 +687,11 @@ Printed words are a grey violet and whatever was filled in is blue ink, so
 the cheque's data stands apart from its print at a glance; an empty value
 is a muted «—». The paper, print and ink are the cheque's own colours,
 dimmed in dark mode. The stamp («ثبت شد» / «ثبت نشد» / «منتظر ثبت») is in
-the status colours — slate for waiting. The leaf keeps a cheque's
+the status colours — slate for waiting. A status set while the leaf is open
+comes down on it as a rubber stamp does: from above and askew, past its
+size, settling at its tilt, the leaf giving a pixel under it (0.5s); a leaf
+opening just has its stamp. Both movements are off when the system asks for
+less motion. The leaf keeps a cheque's
 proportions at the least and grows when what it carries needs more room.
 Everything is sized in em: 14px in the view; on the login page the leaf
 scales with its container as one object. Below 540px the view reflows the
@@ -909,13 +932,12 @@ opened for one account gets «switched» if another signed in since. Signing
 out asks the server to clear the cookie. A signed Bearer token is still
 taken (scripts, and sessions from before the cookie until they run out).
 
-**Login.** Two panes: the form in a bordered card with a Border Beam (a
+**Login.** The login box alone, in the middle of the page (the owner's
+call, 2026-10-12: a sample cheque and a line of copy stood beside it until
+then): the brand above it, the form in a bordered card with a Border Beam (a
 short bright arc of the edge, going round once as the page opens, then
-resting — WCAG 2.2.2), and a faint grey panel with the sample cheque over a
-fading Grid Pattern and one line of copy («چکی که از مشتری می‌گیرید، تا ثبت
-به نام ذینفع در صیاد، زیر نظر شماست»). Below 960px the form comes first and
-the panel is a band under it; the floating support button gives way to a
-link under the form («به پشتیبانی پیام بدهید»). A username typed on a
+resting — WCAG 2.2.2), and one line under it, «حساب ندارید یا رمز را فراموش
+کرده‌اید؟ به پشتیبانی پیام بدهید». No floating button, no «remember me». A username typed on a
 Persian keyboard is read back by key («زمشعیفثسف» → «claudtest») and said
 under the field; Caps Lock is said under the password; a password with
 Persian digits is tried with Latin ones too. A wrong field is marked
@@ -977,4 +999,3 @@ year, `immutable`.
 | `js/serials.js` | reading a pasted list of serials (the same file as backend/lib/serials.js) |
 | `js/send-window.js` | the send window, the chips over the board, the search hint |
 | `js/bulk-edit.js` | bulk edit |
-| `js/login-art.js` | the login page's sample cheque |

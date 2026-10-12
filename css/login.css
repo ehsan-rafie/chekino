@@ -1,8 +1,8 @@
-/* Login — two panes. The form sits on the start (right) side in a
-   bordered card; the art pane on the end side is a faint grey panel with a
-   sample Sayad cheque lying on a fading grid. The border beam round the
-   card is the page's one moving thing; everything else moves only when
-   the user does something. */
+/* Login — the login box alone, in the middle of the page: the brand above
+   it, the support line under it. The border beam round the card is the
+   page's one moving thing; everything else moves only when the user does
+   something. (A sample cheque and a line of copy stood beside it until
+   2026-10-12; the owner wanted the box only.) */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
@@ -15,7 +15,6 @@ body {
 
 .auth {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(0, 1.15fr);
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -186,116 +185,23 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   color: var(--muted);
 }
 
-/* ═══ Art pane ═══ */
-.auth-art {
-  display: grid;
-  place-items: center;
-  margin: 12px;
-  margin-inline-start: 0;
-  padding: 48px 40px;
-  border-radius: 20px;
-  background: var(--surface-2);
-}
-.auth-art-inner {
-  width: 100%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  gap: 36px;
-}
-.auth-cheque {
-  transform: rotate(-2deg);
-  animation: chequeIn 0.8s var(--ease-out) 0.2s both;
-}
-@keyframes chequeIn {
-  from { opacity: 0; transform: translateY(14px) rotate(-2deg); }
-  to   { opacity: 1; transform: rotate(-2deg); }
-}
-
-.auth-copy { animation: authIn 0.7s var(--ease-out) 0.45s both; }
-.auth-copy h2 {
-  margin: 0 0 10px;
-  max-width: 28ch;
-  font-size: clamp(20px, 1.9vw, 26px);
-  line-height: 1.6;
-  color: var(--ink);
-  font-variation-settings: 'wght' 700;
-}
-.auth-copy p {
-  margin: 0;
-  font-size: var(--t-body);
-  line-height: 1.9;
-  color: var(--muted);
-}
-
-/* ═══ Support button ═══ */
-.tg-float {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 200;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink-2);
-  cursor: pointer;
-  box-shadow: var(--shadow-lift);
-  transition: transform var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease);
-}
-.tg-float:hover { color: var(--ink); transform: translateY(-1px); }
-.tg-float:focus-visible { outline: none; box-shadow: var(--ring), var(--shadow-lift); }
-@media (max-width: 960px) { .tg-float, .tg-tooltip { display: none; } }
 .auth-foot a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .field-hint { min-height: 0; margin-top: 4px; font-size: var(--t-micro); color: var(--ink-2); }
 .field-hint:empty { display: none; }
-.tg-float svg { width: 20px; height: 20px; }
-.tg-tooltip {
-  position: fixed;
-  bottom: 34px;
-  left: 78px;
-  z-index: 200;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: var(--t-micro);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-4px);
-  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
-}
-.tg-tooltip.show { opacity: 1; transform: none; }
 
-/* ═══ Narrow screens: the art becomes a band above the form ═══ */
+/* ═══ Narrow screens: the box from the top, a little tighter ═══ */
 @media (max-width: 960px) {
-  .auth { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
-  .auth-art {
-    order: 2;
-    margin: 0 10px 10px;
-    padding: 26px 20px 24px;
-    border-radius: 16px;
-  }
-  .auth-art-inner { max-width: 420px; gap: var(--s4); }
-  .auth-copy { display: none; }
-  .auth-pane { justify-content: flex-start; gap: var(--s5); padding: 28px 22px 24px; }
-  .auth-brand { display: none; }
+  .auth-pane { justify-content: flex-start; gap: var(--s5); padding: 40px 18px 24px; }
   .brand h1 { font-size: 26px; }
 }
 
-
 @media (prefers-reduced-motion: reduce) {
-  .card, .auth-copy, .auth-cheque { animation: none; }
+  .card { animation: none; }
 }
 
 /* ═══ Monochrome finish (Magic UI) ═══
    The form is a bordered card with a Border Beam running round its edge —
-   the page's one moving thing — and the art pane is a faint grey panel
-   with a Grid Pattern fading out from behind the cheque. */
+   the page's one moving thing. */
 .auth-brand .brand-mark { color: var(--ink); }
 .auth-brand .brand-mark path { stroke: var(--bg); }
 
@@ -328,8 +234,8 @@ button.submit:disabled { opacity: 0.7; cursor: progress; }
   pointer-events: none;
 }
 @keyframes beamTurn { to { --beam-turn: 360deg; } }
-:root { --beam-head: #0A0A0A; --beam-tail: rgba(10, 10, 10, 0.18); --grid-line: rgba(0, 0, 0, 0.055); }
-:root[data-theme="dark"] { --beam-head: #FAFAFA; --beam-tail: rgba(250, 250, 250, 0.2); --grid-line: rgba(255, 255, 255, 0.06); }
+:root { --beam-head: #0A0A0A; --beam-tail: rgba(10, 10, 10, 0.18); }
+:root[data-theme="dark"] { --beam-head: #FAFAFA; --beam-tail: rgba(250, 250, 250, 0.2); }
 @media (prefers-reduced-motion: reduce) { .card::after { display: none; } }
 
 .field input {
@@ -359,33 +265,7 @@ button.submit {
 }
 .auth-foot { text-align: center; }
 
-.auth-art {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface-2);
-  box-shadow: none;
-}
-.auth-art::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-position: center center;
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 78%);
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 25%, transparent 78%);
-  pointer-events: none;
-}
-.tg-float { width: 40px; height: 40px; border-radius: 14px; box-shadow: var(--shadow-lift); }
-.tg-tooltip { border-radius: 8px; }
 @media (max-width: 960px) {
-  .auth-art { border-radius: 20px; }
   .card { padding: 22px 18px 20px; }
 }
 button.submit:focus-visible { outline-color: var(--focus-outline); }

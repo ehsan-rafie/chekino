@@ -3201,6 +3201,29 @@ body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: n
   .check-card.just-changed.st-problem { animation: none; }
 }
 
+/* The copy that carries a card to its new lane (flyCard in dashboard.js):
+   above the lanes, lifted as if picked up; the card itself waits unseen
+   where it lands, then rings once in its lane's colour (slate, green, red).
+   No fill: the card's own shadow is back the moment the ring is done. */
+.check-card-flying {
+  position: fixed;
+  z-index: 500;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: var(--shadow-2);
+  will-change: transform;
+}
+.check-card.is-arriving { visibility: hidden; }
+.check-card.just-landed { animation: cardRing 0.6s var(--ease-out); }
+.check-card.just-landed.st-done    { animation-name: cardRingDone; }
+.check-card.just-landed.st-problem { animation-name: cardRingProblem; }
+@keyframes cardRing        { from { box-shadow: 0 0 0 0 rgba(86, 100, 122, 0.35); } to { box-shadow: 0 0 0 10px rgba(86, 100, 122, 0); } }
+@keyframes cardRingDone    { from { box-shadow: 0 0 0 0 rgba(20, 128, 92, 0.4); }   to { box-shadow: 0 0 0 10px rgba(20, 128, 92, 0); } }
+@keyframes cardRingProblem { from { box-shadow: 0 0 0 0 rgba(194, 69, 60, 0.4); }   to { box-shadow: 0 0 0 10px rgba(194, 69, 60, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .check-card.just-landed { animation: none; }
+}
+
 /* Three rows, always the same two fields in the same spots — but not the
    same weight. Row 1 is bookkeeping (serial, due date): small and muted,
    read only when it's specifically what's being looked for. Row 2 is the

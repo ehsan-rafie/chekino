@@ -134,6 +134,17 @@
     return '';
   }
   const STAMP = { done: 'ثبت شد', problem: 'ثبت نشد', pending: 'منتظر ثبت' };
+  let stampSeen = false;   // the leaf has shown a status since it opened
+  function landStamp() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const s = $('cqcStamp');
+    s.classList.remove('is-landing'); cheque.classList.remove('is-stamped');
+    void s.offsetWidth;   // a second change in a row starts it over
+    s.classList.add('is-landing'); cheque.classList.add('is-stamped');
+  }
+  $('cqcStamp').addEventListener('animationend', (e) => {
+    if (e.animationName === 'cqcStampLand') { e.target.classList.remove('is-landing'); cheque.classList.remove('is-stamped'); }
+  });
 
   // ---- the photo, where the leaf has its QR ------------------------------
   // (dashboard.js keeps the attachments in the global `attachedFiles`)
@@ -265,9 +276,13 @@
     setFill('cqcNid', nid && toFa(nid), '—');
     setFill('cqcAmount', amount && toFa(group(amount)), '');
 
-    // The stamp
+    // The stamp. A status set while the leaf is open lands on it, the way a
+    // rubber stamp comes down — not when a leaf opens (it is there already)
+    const was = cheque.dataset.status;
     $('cqcStamp').textContent = STAMP[status] || '';
     cheque.dataset.status = status;
+    if (stampSeen && was && status && was !== status) landStamp();
+    stampSeen = true;
 
     // The people, and when the cheque went where
     setFill('cqcOwner', owner, '—');
@@ -296,6 +311,7 @@
       drawPrint();
       last = '';
       photoKey = null;
+      stampSeen = false;
       render();
       timer = setInterval(render, 300);
     } else if (!open && timer) {

@@ -383,19 +383,18 @@
   function rowProblems(row) {
     const p = {};
     const others = st.rows.filter((r) => r !== row && !isBlank(r));
-    if (!row.serial) p.serial = 'لازم است';
-    else if (row.serial.length !== 6) p.serial = 'باید ۶ رقم باشد';
-    if (!row.sayad_id) p.sayad = 'لازم است';
-    else if (row.sayad_id.length !== 16) p.sayad = 'باید ۱۶ رقم باشد';
+    // a field's own rule is js/rules.js's (the server's too, H13)
+    const serialProblem = ChekinoRules.serial(row.serial), sayadProblem = ChekinoRules.sayad(row.sayad_id);
+    if (serialProblem) p.serial = serialProblem;
+    if (sayadProblem) p.sayad = sayadProblem;
     else {
       const taken = loadCheques().find((c) => digits(c.sayad) === row.sayad_id);
       const twin = others.find((r) => r.sayad_id === row.sayad_id);
       if (taken) p.sayad = `این شناسه قبلاً ثبت شده — چک ${fa(taken.serial)}`;
       else if (twin) p.sayad = `در همین فهرست تکرار شده — ردیف ${fa(st.rows.indexOf(twin) + 1)}`;
     }
-    const amt = row.amount ? Number(row.amount) : 0;
-    if (!row.amount) p.amount = 'لازم است';
-    else if (!(amt > 0 && amt < 1e13)) p.amount = 'مبلغ غیرعادی است؛ صفر اضافه نیست؟';
+    const amountProblem = ChekinoRules.amount(row.amount);
+    if (amountProblem) p.amount = amountProblem;
     if (!row.due_date) {
       p.due = row.ui && row.ui.due && !row.ui.due.isEmpty() ? (row.ui.due.validate(), row.ui.dueMsg.textContent || 'ناقص است') : 'لازم است';
     }

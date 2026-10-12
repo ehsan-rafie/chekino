@@ -1253,37 +1253,19 @@ sayadInput.addEventListener('blur', () => {
   if (sayadDigits().length > 0) validateSayad();
 });
 
-function validateSerial() {
-  const len = serialInput.value.length;
-  if (len === 0) {
-    serialField.classList.add('error');
-    serialMsg.textContent = 'لازم است';
+// A field against the rule (js/rules.js — the server checks with the same
+// file, H13): its note says what is wrong, or the field is fine
+function ruleField(problem, field, msg) {
+  if (problem) {
+    field.classList.add('error');
+    msg.textContent = problem;
     return false;
   }
-  if (len !== 6) {
-    serialField.classList.add('error');
-    serialMsg.textContent = 'باید ۶ رقم باشد';
-    return false;
-  }
-  serialField.classList.remove('error');
+  field.classList.remove('error');
   return true;
 }
-
-function validateSayad() {
-  const len = sayadDigits().length;
-  if (len === 0) {
-    sayadField.classList.add('error');
-    sayadMsg.textContent = 'لازم است';
-    return false;
-  }
-  if (len !== 16) {
-    sayadField.classList.add('error');
-    sayadMsg.textContent = 'باید ۱۶ رقم باشد';
-    return false;
-  }
-  sayadField.classList.remove('error');
-  return true;
-}
+function validateSerial() { return ruleField(ChekinoRules.serial(serialInput.value), serialField, serialMsg); }
+function validateSayad() { return ruleField(ChekinoRules.sayad(sayadDigits()), sayadField, sayadMsg); }
 
 // =========================================================
 // ---- Date fields: reusable masked input + shared calendar ----
@@ -1856,21 +1838,8 @@ amountInput.addEventListener('blur', () => {
   if (amountRawDigits() !== '') validateAmount();
 });
 
-function validateAmount() {
-  const raw = amountRawDigits();
-  if (raw === '') {
-    amountField.classList.add('error');
-    amountMsg.textContent = 'لازم است';
-    return false;
-  }
-  if (parseInt(raw, 10) === 0) {
-    amountField.classList.add('error');
-    amountMsg.textContent = 'بیشتر از صفر باشد';
-    return false;
-  }
-  amountField.classList.remove('error');
-  return true;
-}
+// (a zero too many reads «مبلغ غیرعادی است؛ صفر اضافه نیست؟», H7)
+function validateAmount() { return ruleField(ChekinoRules.amount(amountRawDigits()), amountField, amountMsg); }
 
 // =========================================================
 // ---- Backend API: auth + fetch wrapper ----
@@ -3421,13 +3390,7 @@ function clearChannels() {
 
 function validateChannels() {
   closeChannelOther(true);         // something still in the field counts
-  if (channelsValue().length === 0) {
-    channelField.classList.add('error');
-    channelMsg.textContent = 'یکی را انتخاب کنید';
-    return false;
-  }
-  channelField.classList.remove('error');
-  return true;
+  return ruleField(ChekinoRules.channels(channelsValue()), channelField, channelMsg);
 }
 // Where saving sends the caret when the channels are what's wrong
 function channelFocusTarget() {
@@ -5974,6 +5937,11 @@ const ICON_AMOUNT = icon('amount');
 // view.
 // Set for exactly one renderTable() call, by applyStatus — see there.
 let justChangedId = null;
+// A card on its way to its new lane (flyCard): drawn unseen until its copy
+// lands, so a re-render during the flight doesn't show it twice
+let flyingId = null;
+let flight = null;   // its copy's animation, while it runs
+const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
 // How long it has waited — what following a cheque up is about (spec 9.4):
 // a pending one, days since it went to its owner and by which channel; a
@@ -6006,7 +5974,7 @@ function cardAgeHtml(c) {
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
   const urgency = dueUrgencyClass(c);
-  const justChanged = c.id === justChangedId || freshCards.has(c.id) ? ' just-changed' : '';
+  const justChanged = (c.id === justChangedId || freshCards.has(c.id) ? ' just-changed' : '') + (c.id === flyingId ? ' is-arriving' : '');
   // A problem cheque shows why, beside its red mark, in the bottom row's
   // free space — the reason is what someone opens that lane to find out.
   const reason = c.status === 'problem' && c.statusReason ? escapeHtml(c.statusReason) : '';
@@ -6429,12 +6397,15 @@ window.addEventListener('resize', updateBoardHeight);
   function onPointerUp(e) {
     if (pointerId === null || e.pointerId !== pointerId) return;
     const card = sourceCard, dropColumn = overColumn, wasDragging = dragging;
+    // where the ghost let go — its box before the tilt, and the tilt — so the
+    // card's flight to its lane starts exactly there (flyCard)
+    const dropAt = wasDragging ? { left: e.clientX - offsetX, top: e.clientY - offsetY, tilt: GHOST_TILT } : null;
     if (wasDragging) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); }
     cleanup();
     if (!wasDragging || !card || !dropColumn) return;
     const id = parseInt(card.dataset.id, 10);
     const targetStatus = dropColumn.dataset.status;
-    handleDrop(id, targetStatus, card);
+    handleDrop(id, targetStatus, card, dropAt);
   }
   boardColumns.addEventListener('pointerup', onPointerUp);
   boardColumns.addEventListener('pointercancel', () => cleanup());
@@ -6452,7 +6423,7 @@ window.addEventListener('resize', updateBoardHeight);
     if (activeReasonPrompt) activeReasonPrompt.cancel();
   }
 
-  function handleDrop(id, targetStatus, cardEl) {
+  function handleDrop(id, targetStatus, cardEl, dropAt) {
     dismissReasonPrompt();
     const current = currentStatusOf(id);
     if (targetStatus === current) return;   // dropped back where it started
@@ -6470,7 +6441,7 @@ window.addEventListener('resize', updateBoardHeight);
       }).then((ok) => { if (ok) applyStatus(id, 'pending', ''); });
       return;
     }
-    applyStatus(id, targetStatus, '');
+    applyStatus(id, targetStatus, '', { from: dropAt });
   }
 
   // "مشکل در ثبت" always carries a reason, drag or dropdown alike — a small
@@ -6693,6 +6664,64 @@ function showReasonBox(menu, id) {
   menu.querySelector('.sr-cancel').addEventListener('click', closeStatusMenu);
 }
 
+// Where a card is on the board now (null when the board isn't showing it)
+function cardRect(id) {
+  // mid-flight (changed again at once — «برگردون»): from where its copy is
+  const copy = flyingId === id && document.querySelector('.check-card-flying');
+  if (copy) { const r = copy.getBoundingClientRect(); return { left: r.left, top: r.top, bottom: r.bottom }; }
+  const el = boardColumns.querySelector(`.check-card[data-id="${id}"]`);
+  if (!el || !el.offsetParent) return null;
+  const r = el.getBoundingClientRect();
+  return r.width ? { left: r.left, top: r.top, bottom: r.bottom } : null;
+}
+// A card whose status changed travels from where it was to its new place,
+// so the eye follows it instead of hunting for it on a redrawn board. The
+// lanes clip what they hold, so a copy makes the trip above them (FLIP: the
+// copy at its last place, set back to its first, then let go) and the card
+// itself shows when the copy lands, with a ring in its lane's colour. Not on
+// a phone's one-lane board (the card goes to another tab), not behind the
+// cheque window, not when motion is turned down.
+function flyCard(id, from) {
+  if (flight) flight.cancel();   // one flight at a time: the last lands at once
+  if (!from || REDUCE_MOTION.matches || isSingleColumnBoard() || modalOverlay.classList.contains('show')) return;
+  if (from.bottom < 0 || from.top > innerHeight) return;
+  const el = boardColumns.querySelector(`.check-card[data-id="${id}"]`);
+  if (!el || !el.offsetParent) return;
+  // its new place in view inside its lane (the lane scrolls, not the page)
+  const list = el.closest('.board-col-list');
+  if (list) {
+    const lr = list.getBoundingClientRect(), r0 = el.getBoundingClientRect();
+    if (r0.top < lr.top) list.scrollTop -= lr.top - r0.top + 8;
+    else if (r0.bottom > lr.bottom) list.scrollTop += r0.bottom - lr.bottom + 8;
+  }
+  const to = el.getBoundingClientRect();
+  const dx = from.left - to.left, dy = from.top - to.top;
+  if ((Math.abs(dx) < 2 && Math.abs(dy) < 2) || to.bottom < 0 || to.top > innerHeight) return;
+  const copy = el.cloneNode(true);
+  copy.classList.remove('just-changed', 'is-arriving', 'just-landed');
+  copy.classList.add('check-card-flying');
+  copy.removeAttribute('data-id');   // not a card the board's own handlers should find
+  copy.setAttribute('aria-hidden', 'true');
+  Object.assign(copy.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' });
+  document.body.appendChild(copy);
+  flyingId = id;
+  el.classList.remove('just-changed', 'just-landed');
+  el.classList.add('is-arriving');
+  flight = copy.animate([
+    { transform: `translate(${dx}px, ${dy}px) ${from.tilt || ''}` },
+    { transform: 'none' },
+  ], { duration: 460, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+  const land = () => {
+    copy.remove();
+    flight = null;
+    if (flyingId === id) flyingId = null;
+    const now = boardColumns.querySelector(`.check-card[data-id="${id}"]`);
+    if (now) { now.classList.remove('is-arriving'); now.classList.add('just-landed'); }
+  };
+  flight.onfinish = land;
+  flight.oncancel = land;
+}
+
 // Optimistic: the card moves the instant it is asked to, and the write
 // goes out behind it. At this server's round-trip time the old order —
 // wait for the PUT, then wait for a full re-fetch of every cheque, then
@@ -6701,6 +6730,7 @@ function showReasonBox(menu, id) {
 // card goes back where it was and the error is shown.
 async function applyStatus(id, status, reason, opts = {}) {
   const rec = loadCheques().find((x) => x.id === id);
+  const from = opts.from || cardRect(id);   // where the card is now, for its flight
   const version = rec ? rec.version : undefined;
   const before = rec
     ? { status: rec.status, statusReason: rec.statusReason, statusChangedAt: rec.statusChangedAt, statusChangedAtIso: rec.statusChangedAtIso }
@@ -6726,6 +6756,7 @@ async function applyStatus(id, status, reason, opts = {}) {
   justChangedId = id;
   renderTable();
   justChangedId = null;
+  flyCard(id, from);
   refreshVeStatus(id);
 
   try {

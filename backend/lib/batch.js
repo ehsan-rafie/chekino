@@ -13,7 +13,7 @@
 const MAX_ROWS = 300;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const AMOUNT_MAX = 1e13;   // NUMERIC(15,2): anything this big is a typo (H7)
+const rules = require('./rules');   // the form's rule for a cheque's fields (H13)
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const shortStr = (v, max) => v === undefined || v === null || (typeof v === 'string' && v.length <= max);
@@ -59,9 +59,9 @@ function rowForCommit(r) {
   const sayad = digitsOf(r.sayad_id);
   const amount = digitsOf(r.amount);
   const missing = [];
-  if (!/^\d{6}$/.test(serial)) missing.push('سریال');
-  if (!/^\d{16}$/.test(sayad)) missing.push('شناسه صیادی');
-  if (!amount || Number(amount) <= 0 || Number(amount) >= AMOUNT_MAX) missing.push('مبلغ');
+  if (rules.serial(serial)) missing.push('سریال');
+  if (rules.sayad(sayad)) missing.push('شناسه صیادی');
+  if (rules.amount(amount)) missing.push('مبلغ');
   if (!validDate(r.due_date)) missing.push('سررسید');
   if (missing.length) return { missing };
   return { row: { serial, sayad_id: sayad, amount, due_date: r.due_date } };

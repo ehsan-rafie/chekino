@@ -265,6 +265,14 @@ function logDetail(r) {
   }
 }
 const logOn = (r) => r.company_name || (r.details && r.details.plan) || '';
+// the detail line as drawn: a username in it keeps its Latin digits
+function logDetailHtml(r) {
+  const d = r.details || {};
+  if (r.action === 'company.create' && d.username) {
+    return [`نام کاربری <bdi class="latin-digits" dir="ltr">${escapeHtml(d.username)}</bdi>`, d.plan && `پلن ${escapeHtml(d.plan)}`].filter(Boolean).join('، ');
+  }
+  return escapeHtml(logDetail(r));
+}
 const LOG_TZ = { timeZone: 'Asia/Tehran' };
 
 async function loadLog() {
@@ -289,10 +297,10 @@ function drawLog() {
     return `
     <tr class="${r.action === 'admin.login_failed' ? 'is-failed' : ''}">
       <td>${at.toLocaleDateString('fa-IR', { ...FA_DAY, ...LOG_TZ })} <span class="log-time">${at.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', ...LOG_TZ })}</span></td>
-      <td dir="ltr" style="text-align:left">${escapeHtml(r.admin_username)}</td>
+      <td class="latin-digits" dir="ltr" style="text-align:left">${escapeHtml(r.admin_username)}</td>
       <td class="log-what">${escapeHtml(logWhat(r))}</td>
       <td>${on ? `<button type="button" class="log-on" data-q="${escapeHtml(on)}" title="فقط کارهای همین">${escapeHtml(on)}</button>` : '—'}</td>
-      <td class="log-detail">${escapeHtml(logDetail(r))}</td>
+      <td class="log-detail">${logDetailHtml(r)}</td>
     </tr>`;
   }).join('') || `<tr><td colspan="5">${logCache.length ? 'فعالیتی با این جستجو نیست' : 'هنوز فعالیتی ثبت نشده'}</td></tr>`;
   const note = document.getElementById('logNote');
@@ -505,7 +513,7 @@ function drawCompanies() {
   body.innerHTML = shown.map(c => `
     <tr data-id="${c.id}">
       <td>${escapeHtml(c.name)}</td>
-      <td dir="ltr" style="text-align:left">${escapeHtml(c.username)}</td>
+      <td class="latin-digits" dir="ltr" style="text-align:left">${escapeHtml(c.username)}</td>
       <td>${escapeHtml(c.plan_name || '—')}</td>
       <td>${faN(c.people_count)}${c.max_people != null ? ' از ' + faN(c.max_people) : ''}</td>
       <td>${faN(c.checks_count)}${c.max_checks != null ? ' از ' + faN(c.max_checks) : ''}</td>

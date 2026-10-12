@@ -376,6 +376,22 @@
   from { opacity: 0; scale: 1.3; }
   to   { opacity: 0.85; scale: 1; }
 }
+/* A status set while the leaf is open (cheque-form.js landStamp): the stamp
+   comes down from above, a little askew, presses past its size, settles —
+   and the leaf gives a pixel under it */
+.cq-cheque[data-status] .cqc-stamp.is-landing { animation: cqcStampLand 0.5s cubic-bezier(0.3, 0, 0.2, 1) both; }
+@keyframes cqcStampLand {
+  0%   { opacity: 0; scale: 1.9; rotate: -13deg; }
+  55%  { opacity: 0.95; scale: 0.94; rotate: -6deg; }
+  75%  { scale: 1.03; }
+  100% { opacity: 0.85; scale: 1; rotate: -7deg; }
+}
+.cq-cheque.is-stamped { animation: cqcPress 0.5s ease-out; }
+@keyframes cqcPress {
+  0%, 50% { translate: 0 0; scale: 1; }
+  60%     { translate: 0 1.5px; scale: 0.996; }
+  100%    { translate: 0 0; scale: 1; }
+}
 
 /* Foot: the owner and the request to register at the start, where the
    leaf names its account holder; the party it was spent to at the end */
@@ -452,5 +468,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp, .cqc-photo-img.is-loading { animation: none; }
+  .cq-cheque .ink-in, .cq-cheque[data-status] .cqc-stamp, .cq-cheque[data-status] .cqc-stamp.is-landing, .cq-cheque.is-stamped, .cqc-photo-img.is-loading { animation: none; }
 }

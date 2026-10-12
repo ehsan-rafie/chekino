@@ -200,13 +200,5 @@ loginForm.addEventListener('submit', async (e) => {
   }
 });
 
-// (the support button is a link now: no script opens it)
-const tgBtn = document.getElementById('tgBtn');
-const tgTooltip = document.getElementById('tgTooltip');
-tgBtn.addEventListener('mouseenter', () => tgTooltip.classList.add('show'));
-tgBtn.addEventListener('mouseleave', () => tgTooltip.classList.remove('show'));
-tgBtn.addEventListener('focus', () => tgTooltip.classList.add('show'));
-tgBtn.addEventListener('blur', () => tgTooltip.classList.remove('show'));
-
 // The username field to type in at once, where there's a keyboard to type with
 if (window.matchMedia && window.matchMedia('(pointer: fine)').matches && !username.value) username.focus();

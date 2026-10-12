@@ -1,6 +1,5 @@
-// Security print — the generators behind every cheque drawn in the app.
-// Shared by the cheque view (js/cheque-form.js) and the login page
-// (js/login-art.js), so the two cheques can't drift apart.
+// Security print — the generators behind every cheque drawn in the app
+// (the cheque view, js/cheque-form.js).
 //
 //   ChekinoPrint.guilloche(svg, opts)  interleaved sine-wave lattice, drawn
 //                                      into <svg>

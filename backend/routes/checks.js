@@ -6,6 +6,7 @@ const authenticate = require('../middleware/auth');
 const { companyLimiter } = require('../middleware/rateLimit');
 const validate = require('../middleware/validate');
 const { nextStage } = require('../lib/stage');
+const rules = require('../lib/rules');
 const { peopleResolver, PeopleLimitError } = require('../lib/people');
 
 const router = express.Router();
@@ -541,8 +542,38 @@ function stageWrites(current, after, opts) {
   return { stage: st.stage, set: st.set, status, history, historyChanged: history !== base };
 }
 
+// A cheque's own fields against the form's rule (lib/rules.js, H13): on a
+// new cheque all of them; on a change the ones sent (`present` says which).
+// A cheque sent to its owner keeps at least one channel. The first problem,
+// as { error, field, code }, or null.
+// Once they pass they are kept as the form keeps them: Latin digits, no
+// spaces or separators («۱۲۳۴۵۶» is 123456).
+const RULE_FIELDS = [
+  ['serial', 'سریال', rules.serial, rules.clean.serial],
+  ['sayad_id', 'شناسه صیادی', rules.sayad, rules.clean.sayad],
+  ['amount', 'مبلغ', rules.amount, rules.clean.amount],
+];
+function ruleProblem(b, { present, sent }) {
+  for (const [k, label, check] of RULE_FIELDS) {
+    if (!present(k)) continue;
+    const p = check(b[k]);
+    if (p) return { error: `${label}: ${p}`, field: k, code: 'invalid_field' };
+  }
+  for (const [k, , , clean] of RULE_FIELDS) {
+    if (present(k) && b[k] !== undefined && b[k] !== null && b[k] !== '') b[k] = clean(b[k]);
+  }
+  if (sent && present('channels')) {
+    const p = rules.channels(b.channels);
+    if (p) return { error: `روش ارسال: ${p}`, field: 'channels', code: 'invalid_field' };
+  }
+  return null;
+}
+
 router.post('/', createValidation, validate, async (req, res) => {
   try {
+    // (a cheque made here is sent to its owner: the bulk add has its own way in)
+    const bad = ruleProblem(req.body, { present: () => true, sent: true });
+    if (bad) return res.status(400).json(bad);
     const {
       serial, sayad_id, amount, due_date, send_date, spend_date,
       owner_id, party_id, beneficiary_id, notes, receipt_image, channels, status,
@@ -630,7 +661,7 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
   try {
     const { id } = req.params;
     const {
-      serial, sayad_id, amount, due_date, send_date, spend_date,
+      due_date, send_date, spend_date,
       owner_id, party_id, beneficiary_id, notes, receipt_image, channels,
       status, status_reason,
     } = req.body;
@@ -644,6 +675,9 @@ router.put('/:id', idParamValidation, updateValidation, validate, async (req, re
       return res.status(404).json({ error: 'چک یافت نشد' });
     }
     const current = existing.rows[0];
+    const bad = ruleProblem(req.body, { present: (k) => (k === 'channels' ? Array.isArray(channels) : !!req.body[k]), sent: current.stage === 'sent' });
+    if (bad) return res.status(400).json(bad);
+    const { serial, sayad_id, amount } = req.body;   // (as kept: Latin digits)
 
     const peopleOk = await ensureOwnedPeople(req.companyId, [owner_id, party_id, beneficiary_id]);
     if (!peopleOk) {
@@ -756,6 +790,11 @@ router.patch('/:id', idParamValidation, patchValidation, validate, async (req, r
       return res.status(404).json({ error: 'چک یافت نشد' });
     }
     const current = found.rows[0];
+    const bad = ruleProblem(b, { present: has, sent: current.stage === 'sent' });
+    if (bad) {
+      await db.query('ROLLBACK');
+      return res.status(400).json(bad);
+    }
     // named people (H14): found or added in this transaction, then weighed as ids
     if (['owner', 'party', 'beneficiary'].some((k) => b[k] !== undefined)) {
       const plan = (await db.query('SELECT p.max_people FROM companies c LEFT JOIN plans p ON p.id = c.plan_id WHERE c.id = $1 FOR UPDATE OF c', [req.companyId])).rows[0] || {};

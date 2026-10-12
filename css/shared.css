@@ -24,6 +24,21 @@
   font-weight: 100 1000;
   font-display: swap;
 }
+/* Latin digits where the text is typed in Latin — usernames, passwords
+   (spec 9.3: «nouser12345» must not read «nouser۱۲۳۴۵»). The same face's
+   standard cut, for 0–9 only: fetched the first time such a digit is drawn,
+   the letters around them stay the usual cut. */
+@font-face {
+  font-family: 'IRANSansX Latin Digits';
+  src: url('/fonts/IRANSansXVF.woff2') format('woff2'),
+       url('/fonts/IRANSansXVF.woff') format('woff');
+  font-weight: 100 1000;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+}
+.latin-digits,
+.field input.latin-digits,
+.field .ig > input.latin-digits { font-family: 'IRANSansX Latin Digits', 'IRANSansX', 'Tahoma', sans-serif; }
 
 /* ════════════════════════════════════════════════════════════════
    1 · PRIMITIVES — raw scales. Components go through the semantic
