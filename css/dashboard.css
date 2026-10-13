@@ -4609,10 +4609,13 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .confirm-actions .confirm-neutral { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
 .confirm-actions .confirm-neutral:hover { background: var(--surface-2); border-color: var(--border-strong); }
 
-/* ── Toast with a way back («برگردون») ──
-   Same surface as the plain toast; it stays for half a minute, so it takes
-   the pointer and wraps a long line; its buttons are quiet ones at the end
-   of the line, edged so they read as buttons in both themes. */
+/* ── Toast with a way back ──
+   Quieter than the plain toast (the owner's ask, 2026-10-13): a hairline
+   edge and a soft shadow, the message in a lighter ink; its buttons quiet
+   ones at the end of the line past a hairline, the way back an undo mark
+   (mirrored, right to left); a thin line along its foot runs out with its
+   time, and stands still while it is held. It takes the pointer and wraps
+   a long line. */
 .app-toast { transition: opacity 0.2s ease, transform 0.2s ease, bottom 0.2s ease; }
 .app-toast.app-toast-action {
   display: flex;
@@ -4627,26 +4630,51 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   visibility: hidden;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
   max-width: calc(100vw - 32px);
-  padding-block: 6px;
-  padding-inline: 16px 8px;
+  gap: 10px;
+  padding-block: 4px;
+  padding-inline: 14px 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--ink-2);
+  font-variation-settings: var(--f-body);
 }
 .app-toast.app-toast-action.show { visibility: visible; pointer-events: auto; transition-delay: 0s; }
-.app-toast-action .toast-text { padding-block: 5px; }
-.app-toast-action .toast-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.app-toast-action .toast-text { padding-block: 6px; }
+.app-toast-action .toast-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; padding-inline-start: 6px; border-inline-start: 1px solid var(--border-subtle); }
 .app-toast-action .toast-action {
   flex-shrink: 0;
   height: 30px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: none;
-  border-radius: 10px;
-  background: var(--surface-2);
-  box-shadow: var(--inset-hairline);
+  border-radius: 8px;
+  background: transparent;
   color: var(--ink);
   font: inherit;
-  font-variation-settings: var(--f-btn);
+  font-variation-settings: var(--f-label);
   cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
 }
-.app-toast-action .toast-action:hover { background: var(--surface-sunken); }
+.app-toast-action .toast-action:hover { background: var(--surface-2); }
+.app-toast-action .toast-action.is-undo { display: grid; place-items: center; width: 32px; padding: 0; color: var(--ink-2); }
+.app-toast-action .toast-action.is-undo:hover { color: var(--ink); }
+.app-toast-action .toast-action.is-undo svg { width: 17px; height: 17px; transform: scaleX(-1); }
+.app-toast-action::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--border-strong);
+  transform-origin: right center;
+}
+.app-toast-action.show::after { animation: toastTime var(--toast-ms, 5000ms) linear both; }
+.app-toast-action.is-held::after { animation-play-state: paused; }
+.app-toast-action.is-fresh::after { animation: none; }
+@keyframes toastTime { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .app-toast-action::after { display: none; } }
 /* events in the cheque's history: a plain line, no status colour */
 .ve-history-link.is-event .ve-history-name { color: var(--ink-2); font-variation-settings: var(--f-value); }
 

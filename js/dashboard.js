@@ -691,8 +691,7 @@ function exitViewEditMode() {
   veHistoryBtn.hidden = true;
   lockFormFields(false);
   cancelPendingDelete();
-  saveConfirmSlideBtn.classList.remove('show');
-  clearFormBtn.classList.remove('pending-cancel');
+  saveCancelSlideBtn.classList.remove('show');
 }
 
 // What this add form saved since it opened: listed in its footer, and the
@@ -1114,7 +1113,7 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();   // on a channel tag this also keeps Enter from pressing it
 
   if (submitCheckBtn.classList.contains('pending-confirm')) {
-    saveConfirmSlideBtn.click();
+    commitSaveEdit();
     return;
   }
   if (t === submitCheckBtn) { submitCheckBtn.click(); return; }
@@ -4540,7 +4539,11 @@ function checkSayadDuplicate() {
 
 submitCheckBtn.addEventListener('click', async () => {
   if (modalMode === 'view') { enterEditMode(); return; }
-  if (modalMode === 'editing') { handleSaveEdit(); return; }
+  if (modalMode === 'editing') {
+    if (submitCheckBtn.classList.contains('pending-confirm')) commitSaveEdit();
+    else handleSaveEdit();
+    return;
+  }
 
   hideFormAlert();
 
@@ -4625,8 +4628,9 @@ submitCheckBtn.addEventListener('click', async () => {
   }
 });
 
-// Saving an edit needs one extra confirming click, since it overwrites an
-// already-registered cheque rather than creating a new one.
+// Saving an edit asks once, whatever was changed (the owner's ask,
+// 2026-10-13: a serial saved at once but a photo asked — two ways for one
+// button): it overwrites a registered cheque.
 function handleSaveEdit() {
   hideFormAlert();
 
@@ -4671,30 +4675,20 @@ function handleSaveEdit() {
     return;
   }
 
-  // A change that can be undone saves at once, «برگردون» in its toast; only
-  // taking files off (they are deleted) still asks first
-  const dropsFiles = Array.isArray(editingFiles) && editingFiles.some((fid) => !rec.files.some((f) => f.id === fid));
-  saveIsDirect = !dropsFiles;
-  if (saveIsDirect) { commitSaveEdit(); return; }
-
-  // valid and no conflicts — reveal the small confirm button beside "ذخیره تغییرات"
-  saveConfirmSlideBtn.classList.add('show');
-  submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
+  // valid and no conflicts: as deleting asks — «ذخیره تغییرات» becomes
+  // «بله، ذخیره شود», and an «انصراف» of its size slides in beside it
+  cancelPendingDelete();
   submitCheckBtn.classList.add('pending-confirm');
-  clearFormBtn.classList.add('pending-cancel');
-  clearFormBtn.title = 'انصراف از ذخیره';
+  submitCheckBtn.textContent = 'بله، ذخیره شود';
+  saveCancelSlideBtn.classList.add('show');
 }
 
-// Cancels the pending save-confirmation and reverts the whole form back to
-// read-only view mode, discarding whatever was edited.
+// «انصراف» (or Escape, or the trash): not now — back to the form as it was
+// being edited, nothing lost
 function cancelPendingSave() {
-  saveConfirmSlideBtn.classList.remove('show');
-  submitCheckBtn.textContent = 'ذخیره تغییرات';
+  saveCancelSlideBtn.classList.remove('show');
   submitCheckBtn.classList.remove('pending-confirm');
-  clearFormBtn.classList.remove('pending-cancel');
-  clearFormBtn.title = 'حذف چک';
-  const c = loadCheques().find(x => x.id === editingChequeId);
-  if (c) openModalForView(editingChequeId);   // re-populate + re-lock from the saved record
+  submitCheckBtn.textContent = 'ذخیره تغییرات';
 }
 
 // «برگردون» after an edit: the cheque as it was, saved over the edit — its
@@ -4734,10 +4728,9 @@ async function undoEdit(id, before, filesBefore) {
     showToast(requestErrorText(e, 'برگردانده نشد'));
   }
 }
-let saveIsDirect = false;   // this save went without the confirming tap
-
 async function commitSaveEdit() {
-  saveConfirmSlideBtn.classList.remove('show');
+  saveCancelSlideBtn.classList.remove('show');
+  submitCheckBtn.classList.remove('pending-confirm');
   const rec = currentFormRecord();
   // Taken once, before any await: if the modal is closed mid-save and another
   // cheque opened, editingChequeId changes — reading it after the await sent
@@ -4795,8 +4788,7 @@ async function commitSaveEdit() {
     fetchPeopleCache();   // whoever the server added
     if (undoable) {
       showToast(`تغییرات چک ${toFa(saved.serial)} ذخیره شد`, {
-        duration: 8000,
-        action: { label: 'برگردون', run: () => undoEdit(id, stored, filesBefore) },
+        action: { undo: true, run: () => undoEdit(id, stored, filesBefore) },
       });
     }
     // the cheque as saved, in the list; not every cheque again (spec 9.9)
@@ -4827,10 +4819,7 @@ async function commitSaveEdit() {
       if (editingChequeId !== id) return;
       if (answer === 'back') {
         // nothing saved and nothing lost: back to editing, as before «ذخیره»
-        submitCheckBtn.textContent = 'ذخیره تغییرات';
-        submitCheckBtn.classList.remove('pending-confirm');
-        clearFormBtn.classList.remove('pending-cancel');
-        clearFormBtn.title = 'حذف چک';
+        cancelPendingSave();
         return;
       }
       if (answer === 'mine') {
@@ -4846,20 +4835,14 @@ async function commitSaveEdit() {
     }
     showFormAlert('error', requestErrorText(e, 'ذخیره نشد'));
     // Failed — the button as it was, so the user can just try again
-    // (the confirm step back, when this save had one)
-    if (saveIsDirect) {
-      submitCheckBtn.textContent = 'ذخیره تغییرات';
-    } else {
-      submitCheckBtn.textContent = 'آیا تغییرات ذخیره شود؟';
-      saveConfirmSlideBtn.classList.add('show');
-    }
+    submitCheckBtn.textContent = 'ذخیره تغییرات';
   }
 }
 
 let deleteInFlight = false;   // one DELETE per confirmation, not one per click
-const saveConfirmSlideBtn = document.getElementById('saveConfirmSlideBtn');
+const saveCancelSlideBtn = document.getElementById('saveCancelSlideBtn');
 const deleteCancelSlideBtn = document.getElementById('deleteCancelSlideBtn');
-saveConfirmSlideBtn.addEventListener('click', commitSaveEdit);
+saveCancelSlideBtn.addEventListener('click', () => { cancelPendingSave(); submitCheckBtn.focus(); });
 
 // Deleting a cheque uses the exact same slide-morph mechanic as saving an
 // edit: the trash icon widens into a red "بله، حذف شود" button, and an
@@ -4871,10 +4854,8 @@ function cancelPendingDelete() {
 deleteCancelSlideBtn.addEventListener('click', cancelPendingDelete);
 
 clearFormBtn.addEventListener('click', async () => {
-  if (clearFormBtn.classList.contains('pending-cancel')) {
-    cancelPendingSave();
-    return;
-  }
+  // the last one pressed wins: a save being asked about steps aside for the delete
+  if (submitCheckBtn.classList.contains('pending-confirm')) cancelPendingSave();
   if (modalMode !== 'add') {
     // view/editing mode: this same trash icon deletes the whole cheque instead
     if (!clearFormBtn.classList.contains('confirming-delete')) {
@@ -4916,8 +4897,7 @@ clearFormBtn.addEventListener('click', async () => {
   clearDraft();
   serialInput.focus();
   showToast('فرم پاک شد', {
-    duration: 8000,
-    action: { label: 'برگردون', run: () => {
+    action: { undo: true, run: () => {
       if (!modalOverlay.classList.contains('show') || modalMode !== 'add') return;
       applyFormSnapshot(was);
       attachedFiles = wasFiles;
@@ -5042,12 +5022,18 @@ function receiptButtonHtml(c) {
   </button>`;
 }
 // A short message at the foot of the page, gone after two seconds.
-// opts.duration: how long instead. opts.actions [{ label, run }] (or one,
-// opts.action): buttons in it — «مشاهده» / «برگردون»; such a toast stays 30
-// seconds unless told otherwise, holds still while the pointer or the
-// keyboard is on it, and goes on Escape. It has a place of its own: a plain
-// message that comes meanwhile shows above it instead of taking its place.
-// One with buttons at a time: a newer one replaces it. Returns { close }.
+// opts.duration: how long instead. opts.actions [{ label, run, undo }] (or
+// one, opts.action): buttons in it — «مشاهده», or with undo: true the way
+// back, an undo mark («بازگردانی» to a screen reader and on hover). Such a
+// toast (the owner's ask, 2026-10-13: quieter, shorter, never stuck) stays
+// five seconds unless told otherwise, a thin line along its foot running
+// out with its time; it holds still while the pointer moves on it or the
+// keyboard is in it — not for a pointer it merely appeared under — and goes
+// on Escape, and after three times its time whatever holds it. It has a
+// place of its own: a plain message that comes meanwhile shows above it
+// instead of taking its place. One with buttons at a time: a newer one
+// replaces it. Returns { close }.
+const UNDO_MARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 function showToast(message, opts = {}) {
   const actions = opts.actions || (opts.action ? [opts.action] : []);
   if (actions.length) return showActionToast(message, actions, opts.duration);
@@ -5072,6 +5058,7 @@ function liftPlainToast() {
 function hideActionToast() {
   if (!actionToastState) return;
   clearTimeout(actionToastState.timer);
+  clearTimeout(actionToastState.cap);
   actionToastState = null;
   if (actionToast.contains(document.activeElement)) document.activeElement.blur();
   actionToast.classList.remove('show');
@@ -5087,6 +5074,7 @@ function holdActionToast() {
   const st = actionToastState;
   if (!st) return;
   st.held = true;
+  actionToast.classList.add('is-held');
   if (!st.timer) return;
   clearTimeout(st.timer);
   st.timer = null;
@@ -5096,12 +5084,17 @@ function showActionToast(message, actions, duration) {
   hideActionToast();
   actionToastText.textContent = message;
   actionToastBtns.innerHTML = '';
-  const state = { left: duration || 30000, timer: null, held: false };
+  const ms = duration || 5000;
+  const state = { left: ms, timer: null, held: false, pointer: false, cap: 0 };
   actions.forEach((a) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'toast-action';
-    b.textContent = a.label;
+    b.className = 'toast-action' + (a.undo ? ' is-undo' : '');
+    if (a.undo) {
+      b.innerHTML = UNDO_MARK;
+      b.title = 'بازگردانی';
+      b.setAttribute('aria-label', 'بازگردانی');
+    } else b.textContent = a.label;
     b.addEventListener('click', () => {
       if (actionToastState !== state) return;
       hideActionToast();
@@ -5110,20 +5103,34 @@ function showActionToast(message, actions, duration) {
     actionToastBtns.appendChild(b);
   });
   actionToastState = state;
+  // its time line starts over with it
+  actionToast.style.setProperty('--toast-ms', ms + 'ms');
+  actionToast.classList.remove('is-held');
+  actionToast.classList.add('is-fresh');
+  void actionToast.offsetWidth;
+  actionToast.classList.remove('is-fresh');
   actionToast.classList.add('show');
   liftPlainToast();
   runActionToastTimer();
+  state.cap = setTimeout(() => { if (actionToastState === state) hideActionToast(); }, ms * 3);
   return { close: () => { if (actionToastState === state) hideActionToast(); } };
 }
 const releaseActionToast = () => {
-  if (!actionToastState) return;
-  if (actionToast.matches(':hover') || actionToast.contains(document.activeElement)) return;
-  actionToastState.held = false;
+  const st = actionToastState;
+  if (!st) return;
+  if (st.pointer || actionToast.contains(document.activeElement)) return;
+  st.held = false;
+  actionToast.classList.remove('is-held');
   runActionToastTimer();
 };
-actionToast.addEventListener('mouseenter', holdActionToast);
+// a pointer that moves on it holds it — one it just appeared under doesn't
+actionToast.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch' || !actionToastState || actionToastState.pointer) return;
+  actionToastState.pointer = true;
+  holdActionToast();
+});
+actionToast.addEventListener('pointerleave', () => { if (actionToastState) actionToastState.pointer = false; setTimeout(releaseActionToast, 0); });
 actionToast.addEventListener('focusin', holdActionToast);
-actionToast.addEventListener('mouseleave', () => setTimeout(releaseActionToast, 0));
 actionToast.addEventListener('focusout', () => setTimeout(releaseActionToast, 0));
 actionToast.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { e.stopPropagation(); hideActionToast(); }
@@ -6870,8 +6877,7 @@ async function applyStatus(id, status, reason, opts = {}) {
     if (rec && before && !opts.quiet) {
       const back = before.status || 'pending';
       showToast(`چک ${toFa(rec.serial)} «${statusById(status).name}» شد`, {
-        duration: 8000,
-        action: { label: 'برگردون', run: () => applyStatus(id, back, back === 'problem' ? before.statusReason || '' : '', { quiet: true }) },
+        action: { undo: true, run: () => applyStatus(id, back, back === 'problem' ? before.statusReason || '' : '', { quiet: true }) },
       });
     }
     // The server's row — its status history and exact time, which the guess

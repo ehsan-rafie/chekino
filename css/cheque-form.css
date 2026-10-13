@@ -542,6 +542,13 @@
 #modalOverlay .modal-footer .btn-clear.confirming-delete .btn-clear-text { font-size: var(--t-cap); }
 #modalOverlay .modal-footer .delete-cancel-slide { height: 36px; font-size: var(--t-cap); }
 #modalOverlay .modal-footer .delete-cancel-slide.show { width: 104px; padding: 0 8px; }
+/* saving an edit asks the same way: «ذخیره تغییرات» narrows into
+   «بله، ذخیره شود» (still the dark one) and an «انصراف» of its size slides
+   in beside it */
+#modalOverlay .modal-footer .save-confirm-wrap { align-items: center; }
+#modalOverlay .modal-footer .btn-submit { width: 132px; min-width: 0; transition: width 0.28s ease, height 0.28s ease, padding 0.28s ease, background var(--dur-1) var(--ease); }
+#modalOverlay .modal-footer .btn-submit.pending-confirm { width: 104px; height: 36px; padding: 0 8px; font-size: var(--t-cap); background: var(--accent); color: var(--on-accent); border: none; box-shadow: none; }
+#modalOverlay .modal-footer .btn-submit.pending-confirm:hover { background: var(--accent-hover); }
 
 /* ---- Narrow screens ---- */
 @media (max-width: 600px) {
@@ -583,6 +590,8 @@
   #modalOverlay .modal-footer .btn-clear { width: 44px; height: 44px; }
   #modalOverlay .modal-footer .btn-clear.confirming-delete, #modalOverlay .modal-footer .delete-cancel-slide { height: 40px; }
   #modalOverlay .modal-footer .btn-clear.confirming-delete, #modalOverlay .modal-footer .delete-cancel-slide.show { width: 96px; }
+  #modalOverlay .modal-footer .btn-submit { width: auto; }
+  #modalOverlay .modal-footer .btn-submit.pending-confirm { flex: 0 0 96px; width: 96px; height: 40px; }
 }
 
 /* ═══ Fields first (2026-09-28) ═══

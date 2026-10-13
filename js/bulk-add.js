@@ -1210,7 +1210,7 @@
       }
       if (r.op_id) {
         lastUndo = { opId: r.op_id, at: Date.now() };
-        showToast(text, { action: { label: 'برگردون', run: () => undoCommit(r.op_id) } });
+        showToast(text, { action: { undo: true, run: () => undoCommit(r.op_id) } });
       } else showToast(text);
       refreshResume();
     } catch (e) {

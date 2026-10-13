@@ -497,10 +497,15 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   («رقم ۶»). The name pickers have no «انتخاب کنید»; their icon and
   arrow say it. Placeholders left: the date segments and the
   note's example. The save button is compact and sits at the end of the
-  footer. **An edit saves at once** and the toast offers «برگردون» (the
-  cheque as it was, saved over the edit — its people by id, its files as
-  they were); the one-tap confirmation in place is kept only where saving
-  can't be undone: an edit that takes files off, which deletes them.
+  footer. **Saving an edit asks once, whatever was changed** (the owner's
+  ask, 2026-10-13: a serial used to save at once and a photo to ask — two
+  ways for one button), as deleting does: «ذخیره تغییرات» narrows into
+  «بله، ذخیره شود» (still the dark one) and an «انصراف» of its size slides
+  in beside it (104×36; 96×40 on a phone). «انصراف» or Escape goes back to
+  the form with the edit kept; the trash meanwhile asks about deleting
+  instead (one question at a time). Saved, the toast offers the way back
+  (the cheque as it was, saved over the edit — its people by id, its files
+  as they were) — except for files taken off, which are deleted.
   Escape on an edit asks about unsaved changes only when the form differs
   from what it held when «ویرایش» was pressed.
   **What this form saved** since it opened stays at the footer's start,
@@ -509,7 +514,7 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   can be checked off at a glance; on a phone it takes a row of its own.
   When the form closes those cards settle in on the board like a moved
   card. **Emptying a new form** is an eraser beside the save (neutral
-  under the pointer): one press, then «فرم پاک شد» with «برگردون». The
+  under the pointer): one press, then «فرم پاک شد» with the way back. The
   red trash is only a saved cheque's «حذف چک».
 - *Size.* The form reads at the size of the board's cards (whose
   figures are 15–16px): what's typed is 15px, labels and section titles
@@ -746,10 +751,16 @@ cheque changed elsewhere meanwhile, the question offers «دیدن نسخه‌ی
 تازه», «ذخیره‌ی تغییرات من» and «برگشت به فرم» (Escape).
 
 **Toasts.** A plain line at the foot of the page, gone after two seconds.
-One that offers a way on or back («مشاهده» / «برگردون») has quiet edged
-buttons at the end of its line, stays half a minute, holds still while
-the pointer or the keyboard is on it and goes on Escape; it keeps its own
-place, and a plain message that comes meanwhile shows above it.
+One that offers a way on or back is quieter (the owner's ask, 2026-10-13):
+a hairline edge and a soft shadow, the message in a lighter ink, its
+buttons quiet ones past a hairline at the end of its line — «مشاهده» in
+words, the way back an undo mark (mirrored, right to left; «بازگردانی» to
+a screen reader and on hover) — and a thin line along its foot running out
+with its time. It stays five seconds, holds still while the pointer moves
+on it or the keyboard is in it (not for a pointer it merely appeared
+under, which left it standing), goes after three times its time whatever
+holds it, and goes on Escape; it keeps its own place, and a plain message
+that comes meanwhile shows above it.
 
 **Bulk add** (`js/bulk-add.js`, `css/bulk.css`; photos: `js/bulk-photos.js`,
 `js/cheque-split.js` and its worker). For adding many cheques at once. An

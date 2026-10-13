@@ -350,7 +350,7 @@
       const n = r.updated.length;
       if (r.op_id) {
         const opId = r.op_id;
-        showToast(`${fa(n)} چک ارسال‌شده ثبت شد`, { action: { label: 'برگردون', run: () => undoSend(opId, r.updated.map((c) => c.id)) } });
+        showToast(`${fa(n)} چک ارسال‌شده ثبت شد`, { action: { undo: true, run: () => undoSend(opId, r.updated.map((c) => c.id)) } });
       } else if (!n) showToast('این چک‌ها قبلاً ارسال شده بودند');
       if (sw) {
         r.updated.forEach((c) => sw.ids.delete(c.id));
