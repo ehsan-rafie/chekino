@@ -402,6 +402,27 @@ const HISTORY_EVENTS = {
   },
   undo: () => 'تغییر قبلی برگردانده شد',
 };
+// A status set by mistake and put back (the owner's ask, 2026-10-13): a
+// change that went back to the status before it within a day is a slip,
+// not part of the cheque's story — both it and its going back are left
+// out of what the history shows (any number in a row: «ثبت شد», back,
+// «ثبت شد», back… is nothing). A status that stood longer than a day stays,
+// whatever came after it. The server keeps every change (H4); only the
+// telling is tidied.
+const SLIP_MS = 24 * 60 * 60 * 1000;
+function withoutSlips(chain) {
+  const kept = [];   // the status changes that stand, in order
+  const gone = new Set();
+  for (const h of chain) {
+    if (h.event) continue;
+    const prev = kept[kept.length - 2], last = kept[kept.length - 1];
+    if (prev && last && h.to === prev.to && Date.parse(h.at) - Date.parse(last.at) < SLIP_MS) {
+      gone.add(last); gone.add(h);
+      kept.pop();
+    } else kept.push(h);
+  }
+  return chain.filter((h) => !gone.has(h));
+}
 function renderVeHistory(c) {
   const hist = c.history || [];
   // The chain always opens with the cheque's initial "منتظر ثبت" state
@@ -411,8 +432,8 @@ function renderVeHistory(c) {
   // earns its place once there has been more than one.
   // Events (6.2) show as plain lines in the same chain; one this page
   // doesn't know is left out rather than shown as a status it isn't
-  const chain = [{ to: 'pending', at: c.createdAt }, ...hist]
-    .filter(h => (h.event ? HISTORY_EVENTS[h.event] : STATUSES.some(st => st.id === h.to)));
+  const chain = withoutSlips([{ to: 'pending', at: c.createdAt }, ...hist]
+    .filter(h => (h.event ? HISTORY_EVENTS[h.event] : STATUSES.some(st => st.id === h.to))));
   veHistory.classList.toggle('show', chain.length > 2);
   veHistoryList.innerHTML = chain.map((h) => {
     if (h.event) {

@@ -555,6 +555,11 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     رسید صیاد» for a registered cheque; «ارسال برای صاحب چک» for a ready
     one. The next step's button takes the focus after a change.
   - The status history, small, once there has been more than one change.
+    A slip is left out of it (the owner's ask, 2026-10-13): a status put
+    back to the one before it within a day — «ثبت شد» by mistake, then
+    «برگردون» — is not part of the cheque's story, so neither it nor its
+    going back is shown (any number in a row); a status that stood longer
+    stays. The server keeps every change (H4); only the telling is tidied.
   On a phone the details sit two by two (the sayad id in the wider column)
   and the steps run down the start edge, each with its words beside its
   mark.
