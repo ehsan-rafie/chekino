@@ -3421,15 +3421,27 @@ function renderFileChips() {
 // `index`: the attached photo being shown — «ویرایش» is offered for it
 // while the form can be edited (not while a saved cheque is only viewed).
 let lightboxIndex = null;
-// The photo grows out of the thumbnail it was opened from and goes back
-// into it when the viewer closes (the owner's ask, 2026-10-13): a copy of
-// it flies between the two places — the thumbnail's crop and corners to the
-// whole photo's — while the viewer's card fades in or out around it; the
-// photo in the card shows once it has landed. Not with less motion, nor
-// when the thumbnail is out of sight (then the card just comes and goes).
-let lightboxFrom = null;     // the thumbnail it opened from
-let lightboxFlight = null;   // the copy in flight: { done }
-let lightboxOpenSeq = 0;
+// ---- The photo viewer ----
+// After the photo viewers people know (a phone's gallery, Telegram; the
+// owner's ask, 2026-10-13): no card — the photo itself on a dark backdrop,
+// its bars floating over it. It grows out of the thumbnail it was opened
+// from: the photo itself moves and scales from there, the thumbnail's crop
+// and corners opening out to the whole photo, while the backdrop darkens;
+// the bars fade in as it lands. Closing, the bars go first and the photo
+// shrinks back into its thumbnail. On a touch screen it follows the
+// finger: dragged down (or up) it grows smaller and the backdrop lighter,
+// and let go far or fast enough it goes back to its thumbnail — else it
+// springs back; dragged sideways, the next photo. With less motion it
+// just appears and goes.
+const lightboxBackdrop = document.getElementById('lightboxBackdrop');
+const lightboxStage = document.getElementById('lightboxStage');
+const LB_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';   // quick to leave, a long soft landing
+let lightboxFrom = null;     // the thumbnail it opened from, when not one of the cheque's files
+let lightboxAnims = [];      // what runs on the photo and the backdrop
+let lightboxHidden = null;   // the thumbnail kept out of sight while its photo is on the move
+let lightboxSeq = 0;
+let lightboxDrag = null;     // a finger on the photo
+let lightboxDragged = false; // …and the click that follows a drag is not a click
 // where the photo shown now sits on the page: its tile in the view, its
 // chip in the form, or what it was opened from (the bulk add's row)
 function lightboxThumb() {
@@ -3443,35 +3455,29 @@ function rectInSight(el) {
   const r = el.getBoundingClientRect();
   return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
 }
-function flyPhoto(src, from, to, radii, ms, hide) {
-  if (lightboxFlight) lightboxFlight.done();
-  const fl = document.createElement('div');
-  fl.className = 'lightbox-flyer';
-  const im = new Image();
-  im.alt = '';
-  im.src = src;
-  fl.appendChild(im);
-  document.body.appendChild(fl);
-  hide.forEach((el) => { el.style.visibility = 'hidden'; });
-  const box = (r, rad) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: rad });
-  const anim = fl.animate([box(from, radii[0]), box(to, radii[1])], { duration: ms, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' });
-  let over = false;
-  const done = () => {
-    if (over) return;
-    over = true;
-    fl.remove();
-    hide.forEach((el) => { el.style.visibility = ''; });
-    if (lightboxFlight && lightboxFlight.done === done) lightboxFlight = null;
-  };
-  anim.onfinish = done;
-  anim.oncancel = done;
-  lightboxFlight = { done };
+function lbHide(el) { lbUnhide(); if (el) { el.style.visibility = 'hidden'; lightboxHidden = el; } }
+function lbUnhide() { if (lightboxHidden) lightboxHidden.style.visibility = ''; lightboxHidden = null; }
+function lbStop() { const a = lightboxAnims; lightboxAnims = []; a.forEach((x) => x.cancel()); lbUnhide(); }
+const lbRadius = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+// the photo's own place, no transform on it
+function lbHome() {
+  const t = lightboxImg.style.transform;
+  lightboxImg.style.transform = 'none';
+  const r = lightboxImg.getBoundingClientRect();
+  lightboxImg.style.transform = t;
+  return r;
 }
-function openLightbox(dataUrl, name, index, from) {
-  const opening = !lightboxOverlay.classList.contains('show');
-  const seq = ++lightboxOpenSeq;
-  if (lightboxFlight) lightboxFlight.done();
-  lightboxImg.style.visibility = '';
+// what lays the photo (at home H) exactly over a thumbnail T: scaled to
+// cover it, middle on middle, cropped and rounded as the thumbnail is
+function lbOver(H, T, radius) {
+  const s = Math.max(T.width / H.width, T.height / H.height);
+  const dx = T.left + T.width / 2 - (H.left + H.width / 2);
+  const dy = T.top + T.height / 2 - (H.top + H.height / 2);
+  const ix = Math.max(0, (H.width - T.width / s) / 2), iy = Math.max(0, (H.height - T.height / s) / 2);
+  return { transform: `translate(${dx}px, ${dy}px) scale(${s})`, clipPath: `inset(${iy}px ${ix}px round ${radius / s}px)` };
+}
+const lbWhole = () => ({ transform: 'translate(0px, 0px) scale(1)', clipPath: `inset(0px 0px round ${lbRadius(lightboxImg)}px)` });
+function lbSet(dataUrl, name, index) {
   lightboxImg.src = dataUrl;
   lightboxImg.dataset.filename = name || 'cheque-photo.jpg';
   lightboxIndex = Number.isInteger(index) ? index : null;
@@ -3479,31 +3485,44 @@ function openLightbox(dataUrl, name, index, from) {
   lightboxImg.dataset.type = (shown && shown.type) || mimeOfDataUrl(dataUrl);
   lightboxEditBtn.hidden = lightboxIndex === null || modalBody.classList.contains('ve-locked');
   updateLightboxNav();
-  let r0 = null, fromEl = null;
-  if (opening) {
-    lightboxFrom = from || null;
-    fromEl = from || lightboxThumb();
-    r0 = REDUCE_MOTION.matches ? null : rectInSight(fromEl);
-    lightboxOverlay.classList.remove('lb-closing');
-    lightboxOverlay.classList.toggle('lb-zoom', !!r0);
-  }
+}
+function openLightbox(dataUrl, name, index, from) {
+  if (lightboxOverlay.classList.contains('show')) { lbSet(dataUrl, name, index); return; }
+  const seq = ++lightboxSeq;
+  lbStop();
+  lightboxDrag = null;
+  lightboxImg.style.transform = '';
+  lightboxImg.style.opacity = '';
+  lightboxBackdrop.style.opacity = '';
+  lbSet(dataUrl, name, index);
+  lightboxFrom = from || null;
+  const fromEl = from || lightboxThumb();
+  lightboxOverlay.classList.remove('lb-closing', 'lb-ui');
   lightboxOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
-  if (r0) {
-    lightboxImg.style.visibility = 'hidden';
-    const fly = () => {
-      if (seq !== lightboxOpenSeq || !lightboxOverlay.classList.contains('show')) return;
-      const r1 = lightboxImg.getBoundingClientRect();
-      if (!r1.width || !rectInSight(fromEl)) { lightboxImg.style.visibility = ''; return; }
-      flyPhoto(dataUrl, rectInSight(fromEl), r1, [getComputedStyle(fromEl).borderRadius, getComputedStyle(lightboxImg).borderRadius], 340, [fromEl, lightboxImg]);
-    };
-    lightboxImg.decode().then(fly, fly);
-  }
-  // Opened from a thumbnail click, so nothing inside the lightbox itself
-  // has focus yet — this makes Enter do the standard thing (dismiss it),
-  // same as Escape already does. Stepping to the next photo keeps focus
-  // where it is.
-  if (opening) lightboxCloseBtn.focus();
+  // Enter does the standard thing (dismiss it), as Escape does
+  lightboxCloseBtn.focus({ preventScroll: true });
+  if (REDUCE_MOTION.matches) { lightboxOverlay.classList.add('lb-ui'); return; }
+  const T = rectInSight(fromEl);
+  lightboxAnims.push(lightboxBackdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 340, easing: 'cubic-bezier(0.2, 0, 0, 1)' }));
+  const grow = () => {
+    if (seq !== lightboxSeq || !lightboxOverlay.classList.contains('show')) return;
+    lightboxImg.style.opacity = '';
+    const H = lbHome();
+    setTimeout(() => { if (seq === lightboxSeq && lightboxOverlay.classList.contains('show')) lightboxOverlay.classList.add('lb-ui'); }, T ? 260 : 120);
+    if (!T || !H.width) {
+      // nothing to grow out of: it comes up from just under its size
+      lightboxAnims.push(lightboxImg.animate([{ opacity: 0, transform: 'scale(0.94)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, easing: LB_EASE }));
+      return;
+    }
+    lbHide(fromEl);
+    const a = lightboxImg.animate([lbOver(H, T, lbRadius(fromEl)), lbWhole()], { duration: 460, easing: LB_EASE });
+    lightboxAnims.push(a);
+    a.onfinish = () => { if (seq === lightboxSeq) lbUnhide(); };
+  };
+  // the same picture as the thumbnail's is there at once; one still on its way is waited for, unseen
+  if (lightboxImg.complete && lightboxImg.naturalWidth) grow();
+  else { lightboxImg.style.opacity = '0'; lightboxImg.decode().then(grow, grow); }
 }
 // More than one photo: step through the attached images — the two arrows,
 // ← and →, and a «۱ از ۲» beside the title
@@ -3654,23 +3673,100 @@ function stepLightbox(dir) {
   const at = imgs.findIndex(x => x.i === lightboxIndex);
   if (imgs.length < 2 || at < 0) return;
   const next = imgs[(at + dir + imgs.length) % imgs.length];
-  openLightbox(next.f.dataUrl, next.f.name, next.i);
+  lbStop();
+  lbSet(next.f.dataUrl, next.f.name, next.i);
+  // the next comes in from the side it lies on (right to left: the next on the left)
+  if (!REDUCE_MOTION.matches) lightboxAnims.push(lightboxImg.animate([{ opacity: 0, transform: `translateX(${dir === 1 ? -56 : 56}px)` }, { opacity: 1, transform: 'translateX(0px)' }], { duration: 300, easing: LB_EASE }));
 }
-function closeLightbox() {
-  if (lightboxFlight) lightboxFlight.done();
-  lightboxOpenSeq++;
-  const to = REDUCE_MOTION.matches ? null : lightboxThumb();
-  const r0 = to && lightboxImg.naturalWidth ? rectInSight(lightboxImg) : null;
-  const r1 = r0 ? rectInSight(to) : null;
-  lightboxOverlay.classList.remove('show');
+// instant: gone at once (to the photo editor, which takes its place)
+function closeLightbox(instant) {
+  if (!lightboxOverlay.classList.contains('show')) return;
+  const seq = ++lightboxSeq;
+  // from wherever the photo is now — still growing, or under a finger
+  const cs = getComputedStyle(lightboxImg);
+  const now = { transform: cs.transform === 'none' ? 'translate(0px, 0px) scale(1)' : cs.transform, clipPath: cs.clipPath === 'none' ? `inset(0px 0px round ${lbRadius(lightboxImg)}px)` : cs.clipPath };
+  const dim = getComputedStyle(lightboxBackdrop).opacity;
+  lbStop();
+  lightboxDrag = null;
+  lightboxImg.style.transform = '';
+  lightboxBackdrop.style.opacity = '';
+  lightboxOverlay.classList.remove('show', 'lb-ui');
   document.body.style.overflow = modalOverlay.classList.contains('show') ? 'hidden' : '';
-  if (!r1) return;
-  // back into its thumbnail, the card fading away around it
+  if (instant || REDUCE_MOTION.matches) return;
   lightboxOverlay.classList.add('lb-closing');
-  flyPhoto(lightboxImg.src, r0, r1, [getComputedStyle(lightboxImg).borderRadius, getComputedStyle(to).borderRadius], 280, [to, lightboxImg]);
-  const seq = lightboxOpenSeq;
-  setTimeout(() => { if (seq === lightboxOpenSeq) lightboxOverlay.classList.remove('lb-closing'); }, 300);
+  const to = lightboxThumb();
+  const T = lightboxImg.naturalWidth ? rectInSight(to) : null;
+  lightboxAnims.push(lightboxBackdrop.animate([{ opacity: dim }, { opacity: 0 }], { duration: 320, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' }));
+  let a;
+  if (T) {
+    lbHide(to);
+    a = lightboxImg.animate([now, lbOver(lbHome(), T, lbRadius(to))], { duration: 380, easing: LB_EASE, fill: 'forwards' });
+  } else {
+    a = lightboxImg.animate([{ ...now, opacity: 1 }, { ...now, opacity: 0 }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
+  }
+  lightboxAnims.push(a);
+  a.onfinish = () => {
+    if (seq !== lightboxSeq) return;
+    lightboxOverlay.classList.remove('lb-closing');
+    lbStop();
+  };
 }
+// A finger on the photo (a touch screen): down or up to put it away,
+// sideways to the next one
+lightboxStage.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse' || !lightboxOverlay.classList.contains('show') || lightboxDrag) return;
+  lbStop();
+  lightboxDrag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, vx: 0, vy: 0, lx: e.clientX, ly: e.clientY, lt: e.timeStamp, axis: null };
+  lightboxDragged = false;
+  try { lightboxStage.setPointerCapture(e.pointerId); } catch (_) {}
+});
+lightboxStage.addEventListener('pointermove', (e) => {
+  const d = lightboxDrag;
+  if (!d || e.pointerId !== d.id) return;
+  d.dx = e.clientX - d.x0;
+  d.dy = e.clientY - d.y0;
+  const dt = Math.max(1, e.timeStamp - d.lt);
+  d.vx = (e.clientX - d.lx) / dt; d.vy = (e.clientY - d.ly) / dt;
+  d.lx = e.clientX; d.ly = e.clientY; d.lt = e.timeStamp;
+  if (!d.axis) {
+    if (Math.hypot(d.dx, d.dy) < 8) return;
+    d.axis = Math.abs(d.dy) > Math.abs(d.dx) ? 'y' : 'x';
+    lightboxDragged = true;
+    lightboxOverlay.classList.remove('lb-ui');
+  }
+  if (d.axis === 'y') {
+    const s = 1 - Math.min(Math.abs(d.dy) / innerHeight, 1) * 0.4;
+    lightboxImg.style.transform = `translate(${d.dx * 0.7}px, ${d.dy}px) scale(${s})`;
+    lightboxBackdrop.style.opacity = String(1 - Math.min(Math.abs(d.dy) / 340, 1) * 0.85);
+  } else {
+    const many = lightboxIndex !== null && lightboxImages().length > 1;
+    // nothing beside it: it gives a little, then holds
+    lightboxImg.style.transform = `translateX(${many ? d.dx : d.dx * 0.25}px)`;
+  }
+});
+function lbLetGo(e) {
+  const d = lightboxDrag;
+  if (!d || e.pointerId !== d.id) return;
+  lightboxDrag = null;
+  if (!d.axis) return;
+  const many = lightboxIndex !== null && lightboxImages().length > 1;
+  if (d.axis === 'y' && (Math.abs(d.dy) > 110 || Math.abs(d.vy) > 0.55)) { closeLightbox(); return; }
+  if (d.axis === 'x' && many && (Math.abs(d.dx) > 70 || Math.abs(d.vx) > 0.45)) {
+    lightboxImg.style.transform = '';
+    stepLightbox(d.dx > 0 ? 1 : -1);   // right to left: pulled right, the next (on the left) comes
+    lightboxOverlay.classList.add('lb-ui');
+    return;
+  }
+  // not far enough: back where it was
+  const from = lightboxImg.style.transform, dim = lightboxBackdrop.style.opacity || '1';
+  lightboxImg.style.transform = '';
+  lightboxBackdrop.style.opacity = '';
+  lightboxAnims.push(lightboxImg.animate([{ transform: from }, { transform: d.axis === 'y' ? 'translate(0px, 0px) scale(1)' : 'translateX(0px)' }], { duration: 320, easing: LB_EASE }));
+  lightboxAnims.push(lightboxBackdrop.animate([{ opacity: dim }, { opacity: 1 }], { duration: 320, easing: LB_EASE }));
+  lightboxOverlay.classList.add('lb-ui');
+}
+lightboxStage.addEventListener('pointerup', lbLetGo);
+lightboxStage.addEventListener('pointercancel', lbLetGo);
 
 function removeFile(i) {
   attachedFiles.splice(i, 1);
@@ -7136,7 +7232,7 @@ lightboxCloseBtn.addEventListener('click', closeLightbox);
 // is, uncropped.
 lightboxEditBtn.addEventListener('click', () => {
   const item = attachedFiles[lightboxIndex];
-  closeLightbox();
+  closeLightbox(true);
   if (!item) return;
   const fromSource = item.source instanceof Blob || typeof item.source === 'string';
   openPhotoEditor(fromSource ? item.source : item.dataUrl, {
@@ -7145,7 +7241,11 @@ lightboxEditBtn.addEventListener('click', () => {
     ...(fromSource && item.edit ? item.edit : {}),
   });
 });
-lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
+// a click on the dark around the photo puts it away (not the end of a drag)
+lightboxOverlay.addEventListener('click', (e) => {
+  if (lightboxDragged) { lightboxDragged = false; return; }
+  if (e.target === lightboxOverlay || e.target === lightboxBackdrop || e.target === lightboxStage) closeLightbox();
+});
 lightboxPrevBtn.addEventListener('click', () => stepLightbox(-1));
 lightboxNextBtn.addEventListener('click', () => stepLightbox(1));
 // Right to left: → goes back, ← goes on

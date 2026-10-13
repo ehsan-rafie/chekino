@@ -1730,124 +1730,130 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
   .pe-tool { width: 44px; height: 44px; }
 }
 
-/* ===== Image lightbox =====
-   Shares the photo editor's card, head and bar (.pe-head, .pe-bar above):
-   same surface and radius, the photo in the same dark well, the actions
-   below it as outlined buttons. «ویرایش» takes the photo back into the
-   editor. */
-.lightbox-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 800;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.lightbox-overlay.show { display: flex; }
-.lightbox-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 720px;
-  max-height: calc(100vh - 48px);
-  background: var(--surface);
-  border-radius: var(--rad-modal);
-  box-shadow: var(--shadow-2), var(--inset-hairline);
-  overflow: hidden;
-}
-.lightbox-overlay.show .lightbox-card { animation: sheetIn var(--dur-3) var(--ease-out) both; }
-/* Grown out of a thumbnail (dashboard.js openLightbox): the card stays put
-   and fades in with the scrim while a copy of the photo flies to its
-   place; closing, the card fades away while the copy flies back */
-.lightbox-overlay.show.lb-zoom { animation: lbFadeIn 240ms var(--ease-out) both; }
-.lightbox-overlay.show.lb-zoom .lightbox-card { animation: none; }
-.lightbox-overlay.lb-closing { display: flex; pointer-events: none; animation: lbFadeOut 260ms var(--ease) both; }
-.lightbox-overlay.lb-closing .lightbox-card { animation: none; }
-@keyframes lbFadeIn { from { opacity: 0; } }
-@keyframes lbFadeOut { to { opacity: 0; } }
-.lightbox-flyer {
-  position: fixed;
-  z-index: 801;
-  overflow: hidden;
-  pointer-events: none;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
-}
-.lightbox-flyer img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.lightbox-body {
-  flex: 1 1 auto;
-  min-height: 0;
+/* ===== The photo viewer =====
+   After the ones people know (a phone's gallery, Telegram): no card — the
+   photo on a near-black backdrop in both themes, its title and close
+   floating over the top, its actions over the bottom, round arrows at its
+   sides for more than one. The bars fade in once the photo has landed
+   (dashboard.js openLightbox adds .lb-ui) and out while it is dragged or
+   put away. */
+.lightbox-overlay { position: fixed; inset: 0; z-index: 800; display: none; color: #fff; }
+.lightbox-overlay.show, .lightbox-overlay.lb-closing { display: block; }
+.lightbox-overlay.lb-closing { pointer-events: none; }
+.lb-backdrop { position: absolute; inset: 0; background: #0b0b0d; }
+.lb-stage {
+  position: absolute;
+  inset: 68px 80px 88px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 16px;
-  padding: 16px;
-  border-radius: 16px;
-  background: #0C0C0D;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  touch-action: pinch-zoom;   /* one finger is the drag's; two still zoom the page */
 }
-.lightbox-body img {
+.lb-stage img {
   display: block;
   max-width: 100%;
-  /* A tall portrait photo mustn't balloon the card toward the screen's
-     height; only the view is capped, the stored photo is untouched. */
-  max-height: min(62vh, 520px);
+  max-height: 100%;
   object-fit: contain;
-  border-radius: 2px;
+  border-radius: 10px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+.lb-top, .lb-bottom, .lightbox-overlay .lightbox-nav { opacity: 0; transition: opacity 180ms var(--ease); pointer-events: none; }
+.lightbox-overlay.lb-ui .lb-top, .lightbox-overlay.lb-ui .lb-bottom, .lightbox-overlay.lb-ui .lightbox-nav { opacity: 1; pointer-events: auto; transition-duration: 260ms; }
+.lb-top {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 64px;
+  padding-inline: 22px 14px;
+  background: linear-gradient(to bottom, rgba(10, 10, 12, 0.55), transparent);
+}
+.lb-title { margin: 0; color: #fff; font-size: var(--t-body); font-variation-settings: 'wght' 620; }
+.lightbox-count { margin-inline-start: 8px; color: rgba(255, 255, 255, 0.6); font-size: var(--t-cap); font-variation-settings: var(--f-num); }
+.lb-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.lb-icon:hover { background: rgba(255, 255, 255, 0.16); }
+.lb-icon svg { width: 18px; height: 18px; }
+.lb-bottom {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(10, 10, 12, 0.55), transparent);
 }
 .lightbox-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  height: 38px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--ink-2);
-  box-shadow: var(--shadow-1);
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
   font-family: inherit;
-  font-size: var(--t-body);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
   cursor: pointer;
-  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease);
 }
-.lightbox-btn:hover { background: var(--accent-wash); color: var(--ink); }
-.lightbox-btn svg { width: 17px; height: 17px; }
+.lightbox-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.lightbox-btn svg { width: 16px; height: 16px; }
 .lightbox-btn[hidden] { display: none; }
-/* Stepping through several photos: round arrows on the dark well's sides */
-.lightbox-body { position: relative; }
+.lb-icon:focus-visible, .lightbox-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 2px; }
+/* more than one photo: round arrows at its sides */
 .lightbox-nav {
   position: absolute;
   top: 50%;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: none;
   border-radius: 50%;
-  background: rgba(20, 20, 22, 0.62);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   translate: 0 -50%;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  transition: background var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease), opacity 180ms var(--ease);
 }
-.lightbox-nav:hover { background: rgba(20, 20, 22, 0.85); }
-.lightbox-nav:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.lightbox-nav:hover { background: rgba(255, 255, 255, 0.2); }
+.lightbox-nav:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 2px; }
 .lightbox-nav[hidden] { display: none; }
 .lightbox-nav svg { width: 20px; height: 20px; }
-.lightbox-prev { inset-inline-start: 10px; }
-.lightbox-next { inset-inline-end: 10px; }
-.lightbox-count { margin-inline-start: 6px; color: var(--muted); font-size: var(--t-cap); font-variation-settings: var(--f-num); }
+.lightbox-prev { inset-inline-start: 20px; }
+.lightbox-next { inset-inline-end: 20px; }
 @media (max-width: 600px) {
-  .lightbox-overlay { padding: 0; }
-  .lightbox-card { max-width: none; max-height: none; height: 100%; border-radius: 0; }
-  .lightbox-body { margin: 0 10px; }
-  .lightbox-body img { max-height: 100%; }
-  .lightbox-bar .lightbox-btn { flex: 1 1 0; height: 44px; padding: 0 8px; }
+  .lb-stage { inset: 60px 0 84px; }
+  .lb-stage img { border-radius: 0; }
+  .lb-top { height: 56px; padding-inline: 16px 10px; }
+  /* a finger pulls it sideways instead; the arrows stay small at the edges */
+  .lightbox-nav { width: 36px; height: 36px; }
+  .lightbox-prev { inset-inline-start: 8px; }
+  .lightbox-next { inset-inline-end: 8px; }
+  .lb-bottom .lightbox-btn { flex: 1 1 0; height: 44px; padding: 0 8px; }
 }
 .file-add {
   display: flex;
@@ -2865,16 +2871,14 @@ body.bulk-open .add-float, body:has(.modal-overlay.show) .add-float { display: n
    instead of a leftover blue that predates the warm palette. */
 .modal-overlay,
 .confirm-overlay,
-.photo-editor-overlay,
-.lightbox-overlay {
+.photo-editor-overlay {
   background: rgba(22, 21, 17, 0.44);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
 :root[data-theme="dark"] .modal-overlay,
 :root[data-theme="dark"] .confirm-overlay,
-:root[data-theme="dark"] .photo-editor-overlay,
-:root[data-theme="dark"] .lightbox-overlay { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .photo-editor-overlay { background: rgba(0, 0, 0, 0.6); }
 
 /* ── 11 · A problem row asks for attention once, not forever ──
    A slow, three-beat pulse on the status dot — not the whole row, not
@@ -4340,16 +4344,14 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 /* ── Modal chrome ── */
 .modal-overlay,
 .confirm-overlay,
-.photo-editor-overlay,
-.lightbox-overlay {
+.photo-editor-overlay {
   background: var(--scrim);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 :root[data-theme="dark"] .modal-overlay,
 :root[data-theme="dark"] .confirm-overlay,
-:root[data-theme="dark"] .photo-editor-overlay,
-:root[data-theme="dark"] .lightbox-overlay { background: rgba(0, 0, 0, 0.7); }
+:root[data-theme="dark"] .photo-editor-overlay { background: rgba(0, 0, 0, 0.7); }
 .modal-box,
 .confirm-box {
   border: none;

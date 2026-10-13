@@ -533,13 +533,8 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     boxes or lines (as the add form lays out its fields). Beside them, in
     a column of its own, the cheque's photo: one frame in a cheque's shape
     (2:1, 232px), no caption (its name is for the screen reader and on
-    hover), a soft magnifier on hover, opening in the viewer (which steps
-    through every photo, «۱ از ۳») — the photo grows out of the frame it
-    was clicked in and goes back into it on close (a copy flies between the
-    two, the thumbnail's crop and corners to the whole photo's, 340ms in,
-    280ms out, while the viewer's card fades around it; the same from the
-    form's chips and the bulk add's rows; not with less motion, nor when
-    the thumbnail is out of sight); the cheque's other files small under
+    hover), a soft magnifier on hover, opening in the photo viewer (below);
+    the cheque's other files small under
     it, three to a row (a Sayad receipt kept from before has a small green
     dot). A PDF is a document mark and «فایل PDF» on the frame's grey («PDF»
     on a small tile), an «open» mark on hover, opening in a new tab. No photo: a quiet dashed «عکس
@@ -591,6 +586,26 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
 The inert wrappers `#veFieldsWrapA/A2/B/C` are what `lockFormFields()`
 makes inert in view mode; `#sayadField` stays outside them. The wrappers
 are `display: contents`, so they never affect the grid.
+
+**The photo viewer** (`#lightboxOverlay`; the owner's ask, 2026-10-13, after
+the viewers people know — a phone's gallery, Telegram). No card: the photo on
+a near-black backdrop (both themes), its title and «۱ از ۳» over the top with
+×, its actions (ویرایش while the form can be edited, اشتراک‌گذاری، دانلود)
+over the bottom, round arrows at its sides for more than one; the bars fade
+in once the photo has landed. The photo itself grows out of the thumbnail
+it was opened from — the view's frame, a form chip, a bulk-add row: it moves
+and scales from there, the thumbnail's crop and corners opening out to the
+whole photo (460ms, a fast start and a long soft landing) while the
+backdrop darkens; closing (×, Escape, a click on the dark around it), the
+bars go first and it shrinks back into its thumbnail (380ms) — from wherever
+it is, even still growing. The next photo slides in from the side it lies
+on (the next on the left). On a touch screen it follows a finger: down or
+up it grows smaller and the backdrop lighter, the page showing through,
+and let go far (110px) or fast enough it goes back into its thumbnail,
+else it springs back; sideways, the next photo (a lone one gives a little,
+then holds); two fingers still zoom the page. With less motion it just
+appears and goes; with the thumbnail out of sight it rises from just under
+its size and fades out.
 
 **Numbers.** Persian digits, grouped by the Persian thousands separator «٬» (U+066C) everywhere — cards, the form, filters, messages, the leaf, reports — never a Latin comma; decimals would take «٫». One helper (`groupDigits`) does it; the amount field keeps the caret by counting digits, not separators.
 
