@@ -533,9 +533,11 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     boxes or lines (as the add form lays out its fields). Beside them, in
     a column of its own, the cheque's photo: one frame in a cheque's shape
     (2:1, 232px), no caption (its name is for the screen reader and on
-    hover), a soft magnifier on hover, opening in the viewer; the cheque's
-    other files small under it (a PDF opens in a new tab; a Sayad receipt
-    kept from before has a small green dot). No photo: a quiet dashed «عکس
+    hover), a soft magnifier on hover, opening in the viewer (which steps
+    through every photo, «۱ از ۳»); the cheque's other files small under
+    it, three to a row (a Sayad receipt kept from before has a small green
+    dot). A PDF is a document mark and «فایل PDF» on the frame's grey («PDF»
+    on a small tile), an «open» mark on hover, opening in a new tab. No photo: a quiet dashed «عکس
     ندارد» in the same place, so every window keeps one shape. The rows
     beside the photo never spread apart for it (a third row takes the
     rest).

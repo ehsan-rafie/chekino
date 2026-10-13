@@ -3335,6 +3335,9 @@ const veFilesList = document.getElementById('veFilesList');
 // (else its first file); the rest small under it, each named for the
 // screen reader and on hover. None: a quiet blank in the same place, so
 // every cheque's window keeps one shape.
+const VE_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>';
+const VE_ZOOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg>';
+const VE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
 const VE_NOPHOTO = `<div class="ve-nofile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span>عکس ندارد</span></div>`;
 function drawVeFiles() {
   const show = modalMode === 'view';
@@ -3351,8 +3354,9 @@ function drawVeFiles() {
   const tile = (f, i, big) => {
     const inner = isImg(f)
       ? (f.dataUrl ? `<img src="${f.dataUrl}" alt="">` : '<span class="ve-file-wait"></span>')
-      : '<span class="ve-file-doc">PDF</span>';
-    const zoom = big && isImg(f) ? '<span class="ve-file-zoom" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg></span>' : '';
+      : `<span class="ve-file-doc">${VE_DOC}<span>${big ? 'فایل PDF' : 'PDF'}</span></span>`;
+    // on hover: a magnifier on a photo (the viewer), an «open» mark on a PDF (a new tab)
+    const zoom = big ? `<span class="ve-file-zoom" aria-hidden="true">${isImg(f) ? VE_ZOOM : VE_OPEN}</span>` : '';
     return `<button type="button" class="ve-file${big ? ' is-main' : ''}${f.kind === 'receipt' ? ' is-receipt' : ''}" data-i="${i}" aria-label="${names[i]}" title="${names[i]}">${inner}${zoom}</button>`;
   };
   const rest = attachedFiles.map((f, i) => i).filter((i) => i !== main);
