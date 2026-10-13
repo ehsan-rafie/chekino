@@ -534,7 +534,12 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     a column of its own, the cheque's photo: one frame in a cheque's shape
     (2:1, 232px), no caption (its name is for the screen reader and on
     hover), a soft magnifier on hover, opening in the viewer (which steps
-    through every photo, «۱ از ۳»); the cheque's other files small under
+    through every photo, «۱ از ۳») — the photo grows out of the frame it
+    was clicked in and goes back into it on close (a copy flies between the
+    two, the thumbnail's crop and corners to the whole photo's, 340ms in,
+    280ms out, while the viewer's card fades around it; the same from the
+    form's chips and the bulk add's rows; not with less motion, nor when
+    the thumbnail is out of sight); the cheque's other files small under
     it, three to a row (a Sayad receipt kept from before has a small green
     dot). A PDF is a document mark and «فایل PDF» on the frame's grey («PDF»
     on a small tile), an «open» mark on hover, opening in a new tab. No photo: a quiet dashed «عکس

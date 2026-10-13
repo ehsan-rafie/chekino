@@ -3369,7 +3369,7 @@ veFilesList.addEventListener('click', (e) => {
   const i = Number(b.dataset.i);
   const f = attachedFiles[i];
   if (!f) return;
-  if ((f.type || '').startsWith('image/')) { if (f.dataUrl) openLightbox(f.dataUrl, f.name, i); }
+  if ((f.type || '').startsWith('image/')) { if (f.dataUrl) openLightbox(f.dataUrl, f.name, i, b.querySelector('img')); }
   else if (f.id) openAttachment(f);
 });
 
@@ -3409,7 +3409,7 @@ function renderFileChips() {
       }
     });
     if (isImage && !loading) {
-      chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name, i));
+      chip.addEventListener('click', () => openLightbox(item.dataUrl, item.name, i, chip.querySelector('img')));
     } else if (!isImage && item.id) {
       chip.classList.add('is-openable');   // a PDF on the server: opens in a new tab
       chip.addEventListener('click', () => openAttachment(item));
@@ -3421,8 +3421,57 @@ function renderFileChips() {
 // `index`: the attached photo being shown — «ویرایش» is offered for it
 // while the form can be edited (not while a saved cheque is only viewed).
 let lightboxIndex = null;
-function openLightbox(dataUrl, name, index) {
+// The photo grows out of the thumbnail it was opened from and goes back
+// into it when the viewer closes (the owner's ask, 2026-10-13): a copy of
+// it flies between the two places — the thumbnail's crop and corners to the
+// whole photo's — while the viewer's card fades in or out around it; the
+// photo in the card shows once it has landed. Not with less motion, nor
+// when the thumbnail is out of sight (then the card just comes and goes).
+let lightboxFrom = null;     // the thumbnail it opened from
+let lightboxFlight = null;   // the copy in flight: { done }
+let lightboxOpenSeq = 0;
+// where the photo shown now sits on the page: its tile in the view, its
+// chip in the form, or what it was opened from (the bulk add's row)
+function lightboxThumb() {
+  if (lightboxIndex === null) return lightboxFrom;
+  if (modalBody.classList.contains('ve-locked')) return veFilesList.querySelector(`.ve-file[data-i="${lightboxIndex}"] img`);
+  const chip = fileChips.querySelectorAll('.file-chip')[lightboxIndex];
+  return (chip && chip.querySelector('img')) || null;
+}
+function rectInSight(el) {
+  if (!el || !el.isConnected) return null;
+  const r = el.getBoundingClientRect();
+  return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
+}
+function flyPhoto(src, from, to, radii, ms, hide) {
+  if (lightboxFlight) lightboxFlight.done();
+  const fl = document.createElement('div');
+  fl.className = 'lightbox-flyer';
+  const im = new Image();
+  im.alt = '';
+  im.src = src;
+  fl.appendChild(im);
+  document.body.appendChild(fl);
+  hide.forEach((el) => { el.style.visibility = 'hidden'; });
+  const box = (r, rad) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: rad });
+  const anim = fl.animate([box(from, radii[0]), box(to, radii[1])], { duration: ms, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' });
+  let over = false;
+  const done = () => {
+    if (over) return;
+    over = true;
+    fl.remove();
+    hide.forEach((el) => { el.style.visibility = ''; });
+    if (lightboxFlight && lightboxFlight.done === done) lightboxFlight = null;
+  };
+  anim.onfinish = done;
+  anim.oncancel = done;
+  lightboxFlight = { done };
+}
+function openLightbox(dataUrl, name, index, from) {
   const opening = !lightboxOverlay.classList.contains('show');
+  const seq = ++lightboxOpenSeq;
+  if (lightboxFlight) lightboxFlight.done();
+  lightboxImg.style.visibility = '';
   lightboxImg.src = dataUrl;
   lightboxImg.dataset.filename = name || 'cheque-photo.jpg';
   lightboxIndex = Number.isInteger(index) ? index : null;
@@ -3430,8 +3479,26 @@ function openLightbox(dataUrl, name, index) {
   lightboxImg.dataset.type = (shown && shown.type) || mimeOfDataUrl(dataUrl);
   lightboxEditBtn.hidden = lightboxIndex === null || modalBody.classList.contains('ve-locked');
   updateLightboxNav();
+  let r0 = null, fromEl = null;
+  if (opening) {
+    lightboxFrom = from || null;
+    fromEl = from || lightboxThumb();
+    r0 = REDUCE_MOTION.matches ? null : rectInSight(fromEl);
+    lightboxOverlay.classList.remove('lb-closing');
+    lightboxOverlay.classList.toggle('lb-zoom', !!r0);
+  }
   lightboxOverlay.classList.add('show');
   document.body.style.overflow = 'hidden';
+  if (r0) {
+    lightboxImg.style.visibility = 'hidden';
+    const fly = () => {
+      if (seq !== lightboxOpenSeq || !lightboxOverlay.classList.contains('show')) return;
+      const r1 = lightboxImg.getBoundingClientRect();
+      if (!r1.width || !rectInSight(fromEl)) { lightboxImg.style.visibility = ''; return; }
+      flyPhoto(dataUrl, rectInSight(fromEl), r1, [getComputedStyle(fromEl).borderRadius, getComputedStyle(lightboxImg).borderRadius], 340, [fromEl, lightboxImg]);
+    };
+    lightboxImg.decode().then(fly, fly);
+  }
   // Opened from a thumbnail click, so nothing inside the lightbox itself
   // has focus yet — this makes Enter do the standard thing (dismiss it),
   // same as Escape already does. Stepping to the next photo keeps focus
@@ -3590,8 +3657,19 @@ function stepLightbox(dir) {
   openLightbox(next.f.dataUrl, next.f.name, next.i);
 }
 function closeLightbox() {
+  if (lightboxFlight) lightboxFlight.done();
+  lightboxOpenSeq++;
+  const to = REDUCE_MOTION.matches ? null : lightboxThumb();
+  const r0 = to && lightboxImg.naturalWidth ? rectInSight(lightboxImg) : null;
+  const r1 = r0 ? rectInSight(to) : null;
   lightboxOverlay.classList.remove('show');
   document.body.style.overflow = modalOverlay.classList.contains('show') ? 'hidden' : '';
+  if (!r1) return;
+  // back into its thumbnail, the card fading away around it
+  lightboxOverlay.classList.add('lb-closing');
+  flyPhoto(lightboxImg.src, r0, r1, [getComputedStyle(lightboxImg).borderRadius, getComputedStyle(to).borderRadius], 280, [to, lightboxImg]);
+  const seq = lightboxOpenSeq;
+  setTimeout(() => { if (seq === lightboxOpenSeq) lightboxOverlay.classList.remove('lb-closing'); }, 300);
 }
 
 function removeFile(i) {

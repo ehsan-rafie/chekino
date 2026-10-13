@@ -927,7 +927,7 @@
     try {
       if (act === 'view') {
         const url = p.url || (p.image_id ? (await loadImage(p.image_id)).url : null);
-        if (url) openLightbox(url, `cheque-${row.serial || 'photo'}.jpg`);
+        if (url) openLightbox(url, `cheque-${row.serial || 'photo'}.jpg`, undefined, row.ui && row.ui.photo ? row.ui.photo.querySelector('img') : null);
       } else if (act === 'turn') {
         const blob = await photoBlob(p);
         setRowPhoto(row, await makePhoto(blob, null, 90, null));

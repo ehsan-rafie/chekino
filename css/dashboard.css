@@ -1757,6 +1757,23 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
   overflow: hidden;
 }
 .lightbox-overlay.show .lightbox-card { animation: sheetIn var(--dur-3) var(--ease-out) both; }
+/* Grown out of a thumbnail (dashboard.js openLightbox): the card stays put
+   and fades in with the scrim while a copy of the photo flies to its
+   place; closing, the card fades away while the copy flies back */
+.lightbox-overlay.show.lb-zoom { animation: lbFadeIn 240ms var(--ease-out) both; }
+.lightbox-overlay.show.lb-zoom .lightbox-card { animation: none; }
+.lightbox-overlay.lb-closing { display: flex; pointer-events: none; animation: lbFadeOut 260ms var(--ease) both; }
+.lightbox-overlay.lb-closing .lightbox-card { animation: none; }
+@keyframes lbFadeIn { from { opacity: 0; } }
+@keyframes lbFadeOut { to { opacity: 0; } }
+.lightbox-flyer {
+  position: fixed;
+  z-index: 801;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+.lightbox-flyer img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .lightbox-body {
   flex: 1 1 auto;
   min-height: 0;
