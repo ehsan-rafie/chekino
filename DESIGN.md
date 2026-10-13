@@ -524,7 +524,16 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   leaf was too busy, then a long column too tall; someone new to Chekino
   should see at once where a cheque came from and where it went). The
   window is named for its serial («چک ۴۴۰۱۲۲»), 800px wide (no more, so
-  nothing sits in empty space), on a white body, in two parts:
+  nothing sits in empty space), on a white body, in two parts. It keeps
+  its own layout but the add form's measures (the owner's ask,
+  2026-10-13: one template throughout): the form's paddings (14/20/20,
+  14 on a phone) and 20px between sections (16 on a phone); each
+  section's title in the middle of a hairline, as the form's are (14px,
+  560, muted); labels at the form's labels' size and weight (14px, 560 —
+  muted here, with no boxes to part them from their values); values at
+  its fields' text (15px, 580; the amount 620; 16px on a phone); the
+  small print — dates, units, the national id, how far off the due date
+  is — at its hints' (13px); 12px between rows.
   - **«مشخصات چک»**: two by two, halves alike — serial and sayad id (left
     to right, a copy button); due date (how far off in a small outlined
     badge: amber when close, red when past, while it waits for Sayad) and
@@ -545,7 +554,7 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     a round mark each with its icon, and under it a few words, who, and
     when: «گرفته شد از» the owner, «خرج شده به» the party and the spend
     date, «ثبت به نام» the beneficiary with «کد ملی» / «شناسه ملی»
-    (copyable), «فرستاده شد به صاحب چک» with each messenger's logo (a
+    (copyable), «ارسال به صاحب چک» (the form's own words) with each messenger's logo (a
     message bubble for one written in), the send date and the reminders
     sent («۲ بار پیگیری شد، آخرین بار …»), and «ثبت در صیاد» — Sayad's
     answer as the title in its colour (green tick, red warning, slate

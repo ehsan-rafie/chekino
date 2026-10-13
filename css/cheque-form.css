@@ -153,14 +153,30 @@
    is at ringed, the ones to come faint and dashed. Under the steps one
    short line: what Sayad's answer means, and the next steps' buttons.
    A phone stacks the steps down the start edge instead. */
+/* The add form's measures (2026-10-13): its paddings and the space between
+   its sections; each section's title in the middle of a hairline, as the
+   form's are; labels at its labels' size and weight (muted: no boxes here
+   to part them from their values); values at its fields' text size and
+   weight; the small print — dates, units, the national id — at its hints'. */
 .cq-view {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 18px 24px 22px;
+  gap: 20px;
+  padding: 14px 20px 20px;
 }
 .cq-body.modal-body.ve-locked { background: var(--surface); }
-.cv-sec-title { margin: 0 0 12px; font-size: var(--t-cap); color: var(--muted); font-variation-settings: 'wght' 560; }
+.cv-sec-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: var(--t-body);
+  color: var(--muted);
+  font-variation-settings: 'wght' 560;
+  white-space: nowrap;
+}
+.cv-sec-title::before,
+.cv-sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
 
 /* ── the details: one row ── */
 .cv-grid {
@@ -169,7 +185,7 @@
   /* a third row takes whatever the photo column needs beyond the two rows
      beside it, so those never spread apart */
   grid-template-rows: auto auto 1fr;
-  gap: 16px 24px;
+  gap: 12px 24px;
   margin: 0;
 }
 .cv-cell { min-width: 0; }
@@ -183,24 +199,27 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 5px;
-  font-size: var(--t-micro);
+  margin-bottom: 6px;
+  font-size: var(--t-body);
+  line-height: 1.7;
   color: var(--muted);
+  font-variation-settings: 'wght' 560;
 }
-.cv-cell dt svg { width: 14px; height: 14px; flex-shrink: 0; }
+.cv-cell dt svg { width: 15px; height: 15px; flex-shrink: 0; }
 .cv-cell dd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 26px; margin: 0; color: var(--ink); }
-.cv-num { font-size: var(--t-value); font-variation-settings: 'wght' 620; unicode-bidi: isolate; white-space: nowrap; }
-.cv-unit { font-size: var(--t-micro); color: var(--muted); }
-#cqcNotes { font-size: var(--t-cap); color: var(--ink-2); line-height: 1.8; white-space: pre-wrap; }
+.cv-num { font-size: var(--t-value); font-variation-settings: var(--f-num); unicode-bidi: isolate; white-space: nowrap; }
+#cqcAmount { font-variation-settings: 'wght' 620; }   /* as the form's amount */
+.cv-unit { font-size: var(--t-cap); color: var(--muted); }
+#cqcNotes { font-size: var(--t-value); color: var(--ink); line-height: 1.7; white-space: pre-wrap; }
 /* how far off the due date is: a small outlined badge, amber when close and
    red when past while the cheque still waits for Sayad (as on the cards) */
 .cv-rel {
-  height: 20px;
-  padding: 0 6px;
+  height: 22px;
+  padding: 0 7px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: var(--t-micro);
-  line-height: 18px;
+  font-size: var(--t-cap);
+  line-height: 20px;
   color: var(--ink-2);
   white-space: nowrap;
 }
@@ -269,7 +288,7 @@
 }
 .cv-dot svg { width: 16px; height: 16px; stroke-width: 2; }
 .cv-body { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; max-width: 100%; }
-.cv-label { font-size: var(--t-micro); color: var(--muted); line-height: 1.6; }
+.cv-label { font-size: var(--t-body); color: var(--muted); font-variation-settings: 'wght' 560; line-height: 1.7; }
 .cv-value {
   display: flex;
   flex-wrap: wrap;
@@ -277,22 +296,22 @@
   align-items: center;
   gap: 2px 8px;
   max-width: 100%;
-  font-size: var(--t-cap);
+  font-size: var(--t-value);
   color: var(--ink);
-  font-variation-settings: 'wght' 600;
+  font-variation-settings: var(--f-num);
   line-height: 1.6;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
 .cv-value.is-empty, .cv-value .is-empty { color: var(--muted); font-variation-settings: var(--f-body); }
-.cv-date { font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-body); }
+.cv-date { font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-body); }
 .cv-date:empty { display: none; }
-.cv-sub { font-size: var(--t-micro); color: var(--muted); line-height: 1.6; }
+.cv-sub { font-size: var(--t-cap); color: var(--muted); line-height: 1.6; }
 .cv-sub[hidden] { display: none; }
 .cv-nid { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 4px; }
 .cv-nid[hidden] { display: none; }
-.cv-nid-k { font-size: var(--t-micro); color: var(--muted); white-space: nowrap; }
-.cv-nid .cv-num { font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-num); }
+.cv-nid-k { font-size: var(--t-cap); color: var(--muted); white-space: nowrap; }
+.cv-nid .cv-num { font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-num); }
 .cv-nid .cv-copy { width: 22px; height: 22px; }
 .cv-ch { display: inline-flex; align-items: center; gap: 5px; }
 .cv-ch svg { width: 15px; height: 15px; flex-shrink: 0; }
@@ -311,7 +330,7 @@
 .cv-step.ve-status-banner.st-done { --dot: var(--state-ok-text); --dot-bg: var(--state-ok-bg); }
 .cv-step.ve-status-banner.st-problem { --dot: var(--state-bad-text); --dot-bg: var(--state-bad-bg); }
 .cv-step.ve-status-banner.st-stage { --dot: var(--muted); --dot-bg: var(--surface); }
-.cv-step.ve-status-banner .ve-st-title { font-variation-settings: 'wght' 680; color: var(--dot); }
+.cv-step.ve-status-banner .ve-st-title { font-variation-settings: 'wght' 620; color: var(--dot); }
 .cv-step.ve-status-banner .cv-value:has(.ve-st-title:empty) { display: none; }
 /* a problem's reason, under its date */
 .cv-reason { max-width: 100%; color: var(--state-bad-text); overflow-wrap: anywhere; }
@@ -348,8 +367,7 @@
 .cv-btn.copied { color: var(--state-ok-text); border-color: color-mix(in srgb, var(--state-ok) 40%, transparent); }
 .cv-btn:disabled { opacity: 0.6; cursor: progress; }
 
-/* ── the note, the files, the history ── */
-#cqcNotes { font-size: var(--t-cap); color: var(--ink-2); line-height: 1.8; white-space: pre-wrap; }
+/* ── the files, the history ── */
 .cq-body.ve-locked .cq-view { -webkit-user-select: text; user-select: text; }
 
 /* The photo: one frame in the cheque's shape (2:1), no caption — a soft
@@ -535,7 +553,8 @@
   .cq-span-4, .cq-span-6 { grid-column: 1 / -1; }
   #serialField, #sayadField, #amountField, #dueDateField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
   #ownerField, #partyField { grid-column: span 1; }   /* each beside its date */
-  .cq-view { padding: 14px 16px 20px; gap: 18px; }
+  .cq-view { padding: 14px; gap: 16px; }
+  .cv-num, .cv-value, #cqcNotes { font-size: 16px; }
   /* the details two by two (the sayad id has the wider column), the note
      and the files each across */
   .cv-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 14px; }
@@ -552,7 +571,7 @@
   .cv-step:not(:last-child)::after { top: 38px; bottom: 2px; inset-inline-start: 16.5px; inset-inline-end: auto; width: 1px; height: auto; }
   .cv-step:has(+ .cv-step.is-next)::after { width: 0; border-top: 0; border-inline-start: 1px dashed var(--border-strong); background: none; }
   .cv-body { align-items: flex-start; padding-top: 2px; }
-  .cv-value { justify-content: flex-start; font-size: var(--t-value); text-wrap: wrap; }
+  .cv-value { justify-content: flex-start; text-wrap: wrap; }
   /* the footer's own buttons above the save and delete */
   #modalOverlay .modal-footer:has(.ve-foot-actions > .cv-btn:not([style*="none"])) { flex-wrap: wrap; row-gap: 8px; }
   .ve-foot-actions { flex: 1 1 100%; flex-wrap: nowrap; margin: 0; }
