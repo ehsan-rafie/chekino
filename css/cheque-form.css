@@ -165,16 +165,14 @@
 /* ── the details: one row ── */
 .cv-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1.4fr);
-  gap: 14px 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 28px;
   margin: 0;
 }
 .cv-cell { min-width: 0; }
 .cv-cell[hidden] { display: none; }
-/* the note and the files: a second row, side by side — or one alone across it */
-.cv-notes { grid-column: 1 / 3; }
-.ve-files { grid-column: 3 / -1; }
-.cv-notes[hidden] + .ve-files, .cv-notes:has(+ .ve-files[hidden]) { grid-column: 1 / -1; }
+/* (two by two, halves alike: serial and sayad id, due date and amount, the
+   note and the files) */
 .cv-cell dt {
   display: flex;
   align-items: center;
@@ -309,6 +307,9 @@
 .cv-step.ve-status-banner.st-stage { --dot: var(--muted); --dot-bg: var(--surface); }
 .cv-step.ve-status-banner .ve-st-title { font-variation-settings: 'wght' 680; color: var(--dot); }
 .cv-step.ve-status-banner .cv-value:has(.ve-st-title:empty) { display: none; }
+/* a problem's reason, under its date */
+.cv-reason { max-width: 100%; color: var(--state-bad-text); overflow-wrap: anywhere; }
+.cv-reason[hidden] { display: none; }
 /* a status set right here: its mark settles in */
 .cv-step.ve-status-banner .cv-dot.is-landing { animation: cvLand 0.45s var(--ease-out) both; }
 @keyframes cvLand {
@@ -317,38 +318,10 @@
   100% { transform: scale(1); }
 }
 
-/* ── under the steps: what the answer means, and the buttons ── */
-.cv-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
-  margin-top: 16px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--surface-2);
-}
-.cv-status:not(:has(.ve-st-desc:not(:empty), .cv-actions > :not([hidden]):not([style*="none"]):not(input), .ve-reason:not([hidden]))) { display: none; }
-.ve-st-desc { flex: 1 1 auto; min-width: 0; font-size: var(--t-cap); color: var(--ink-2); line-height: 1.7; }
-.ve-st-desc:empty { display: none; }
-.ve-st-desc > span { unicode-bidi: isolate; }
-/* parted by a short hairline, not a dot: a middle dot beside Persian
-   digits reads as a zero («۰۹ · ۴» → «۰۹ ۰ ۴») */
-.ve-st-sep { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ve-st-desc > .ve-st-sep + span::before {
-  content: '';
-  display: inline-block;
-  width: 1px;
-  height: 0.9em;
-  margin-inline: 9px;
-  vertical-align: -0.1em;
-  background: var(--border-strong);
-}
-.cv-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
-.ve-st-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.ve-st-actions[hidden] { display: none; }
-.cv-btn,
-.ve-st-actions .ve-receipt-btn {
+/* ── the view's own buttons, in the footer at its start ── */
+.ve-foot-actions { order: -2; display: flex; flex-wrap: wrap; gap: 8px; margin-inline-end: auto; }
+#modalOverlay .modal-box:not(:has(.cq-body.ve-locked)) .ve-foot-actions { display: none; }
+.cv-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -364,56 +337,10 @@
   cursor: pointer;
   transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.cv-btn svg, .ve-st-actions .ve-receipt-btn svg { width: 14px; height: 14px; }
-.cv-btn:hover, .ve-st-actions .ve-receipt-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.cv-btn svg { width: 14px; height: 14px; }
+.cv-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .cv-btn.copied { color: var(--state-ok-text); border-color: color-mix(in srgb, var(--state-ok) 40%, transparent); }
 .cv-btn:disabled { opacity: 0.6; cursor: progress; }
-/* the next Sayad status, in its own colour */
-.ve-st-actions [data-ve-set="done"] { color: var(--state-ok-text); }
-.ve-st-actions [data-ve-set="problem"] { color: var(--state-bad-text); }
-
-/* «مشکل دارد»: why, right under the line, across it */
-.cq-view .ve-reason {
-  flex: 1 1 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-}
-.cq-view .ve-reason[hidden] { display: none; }
-.ve-reason-label { font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-label); }
-.ve-reason textarea {
-  width: 100%;
-  min-height: 60px;
-  padding: 8px 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--t-value);
-  line-height: 1.7;
-  resize: vertical;
-}
-.ve-reason textarea:focus { outline: none; border-color: var(--focus-edge); box-shadow: var(--ring); }
-.ve-reason-actions { display: flex; gap: 8px; }
-.ve-reason-actions button {
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-cap);
-  font-variation-settings: var(--f-label);
-  cursor: pointer;
-}
-.ve-reason-actions .ve-reason-save { border-color: var(--ink); background: var(--ink); color: var(--surface); }
-.ve-reason-actions button:hover { background: var(--surface-2); }
-.ve-reason-actions .ve-reason-save:hover { background: color-mix(in srgb, var(--ink) 86%, var(--surface)); }
 
 /* ── the note, the files, the history ── */
 #cqcNotes { font-size: var(--t-cap); color: var(--ink-2); line-height: 1.8; white-space: pre-wrap; }
@@ -452,12 +379,31 @@
 .ve-file.is-receipt .ve-file-label { color: var(--state-ok-text); }
 .ve-file-label { text-align: center; }
 
-/* The history: shown only after more than one change; small, a dot in the
-   status colour per change, joined by a hairline */
-.cq-view .ve-history { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
-.cq-view .ve-history-label { margin-bottom: 10px; font-size: var(--t-micro); color: var(--muted); font-variation-settings: var(--f-body); }
-.cq-view .ve-history-list { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 0; }
-.cq-view .ve-history-link {
+/* The history, behind its button in the top bar: a small panel under it,
+   a dot in the status colour per change joined by a hairline, the date at
+   the end, a reason under its change */
+#modalOverlay .modal-box { position: relative; }
+.ve-history-pop {
+  position: absolute;
+  top: 58px;
+  inset-inline-end: 14px;
+  z-index: 5;
+  width: min(340px, calc(100% - 28px));
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2), var(--inset-hairline);
+  animation: cvPop var(--dur-2) var(--ease-out);
+}
+.ve-history-pop[hidden] { display: none; }
+@keyframes cvPop { from { opacity: 0; transform: translateY(-4px); } }
+.ve-history-btn[hidden] { display: none; }
+.ve-history-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--ink); }
+.ve-history-pop .ve-history-label { margin-bottom: 12px; font-size: var(--t-micro); color: var(--muted); font-variation-settings: var(--f-body); }
+.ve-history-pop .ve-history-list { display: flex; flex-direction: column; gap: 0; }
+.ve-history-pop .ve-history-link {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -468,8 +414,8 @@
   font-size: var(--t-cap);
   line-height: 1.6;
 }
-.cq-view .ve-history-link:last-child { padding-bottom: 0; }
-.cq-view .ve-history-link::before {
+.ve-history-pop .ve-history-link:last-child { padding-bottom: 0; }
+.ve-history-pop .ve-history-link::before {
   content: '';
   position: absolute;
   inset-inline-start: 0;
@@ -479,7 +425,7 @@
   border-radius: 50%;
   background: var(--hist-dot);
 }
-.cq-view .ve-history-link:not(:last-child)::after {
+.ve-history-pop .ve-history-link:not(:last-child)::after {
   content: '';
   position: absolute;
   inset-inline-start: 4px;
@@ -488,13 +434,10 @@
   width: 1px;
   background: var(--border);
 }
-.cq-view .ve-history-name { font-size: inherit; color: var(--ink); font-variation-settings: var(--f-value); }
-.cq-view .ve-history-date { font-size: inherit; color: var(--muted); }
-.cq-view .ve-history-reason { grid-column: 1 / -1; font-size: var(--t-micro); color: var(--ink-2); white-space: normal; }
-
-@media (prefers-reduced-motion: reduce) {
-  .cv-step.ve-status-banner .cv-dot.is-landing { animation: none; }
-}
+.ve-history-pop .ve-history-name { color: var(--ink); font-variation-settings: var(--f-value); }
+.ve-history-pop .ve-history-date { color: var(--muted); font-size: var(--t-micro); font-variation-settings: var(--f-num); white-space: nowrap; }
+.ve-history-pop .ve-history-reason { grid-column: 1 / -1; font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-hint); }
+@media (prefers-reduced-motion: reduce) { .ve-history-pop { animation: none; } }
 
 /* ---- Footer: a compact save at the end ---- */
 #modalOverlay .modal-footer { justify-content: flex-end; }
@@ -517,7 +460,7 @@
   /* the details two by two (the sayad id has the wider column), the note
      and the files each across */
   .cv-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 14px; }
-  .cv-notes, .ve-files, .cv-notes[hidden] + .ve-files, .cv-notes:has(+ .ve-files[hidden]) { grid-column: 1 / -1; }
+  .cv-notes, .ve-files { grid-column: 1 / -1; }
   /* the steps down the start edge, each with its words beside its mark */
   .cv-flow { grid-template-columns: minmax(0, 1fr); }
   .cv-step { flex-direction: row; align-items: flex-start; gap: 12px; padding: 0 0 14px; text-align: start; }
@@ -526,9 +469,12 @@
   .cv-step:has(+ .cv-step.is-next)::after { width: 0; border-top: 0; border-inline-start: 1px dashed var(--border-strong); background: none; }
   .cv-body { align-items: flex-start; padding-top: 2px; }
   .cv-value { justify-content: flex-start; font-size: var(--t-value); text-wrap: wrap; }
-  .cv-status { margin-top: 14px; }
-  .cv-actions { margin-inline-start: 0; }
-  .cv-btn, .ve-st-actions .ve-receipt-btn { height: 40px; }
+  /* the footer's own buttons above the save and delete */
+  #modalOverlay .modal-footer:has(.ve-foot-actions > .cv-btn:not([style*="none"])) { flex-wrap: wrap; row-gap: 8px; }
+  .ve-foot-actions { flex: 1 1 100%; flex-wrap: nowrap; margin: 0; }
+  .ve-foot-actions:not(:has(> .cv-btn:not([style*="none"]))) { display: none; }
+  .ve-foot-actions .cv-btn { flex: 1 1 0; min-width: 0; justify-content: center; }
+  .cv-btn { height: 40px; }
   #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }
   #modalOverlay .modal-footer .btn-clear { width: 44px; height: 44px; }

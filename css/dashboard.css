@@ -1877,82 +1877,6 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
 .form-alert.error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border); }
 
 .modal-header-actions { display: flex; align-items: center; gap: 8px; }
-.ve-receipt-btn {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--success-border);
-  border-radius: var(--rad-ctl);
-  background: var(--surface);
-  color: var(--success);
-  font-family: inherit;
-  font-size: 13px;
-  font-variation-settings: var(--f-btn);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.ve-receipt-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.ve-receipt-btn:hover { background: var(--success-bg); }
-.ve-receipt-btn.copied { background: var(--success-bg); }
-
-.ve-history {
-  grid-column: 1 / -1;
-  display: none;
-  margin-bottom: 20px;
-}
-.ve-history.show { display: block; }
-.ve-history-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-variation-settings: var(--f-label);
-  margin-bottom: 8px;
-}
-.ve-history-list {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-.ve-history-arrow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--muted);
-  font-size: 14px;
-  padding-top: 1px;
-}
-/* An invisible line the same height as a date, under the arrow's glyph —
-   this is what keeps the arrow sitting on the exact same line as the
-   status names above the dates, instead of drifting toward the middle
-   of the whole two-line block. */
-.ve-history-arrow::after { content: ''; height: 14px; }
-.ve-history-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.ve-history-name {
-  font-size: 13px;
-  color: var(--hist-dot, var(--ink));
-  font-variation-settings: var(--f-value);
-  white-space: nowrap;
-}
-.ve-history-date {
-  font-size: 12px;
-  color: var(--muted);
-  font-variation-settings: var(--f-num);
-  white-space: nowrap;
-}
-.ve-history-reason {
-  font-size: 12px;
-  color: var(--muted);
-  font-variation-settings: var(--f-hint);
-  white-space: nowrap;
-}
-
 .ve-fields-wrap { display: contents; }
 
 /* ===== People management (owners / parties / beneficiaries) ===== */
@@ -4458,15 +4382,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .modal-header { padding: 8px 14px; min-height: 54px; }
   .modal-footer { padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 8px)); }
 }
-.ve-receipt-btn {
-  height: 32px;
-  border: 1px solid color-mix(in srgb, var(--state-ok) 30%, transparent);
-  border-radius: var(--rad-ctl);
-  background: var(--state-ok-bg);
-  color: var(--state-ok-text);
-}
-.ve-receipt-btn:hover { background: color-mix(in srgb, var(--state-ok) 16%, var(--surface)); }
-
 /* ── Floating surfaces: white, a 1px ring, a soft drop ── */
 .filter-popover,
 .status-menu,

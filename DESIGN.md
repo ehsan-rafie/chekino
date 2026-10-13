@@ -524,45 +524,48 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   leaf was too busy, then a long column too tall; someone new to Chekino
   should see at once where a cheque came from and where it went). The
   window is named for its serial («چک ۴۴۰۱۲۲»), 860px wide, on a white
-  body; its parts run across it, not down it:
-  - **«مشخصات چک»**: serial, sayad id (left to right, a copy button), due
-    date (how far off in a small outlined badge: amber when close, red when
-    past, while it waits for Sayad) and amount (its words on hover) in one
-    row — each a small icon and caption over its value, all alike, no boxes
-    or lines (as the add form lays out its fields). Under them, only when
-    there are any, the note and the cheque's files as small tiles («عکس
-    چک»، «عکس ۱»، «PDF»، «رسید صیاد» in green; a photo opens in the viewer,
-    a PDF in a new tab).
+  body, in two parts:
+  - **«مشخصات چک»**: two by two, halves alike — serial and sayad id (left
+    to right, a copy button); due date (how far off in a small outlined
+    badge: amber when close, red when past, while it waits for Sayad) and
+    amount (its words on hover); then, only when there are any, the note
+    and the cheque's files as small tiles («عکس چک»، «عکس ۱»، «PDF»، «رسید
+    صیاد» in green; a photo opens in the viewer, a PDF in a new tab). Each
+    a small icon and caption over its value, no boxes or lines (as the add
+    form lays out its fields).
   - **«روند چک»**: a row of five steps from right to left joined by a line,
     a round mark each with its icon, and under it a few words, who, and
-    when: «گرفته شد از» the owner, «خرج شد برای» the party and the spend
+    when: «گرفته شد از» the owner, «خرج شده به» the party and the spend
     date, «ثبت به نام» the beneficiary with «کد ملی» / «شناسه ملی»
     (copyable), «فرستاده شد به صاحب چک» with each messenger's logo (a
     message bubble for one written in), the send date and the reminders
     sent («۲ بار پیگیری شد، آخرین بار …»), and «ثبت در صیاد» — Sayad's
     answer as the title in its colour (green tick, red warning, slate
-    clock) and its date. A step's tooltip names its role. Done steps have
-    an ink mark on grey; a ready cheque's send step is ringed in ink
-    («هنوز فرستاده نشده») and Sayad's still to come (dashed mark, dashed
-    line to it). A status set while the window is open makes Sayad's mark
-    settle in (0.45s; not with less motion).
-  - **One short line under the steps**, on a faint grey: what the answer
-    means («۱۵ روز از ارسال»، «۳ روز پس از ارسال», the problem's reason)
-    and the next steps' buttons at its end — «ثبت شد» / «مشکل دارد» (or
-    «ثبت شد» / «دوباره منتظر ثبت») each in its status colour, the board's
-    own change with its «برگردون» («مشکل دارد» asks why right there:
-    Enter saves, Escape closes only the box); «کپی رسید ثبت» and «پیوست
-    رسید صیاد» for a registered cheque; «ارسال برای صاحب چک» for a ready
-    one. The next step's button takes the focus after a change.
-  - The status history, small, once there has been more than one change.
-    A slip is left out of it (the owner's ask, 2026-10-13): a status put
-    back to the one before it within a day — «ثبت شد» by mistake, then
-    «برگردون» — is not part of the cheque's story, so neither it nor its
-    going back is shown (any number in a row); a status that stood longer
-    stays. The server keeps every change (H4); only the telling is tidied.
-  On a phone the details sit two by two (the sayad id in the wider column)
-  and the steps run down the start edge, each with its words beside its
-  mark.
+    clock), the date it changed once registered or not, and a problem's
+    reason under it. A step's tooltip names its role. Done steps have an
+    ink mark on grey; a ready cheque's send step is ringed in ink («هنوز
+    فرستاده نشده») and Sayad's still to come (dashed mark, dashed line to
+    it). A status set while the window is open makes Sayad's mark settle
+    in (0.45s; not with less motion).
+  Nothing under the steps (the owner's ask, 2026-10-13): no line of days,
+  no status buttons — the status is changed on the board. The view's own
+  buttons sit in the footer at its start, across from «ویرایش» and the
+  trash: «کپی رسید ثبت» and «پیوست رسید صیاد» for a registered cheque,
+  «ارسال برای صاحب چک» for a ready one (on a phone, a row of their own
+  above).
+  The status history is a small button (a clock turning back) in the top
+  bar beside ×, shown once there is a change to tell; it opens a panel
+  under it — a dot in the status colour per change joined by a hairline,
+  its date at the end, a reason under its change. Escape or a click
+  elsewhere closes the panel only. A slip is left out of it (the owner's
+  ask, 2026-10-13): a status put back to the one before it within a day —
+  «ثبت شد» by mistake, then «برگردون» — is not part of the cheque's
+  story, so neither it nor its going back is shown (any number in a row);
+  a status that stood longer stays. The server keeps every change (H4);
+  only the telling is tidied.
+  On a phone the details sit two by two (the sayad id in the wider
+  column), the note and the files each across, and the steps run down
+  the start edge, each with its words beside its mark.
 
   «ویرایش» switches to the form.
 

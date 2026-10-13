@@ -384,6 +384,22 @@ const modalTitle = document.getElementById('modalTitle');
 const veStatusBanner = document.getElementById('veStatusBanner');
 const veHistory = document.getElementById('veHistory');
 const veHistoryList = document.getElementById('veHistoryList');
+const veHistoryBtn = document.getElementById('veHistoryBtn');
+// The history opens from its button in the top bar (2026-10-13), in a
+// small panel under it; a click elsewhere or Escape closes it
+function closeVeHistory() {
+  if (veHistory.hidden) return false;
+  veHistory.hidden = true;
+  veHistoryBtn.setAttribute('aria-expanded', 'false');
+  return true;
+}
+veHistoryBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (closeVeHistory()) return;
+  veHistory.hidden = false;
+  veHistoryBtn.setAttribute('aria-expanded', 'true');
+});
+document.addEventListener('click', (e) => { if (!veHistory.hidden && !veHistory.contains(e.target)) closeVeHistory(); });
 
 // What each kind of history event (spec 6.2) reads as in the cheque's history
 const HISTORY_EVENTS = {
@@ -434,7 +450,9 @@ function renderVeHistory(c) {
   // doesn't know is left out rather than shown as a status it isn't
   const chain = withoutSlips([{ to: 'pending', at: c.createdAt }, ...hist]
     .filter(h => (h.event ? HISTORY_EVENTS[h.event] : STATUSES.some(st => st.id === h.to))));
-  veHistory.classList.toggle('show', chain.length > 2);
+  // its button only when there's more than the cheque's first state
+  veHistoryBtn.hidden = chain.length < 2;
+  if (veHistoryBtn.hidden) closeVeHistory();
   veHistoryList.innerHTML = chain.map((h) => {
     if (h.event) {
       return `<div class="ve-history-link is-event" style="--hist-dot:var(--muted)">
@@ -469,20 +487,16 @@ let veHasEdited = false;
 let editStart = '';
 const editState = () => JSON.stringify(formSnapshot()) + '|' + attachedFiles.map((f) => f.id || (f.dataUrl || '').length).join();
 
-// The status block at the top of the view (HeroUI's Alert): the state as
-// the title, and one line under it with what matters for that state —
-// when it was registered, why it wasn't, or how long it has been waiting
-// (how far off the due date is, the cheque itself says).
 const veStIcon = document.getElementById('veStIcon');
 const veStTitle = document.getElementById('veStTitle');
-const veStDesc = document.getElementById('veStDesc');
 const veStDate = document.getElementById('veStDate');
+const veStReason = document.getElementById('veStReason');
 const cvSend = document.getElementById('cvSend');
 const cvFollow = document.getElementById('cvFollow');
-// The view's last two steps (2026-10-12): sent to its owner — done, or the
-// step it is at, with «ارسال برای صاحب چک» — and Sayad's answer: its status
-// as the title, its date at the end of the label, one line under it, and
-// the next steps (showVeActions). Not sent yet, the last is still to come.
+// The view's last two steps: sent to its owner — done, or the step it is at
+// — and Sayad's answer: its status as the title, the date it changed (once
+// registered or not), and a problem's reason. Not sent yet, the last is
+// still to come. (The status itself is changed on the board.)
 function fillVeStatus(c) {
   const pre = isPreSend(c);
   cvSend.classList.toggle('is-current', pre);   // not sent yet: the step it is at
@@ -492,33 +506,22 @@ function fillVeStatus(c) {
   cvFollow.hidden = !ups.length || pre;
   if (ups.length) cvFollow.textContent = `${ups.length === 1 ? 'یک بار' : toFa(ups.length) + ' بار'} پیگیری شد، آخرین بار ${faDate(ups[ups.length - 1].at)}`;
   veStDate.textContent = '';
+  veStReason.hidden = true;
   if (pre) {
     veStatusBanner.className = 'cv-step ve-status-banner show st-stage is-next';
     veStIcon.innerHTML = icon('clock');
     veStTitle.textContent = '';
-    veStDesc.innerHTML = '';
     return;
   }
   const st = statusById(c.status);
-  const sent = daysSinceJalali(c.sendDate);
-  const parts = [];
-  if (c.status === 'done') {
-    if (c.statusChangedAt) veStDate.textContent = faDate(c.statusChangedAt);
-    const took = sent >= 0 ? sent - Math.max(0, daysSinceJalali(c.statusChangedAt)) : -1;
-    if (took > 0) parts.push(`${toFa(took)} روز پس از ارسال`);
-  } else if (c.status === 'problem') {
-    if (c.statusReason) parts.push(c.statusReason);
-    if (c.statusChangedAt) veStDate.textContent = faDate(c.statusChangedAt);
-  } else if (sent >= 0) {
-    parts.push(sent === 0 ? 'امروز فرستاده شد' : `${toFa(sent)} روز از ارسال`);
+  if (c.status !== 'pending' && c.statusChangedAt) veStDate.textContent = faDate(c.statusChangedAt);
+  if (c.status === 'problem' && c.statusReason) {
+    veStReason.textContent = c.statusReason;
+    veStReason.hidden = false;
   }
   veStatusBanner.className = 'cv-step ve-status-banner show ' + st.cls;
   veStIcon.innerHTML = icon(c.status === 'done' ? 'check' : c.status === 'problem' ? 'alert' : 'clock');
   veStTitle.textContent = st.name;
-  // each part isolated, so a date and a count side by side never merge
-  // into one number run; the comma is for screen readers, the eye gets a
-  // hairline
-  veStDesc.innerHTML = parts.map(t => `<span>${escapeHtml(t)}</span>`).join('<i class="ve-st-sep">، </i>');
 }
 
 // Added in bulk and not yet sent to its owner (ready): the form shows it
@@ -533,33 +536,14 @@ veSendBtn.addEventListener('click', () => {
   window.ChekinoSend.open([id]);
 });
 
-// The status from the view itself (spec 9.5): a cheque waiting for Sayad
-// can be marked registered or not; one that wasn't, registered or back to
-// waiting. A registered one has its receipt to copy instead, one not yet
-// sent its «ارسال». The change is the board's (applyStatus, with its
-// «برگردون»); the view follows it (refreshVeStatus).
-const veStActions = document.getElementById('veStActions');
-const veReason = document.getElementById('veReason');
-const veReasonText = document.getElementById('veReasonText');
-const VE_ACTIONS = {
-  pending: [['done', 'check', 'ثبت شد'], ['problem', 'alert', 'مشکل دارد']],
-  problem: [['done', 'check', 'ثبت شد'], ['pending', 'clock', 'دوباره منتظر ثبت']],
-};
+// The view's own buttons, in the footer: a registered cheque's receipt to
+// copy and its proof to attach, a ready one's sending. (Its Sayad status is
+// changed on the board — the owner's call, 2026-10-13.)
 function showVeActions(c) {
   const preSend = isPreSend(c);
   veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
   veProofBtn.style.display = veReceiptBtn.style.display;
   veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
-  const acts = preSend ? null : VE_ACTIONS[c.status || 'pending'];
-  const key = acts ? c.status || 'pending' : '';
-  // drawn again only when they change: a press keeps its focus
-  if (veStActions.dataset.st !== key) {
-    veStActions.dataset.st = key;
-    veStActions.innerHTML = (acts || []).map(([to, ic, label]) =>
-      `<button type="button" class="ve-receipt-btn" data-ve-set="${to}">${icon(ic)}<span>${label}</span></button>`).join('');
-  }
-  veStActions.hidden = !acts;
-  closeVeReason();
 }
 // The Sayad registration receipt the owner sent back, kept with the cheque
 // as proof (C1's «receipt»): a photo made small like any other, or a PDF;
@@ -617,10 +601,6 @@ veProofInput.addEventListener('change', async () => {
 
 function hideVeActions() {
   veProofBtn.style.display = 'none';
-  veStActions.hidden = true;
-  veStActions.dataset.st = '';
-  veStActions.innerHTML = '';
-  closeVeReason();
 }
 // After a status change made anywhere (here, the board, a «برگردون»):
 // the open view shows it, and an edit starts from the new version
@@ -633,39 +613,6 @@ function refreshVeStatus(id) {
   showVeActions(c);
   renderVeHistory(c);
 }
-function veReasonOpen() { return !veReason.hidden; }
-function closeVeReason(focusBack) {
-  if (veReason.hidden) return;
-  veReason.hidden = true;
-  veReasonText.value = '';
-  const b = veStActions.querySelector('[data-ve-set="problem"]');
-  if (focusBack && b) b.focus();
-}
-function veSetStatus(to, reason) {
-  const id = editingChequeId;
-  if (id == null) return;
-  closeVeReason();
-  applyStatus(id, to, reason || '');
-  // the press's own result in focus: the next step, or the banner's text
-  // (the buttons sit on the line under the steps)
-  const next = [...veStActions.closest('.cv-status').querySelectorAll('.ve-receipt-btn, .cv-btn')].find((b) => b.offsetParent !== null);
-  (next || modalBody).focus({ preventScroll: true });
-}
-veStActions.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-ve-set]');
-  if (!b) return;
-  if (b.dataset.veSet !== 'problem') { veSetStatus(b.dataset.veSet); return; }
-  veReason.hidden = false;
-  veReasonText.focus();
-});
-document.getElementById('veReasonSave').addEventListener('click', () => veSetStatus('problem', veReasonText.value.trim()));
-document.getElementById('veReasonCancel').addEventListener('click', () => closeVeReason(true));
-// Enter saves the reason (Shift+Enter for a second line); Escape is the
-// page's Escape chain
-veReasonText.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); veSetStatus('problem', veReasonText.value.trim()); }
-});
-
 const veFieldsWrapA = document.getElementById('veFieldsWrapA');
 const veFieldsWrapA2 = document.getElementById('veFieldsWrapA2');
 const veFieldsWrapB = document.getElementById('veFieldsWrapB');
@@ -708,6 +655,7 @@ function openModalForView(id) {
   modalTitle.textContent = `چک ${toFa(c.serial)}`;
   enableFormButtons();
   hideFormAlert();
+  closeVeHistory();
   fillVeStatus(c);
   const preSend = isPreSend(c);
   modalBody.classList.toggle('pre-send', preSend);
@@ -773,7 +721,8 @@ function enterEditMode() {
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
   submitCheckBtn.textContent = 'ذخیره تغییرات';
-  closeVeReason();
+  closeVeHistory();
+  veHistoryBtn.hidden = true;
   cancelPendingDelete();
 }
 
@@ -794,7 +743,8 @@ function exitViewEditMode() {
   veSendBtn.style.display = 'none';
   hideVeActions();
   modalBody.classList.remove('pre-send');
-  veHistory.classList.remove('show', 'open');
+  closeVeHistory();
+  veHistoryBtn.hidden = true;
   lockFormFields(false);
   cancelPendingDelete();
   saveConfirmSlideBtn.classList.remove('show');
@@ -839,7 +789,8 @@ function openModal() {
   veSendBtn.style.display = 'none';
   hideVeActions();
   modalBody.classList.remove('pre-send');
-  veHistory.classList.remove('show', 'open');
+  closeVeHistory();
+  veHistoryBtn.hidden = true;
   lockFormFields(false);
   sayadField.classList.remove('view-mode');
   hideFormAlert();
@@ -1210,7 +1161,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.shiftKey) return;
   const t = e.target;
-  if (t === notesInput || t === veReasonText) return;
+  if (t === notesInput) return;
   if (dueDateCal.classList.contains('show')) return;
   const openList = document.querySelector('.ac-list.show');
   if (openList && openList.querySelector('.ac-item.active')) return;
@@ -7256,7 +7207,7 @@ document.addEventListener('keydown', (e) => {
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
-  if (veReasonOpen()) { closeVeReason(true); return; }
+  if (closeVeHistory()) return;
   if (modalOverlay.classList.contains('show')) { closeModal(false); return; }
   if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return; }
   if (dupOpen() && peopleModalOverlay.classList.contains('show')) { closeDups(); return; }
@@ -7293,7 +7244,7 @@ function closeTopmostLayer() {
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
-  if (veReasonOpen()) { closeVeReason(); return true; }
+  if (closeVeHistory()) return true;
   if (modalOverlay.classList.contains('show')) { closeModal(false); return true; }
   if (personOpen && peopleModalOverlay.classList.contains('show')) { closePerson(); return true; }
   if (dupOpen() && peopleModalOverlay.classList.contains('show')) { closeDups(); return true; }
