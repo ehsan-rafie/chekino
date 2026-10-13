@@ -523,16 +523,22 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
 - *View — the cheque, plainly* (the owner's asks, 2026-10-12/13: the drawn
   leaf was too busy, then a long column too tall; someone new to Chekino
   should see at once where a cheque came from and where it went). The
-  window is named for its serial («چک ۴۴۰۱۲۲»), 860px wide, on a white
-  body, in two parts:
+  window is named for its serial («چک ۴۴۰۱۲۲»), 800px wide (no more, so
+  nothing sits in empty space), on a white body, in two parts:
   - **«مشخصات چک»**: two by two, halves alike — serial and sayad id (left
     to right, a copy button); due date (how far off in a small outlined
     badge: amber when close, red when past, while it waits for Sayad) and
-    amount (its words on hover); then, only when there are any, the note
-    and the cheque's files as small tiles («عکس چک»، «عکس ۱»، «PDF»، «رسید
-    صیاد» in green; a photo opens in the viewer, a PDF in a new tab). Each
-    a small icon and caption over its value, no boxes or lines (as the add
-    form lays out its fields).
+    amount (its words on hover); the note across both under them, only
+    when there is one. Each a small icon and caption over its value, no
+    boxes or lines (as the add form lays out its fields). Beside them, in
+    a column of its own, the cheque's photo: one frame in a cheque's shape
+    (2:1, 232px), no caption (its name is for the screen reader and on
+    hover), a soft magnifier on hover, opening in the viewer; the cheque's
+    other files small under it (a PDF opens in a new tab; a Sayad receipt
+    kept from before has a small green dot). No photo: a quiet dashed «عکس
+    ندارد» in the same place, so every window keeps one shape. The rows
+    beside the photo never spread apart for it (a third row takes the
+    rest).
   - **«روند چک»**: a row of five steps from right to left joined by a line,
     a round mark each with its icon, and under it a few words, who, and
     when: «گرفته شد از» the owner, «خرج شده به» the party and the spend
@@ -548,11 +554,16 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     it). A status set while the window is open makes Sayad's mark settle
     in (0.45s; not with less motion).
   Nothing under the steps (the owner's ask, 2026-10-13): no line of days,
-  no status buttons — the status is changed on the board. The view's own
-  buttons sit in the footer at its start, across from «ویرایش» and the
-  trash: «کپی رسید ثبت» and «پیوست رسید صیاد» for a registered cheque,
-  «ارسال برای صاحب چک» for a ready one (on a phone, a row of their own
-  above).
+  no status buttons — the status is changed on the board. A registered
+  cheque's «کپی رسید ثبت» (the message for its owner) is a quiet button
+  with its words in the top bar beside the history; there is no attaching
+  a Sayad receipt from the view any more. A ready cheque's «ارسال برای
+  صاحب چک» sits in the footer at its start, across from «ویرایش» and the
+  trash (on a phone, a row of its own above).
+  Deleting: the trash widens into a red «بله، حذف شود» and an «انصراف» of
+  the same size slides in beside it, both a size smaller than the footer's
+  buttons (104×36; 96×40 on a phone); «ویرایش» stays as it is, and
+  pressing it calls the delete off.
   The status history is a small button (a clock turning back) in the top
   bar beside ×, shown once there is a change to tell; it opens a panel
   under it — a dot in the status colour per change joined by a hairline,
@@ -564,8 +575,9 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   a status that stood longer stays. The server keeps every change (H4);
   only the telling is tidied.
   On a phone the details sit two by two (the sayad id in the wider
-  column), the note and the files each across, and the steps run down
-  the start edge, each with its words beside its mark.
+  column), the note and the photo each across (the photo 5:2; none, one
+  quiet line), and the steps run down the start edge, each with its words
+  beside its mark.
 
   «ویرایش» switches to the form.
 

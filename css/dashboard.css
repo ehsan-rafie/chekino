@@ -2310,13 +2310,6 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
   border-color: var(--blue-700);
 }
 .btn-submit.pending-confirm:hover { background: var(--blue-100); }
-.btn-submit.delete-warning {
-  background: var(--surface);
-  color: var(--error);
-  border-color: var(--error);
-  cursor: default;
-  pointer-events: none;
-}
 
 /* The trash button morphs into a wide "بله، حذف شود" button — the exact same
    mechanic as "ذخیره تغییرات" turning into a question — just colored for a
@@ -2425,9 +2418,8 @@ button.status-opt:focus-visible, .status-revert-yes:focus-visible, .status-rever
   }
 }
 @media (max-width: 420px) {
-  /* Squeeze the delete-confirmation row a bit so the warning message,
-     the "بله، حذف شود" button, and "انصراف" all still fit on one line. */
-  .btn-submit.delete-warning { font-size: 12px; }
+  /* Squeeze the delete-confirmation row a bit so the "بله، حذف شود"
+     button and "انصراف" still fit on one line. */
   .btn-clear.confirming-delete { width: 100px; padding: 0 8px; font-size: 12px; }
   .delete-cancel-slide.show { width: 60px; font-size: 12px; padding: 0; }
 }
@@ -3901,7 +3893,6 @@ html, body { background-color: var(--bg); }
   border: 1px solid var(--border);
   box-shadow: none;
 }
-.btn-submit.delete-warning { background: var(--state-bad-bg); color: var(--state-bad-text); border: 1px solid color-mix(in srgb, var(--state-bad) 25%, transparent); box-shadow: none; }
 .btn-clear {
   width: 38px;
   height: 38px;

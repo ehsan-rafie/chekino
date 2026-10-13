@@ -536,71 +536,15 @@ veSendBtn.addEventListener('click', () => {
   window.ChekinoSend.open([id]);
 });
 
-// The view's own buttons, in the footer: a registered cheque's receipt to
-// copy and its proof to attach, a ready one's sending. (Its Sayad status is
+// The view's own buttons: a registered cheque's receipt to copy, in the
+// top bar; a ready one's sending, in the footer. (Its Sayad status is
 // changed on the board — the owner's call, 2026-10-13.)
 function showVeActions(c) {
-  const preSend = isPreSend(c);
-  veReceiptBtn.style.display = !preSend && c.status === 'done' ? 'flex' : 'none';
-  veProofBtn.style.display = veReceiptBtn.style.display;
+  veReceiptBtn.hidden = isPreSend(c) || c.status !== 'done';
   veSendBtn.style.display = c.stage === 'ready' && window.ChekinoSend ? 'flex' : 'none';
 }
-// The Sayad registration receipt the owner sent back, kept with the cheque
-// as proof (C1's «receipt»): a photo made small like any other, or a PDF;
-// uploaded on its own, then named in the cheque with its other files —
-// through the cheque's version, so an edit elsewhere isn't overwritten.
-const veProofBtn = document.getElementById('veProofBtn');
-const veProofInput = document.getElementById('veProofInput');
-veProofBtn.addEventListener('click', () => veProofInput.click());
-async function proofBlob(file) {
-  if (file.type === 'application/pdf') {
-    if (file.size > 10 * 1024 * 1024) throw Object.assign(new Error('PDF بزرگ‌تر از ۱۰ مگابایت است'), { status: 413 });
-    return file;
-  }
-  if (!file.type.startsWith('image/')) throw Object.assign(new Error('فقط عکس یا PDF'), { status: 415 });
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = url; });
-    const canvas = resizeCanvasIfNeeded(imageToCanvas(img), 1600);
-    return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
-  } finally { URL.revokeObjectURL(url); }
-}
-veProofInput.addEventListener('change', async () => {
-  const file = veProofInput.files && veProofInput.files[0];
-  veProofInput.value = '';
-  const id = editingChequeId;
-  if (!file || id == null) return;
-  veProofBtn.disabled = true;
-  try {
-    const c = loadCheques().find((x) => x.id === id);
-    if (editingFiles === null && c) await loadChequeFiles(c);
-    if (editingFiles === null) throw Object.assign(new Error('فایل‌های این چک از سرور نرسیدند؛ دوباره بزن'), { status: 503 });
-    const blob = await proofBlob(file);
-    const up = await apiJson('/images', { method: 'POST', headers: { 'Content-Type': blob.type, 'X-Kind': 'receipt' }, body: blob });
-    const saved = await apiJson(`/checks/${id}`, { method: 'PATCH', body: JSON.stringify({ version: editingVersion, images: [...editingFiles, up.id] }) });
-    putCheque(saved);
-    renderTable();
-    if (editingChequeId === id) {
-      editingVersion = saved.version;
-      editingFiles = [...editingFiles, up.id];
-      attachedFiles.push({ id: up.id, kind: 'receipt', name: attachmentName(blob.type, c && c.serial, 'receipt'), type: blob.type, size: blob.size, dataUrl: '' });
-      editingFilesAtOpen = attachedFiles.map((f) => f.id).join();
-      renderFileChips();
-      loadAttachedImages();
-    }
-    showToast('رسید صیاد به چک پیوست شد');
-  } catch (e) {
-    if (e && e.status === 409 && e.data && e.data.code === 'version_conflict') {
-      showToast('این چک همین حالا جای دیگری تغییر کرد؛ دوباره بازش کن و رسید را بگذار');
-      loadChecksFromApi().then(renderTable).catch(() => {});
-    } else showToast(requestErrorText(e, 'رسید پیوست نشد'));
-  } finally {
-    veProofBtn.disabled = false;
-  }
-});
-
 function hideVeActions() {
-  veProofBtn.style.display = 'none';
+  veReceiptBtn.hidden = true;
 }
 // After a status change made anywhere (here, the board, a «برگردون»):
 // the open view shows it, and an edit starts from the new version
@@ -732,14 +676,14 @@ function exitViewEditMode() {
   veHasEdited = false;
   modalTitle.textContent = 'افزودن چک جدید';
   submitCheckBtn.textContent = 'ثبت چک';
-  submitCheckBtn.classList.remove('pending-confirm', 'delete-warning');
+  submitCheckBtn.classList.remove('pending-confirm');
   clearFormBtn.title = 'پاک کردن فرم';
   clearFormBtn.setAttribute('aria-label', 'پاک کردن فرم');
   clearFormBtn.classList.add('is-erase');
   clearFormBtn.classList.remove('confirming-delete');
   document.getElementById('deleteCancelSlideBtn').classList.remove('show');
   veStatusBanner.classList.remove('show');
-  veReceiptBtn.style.display = 'none';
+  veReceiptBtn.hidden = true;
   veSendBtn.style.display = 'none';
   hideVeActions();
   modalBody.classList.remove('pre-send');
@@ -778,14 +722,14 @@ function openModal() {
   editingChequeId = null;
   modalTitle.textContent = 'افزودن چک جدید';
   submitCheckBtn.textContent = 'ثبت چک';
-  submitCheckBtn.classList.remove('pending-confirm', 'delete-warning');
+  submitCheckBtn.classList.remove('pending-confirm');
   enableFormButtons();
   clearFormBtn.title = 'پاک کردن فرم';
   clearFormBtn.setAttribute('aria-label', 'پاک کردن فرم');
   clearFormBtn.classList.add('is-erase');
   clearFormBtn.classList.remove('confirming-delete');
   veStatusBanner.classList.remove('show');
-  veReceiptBtn.style.display = 'none';
+  veReceiptBtn.hidden = true;
   veSendBtn.style.display = 'none';
   hideVeActions();
   modalBody.classList.remove('pre-send');
@@ -3386,21 +3330,34 @@ let attachedFiles = [];                    // { name, type, size, dataUrl, [sour
 // photo opens in the viewer, a PDF in a new tab)
 const veFiles = document.getElementById('veFiles');
 const veFilesList = document.getElementById('veFilesList');
+// The view's photo (the owner's ask, 2026-10-13): one frame in the
+// cheque's shape beside the details, no caption — the cheque's own photo
+// (else its first file); the rest small under it, each named for the
+// screen reader and on hover. None: a quiet blank in the same place, so
+// every cheque's window keeps one shape.
+const VE_NOPHOTO = `<div class="ve-nofile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span>عکس ندارد</span></div>`;
 function drawVeFiles() {
-  const show = modalMode === 'view' && attachedFiles.length > 0;
+  const show = modalMode === 'view';
   veFiles.hidden = !show;
   if (!show) { veFilesList.innerHTML = ''; return; }
+  veFiles.classList.toggle('is-empty', !attachedFiles.length);
+  if (!attachedFiles.length) { veFilesList.innerHTML = VE_NOPHOTO; return; }
+  const isImg = (f) => (f.type || '').startsWith('image/');
+  let main = attachedFiles.findIndex((f) => f.kind !== 'receipt' && isImg(f));
+  if (main < 0) main = 0;
   let photoN = 0;
-  const photos = attachedFiles.filter((f) => f.kind !== 'receipt' && (f.type || '').startsWith('image/')).length;
-  document.getElementById('veFilesLabel').textContent = attachedFiles.length > 1 ? 'عکس‌ها و فایل‌ها' : 'عکس';
-  veFilesList.innerHTML = attachedFiles.map((f, i) => {
-    const isImg = (f.type || '').startsWith('image/');
-    const label = f.kind === 'receipt' ? 'رسید صیاد' : isImg ? (photos > 1 ? `عکس ${toFa(++photoN)}` : 'عکس چک') : 'PDF';
-    const thumb = isImg
+  const photos = attachedFiles.filter((f) => f.kind !== 'receipt' && isImg(f)).length;
+  const names = attachedFiles.map((f) => (f.kind === 'receipt' ? 'رسید صیاد' : isImg(f) ? (photos > 1 ? `عکس ${toFa(++photoN)}` : 'عکس چک') : 'PDF'));
+  const tile = (f, i, big) => {
+    const inner = isImg(f)
       ? (f.dataUrl ? `<img src="${f.dataUrl}" alt="">` : '<span class="ve-file-wait"></span>')
       : '<span class="ve-file-doc">PDF</span>';
-    return `<button type="button" class="ve-file${f.kind === 'receipt' ? ' is-receipt' : ''}" data-i="${i}" aria-label="${label}">${thumb}<span class="ve-file-label">${label}</span></button>`;
-  }).join('');
+    const zoom = big && isImg(f) ? '<span class="ve-file-zoom" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg></span>' : '';
+    return `<button type="button" class="ve-file${big ? ' is-main' : ''}${f.kind === 'receipt' ? ' is-receipt' : ''}" data-i="${i}" aria-label="${names[i]}" title="${names[i]}">${inner}${zoom}</button>`;
+  };
+  const rest = attachedFiles.map((f, i) => i).filter((i) => i !== main);
+  veFilesList.innerHTML = tile(attachedFiles[main], main, true)
+    + (rest.length ? `<div class="ve-file-rest">${rest.map((i) => tile(attachedFiles[i], i, false)).join('')}</div>` : '');
 }
 veFilesList.addEventListener('click', (e) => {
   const b = e.target.closest('.ve-file');
@@ -4727,13 +4684,11 @@ const deleteCancelSlideBtn = document.getElementById('deleteCancelSlideBtn');
 saveConfirmSlideBtn.addEventListener('click', commitSaveEdit);
 
 // Deleting a cheque uses the exact same slide-morph mechanic as saving an
-// edit: the trash icon widens into a red "بله، حذف شود" button, and a small
-// "انصراف" button slides in beside it.
+// edit: the trash icon widens into a red "بله، حذف شود" button, and an
+// "انصراف" of the same size slides in beside it; «ویرایش» stays as it is.
 function cancelPendingDelete() {
   clearFormBtn.classList.remove('confirming-delete');
   deleteCancelSlideBtn.classList.remove('show');
-  submitCheckBtn.classList.remove('delete-warning');
-  submitCheckBtn.textContent = modalMode === 'editing' ? 'ذخیره تغییرات' : 'ویرایش';
 }
 deleteCancelSlideBtn.addEventListener('click', cancelPendingDelete);
 
@@ -4747,8 +4702,6 @@ clearFormBtn.addEventListener('click', async () => {
     if (!clearFormBtn.classList.contains('confirming-delete')) {
       clearFormBtn.classList.add('confirming-delete');
       deleteCancelSlideBtn.classList.add('show');
-      submitCheckBtn.classList.add('delete-warning');
-      submitCheckBtn.textContent = 'این چک حذف خواهد شد';
       return;
     }
     // second click — the button now reads "بله، حذف شود".

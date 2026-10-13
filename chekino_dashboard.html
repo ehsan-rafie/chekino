@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261013c" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261013d" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
@@ -13,10 +13,10 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261013c">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261013c">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261013c">
-<link rel="stylesheet" href="/css/bulk.css?v=20261013c">
+<link rel="stylesheet" href="/css/shared.css?v=20261013d">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261013d">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261013d">
+<link rel="stylesheet" href="/css/bulk.css?v=20261013d">
 </head>
 <body class="chekino-auth-pending">
 
@@ -411,6 +411,12 @@
         <h2 id="modalTitle">افزودن چک جدید</h2>
       </div>
       <div class="modal-header-actions">
+        <!-- a registered cheque's receipt message, to copy for its owner
+             (dashboard.js showVeActions, copyReceiptMessage) -->
+        <button type="button" class="ve-head-btn" id="veReceiptBtn" title="کپی پیام رسید ثبت برای صاحب چک" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2.5"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>
+          <span>کپی رسید ثبت</span>
+        </button>
         <!-- the cheque's status history (dashboard.js renderVeHistory) -->
         <button type="button" class="modal-close ve-history-btn" id="veHistoryBtn" title="تاریخچه وضعیت" aria-label="تاریخچه وضعیت" aria-expanded="false" aria-controls="veHistory" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
@@ -432,16 +438,14 @@
     <div class="modal-body cq-body" id="modalBody" tabindex="0" role="group" aria-label="مشخصات چک">
 
       <!-- ═══ VIEW: the cheque, plainly ═══
-           Shown only in view mode (modal-body.ve-locked). Across the window,
-           not down it: «مشخصات چک» in one row (serial, sayad id, due date,
-           amount; the note and the files under them when there are any),
-           then «روند چک» as a row of steps from right to left — who it came
-           from, who it went to, whose name, sent when and how, Sayad's
-           answer — and under them one short line with what that answer
-           means and the next steps' buttons. A phone stacks the steps.
-           Filled from the same form fields «ویرایش» edits (js/cheque-form.js);
-           the last step and the line under the steps are dashboard.js's
-           (fillVeStatus, showVeActions). -->
+           Shown only in view mode (modal-body.ve-locked). «مشخصات چک»: serial
+           and sayad id, due date and amount two by two, the note under them,
+           and the cheque's photo in a frame of its own beside them; then
+           «روند چک» as a row of steps from right to left — who it came from,
+           who it went to, whose name, sent when and how, Sayad's answer.
+           A phone stacks the steps. Filled from the same form fields
+           «ویرایش» edits (js/cheque-form.js); the last step and the photo
+           are dashboard.js's (fillVeStatus, drawVeFiles). -->
       <div class="cq-view" id="cqView">
         <section class="cv-sum" aria-labelledby="cvSumTitle">
           <h3 class="cv-sec-title" id="cvSumTitle">مشخصات چک</h3>
@@ -466,8 +470,10 @@
               <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>توضیحات</dt>
               <dd><span id="cqcNotes"></span></dd>
             </div>
+            <!-- the photo: one frame, the cheque's shape; its other files
+                 small under it; none, a quiet blank (dashboard.js drawVeFiles) -->
             <div class="cv-cell ve-files" id="veFiles" hidden>
-              <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span id="veFilesLabel">عکس</span></dt>
+              <dt class="cv-sr">عکس چک</dt>
               <dd><div class="ve-files-list" id="veFilesList"></div></dd>
             </div>
           </dl>
@@ -711,18 +717,8 @@
     </div>
 
     <div class="modal-footer" id="modalFooter">
-      <!-- the view's own: a registered cheque's receipt and its proof, a
-           ready one's sending (dashboard.js showVeActions) -->
+      <!-- the view's own: a ready cheque's sending (dashboard.js showVeActions) -->
       <div class="ve-foot-actions">
-        <button type="button" class="cv-btn" id="veReceiptBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2.5"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>
-          <span>کپی رسید ثبت</span>
-        </button>
-        <button type="button" class="cv-btn" id="veProofBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-          <span>پیوست رسید صیاد</span>
-        </button>
-        <input type="file" id="veProofInput" accept="image/*,application/pdf" hidden>
         <button type="button" class="cv-btn" id="veSendBtn" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           <span>ارسال برای صاحب چک</span>
@@ -1084,24 +1080,24 @@
 <div class="app-toast app-toast-action" id="appToastAction" role="status" aria-live="polite"><span class="toast-text"></span><span class="toast-actions"></span></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261013c"></script>
-<script src="/js/shared.js?v=20261013c"></script>
-<script src="/js/palette.js?v=20261013c"></script>
-<script src="/js/nid.js?v=20261013c"></script>
-<script src="/js/rules.js?v=20261013c"></script>
-<script src="/js/dashboard.js?v=20261013c"></script>
-<script src="/js/cheque-form.js?v=20261013c"></script>
-<script src="/js/date-segments.js?v=20261013c"></script>
-<script src="/js/cal-picker.js?v=20261013c"></script>
-<script src="/js/field-addons.js?v=20261013c"></script>
-<script src="/js/serials.js?v=20261013c"></script>
-<script src="/js/cheque-split.js?v=20261013c"></script>
-<script src="/js/bulk-photos.js?v=20261013c"></script>
-<script src="/js/bulk-add.js?v=20261013c"></script>
-<script src="/js/send-window.js?v=20261013c"></script>
-<script src="/js/follow-window.js?v=20261013c"></script>
-<script src="/js/shell.js?v=20261013c"></script>
-<script src="/js/theme-reveal.js?v=20261013c"></script>
+<script src="/js/icons.js?v=20261013d"></script>
+<script src="/js/shared.js?v=20261013d"></script>
+<script src="/js/palette.js?v=20261013d"></script>
+<script src="/js/nid.js?v=20261013d"></script>
+<script src="/js/rules.js?v=20261013d"></script>
+<script src="/js/dashboard.js?v=20261013d"></script>
+<script src="/js/cheque-form.js?v=20261013d"></script>
+<script src="/js/date-segments.js?v=20261013d"></script>
+<script src="/js/cal-picker.js?v=20261013d"></script>
+<script src="/js/field-addons.js?v=20261013d"></script>
+<script src="/js/serials.js?v=20261013d"></script>
+<script src="/js/cheque-split.js?v=20261013d"></script>
+<script src="/js/bulk-photos.js?v=20261013d"></script>
+<script src="/js/bulk-add.js?v=20261013d"></script>
+<script src="/js/send-window.js?v=20261013d"></script>
+<script src="/js/follow-window.js?v=20261013d"></script>
+<script src="/js/shell.js?v=20261013d"></script>
+<script src="/js/theme-reveal.js?v=20261013d"></script>
 
 </body>
 </html>
