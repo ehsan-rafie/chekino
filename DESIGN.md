@@ -520,47 +520,44 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
   the window, grow in step by their own rules. On a phone every field's
   text is 16px, since below that Safari on iOS zooms the page when a
   field is tapped.
-- *View — the cheque, plainly* (the owner's ask, 2026-10-12: the drawn
-  leaf was too busy; someone new to Chekino should see at once where a
-  cheque came from and where it went, with few words). The window is
-  named for its serial («چک ۴۴۰۱۲۲»), 640px wide, on a white body:
-  - **«مشخصات چک»**, a small title with «مشاهده عکس» at its other end
-    (with a count when there are more files; «مشاهده فایل‌ها» / «مشاهده PDF»
-    as they are — it opens the viewer, a PDF a new tab), over one neat
-    rectangle: four cells alike, two by two, parted by hairlines, each a
-    small icon and caption over its value — «مبلغ» (its words on hover),
-    «سررسید» (how far off in a small outlined badge: amber when close, red
-    when past, while it waits for Sayad), «سریال», «شناسه صیادی» (left to
-    right, with a copy button). No value is larger than another (the owner's
-    ask: the amount needn't lead). On a phone the cells are rows, caption at
-    the start and value at the end.
-  - **«روند چک»**, its way so far: a line down the start edge with a round mark per
-    step, and beside each a few words, who, and when (after a hairline):
-    «گرفته شد از» the owner (a person), «خرج شد برای» the party (a shop)
-    and the spend date, «ثبت به نام» the beneficiary with «کد ملی» /
-    «شناسه ملی» (copyable), «فرستاده شد به صاحب چک» with the send date and
-    each messenger's logo and name (a message bubble for one written in),
-    and «ثبت در صیاد» — Sayad's answer as the title in its colour
-    (green tick, red warning, slate clock), its date, and one line: «۳ روز
-    پس از ارسال», the problem's reason, or «۱۵ روز از ارسال». A step's
-    tooltip names its role (صاحب چک، طرف حساب، ذینفع). Done steps have an
-    ink mark on grey; a ready cheque's send step is where it stands (ringed
-    in ink, «هنوز فرستاده نشده», «ارسال برای صاحب چک»), and Sayad's step is
-    still to come (dashed mark, dashed line to it). Reminders sent show
-    under the send step («۲ بار پیگیری شد، آخرین بار …»).
-  - **The step's own buttons** under it: «ثبت شد» / «مشکل دارد» (or «ثبت
-    شد» / «دوباره منتظر ثبت»), each in its status colour — the board's own
-    change, with its «برگردون»; «مشکل دارد» asks why right there (Enter
-    saves, Escape closes only the box). A registered cheque has «کپی رسید
-    ثبت» and «پیوست رسید صیاد» (the Sayad receipt the owner sends back, kept
-    as a file of the kind «receipt»). A status set while the window is open
-    makes Sayad's mark settle in (0.45s; not with less motion). The view
-    follows any change of the cheque, its next step takes the focus, and
-    «ویرایش» starts from the new version.
-  - **Then**, only when there is one: the note on a faint panel; «پیوست‌ها»
-    when there is more than the one photo (tiles captioned «عکس ۱»، «PDF»،
-    «رسید صیاد» in green); the status history once there has been more than
-    one change.
+- *View — the cheque, plainly* (the owner's asks, 2026-10-12/13: the drawn
+  leaf was too busy, then a long column too tall; someone new to Chekino
+  should see at once where a cheque came from and where it went). The
+  window is named for its serial («چک ۴۴۰۱۲۲»), 860px wide, on a white
+  body; its parts run across it, not down it:
+  - **«مشخصات چک»**: serial, sayad id (left to right, a copy button), due
+    date (how far off in a small outlined badge: amber when close, red when
+    past, while it waits for Sayad) and amount (its words on hover) in one
+    row — each a small icon and caption over its value, all alike, no boxes
+    or lines (as the add form lays out its fields). Under them, only when
+    there are any, the note and the cheque's files as small tiles («عکس
+    چک»، «عکس ۱»، «PDF»، «رسید صیاد» in green; a photo opens in the viewer,
+    a PDF in a new tab).
+  - **«روند چک»**: a row of five steps from right to left joined by a line,
+    a round mark each with its icon, and under it a few words, who, and
+    when: «گرفته شد از» the owner, «خرج شد برای» the party and the spend
+    date, «ثبت به نام» the beneficiary with «کد ملی» / «شناسه ملی»
+    (copyable), «فرستاده شد به صاحب چک» with each messenger's logo (a
+    message bubble for one written in), the send date and the reminders
+    sent («۲ بار پیگیری شد، آخرین بار …»), and «ثبت در صیاد» — Sayad's
+    answer as the title in its colour (green tick, red warning, slate
+    clock) and its date. A step's tooltip names its role. Done steps have
+    an ink mark on grey; a ready cheque's send step is ringed in ink
+    («هنوز فرستاده نشده») and Sayad's still to come (dashed mark, dashed
+    line to it). A status set while the window is open makes Sayad's mark
+    settle in (0.45s; not with less motion).
+  - **One short line under the steps**, on a faint grey: what the answer
+    means («۱۵ روز از ارسال»، «۳ روز پس از ارسال», the problem's reason)
+    and the next steps' buttons at its end — «ثبت شد» / «مشکل دارد» (or
+    «ثبت شد» / «دوباره منتظر ثبت») each in its status colour, the board's
+    own change with its «برگردون» («مشکل دارد» asks why right there:
+    Enter saves, Escape closes only the box); «کپی رسید ثبت» and «پیوست
+    رسید صیاد» for a registered cheque; «ارسال برای صاحب چک» for a ready
+    one. The next step's button takes the focus after a change.
+  - The status history, small, once there has been more than one change.
+  On a phone the details sit two by two (the sayad id in the wider column)
+  and the steps run down the start edge, each with its words beside its
+  mark.
 
   «ویرایش» switches to the form.
 

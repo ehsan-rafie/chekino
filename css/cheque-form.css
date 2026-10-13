@@ -15,7 +15,7 @@
 .cq-body.ve-locked .cq-form { display: none; }
 
 #modalOverlay .modal-box { max-width: 700px; }
-#modalOverlay .modal-box:has(.cq-body.ve-locked) { max-width: 640px; }
+#modalOverlay .modal-box:has(.cq-body.ve-locked) { max-width: 860px; }
 @media (min-width: 601px) {
   #modalOverlay .modal-box { max-height: min(92vh, 920px); }
 }
@@ -143,43 +143,38 @@
 #modalOverlay .cq-note label { padding-inline-start: 2px; }
 #modalOverlay .notes-count:empty { display: none; }
 
-/* ═══ View: the cheque, plainly (2026-10-12) ═══
-   Two parts on a white body. At the top the cheque at a glance on a faint
-   grey panel: its photo, the amount large with its words under it, and
-   three facts each with its icon — due date, serial, sayad id. Below, its
-   way so far: a line down the start edge with a round mark per step (done
-   in ink, the step it is at in its status colour, the ones to come faint
-   and dashed), and beside each mark what happened in a few words, who, and
-   when. The step it is at carries its own buttons. */
+/* ═══ View: the cheque, plainly (2026-10-13: across, not down) ═══
+   Two sections on a white body, each under a small title. «مشخصات چک»:
+   serial, sayad id, due date and amount in one row (the note and the files
+   in a row under them, only when there are any) — each a small icon and
+   caption over its value, all alike, no boxes or lines. «روند چک»: a row
+   of steps from right to left joined by a line — a round mark each, what
+   happened under it in a few words, who, and when; done in ink, the one it
+   is at ringed, the ones to come faint and dashed. Under the steps one
+   short line: what Sayad's answer means, and the next steps' buttons.
+   A phone stacks the steps down the start edge instead. */
 .cq-view {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 20px 22px 24px;
+  padding: 18px 24px 22px;
 }
 .cq-body.modal-body.ve-locked { background: var(--surface); }
+.cv-sec-title { margin: 0 0 12px; font-size: var(--t-cap); color: var(--muted); font-variation-settings: 'wght' 560; }
 
-/* ── the two sections: a small title, and on the details a button ── */
-.cv-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; margin-bottom: 10px; }
-.cv-sec-title { margin: 0; font-size: var(--t-cap); color: var(--muted); font-variation-settings: 'wght' 560; }
-
-/* ── the details, laid out as the add form lays out its fields but
-   without boxes or lines: serial and sayad id, due date and amount, the
-   note and the files — each a small icon and caption over its value, all
-   alike (six columns, as the form: the short value 2, the long one 4) ── */
+/* ── the details: one row ── */
 .cv-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 16px 24px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1.4fr);
+  gap: 14px 22px;
   margin: 0;
 }
 .cv-cell { min-width: 0; }
-.cv-c2 { grid-column: span 2; }
-.cv-c3 { grid-column: span 3; }
-.cv-c4 { grid-column: span 4; }
-/* the note or the files alone take the whole row */
-.cv-notes[hidden] + .ve-files, .cv-notes:has(+ .ve-files[hidden]) { grid-column: 1 / -1; }
 .cv-cell[hidden] { display: none; }
+/* the note and the files: a second row, side by side — or one alone across it */
+.cv-notes { grid-column: 1 / 3; }
+.ve-files { grid-column: 3 / -1; }
+.cv-notes[hidden] + .ve-files, .cv-notes:has(+ .ve-files[hidden]) { grid-column: 1 / -1; }
 .cv-cell dt {
   display: flex;
   align-items: center;
@@ -189,9 +184,10 @@
   color: var(--muted);
 }
 .cv-cell dt svg { width: 14px; height: 14px; flex-shrink: 0; }
-.cv-cell dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 26px; margin: 0; color: var(--ink); }
+.cv-cell dd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 26px; margin: 0; color: var(--ink); }
 .cv-num { font-size: var(--t-value); font-variation-settings: 'wght' 620; unicode-bidi: isolate; white-space: nowrap; }
 .cv-unit { font-size: var(--t-micro); color: var(--muted); }
+#cqcNotes { font-size: var(--t-cap); color: var(--ink-2); line-height: 1.8; white-space: pre-wrap; }
 /* how far off the due date is: a small outlined badge, amber when close and
    red when past while the cheque still waits for Sayad (as on the cards) */
 .cv-rel {
@@ -223,31 +219,43 @@
 .cv-copy:hover { background: var(--surface-2); color: var(--ink); }
 .cv-copy.is-done { color: var(--state-ok-text); }
 .cv-copy[hidden] { display: none; }
-/* ── its way so far ── */
-.cv-flow { margin: 0; padding: 0; list-style: none; }
+
+/* ── its way so far: a row of steps ── */
+.cv-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 .cv-step {
   --dot: var(--ink);
   --dot-bg: var(--surface-2);
   position: relative;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 0 14px;
-  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 6px;
+  text-align: center;
 }
-.cv-step:last-child { padding-bottom: 0; }
-/* the line from this mark to the next */
+/* the line from this mark to the next one, along the marks' middle */
 .cv-step:not(:last-child)::after {
   content: '';
   position: absolute;
-  inset-inline-start: 16.5px;
-  top: 38px;
-  bottom: 4px;
-  width: 1px;
+  top: 17px;
+  inset-inline-start: calc(50% + 24px);
+  inset-inline-end: calc(-50% + 24px);
+  height: 1px;
   background: var(--border-strong);
 }
 .cv-dot {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -256,62 +264,72 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dot) 14%, transparent);
 }
 .cv-dot svg { width: 16px; height: 16px; stroke-width: 2; }
-.cv-body { min-width: 0; padding-top: 1px; }
-.cv-label {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: var(--t-micro);
-  color: var(--muted);
-  line-height: 1.6;
-}
-/* its date beside its words, after a short hairline */
-.cv-date { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-body); }
-.cv-date::before { content: ''; width: 1px; height: 0.9em; background: var(--border-strong); }
-.cv-date:empty { display: none; }
+.cv-body { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; max-width: 100%; }
+.cv-label { font-size: var(--t-micro); color: var(--muted); line-height: 1.6; }
 .cv-value {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 4px 12px;
-  margin-top: 1px;
-  font-size: var(--t-value);
+  gap: 2px 8px;
+  max-width: 100%;
+  font-size: var(--t-cap);
   color: var(--ink);
   font-variation-settings: 'wght' 600;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
-.cv-value .is-empty, .cv-value.is-empty { color: var(--muted); font-variation-settings: var(--f-body); }
-.cv-nid { display: inline-flex; align-items: center; gap: 6px; }
-.cv-nid[hidden] { display: none; }
-.cv-nid-k { font-size: var(--t-micro); color: var(--muted); font-variation-settings: var(--f-body); }
-.cv-nid .cv-num { font-size: var(--t-cap); color: var(--ink-2); font-variation-settings: var(--f-num); }
-.cv-channels { gap: 4px 10px; }
-.cv-ch { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-cap); font-variation-settings: var(--f-label); }
-.cv-ch svg { width: 16px; height: 16px; }
-.cv-sub { margin-top: 2px; font-size: var(--t-micro); color: var(--muted); }
+.cv-value.is-empty, .cv-value .is-empty { color: var(--muted); font-variation-settings: var(--f-body); }
+.cv-date { font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-body); }
+.cv-date:empty { display: none; }
+.cv-sub { font-size: var(--t-micro); color: var(--muted); line-height: 1.6; }
 .cv-sub[hidden] { display: none; }
+.cv-nid { display: inline-flex; align-items: center; gap: 4px; }
+.cv-nid[hidden] { display: none; }
+.cv-nid-k { font-size: var(--t-micro); color: var(--muted); }
+.cv-nid .cv-num { font-size: var(--t-micro); color: var(--ink-2); font-variation-settings: var(--f-num); }
+.cv-nid .cv-copy { width: 22px; height: 22px; }
+.cv-ch { display: inline-flex; align-items: center; gap: 5px; }
+.cv-ch svg { width: 15px; height: 15px; flex-shrink: 0; }
 
 /* the step it is at (a ready cheque's «send»): its mark ringed in ink */
 .cv-step.is-current { --dot-bg: var(--surface); }
 .cv-step.is-current .cv-dot { box-shadow: inset 0 0 0 1.5px var(--ink); }
-.cv-step.is-current .cv-value.is-empty { font-size: var(--t-cap); }
-/* a step still to come: faint, its mark dashed */
+/* a step still to come: faint, its mark dashed, the line to it dashed */
 .cv-step.is-next { --dot: var(--muted); --dot-bg: var(--surface); }
-.cv-step.is-next .cv-dot { box-shadow: inset 0 0 0 1px var(--border-strong); background-image: none; border: 1px dashed var(--border-strong); box-shadow: none; }
+.cv-step.is-next .cv-dot { box-shadow: none; border: 1px dashed var(--border-strong); }
 .cv-step.is-next .cv-label { color: var(--muted); }
-.cv-step.is-next .cv-value { color: var(--muted); font-variation-settings: var(--f-body); font-size: var(--t-cap); }
-.cv-step.is-next::after { background: none; border-inline-start: 1px dashed var(--border-strong); width: 0; }
-/* the step before one still to come: its line goes on dashed */
-.cv-step:has(+ .cv-step.is-next)::after { background: none; width: 0; border-inline-start: 1px dashed var(--border-strong); }
+.cv-step:has(+ .cv-step.is-next)::after { height: 0; background: none; border-top: 1px dashed var(--border-strong); }
 
-/* Sayad's answer: the mark in the status colour */
+/* Sayad's answer: the mark and the title in the status colour */
 .cv-step.ve-status-banner { --dot: color-mix(in srgb, var(--st-pending) 70%, var(--ink)); --dot-bg: var(--st-pending-bg); }
 .cv-step.ve-status-banner.st-done { --dot: var(--state-ok-text); --dot-bg: var(--state-ok-bg); }
 .cv-step.ve-status-banner.st-problem { --dot: var(--state-bad-text); --dot-bg: var(--state-bad-bg); }
 .cv-step.ve-status-banner.st-stage { --dot: var(--muted); --dot-bg: var(--surface); }
-.cv-step.ve-status-banner .ve-st-title { font-variation-settings: 'wght' 640; color: var(--dot); }
-.cv-step.ve-status-banner.st-stage .ve-st-title:empty { display: none; }
-.ve-st-desc { margin-top: 1px; font-size: var(--t-cap); color: var(--ink-2); line-height: 1.7; }
+.cv-step.ve-status-banner .ve-st-title { font-variation-settings: 'wght' 680; color: var(--dot); }
+.cv-step.ve-status-banner .cv-value:has(.ve-st-title:empty) { display: none; }
+/* a status set right here: its mark settles in */
+.cv-step.ve-status-banner .cv-dot.is-landing { animation: cvLand 0.45s var(--ease-out) both; }
+@keyframes cvLand {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* ── under the steps: what the answer means, and the buttons ── */
+.cv-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.cv-status:not(:has(.ve-st-desc:not(:empty), .cv-actions > :not([hidden]):not([style*="none"]):not(input), .ve-reason:not([hidden]))) { display: none; }
+.ve-st-desc { flex: 1 1 auto; min-width: 0; font-size: var(--t-cap); color: var(--ink-2); line-height: 1.7; }
 .ve-st-desc:empty { display: none; }
 .ve-st-desc > span { unicode-bidi: isolate; }
 /* parted by a short hairline, not a dot: a middle dot beside Persian
@@ -326,10 +344,7 @@
   vertical-align: -0.1em;
   background: var(--border-strong);
 }
-
-/* a step's own buttons, under its words */
-.cv-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.cv-actions:not(:has(> :not([hidden]):not([style*="none"]):not(input))) { display: none; }
+.cv-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
 .ve-st-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ve-st-actions[hidden] { display: none; }
 .cv-btn,
@@ -357,20 +372,12 @@
 .ve-st-actions [data-ve-set="done"] { color: var(--state-ok-text); }
 .ve-st-actions [data-ve-set="problem"] { color: var(--state-bad-text); }
 
-/* a status set right here: its mark settles in */
-.cv-step.ve-status-banner .cv-dot.is-landing { animation: cvLand 0.45s var(--ease-out) both; }
-@keyframes cvLand {
-  0% { transform: scale(0.6); }
-  60% { transform: scale(1.12); }
-  100% { transform: scale(1); }
-}
-
-/* «مشکل دارد»: why, right under the buttons */
+/* «مشکل دارد»: why, right under the line, across it */
 .cq-view .ve-reason {
+  flex: 1 1 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 10px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -507,10 +514,20 @@
   #serialField, #sayadField, #amountField, #dueDateField, #fileField, #channelField, #benefField, #nidField { grid-column: 1 / -1; }
   #ownerField, #partyField { grid-column: span 1; }   /* each beside its date */
   .cq-view { padding: 14px 16px 20px; gap: 18px; }
-  /* the details: the same rows, tighter; the note and the files each
-     across the width */
-  .cv-grid { gap: 14px 14px; }
-  .cv-c3 { grid-column: 1 / -1; }
+  /* the details two by two (the sayad id has the wider column), the note
+     and the files each across */
+  .cv-grid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 14px; }
+  .cv-notes, .ve-files, .cv-notes[hidden] + .ve-files, .cv-notes:has(+ .ve-files[hidden]) { grid-column: 1 / -1; }
+  /* the steps down the start edge, each with its words beside its mark */
+  .cv-flow { grid-template-columns: minmax(0, 1fr); }
+  .cv-step { flex-direction: row; align-items: flex-start; gap: 12px; padding: 0 0 14px; text-align: start; }
+  .cv-step:last-child { padding-bottom: 0; }
+  .cv-step:not(:last-child)::after { top: 38px; bottom: 2px; inset-inline-start: 16.5px; inset-inline-end: auto; width: 1px; height: auto; }
+  .cv-step:has(+ .cv-step.is-next)::after { width: 0; border-top: 0; border-inline-start: 1px dashed var(--border-strong); background: none; }
+  .cv-body { align-items: flex-start; padding-top: 2px; }
+  .cv-value { justify-content: flex-start; font-size: var(--t-value); text-wrap: wrap; }
+  .cv-status { margin-top: 14px; }
+  .cv-actions { margin-inline-start: 0; }
   .cv-btn, .ve-st-actions .ve-receipt-btn { height: 40px; }
   #modalOverlay .modal-footer .save-confirm-wrap { flex: 1 1 auto; }
   #modalOverlay .modal-footer .btn-submit { flex: 1 1 auto; height: 44px; }

@@ -626,7 +626,8 @@ function veSetStatus(to, reason) {
   closeVeReason();
   applyStatus(id, to, reason || '');
   // the press's own result in focus: the next step, or the banner's text
-  const next = [...veStatusBanner.querySelectorAll('.ve-receipt-btn, .cv-btn')].find((b) => b.offsetParent !== null);
+  // (the buttons sit on the line under the steps)
+  const next = [...veStActions.closest('.cv-status').querySelectorAll('.ve-receipt-btn, .cv-btn')].find((b) => b.offsetParent !== null);
   (next || modalBody).focus({ preventScroll: true });
 }
 veStActions.addEventListener('click', (e) => {
