@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<script src="/js/boot.js?v=20261014e" data-mode="dashboard"></script>
+<script src="/js/boot.js?v=20261014f" data-mode="dashboard"></script>
 <style>body.chekino-auth-pending { display: none; }</style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no, address=no, email=no, date=no">
@@ -13,10 +13,10 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='5' width='30' height='22' rx='6' fill='%230A0A0A'/%3E%3Cpath d='M14 13.5h11M14 18.5h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preload" href="/fonts/IRANSansXVFaNum.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/css/shared.css?v=20261014e">
-<link rel="stylesheet" href="/css/dashboard.css?v=20261014e">
-<link rel="stylesheet" href="/css/cheque-form.css?v=20261014e">
-<link rel="stylesheet" href="/css/bulk.css?v=20261014e">
+<link rel="stylesheet" href="/css/shared.css?v=20261014f">
+<link rel="stylesheet" href="/css/dashboard.css?v=20261014f">
+<link rel="stylesheet" href="/css/cheque-form.css?v=20261014f">
+<link rel="stylesheet" href="/css/bulk.css?v=20261014f">
 </head>
 <body class="chekino-auth-pending">
 
@@ -121,18 +121,27 @@
       </div>
 
       <div class="filter-pill-group">
-        <button type="button" class="filter-pill-btn" data-pop="popDate" aria-haspopup="dialog" aria-expanded="false" aria-controls="popDate">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="3"/><path d="M3 10h18"/></svg>
-          تاریخ
-        </button>
-        <button type="button" class="filter-pill-btn" data-pop="popAmount" aria-haspopup="dialog" aria-expanded="false" aria-controls="popAmount">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="3"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>
-          مبلغ
-        </button>
-        <button type="button" class="filter-pill-btn" data-pop="popPeople" aria-haspopup="dialog" aria-expanded="false" aria-controls="popPeople">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          اشخاص
-        </button>
+        <span class="filter-pill" data-filter="date">
+          <button type="button" class="filter-pill-btn" data-pop="popDate" data-name="تاریخ" aria-haspopup="dialog" aria-expanded="false" aria-controls="popDate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="3"/><path d="M3 10h18"/></svg>
+            <span class="fpb-label">تاریخ</span>
+          </button>
+          <button type="button" class="filter-pill-x" data-clear="date" aria-label="برداشتن فیلتر تاریخ" title="برداشتن این فیلتر" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </span>
+        <span class="filter-pill" data-filter="amount">
+          <button type="button" class="filter-pill-btn" data-pop="popAmount" data-name="مبلغ" aria-haspopup="dialog" aria-expanded="false" aria-controls="popAmount">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="3"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>
+            <span class="fpb-label">مبلغ</span>
+          </button>
+          <button type="button" class="filter-pill-x" data-clear="amount" aria-label="برداشتن فیلتر مبلغ" title="برداشتن این فیلتر" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </span>
+        <span class="filter-pill" data-filter="people">
+          <button type="button" class="filter-pill-btn" data-pop="popPeople" data-name="اشخاص" aria-haspopup="dialog" aria-expanded="false" aria-controls="popPeople">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="fpb-label">اشخاص</span>
+          </button>
+          <button type="button" class="filter-pill-x" data-clear="people" aria-label="برداشتن فیلتر اشخاص" title="برداشتن این فیلتر" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </span>
       </div>
       <button type="button" class="filter-clear-btn" id="filterClearBtn" title="پاک کردن فیلترها" aria-label="پاک کردن فیلترها">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -143,15 +152,17 @@
     <div class="active-filters-row" id="activeFiltersRow"></div>
   </div>
 
-  <div class="filter-popover" id="popDate">
-    <div class="fp-title">بر اساس تاریخ</div>
-    <div class="radio-row">
-      <label class="radio-opt"><input type="radio" name="dateBasis" value="dueDate" checked><span>تاریخ سررسید</span></label>
-      <label class="radio-opt"><input type="radio" name="dateBasis" value="createdAt"><span>تاریخ ثبت در سیستم</span></label>
+  <!-- The filters (2026-10-14): each pill opens its own; dashboard.js
+       «---- filters ----» fills them -->
+  <div class="filter-popover fp-date" id="popDate" role="dialog" aria-label="فیلتر تاریخ">
+    <div class="fp-seg" role="radiogroup" aria-label="کدام تاریخ">
+      <label class="fp-seg-opt"><input type="radio" name="dateBasis" value="dueDate" checked><span>تاریخ سررسید</span></label>
+      <label class="fp-seg-opt"><input type="radio" name="dateBasis" value="createdAt"><span>تاریخ افزودن</span></label>
     </div>
+    <div class="date-presets" id="datePresets"></div>
     <div class="form-field date-field" id="filterRangeField">
       <div class="date-input-wrap" id="filterRangeWrap">
-        <input type="text" id="filterRangeInput" class="date-mask-input" readonly placeholder="از تاریخ … تا تاریخ">
+        <input type="text" id="filterRangeInput" class="date-mask-input" readonly placeholder="بازه‌ی دلخواه از تقویم" aria-label="بازه‌ی دلخواه از تقویم">
         <button type="button" class="date-cal-btn" id="filterRangeCalBtn" tabindex="-1" title="انتخاب بازه از تقویم">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </button>
@@ -164,55 +175,45 @@
     </label>
   </div>
 
-  <div class="filter-popover" id="popAmount">
-    <div class="fp-title">بر اساس مبلغ</div>
+  <div class="filter-popover fp-amount" id="popAmount" role="dialog" aria-label="فیلتر مبلغ">
+    <!-- where the cheques' amounts lie, smallest on the right; the two
+         handles ride its bottom edge -->
+    <div class="amount-hist" id="amountHist" aria-hidden="true"></div>
+    <div class="amount-slider" id="amountSlider">
+      <input type="range" id="amountLo" min="0" max="1000" step="1" value="0" aria-label="کمترین مبلغ">
+      <input type="range" id="amountHi" min="0" max="1000" step="1" value="1000" aria-label="بیشترین مبلغ">
+    </div>
     <div class="amount-filter-row">
-      <div class="amount-filter-box ig has-pre has-suf">
-        <span class="ig-pre" aria-hidden="true">از</span>
-        <input type="text" id="filterAmountMin" inputmode="numeric" placeholder="۰" aria-label="حداقل مبلغ (ریال)">
-        <span class="ig-suf" aria-hidden="true">﷼</span>
+      <div class="amount-filter-col">
+        <div class="amount-filter-box ig has-pre has-suf">
+          <span class="ig-pre" aria-hidden="true">از</span>
+          <input type="text" id="filterAmountMin" inputmode="numeric" autocomplete="off" placeholder="۰" aria-label="کمترین مبلغ (ریال)، مثلاً ۵۰ میلیون" aria-describedby="amountMinWords">
+          <span class="ig-suf" aria-hidden="true">﷼</span>
+        </div>
+        <div class="amount-words" id="amountMinWords"></div>
       </div>
-      <div class="amount-filter-box ig has-pre has-suf">
-        <span class="ig-pre" aria-hidden="true">تا</span>
-        <input type="text" id="filterAmountMax" inputmode="numeric" placeholder="بی‌سقف" aria-label="حداکثر مبلغ (ریال)">
-        <span class="ig-suf" aria-hidden="true">﷼</span>
+      <div class="amount-filter-col">
+        <div class="amount-filter-box ig has-pre has-suf">
+          <span class="ig-pre" aria-hidden="true">تا</span>
+          <input type="text" id="filterAmountMax" inputmode="numeric" autocomplete="off" placeholder="بی‌سقف" aria-label="بیشترین مبلغ (ریال)، مثلاً ۲ میلیارد" aria-describedby="amountMaxWords">
+          <span class="ig-suf" aria-hidden="true">﷼</span>
+        </div>
+        <div class="amount-words" id="amountMaxWords"></div>
       </div>
     </div>
-    <div class="amount-presets">
-      <button type="button" class="af-preset" data-min="0" data-max="10000000">تا ۱۰ میلیون</button>
-      <button type="button" class="af-preset" data-min="10000000" data-max="1000000000">۱۰ میلیون تا ۱ میلیارد</button>
-      <button type="button" class="af-preset" data-min="1000000000" data-max="100000000000">۱ میلیارد تا ۱۰۰ میلیارد</button>
-    </div>
+    <div class="amount-suggest" id="amountSuggest" hidden></div>
+    <div class="amount-count" id="amountCount" aria-live="polite"></div>
   </div>
 
-  <div class="filter-popover" id="popPeople">
-    <div class="fp-title">بر اساس اشخاص</div>
-    <div class="filter-people-row">
-      <div class="form-field ac-field" id="filterOwnerField">
-        <div class="ig has-pre">
-          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></span>
-          <input type="text" id="filterOwnerInput" class="ac-input" autocomplete="off" placeholder="صاحب چک" aria-label="فیلتر بر اساس صاحب چک" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="filterOwnerList">
-        </div>
-        <div class="ac-list mf-list" id="filterOwnerList" role="listbox" aria-multiselectable="true"></div>
-        <div class="mf-tags" id="filterOwnerTags" hidden></div>
-      </div>
-      <div class="form-field ac-field" id="filterPartyField">
-        <div class="ig has-pre">
-          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
-          <input type="text" id="filterPartyInput" class="ac-input" autocomplete="off" placeholder="طرف حساب" aria-label="فیلتر بر اساس طرف حساب" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="filterPartyList">
-        </div>
-        <div class="ac-list mf-list" id="filterPartyList" role="listbox" aria-multiselectable="true"></div>
-        <div class="mf-tags" id="filterPartyTags" hidden></div>
-      </div>
-      <div class="form-field ac-field" id="filterBenefField">
-        <div class="ig has-pre">
-          <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-          <input type="text" id="filterBenefInput" class="ac-input" autocomplete="off" placeholder="نام یا کد ملی ذینفع" aria-label="فیلتر بر اساس نام یا کد ملی ذینفع" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="filterBenefList">
-        </div>
-        <div class="ac-list mf-list" id="filterBenefList" role="listbox" aria-multiselectable="true"></div>
-        <div class="mf-tags" id="filterBenefTags" hidden></div>
+  <div class="filter-popover fp-people" id="popPeople" role="dialog" aria-label="فیلتر اشخاص">
+    <div class="form-field ac-field">
+      <div class="ig has-pre">
+        <span class="ig-pre" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input type="text" id="peopleFilterInput" class="ac-input" autocomplete="off" placeholder="نام یا کد ملی" aria-label="جستجوی صاحب چک، طرف حساب یا ذینفع با نام یا کد ملی" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="peopleFilterList">
       </div>
     </div>
+    <div class="mf-tags pf-tags" id="peopleFilterTags" hidden></div>
+    <div class="pf-list" id="peopleFilterList" role="listbox" aria-multiselectable="true" aria-label="صاحبان چک، طرف‌های حساب و ذینفعان"></div>
   </div>
 
   <div class="search-note" id="searchNote" aria-live="polite"></div>
@@ -291,10 +292,6 @@
   <div class="ac-list" id="partyList"></div>
   <div class="ac-list" id="benefList"></div>
   <div class="ac-list" id="nidList"></div>
-
-  <!-- Same story for the people filter: .filter-popover.show animates with
-       fill-mode both, so it keeps a transform once open and would capture
-       these three the moment the popover they used to sit in was shown. -->
 
         <div class="cal-backdrop" id="calBackdrop"></div>
         <div class="cal-popup" id="dueDateCal">
@@ -1069,23 +1066,23 @@
 <div class="app-toast app-toast-action" id="appToastAction" role="status" aria-live="polite"><span class="toast-text"></span><span class="toast-actions"></span></div>
 <div class="app-tooltip" id="appTooltip"></div>
 
-<script src="/js/icons.js?v=20261014e"></script>
-<script src="/js/shared.js?v=20261014e"></script>
-<script src="/js/palette.js?v=20261014e"></script>
-<script src="/js/nid.js?v=20261014e"></script>
-<script src="/js/rules.js?v=20261014e"></script>
-<script src="/js/dashboard.js?v=20261014e"></script>
-<script src="/js/cheque-form.js?v=20261014e"></script>
-<script src="/js/date-segments.js?v=20261014e"></script>
-<script src="/js/cal-picker.js?v=20261014e"></script>
-<script src="/js/field-addons.js?v=20261014e"></script>
-<script src="/js/serials.js?v=20261014e"></script>
-<script src="/js/cheque-split.js?v=20261014e"></script>
-<script src="/js/bulk-photos.js?v=20261014e"></script>
-<script src="/js/bulk-add.js?v=20261014e"></script>
-<script src="/js/send-window.js?v=20261014e"></script>
-<script src="/js/shell.js?v=20261014e"></script>
-<script src="/js/theme-reveal.js?v=20261014e"></script>
+<script src="/js/icons.js?v=20261014f"></script>
+<script src="/js/shared.js?v=20261014f"></script>
+<script src="/js/palette.js?v=20261014f"></script>
+<script src="/js/nid.js?v=20261014f"></script>
+<script src="/js/rules.js?v=20261014f"></script>
+<script src="/js/dashboard.js?v=20261014f"></script>
+<script src="/js/cheque-form.js?v=20261014f"></script>
+<script src="/js/date-segments.js?v=20261014f"></script>
+<script src="/js/cal-picker.js?v=20261014f"></script>
+<script src="/js/field-addons.js?v=20261014f"></script>
+<script src="/js/serials.js?v=20261014f"></script>
+<script src="/js/cheque-split.js?v=20261014f"></script>
+<script src="/js/bulk-photos.js?v=20261014f"></script>
+<script src="/js/bulk-add.js?v=20261014f"></script>
+<script src="/js/send-window.js?v=20261014f"></script>
+<script src="/js/shell.js?v=20261014f"></script>
+<script src="/js/theme-reveal.js?v=20261014f"></script>
 
 </body>
 </html>

@@ -202,22 +202,56 @@ right (ink, radius 12); Enter goes past the header to the board.
 
 **Toolbar.** The search field (320px), then the facet filters «تاریخ»
 «مبلغ» «اشخاص» (dashed until they hold a value), then «پاک کردن فیلترها»
-when something is filtered, and after it, in the same row, a chip per
-applied filter with its value and its own × — an outlined badge (radius
-8, not a capsule). Filtering never moves the board: the chips used to
-take a line of their own under the row. Below 860px, with no room left
-in the row, they wrap under it. On phones the three facet filters share
-their row evenly.
-**«اشخاص» takes several people per role.** Each field (صاحب چک، طرف
-حساب، ذینفع — the last also by national id) opens a checklist right under
-it, inside the popover (HeroUI's ListBox, multiple selection): a box that
-fills blue when ticked, the name, and how many cheques that person has;
-it stays open to tick more. The chosen people sit as outlined tags under
-the field, each with its own ×. A cheque passes when its owner is any of
-the chosen owners (and so on); the three roles narrow one another. The
-toolbar chip reads «صاحب چک: الف، ب و ۲ نفر دیگر». Keyboard: ↑ ↓, Enter
-ticks, Backspace in the empty field drops the last tag, Escape closes the
-list and then the popover.
+when something is filtered.
+
+**The filters (the owner's ask, 2026-10-14: smarter, not busier).** A set
+pill says what it holds — «سررسید این ماه», «۵۰ میلیون تا ۲ میلیارد ﷼», a
+name or «۲ نفر» — in the applied blue, with its own × at its end; the
+second row of chips under the pills went (it said the same words twice),
+and only today's question («سررسید نزدیک») still sits there. A report
+names the filters in full, dates and rials. Each popover counts what its
+choices would show beside the other filters, so a pick that leads nowhere
+reads as such before it's made. On phones the three pills share their row
+at rest; once a set one needs more room, the row scrolls sideways and
+fades at its edges, the words kept whole.
+- **تاریخ.** Two tabs in a well (HeroUI's Tabs): «تاریخ سررسید» or
+  «تاریخ افزودن». Six quick picks, two to a row, each with its count —
+  for a due date «سررسید گذشته، امروز، ۷ روز آینده، ۳۰ روز آینده، این ماه،
+  ماه بعد», for the day added «امروز، دیروز، ۷ روز اخیر، ۳۰ روز اخیر، این
+  ماه، ماه قبل». They are worked out from today each time (a week ahead
+  stays a week ahead), a pick closes the popover, the same pick again lets
+  go, and the other tab keeps a pick both have. Under them the span field
+  shows the days a pick stands for, and opens the calendar for any other
+  span; once its first day is in, the days up to the one under the pointer
+  show as the span they'd make. The pill puts a span in short words: «سررسید
+  ۳ تا ۱۲ مهر», «سررسید از ۱ مهر» (the year only when it isn't this one).
+  The archive toggle stays at the bottom.
+- **مبلغ.** The board's amounts as 28 bars on a log scale (a few million
+  and tens of billions on one line), smallest on the right like the «از»
+  field; the chosen span dark, the rest pale. Two handles ride the bars'
+  bottom edge (two range inputs: arrows, Page Up/Down, Home/End); a handle
+  sets its own field to a round figure (two significant digits, rounded
+  outwards), and one pulled all the way out lets that side go. The fields
+  hint the board's smallest and largest, take a figure in full or the way
+  it's said — «۵۰ میلیون», «۲٫۵ میلیارد», «۲۰ میلیون تومان», «۵۰۰ هزار» —
+  read right to left while words are in them and turn into digits on Enter
+  or leaving; a short figure («۵۰») offers «۵۰ میلیون» and «۵۰ میلیارد»
+  as dashed chips under them. Under each field, the amount in words, in
+  tomans as on the form; under both, «۸ چک در این بازه».
+- **اشخاص.** One search (name or national id) over the three roles; the
+  list under it goes by role — «صاحب چک», «طرف حساب», «ذینفع», each
+  heading with its icon, held at the top while its people scroll — the
+  people with the most cheques first, five a role until the search is
+  typed in or «و ۱۰ صاحب چک دیگر» opens the rest. Each row: the tick box
+  (HeroUI's ListBox, multiple selection; blue when ticked), the name, a
+  beneficiary's national id, and the count beside the other filters (a
+  person at none is quieter). Several can be ticked: within a role any of
+  them, across roles all of them. The ticked sit as outlined tags over the
+  list, with their role's icon and their own ×. On a pointer device the
+  search takes the caret as the popover opens; on a touch screen it waits
+  for a tap. Keyboard: ↑ ↓, Enter ticks (or opens the rest), Backspace in
+  the empty search drops the last one ticked, Escape empties the search and
+  then closes.
 
 **Board.** Three lanes, each with a faint wash of its status colour (3%),
 an edge of the same hue (11%), and down its start edge a thin line of that

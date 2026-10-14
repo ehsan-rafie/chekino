@@ -2484,8 +2484,8 @@ personBody.addEventListener('click', (e) => {
     const f = peopleFilter[role];
     if (!p || !f) return;
     Object.keys(peopleFilter).forEach(clearPeopleFilter);
-    f.sel = [{ name: p.full_name, key: role === 'benef' ? benefKey(p.full_name, p.national_id) : normalizeName(p.full_name) }];
-    renderPeopleTags(role);
+    f.sel = [{ name: p.full_name, key: role === 'benef' ? benefKey(p.full_name, p.national_id) : normalizeName(p.full_name), at: ++pickSeq }];
+    renderPeopleTags();
     refreshTable();
     closePerson();
     closePeopleModal();
@@ -4015,11 +4015,13 @@ function openRangeCalendar() {
   calendarMode = 'range';
   activeDateField = null;
   calendarAnchorEl = filterRangeWrap;
-  draftRangeFrom = rangeFrom;
-  draftRangeTo = rangeTo;
+  // a quick pick («این ماه») opens as the days it stands for
+  const quick = datePresetOf(dateBasis(), datePreset);
+  [draftRangeFrom, draftRangeTo] = quick ? quick.range() : [rangeFrom, rangeTo];
+  if (!draftRangeFrom) draftRangeTo = null;
   calFooterSingle.classList.remove('show');
   calFooterRange.classList.add('show');
-  if (rangeFrom) { calViewYear = rangeFrom.y; calViewMonth = rangeFrom.m; }
+  if (draftRangeFrom) { calViewYear = draftRangeFrom.y; calViewMonth = draftRangeFrom.m; }
   else { const [ty, tm] = todayJalali(); calViewYear = ty; calViewMonth = tm; }
   renderCalendar();
   dueDateCal.classList.add('show');
@@ -4085,16 +4087,21 @@ function selectDate(y, m, d) {
 
 function dateNum(y, m, d) { return y * 10000 + m * 100 + d; }
 
-function updateRangeDisplay() {
-  // Isolate each date's digits so they read correctly internally (as before),
-  // and also wrap the whole "از ... تا ..." phrase in its own RTL isolate so
-  // the two words themselves can't be reordered relative to one another either.
+// «از ۱۴۰۵/۰۷/۰۱ تا ۱۴۰۵/۰۷/۱۵», either end open. Each date's digits sit in
+// their own isolate and the whole phrase in an RTL one, so neither the digits
+// nor the two words can be reordered.
+function jalaliSpanText(from, to, gap = ' ') {
   const LRI = '\u2066', RLI = '\u2067', PDI = '\u2069';
-  if (!rangeFrom) { filterRangeInput.value = ''; return; }
-  const f = `${LRI}${toFa(rangeFrom.y)}/${toFa(pad2(rangeFrom.m))}/${toFa(pad2(rangeFrom.d))}${PDI}`;
-  if (!rangeTo) { filterRangeInput.value = `${RLI}از ${f}${PDI}`; return; }
-  const t = `${LRI}${toFa(rangeTo.y)}/${toFa(pad2(rangeTo.m))}/${toFa(pad2(rangeTo.d))}${PDI}`;
-  filterRangeInput.value = `${RLI}از ${f}   تا ${t}${PDI}`;
+  const fa = (o) => `${LRI}${toFa(o.y)}/${toFa(pad2(o.m))}/${toFa(pad2(o.d))}${PDI}`;
+  if (!from && !to) return '';
+  if (!to) return `${RLI}از ${fa(from)}${PDI}`;
+  if (!from) return `${RLI}تا ${fa(to)}${PDI}`;
+  return `${RLI}از ${fa(from)}${gap}تا ${fa(to)}${PDI}`;
+}
+function updateRangeDisplay() {
+  const quick = datePresetOf(dateBasis(), datePreset);
+  const [from, to] = quick ? quick.range() : [rangeFrom, rangeTo];
+  filterRangeInput.value = jalaliSpanText(from, to, '   ');
 }
 
 // First click starts a new span; the second click (anywhere else) completes
@@ -4203,6 +4210,7 @@ calTodayBtn.addEventListener('click', () => {
   selectDate(ty, tm, td);
 });
 calConfirmRangeBtn.addEventListener('click', () => {
+  datePreset = null;   // the days picked replace a quick pick
   rangeFrom = draftRangeFrom;
   rangeTo = draftRangeTo;
   updateRangeDisplay();
@@ -4217,6 +4225,23 @@ calClearRangeBtn.addEventListener('click', () => {
   renderCalendar();
 });
 calBackdrop.addEventListener('click', closeCalendar);
+// Picking a span: once its first day is in, the days up to the one under
+// the pointer show as the span they'd make
+function paintRangeHover(day) {
+  const on = calendarMode === 'range' && draftRangeFrom && !draftRangeTo && day;
+  const a = on ? dateNum(draftRangeFrom.y, draftRangeFrom.m, draftRangeFrom.d) : 0;
+  const b = on ? dateNum(calViewYear, calViewMonth, day) : 0;
+  calGrid.querySelectorAll('.cal-day[data-day]').forEach((el) => {
+    const n = dateNum(calViewYear, calViewMonth, parseInt(el.dataset.day, 10));
+    el.classList.toggle('range-hover', !!on && n > Math.min(a, b) && n < Math.max(a, b));
+    el.classList.toggle('range-hover-end', !!on && n === b && n !== a);
+  });
+}
+calGrid.addEventListener('mouseover', (e) => {
+  const el = e.target.closest('.cal-day[data-day]');
+  if (el) paintRangeHover(parseInt(el.dataset.day, 10));
+});
+calGrid.addEventListener('mouseleave', () => paintRangeHover(0));
 
 document.addEventListener('click', (e) => {
   if (!dueDateCal.classList.contains('show')) return;
@@ -4948,15 +4973,18 @@ const filterRangeCalBtn = document.getElementById('filterRangeCalBtn');
 const filterRangeMsg = document.getElementById('filterRangeMsg');
 const filterAmountMin = document.getElementById('filterAmountMin');
 const filterAmountMax = document.getElementById('filterAmountMax');
-const filterOwnerField = document.getElementById('filterOwnerField');
-const filterOwnerInput = document.getElementById('filterOwnerInput');
-const filterOwnerList = document.getElementById('filterOwnerList');
-const filterPartyField = document.getElementById('filterPartyField');
-const filterPartyInput = document.getElementById('filterPartyInput');
-const filterPartyList = document.getElementById('filterPartyList');
-const filterBenefField = document.getElementById('filterBenefField');
-const filterBenefInput = document.getElementById('filterBenefInput');
-const filterBenefList = document.getElementById('filterBenefList');
+const datePresetsBox = document.getElementById('datePresets');
+const amountHist = document.getElementById('amountHist');
+const amountSlider = document.getElementById('amountSlider');
+const amountLo = document.getElementById('amountLo');
+const amountHi = document.getElementById('amountHi');
+const amountMinWords = document.getElementById('amountMinWords');
+const amountMaxWords = document.getElementById('amountMaxWords');
+const amountSuggest = document.getElementById('amountSuggest');
+const amountCount = document.getElementById('amountCount');
+const peopleFilterInput = document.getElementById('peopleFilterInput');
+const peopleFilterList = document.getElementById('peopleFilterList');
+const peopleFilterTags = document.getElementById('peopleFilterTags');
 const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
 const filterClearBtn = document.getElementById('filterClearBtn');
 const boardColumns = document.getElementById('boardColumns');
@@ -5283,7 +5311,77 @@ function setBoardFocus(key) {
   refreshTable();
 }
 
-function getFilteredCheques() {
+// Which date the date filter reads
+function dateBasis() { return document.querySelector('input[name="dateBasis"]:checked').value; }
+
+// today ± days, as { y, m, d }
+function jalaliShift(days) {
+  const [ty, tm, td] = todayJalali();
+  const g = jalaliToJsDate(ty, tm, td);
+  g.setDate(g.getDate() + days);
+  const [y, m, d] = gregorianToJalali(g.getFullYear(), g.getMonth() + 1, g.getDate());
+  return { y, m, d };
+}
+// this month (0), the next (1), the last (-1): its first and last day
+function jalaliMonthSpan(offset) {
+  let [y, m] = todayJalali();
+  m += offset;
+  while (m < 1) { m += 12; y--; }
+  while (m > 12) { m -= 12; y++; }
+  return [{ y, m, d: 1 }, { y, m, d: daysInJalaliMonth(y, m) }];
+}
+// The date filter's quick picks (2026-10-14), worked out from today each
+// time they're used, so «۷ روز آینده» stays seven days ahead tomorrow. A
+// due date looks ahead, the day a cheque was added looks back.
+const DATE_PRESETS = {
+  dueDate: [
+    { key: 'past', label: 'سررسید گذشته', pill: 'سررسید گذشته', range: () => [null, jalaliShift(-1)] },
+    { key: 'today', label: 'امروز', pill: 'سررسید امروز', range: () => [jalaliShift(0), jalaliShift(0)] },
+    { key: 'next7', label: '۷ روز آینده', pill: 'سررسید ۷ روز آینده', range: () => [jalaliShift(0), jalaliShift(6)] },
+    { key: 'next30', label: '۳۰ روز آینده', pill: 'سررسید ۳۰ روز آینده', range: () => [jalaliShift(0), jalaliShift(29)] },
+    { key: 'month', label: 'این ماه', pill: 'سررسید این ماه', range: () => jalaliMonthSpan(0) },
+    { key: 'nextMonth', label: 'ماه بعد', pill: 'سررسید ماه بعد', range: () => jalaliMonthSpan(1) },
+  ],
+  createdAt: [
+    { key: 'today', label: 'امروز', pill: 'افزوده امروز', range: () => [jalaliShift(0), jalaliShift(0)] },
+    { key: 'yesterday', label: 'دیروز', pill: 'افزوده دیروز', range: () => [jalaliShift(-1), jalaliShift(-1)] },
+    { key: 'last7', label: '۷ روز اخیر', pill: 'افزوده در ۷ روز اخیر', range: () => [jalaliShift(-6), jalaliShift(0)] },
+    { key: 'last30', label: '۳۰ روز اخیر', pill: 'افزوده در ۳۰ روز اخیر', range: () => [jalaliShift(-29), jalaliShift(0)] },
+    { key: 'month', label: 'این ماه', pill: 'افزوده این ماه', range: () => jalaliMonthSpan(0) },
+    { key: 'lastMonth', label: 'ماه قبل', pill: 'افزوده ماه قبل', range: () => jalaliMonthSpan(-1) },
+  ],
+};
+let datePreset = null;   // a quick pick's key, or null (then the calendar's span, if any)
+function datePresetOf(basis, key) {
+  return key ? (DATE_PRESETS[basis] || []).find((p) => p.key === key) || null : null;
+}
+const toDateNum = (o) => (o ? dateNum(o.y, o.m, o.d) : null);
+// The date filter's span as two comparable numbers, either end open; null
+// when there's none
+function dateBounds() {
+  const quick = datePresetOf(dateBasis(), datePreset);
+  const [from, to] = quick ? quick.range() : [rangeFrom, rangeTo];
+  if (!from && !to) return null;
+  return { from: toDateNum(from), to: toDateNum(to) };
+}
+const inDateSpan = (c, basis, span) => {
+  const n = jalaliDateToNum(c[basis]);
+  return n !== null && (span.from === null || n >= span.from) && (span.to === null || n <= span.to);
+};
+
+// The amount filter's span in rials (min 0, max Infinity when open); null
+// when there's none
+function amountBounds() {
+  const lo = parseAmountText(filterAmountMin.value);
+  const hi = parseAmountText(filterAmountMax.value);
+  if (!lo && hi === null) return null;
+  return { min: lo || 0, max: hi === null ? Infinity : hi };
+}
+
+// The board's cheques under every filter but `skip` ('date', 'amount', or
+// a role of the people filter): what a filter's own choices count against —
+// «۷ روز آینده ۵» is five with everything else as it is
+function filterCheques(skip) {
   let list = sentCheques();
 
   if (!showArchivedCheckbox || !showArchivedCheckbox.checked) {
@@ -5295,45 +5393,61 @@ function getFilteredCheques() {
   const match = searchMatcher(searchInput.value);
   if (match) list = list.filter(match);
 
-  // date range, on whichever basis the radio picks
-  const basis = document.querySelector('input[name="dateBasis"]:checked').value;
-  const fromNum = rangeFrom ? dateNum(rangeFrom.y, rangeFrom.m, rangeFrom.d) : null;
-  const toNum = rangeTo ? dateNum(rangeTo.y, rangeTo.m, rangeTo.d) : null;
-  if (fromNum !== null || toNum !== null) {
-    list = list.filter(c => {
-      const n = jalaliDateToNum(c[basis]);
-      if (n === null) return false;
-      if (fromNum !== null && n < fromNum) return false;
-      if (toNum !== null && n > toNum) return false;
-      return true;
-    });
-  }
+  const basis = dateBasis();
+  const span = skip === 'date' ? null : dateBounds();
+  if (span) list = list.filter(c => inDateSpan(c, basis, span));
 
-  // amount range — only restricts anything once it's been moved off the full span
-  const minA = parseInt(toEnDigits(filterAmountMin.value).replace(/[^0-9]/g, ''), 10) || 0;
-  const maxRaw = toEnDigits(filterAmountMax.value).replace(/[^0-9]/g, '');
-  const maxA = maxRaw ? parseInt(maxRaw, 10) : 100000000000;
-  if (minA > 0 || maxRaw) {
-    list = list.filter(c => {
-      const a = amountToRial(c.amount);
-      return a >= minA && a <= maxA;
-    });
-  }
+  const amt = skip === 'amount' ? null : amountBounds();
+  if (amt) list = list.filter(c => { const a = amountToRial(c.amount); return a >= amt.min && a <= amt.max; });
 
   // people — several can be chosen per role: a cheque passes when its
   // owner is any of the chosen owners (and likewise party, beneficiary);
-  // the roles narrow one another. Only chosen people count, not a name
-  // still being typed.
-  Object.values(peopleFilter).forEach((f) => {
-    if (!f.sel.length) return;
+  // the roles narrow one another
+  Object.keys(peopleFilter).forEach((role) => {
+    const f = peopleFilter[role];
+    if (role === skip || !f.sel.length) return;
     const keys = new Set(f.sel.map(s => s.key));
     list = list.filter(c => keys.has(f.chequeKey(c)));
   });
 
   return list;
 }
+function getFilteredCheques() { return filterCheques(null); }
 
-function pillBtn(popId) { return document.querySelector(`.filter-pill-btn[data-pop="${popId}"]`); }
+// «۱ مهر», with the year when it isn't this one
+function shortJalali(o) {
+  const [ty] = todayJalali();
+  return `${toFa(o.d)} ${jalaliMonthNames[o.m - 1]}${o.y !== ty ? ' ' + toFa(o.y) : ''}`;
+}
+// «۱ تا ۱۵ مهر», «۲۸ مهر تا ۵ آبان», «از ۱ مهر»
+function shortSpan(from, to) {
+  if (!to) return `از ${shortJalali(from)}`;
+  if (!from) return `تا ${shortJalali(to)}`;
+  if (toDateNum(from) === toDateNum(to)) return shortJalali(from);
+  if (from.y === to.y && from.m === to.m) return `${toFa(from.d)} تا ${shortJalali(to)}`;
+  return `${shortJalali(from)} تا ${shortJalali(to)}`;
+}
+// 47000000 → «۴۷ میلیون», 2500000000 → «۲٫۵ میلیارد»
+function compactAmount(n) {
+  for (const [w, u] of [['میلیارد', 1e9], ['میلیون', 1e6], ['هزار', 1e3]]) {
+    if (n >= u) return `${toFa(String(Math.round((n / u) * 10) / 10).replace('.', '٫'))} ${w}`;
+  }
+  return toFa(groupDigits(String(n)));
+}
+
+// A pill says what its filter is set to — «سررسید این ماه», «از ۵۰ میلیون ﷼»,
+// a name — and carries its own × (the owner's ask, 2026-10-14: the same
+// words in a second row under the pills went)
+function setPill(key, text, full) {
+  const wrap = document.querySelector(`.filter-pill[data-filter="${key}"]`);
+  const btn = wrap.querySelector('.filter-pill-btn');
+  wrap.classList.toggle('is-on', !!text);
+  btn.classList.toggle('active', !!text);
+  btn.querySelector('.fpb-label').textContent = text || btn.dataset.name;
+  btn.title = full || '';
+  btn.setAttribute('aria-label', text ? `${btn.dataset.name}: ${full || text}` : btn.dataset.name);
+  wrap.querySelector('.filter-pill-x').hidden = !text;
+}
 
 let lastFilterChips = [];
 // The board's filters and search, as one line of words (bidi marks out)
@@ -5345,40 +5459,42 @@ function filterSummary() {
   return parts.join('؛ ');
 }
 function updateFilterUI() {
-  const dateOn = !!rangeFrom;
-  const amountOn = filterAmountMin.value.trim() !== '' || filterAmountMax.value.trim() !== '';
-  const ownerOn = peopleFilter.owner.sel.length > 0;
-  const partyOn = peopleFilter.party.sel.length > 0;
-  const benefOn = peopleFilter.benef.sel.length > 0;
-  const peopleOn = ownerOn || partyOn || benefOn;
-
-  pillBtn('popDate').classList.toggle('active', dateOn);
-  pillBtn('popAmount').classList.toggle('active', amountOn);
-  pillBtn('popPeople').classList.toggle('active', peopleOn);
-
-  filterClearBtn.classList.toggle('show', dateOn || amountOn || peopleOn || !!boardFocus);
-
-  const basisLabel = document.querySelector('input[name="dateBasis"]:checked').value === 'dueDate' ? 'تاریخ سررسید' : 'تاریخ ثبت';
+  const basis = dateBasis();
+  const span = dateBounds();
+  const amt = amountBounds();
+  const chosen = peoplePicked();
   const chips = [];
   if (boardFocus) chips.push({ key: 'focus', label: BOARD_FOCUS[boardFocus].label });
-  if (dateOn) {
-    const LRI = '\u2066', RLI = '\u2067', PDI = '\u2069';
-    const f = rangeFrom ? `${LRI}${toFa(rangeFrom.y)}/${toFa(pad2(rangeFrom.m))}/${toFa(pad2(rangeFrom.d))}${PDI}` : '…';
-    const t = rangeTo ? `${LRI}${toFa(rangeTo.y)}/${toFa(pad2(rangeTo.m))}/${toFa(pad2(rangeTo.d))}${PDI}` : '…';
-    chips.push({ key: 'date', label: `${basisLabel}: ${RLI}از ${f} تا ${t}${PDI}` });
-  }
-  if (amountOn) {
-    const loLabel = filterAmountMin.value.trim() || '۰';
-    const hiLabel = filterAmountMax.value.trim() || '۱۰٬۰۰۰٬۰۰۰٬۰۰۰';
-    chips.push({ key: 'amount', label: `مبلغ: ${loLabel} تا ${hiLabel} ریال` });
-  }
-  ['owner', 'party', 'benef'].forEach((role) => {
-    const f = peopleFilter[role];
-    if (f.sel.length) chips.push({ key: role, label: `${f.label}: ${peopleSummary(f.sel)}` });
-  });
+
+  if (span) {
+    const quick = datePresetOf(basis, datePreset);
+    const [from, to] = quick ? quick.range() : [rangeFrom, rangeTo];
+    const word = basis === 'dueDate' ? 'سررسید' : 'افزوده';
+    const full = `${basis === 'dueDate' ? 'تاریخ سررسید' : 'تاریخ افزودن'}: ${jalaliSpanText(from, to)}${quick ? ` (${quick.label})` : ''}`;
+    setPill('date', quick ? quick.pill : `${word} ${shortSpan(from, to)}`, full.replace(/[\u2066-\u2069]/g, ''));
+    chips.push({ key: 'date', label: full });
+  } else setPill('date', '');
+
+  if (amt) {
+    const lo = amt.min ? compactAmount(amt.min) : '', hi = amt.max < Infinity ? compactAmount(amt.max) : '';
+    const text = `${lo && hi ? `${lo} تا ${hi}` : lo ? `از ${lo}` : `تا ${hi}`} ﷼`;
+    const full = `مبلغ: ${amt.min ? `از ${toFa(groupDigits(String(amt.min)))} ` : ''}${amt.max < Infinity ? `تا ${toFa(groupDigits(String(amt.max)))} ` : ''}ریال`;
+    setPill('amount', text, full);
+    chips.push({ key: 'amount', label: full });
+  } else setPill('amount', '');
+
+  if (chosen.length) {
+    const roles = ['owner', 'party', 'benef'].filter((r) => peopleFilter[r].sel.length);
+    const full = roles.map((r) => `${peopleFilter[r].label}: ${peopleSummary(peopleFilter[r].sel)}`).join('؛ ');
+    setPill('people', chosen.length === 1 ? chosen[0].name : `${toFa(chosen.length)} نفر`, full);
+    roles.forEach((r) => chips.push({ key: r, label: `${peopleFilter[r].label}: ${peopleSummary(peopleFilter[r].sel)}` }));
+  } else setPill('people', '');
+
+  filterClearBtn.classList.toggle('show', chips.length > 0);
   lastFilterChips = chips;
-  activeFiltersRow.innerHTML = chips.map(c => `
-    <span class="active-chip" data-key="${c.key}">${c.html || escapeHtml(c.label)}
+  // the row under the pills keeps only what no pill shows: today's question
+  activeFiltersRow.innerHTML = chips.filter((c) => c.key === 'focus').map(c => `
+    <span class="active-chip" data-key="${c.key}">${escapeHtml(c.label)}
       <button type="button" data-clear="${c.key}" aria-label="حذف فیلتر ${escapeHtml(c.label.split(':')[0])}" title="حذف این فیلتر">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -5387,15 +5503,28 @@ function updateFilterUI() {
   activeFiltersRow.querySelectorAll('[data-clear]').forEach(btn => {
     btn.addEventListener('click', () => clearOneFilter(btn.dataset.clear));
   });
+  markPillOverflow();
+  renderOpenFilter();
 }
+// a phone's pill row wider than the screen scrolls, and says so at its edges
+const pillGroup = document.querySelector('.board-search-box .filter-pill-group');
+function markPillOverflow() {
+  pillGroup.classList.toggle('is-scroll', pillGroup.scrollWidth > pillGroup.clientWidth + 1);
+}
+window.addEventListener('resize', markPillOverflow);
 
 function clearOneFilter(key) {
-  if (key === 'date') { rangeFrom = null; rangeTo = null; updateRangeDisplay(); filterRangeField.classList.remove('error'); }
-  else if (key === 'amount') { filterAmountMin.value = ''; filterAmountMax.value = ''; setActivePreset(null); }
+  if (key === 'date') { datePreset = null; rangeFrom = null; rangeTo = null; updateRangeDisplay(); filterRangeField.classList.remove('error'); }
+  else if (key === 'amount') { filterAmountMin.value = ''; filterAmountMax.value = ''; syncAmountSlider(); }
+  else if (key === 'people') Object.keys(peopleFilter).forEach(clearPeopleFilter);
   else if (peopleFilter[key]) clearPeopleFilter(key);
   else if (key === 'focus') boardFocus = null;
   refreshTable();
 }
+document.querySelectorAll('.filter-pill-x').forEach((btn) => btn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  clearOneFilter(btn.dataset.clear);
+}));
 
 // No combined total in the toolbar — the reference page header carries
 // nothing heavier than the title and search either. Each status's own
@@ -5478,7 +5607,12 @@ function togglePopover(pop, btn) {
   btn.setAttribute('aria-expanded', 'true');
   activePopover = pop;
   activePopoverBtn = btn;
+  if (pop === popAmount) syncAmountSlider();
+  renderOpenFilter();
   positionPopover(pop, btn);
+  // the people's search takes the caret at once — not on a touch screen,
+  // where it would throw a keyboard over the list
+  if (pop === popPeople && window.matchMedia('(hover: hover) and (pointer: fine)').matches) peopleFilterInput.focus();
   window.addEventListener('scroll', repositionActivePopover, true);
   window.addEventListener('resize', repositionActivePopover);
   pushBackGuard();
@@ -5500,12 +5634,78 @@ document.addEventListener('click', (e) => {
   closePopover();
 });
 
-// ---- date-range radio + inputs ----
-document.querySelectorAll('input[name="dateBasis"]').forEach(r => r.addEventListener('change', refreshTable));
-// (date-range input is filled only via the calendar; no free-typing to wire up)
+// ---- filters (2026-10-14) ----
+// What the open popover shows depends on the other filters (its counts) —
+// drawn again whenever the board is
+function renderOpenFilter() {
+  if (activePopover === popDate) renderDatePresets();
+  else if (activePopover === popAmount) renderAmountHist();
+  else if (activePopover === popPeople) renderPeopleList();
+}
 
-// ---- amount filter: two plain grouped-digit fields, capped at 10 billion ----
+// ---- date: the basis, quick picks, the calendar's span ----
+// Each quick pick says how many cheques it would show, as the board stands;
+// one with none is quieter but still pickable. A pick closes the popover
+// (the pill says what's set); picking it again lets it go.
+function renderDatePresets() {
+  const basis = dateBasis();
+  const base = filterCheques('date');
+  datePresetsBox.innerHTML = DATE_PRESETS[basis].map((p) => {
+    const [from, to] = p.range();
+    const span = { from: toDateNum(from), to: toDateNum(to) };
+    const n = base.filter((c) => inDateSpan(c, basis, span)).length;
+    const on = p.key === datePreset;
+    return `<button type="button" class="date-preset${on ? ' on' : ''}${n ? '' : ' none'}" data-preset="${p.key}" aria-pressed="${on}" title="${escapeHtml(jalaliSpanText(from, to).replace(/[\u2066-\u2069]/g, ''))}">
+      <span>${p.label}</span><span class="dp-count" aria-label="${toFa(n)} چک">${toFa(n)}</span>
+    </button>`;
+  }).join('');
+}
+datePresetsBox.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-preset]');
+  if (!btn) return;
+  datePreset = datePreset === btn.dataset.preset ? null : btn.dataset.preset;
+  rangeFrom = null;
+  rangeTo = null;
+  filterRangeField.classList.remove('error');
+  updateRangeDisplay();
+  refreshTable();
+  if (datePreset) closePopover();
+});
+// Another basis keeps a pick both sides have («امروز», «این ماه»)
+document.querySelectorAll('input[name="dateBasis"]').forEach(r => r.addEventListener('change', () => {
+  if (datePreset && !datePresetOf(dateBasis(), datePreset)) datePreset = null;
+  updateRangeDisplay();
+  refreshTable();
+}));
+
+// ---- amount: where the amounts lie, two handles over them, or typed ----
+// The cheques' amounts as bars on a log scale (a few million to tens of
+// billions sit on one line), the chosen span dark; two handles on their
+// bottom edge; the two fields take a figure in full or the way it's said
+// («۵۰ میلیون», «۲٫۵ میلیارد», «۲۰ میلیون تومان»), and a short one
+// («۵۰») offers what it likely means. Under each field, the amount in words.
 const AMOUNT_FILTER_MAX = 100000000000;
+const AMOUNT_BINS = 28;
+const SLIDER_MAX = 1000;
+let amountDomain = null;   // [smallest, largest] amount on the board, or null
+
+// «۵۰ میلیون» → 50000000; «۲٫۵ میلیارد» → 2500000000; «۲۰ میلیون تومان» →
+// 200000000; «۳٬۲۰۰٬۰۰۰» → 3200000; null for nothing
+function parseAmountText(s) {
+  let v = toEnDigits(String(s || '')).replace(/[٠-٩]/g, (x) => String(x.charCodeAt(0) - 0x0660));
+  const toman = /تومان|تومن/.test(v);
+  v = v.replace(/[٬,]/g, '').replace(/[٫/]/g, '.');
+  const m = v.match(/(\d+(?:\.\d+)?)\s*(میلیارد|میلیون|هزار|م|k|m|b)?/i);
+  if (!m) return null;
+  let n = parseFloat(m[1]);
+  const u = (m[2] || '').toLowerCase();
+  if (u === 'میلیارد' || u === 'b') n *= 1e9;
+  else if (u === 'میلیون' || u === 'م' || u === 'm') n *= 1e6;
+  else if (u === 'هزار' || u === 'k') n *= 1e3;
+  if (toman) n *= 10;
+  return Math.min(Math.round(n), AMOUNT_FILTER_MAX);
+}
+const plainDigits = (s) => /^[\d۰-۹٠-٩٬,\s]*$/.test(s);
 
 function sanitizeAmountFilterInput(input) {
   let raw = toEnDigits(input.value).replace(/[^0-9]/g, '');
@@ -5513,53 +5713,167 @@ function sanitizeAmountFilterInput(input) {
   if (raw && parseInt(raw, 10) > AMOUNT_FILTER_MAX) raw = String(AMOUNT_FILTER_MAX);
   input.value = raw === '' ? '' : toFa(groupDigits(raw));
 }
-
-function setActivePreset(min, max) {
-  document.querySelectorAll('.af-preset').forEach(btn => {
-    btn.classList.toggle('active',
-      min !== null && parseInt(btn.dataset.min, 10) === min && parseInt(btn.dataset.max, 10) === max);
+// a figure said in words becomes its digits once the field is left
+function normalizeAmountInput(input) {
+  input.classList.remove('is-words');
+  if (plainDigits(input.value)) return;
+  const v = parseAmountText(input.value);
+  input.value = v ? toFa(groupDigits(String(v))) : '';
+  updateAmountWords();
+}
+function updateAmountWords() {
+  [[filterAmountMin, amountMinWords], [filterAmountMax, amountMaxWords]].forEach(([inp, out]) => {
+    const v = parseAmountText(inp.value);
+    out.textContent = v ? amountInWords(String(v)) : '';
+    out.title = out.textContent;
   });
 }
 
+function amountDomainOf() {
+  const xs = sentCheques().map(c => amountToRial(c.amount)).filter(a => a > 0);
+  if (xs.length < 2) return null;
+  const lo = Math.min(...xs), hi = Math.max(...xs);
+  return hi > lo ? [lo, hi] : null;
+}
+const amountAt = (pos, d) => Math.exp(Math.log(d[0]) + (pos / SLIDER_MAX) * (Math.log(d[1]) - Math.log(d[0])));
+const amountPos = (a, d) => Math.max(0, Math.min(SLIDER_MAX, Math.round(((Math.log(a) - Math.log(d[0])) / (Math.log(d[1]) - Math.log(d[0]))) * SLIDER_MAX)));
+// two significant figures, rounded outwards so the span keeps what's under
+// its handle: 47,312,000 → 47,000,000 (low end) or 48,000,000 (high end)
+function niceAmount(a, up) {
+  const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(a)) - 1));
+  return (up ? Math.ceil(a / p) : Math.floor(a / p)) * p;
+}
+function paintAmountTrack() {
+  amountSlider.style.setProperty('--lo', String(amountLo.value / SLIDER_MAX));
+  amountSlider.style.setProperty('--hi', String(amountHi.value / SLIDER_MAX));
+  // two handles on one spot: the one that can still move is on top
+  amountLo.style.zIndex = +amountLo.value > SLIDER_MAX / 2 ? '3' : '';
+}
+// the handles follow the fields
+function syncAmountSlider() {
+  const d = amountDomain = amountDomainOf();
+  if (d) {
+    const b = amountBounds();
+    amountLo.value = b && b.min > d[0] ? amountPos(b.min, d) : 0;
+    amountHi.value = b && b.max < d[1] ? amountPos(b.max, d) : SLIDER_MAX;
+    paintAmountTrack();
+    filterAmountMin.placeholder = compactAmount(niceAmount(d[0], false));
+    filterAmountMax.placeholder = compactAmount(niceAmount(d[1], true));
+  }
+  updateAmountWords();
+}
+function renderAmountHist() {
+  const d = amountDomain = amountDomainOf();
+  amountHist.hidden = !d;
+  amountSlider.hidden = !d;
+  const b = amountBounds();
+  amountCount.textContent = b ? `${toFa(getFilteredCheques().length)} چک در این بازه` : '';
+  if (!d) return;
+  const bins = new Array(AMOUNT_BINS).fill(0);
+  const L0 = Math.log(d[0]), span = Math.log(d[1]) - L0;
+  filterCheques('amount').forEach((c) => {
+    const a = amountToRial(c.amount);
+    if (a <= 0) return;
+    bins[Math.max(0, Math.min(AMOUNT_BINS - 1, Math.floor(((Math.log(a) - L0) / span) * AMOUNT_BINS)))]++;
+  });
+  const top = Math.max(1, ...bins);
+  amountHist.innerHTML = bins.map((n, i) => {
+    const lo = Math.exp(L0 + (i / AMOUNT_BINS) * span), hi = Math.exp(L0 + ((i + 1) / AMOUNT_BINS) * span);
+    const inSpan = !b || (hi >= b.min && lo <= b.max);
+    return `<i class="${inSpan ? 'in' : ''}" style="height:${n ? Math.max(10, Math.round((n / top) * 100)) : 0}%"></i>`;
+  }).join('');
+}
+// A handle moved: its own field takes the amount under it, rounded (an
+// end pulled all the way out lets that side go)
+function onAmountSlide(e) {
+  const d = amountDomain;
+  if (!d) return;
+  let lo = +amountLo.value, hi = +amountHi.value;
+  if (lo > hi) {
+    if (e.target === amountLo) amountLo.value = lo = hi;
+    else amountHi.value = hi = lo;
+  }
+  if (e.target === amountLo) filterAmountMin.value = lo > 0 ? toFa(groupDigits(String(niceAmount(amountAt(lo, d), false)))) : '';
+  else filterAmountMax.value = hi < SLIDER_MAX ? toFa(groupDigits(String(niceAmount(amountAt(hi, d), true)))) : '';
+  paintAmountTrack();
+  updateAmountWords();
+  refreshTable();
+}
+amountLo.addEventListener('input', onAmountSlide);
+amountHi.addEventListener('input', onAmountSlide);
+
+// «۵۰» typed: «۵۰ میلیون» and «۵۰ میلیارد» offered under the fields
+function renderAmountSuggest(input) {
+  const raw = toEnDigits(input.value).replace(/[^0-9]/g, '');
+  const n = parseInt(raw, 10);
+  let html = '';
+  if (document.activeElement === input && plainDigits(input.value) && n > 0 && n < 1000) {
+    html = [[1e6, 'میلیون'], [1e9, 'میلیارد']].filter(([u]) => n * u <= AMOUNT_FILTER_MAX)
+      .map(([u, w]) => `<button type="button" class="amount-sug" data-v="${n * u}" tabindex="-1">${toFa(n)} ${w}</button>`).join('');
+  }
+  amountSuggest.innerHTML = html;
+  amountSuggest.hidden = !html;
+  amountSuggest.dataset.for = input.id;
+}
+amountSuggest.addEventListener('mousedown', (e) => e.preventDefault());   // the field keeps the caret
+amountSuggest.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-v]');
+  if (!btn) return;
+  const input = document.getElementById(amountSuggest.dataset.for);
+  input.value = toFa(groupDigits(btn.dataset.v));
+  amountSuggest.hidden = true;
+  syncAmountSlider();
+  refreshTable();
+});
+
 [filterAmountMin, filterAmountMax].forEach(inp => {
   inp.addEventListener('input', () => {
-    sanitizeAmountFilterInput(inp);
-    setActivePreset(null);
+    if (plainDigits(inp.value)) sanitizeAmountFilterInput(inp);
+    inp.classList.toggle('is-words', !plainDigits(inp.value));
+    renderAmountSuggest(inp);
+    syncAmountSlider();
     refreshTable();
+  });
+  inp.addEventListener('focus', () => renderAmountSuggest(inp));
+  inp.addEventListener('blur', () => {
+    normalizeAmountInput(inp);
+    setTimeout(() => { if (document.activeElement !== filterAmountMin && document.activeElement !== filterAmountMax) amountSuggest.hidden = true; }, 0);
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); normalizeAmountInput(inp); amountSuggest.hidden = true; syncAmountSlider(); refreshTable(); }
   });
 });
 
-document.querySelectorAll('.af-preset').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const min = parseInt(btn.dataset.min, 10);
-    const max = parseInt(btn.dataset.max, 10);
-    filterAmountMin.value = min > 0 ? toFa(groupDigits(String(min))) : '';
-    filterAmountMax.value = max < AMOUNT_FILTER_MAX ? toFa(groupDigits(String(max))) : '';
-    setActivePreset(min, max);
-    refreshTable();
-  });
-});
-
-// ---- people filters: several people per role ----
-// Each field searches its role's people and opens a checklist (HeroUI's
-// ListBox with multiple selection) right under it, inside the popover —
-// not floating over the fields below, which it would cover while open: a
-// tick for the chosen ones, how many cheques each has, pick as many as
-// needed — the list stays open. The chosen people sit as tags under it,
-// each with its own ×.
-// Keyboard: ↑ ↓ move, Enter ticks, Backspace in the empty field drops the
-// last tag, Escape closes the list (a second Escape closes the popover).
+// ---- people: one search over the three roles ----
+// One field finds a name or a national id among the cheques' owners,
+// parties and beneficiaries. The list under it goes by role, the people
+// with the most cheques first — five a role until the field is typed in or
+// «و … نفر دیگر» opens the rest — each with how many cheques it would show
+// beside the other filters. Several can be ticked (HeroUI's ListBox with
+// multiple selection; the list stays): within a role any of them, across
+// roles all of them. The ticked ones sit as tags over the list, each with
+// its role's icon and its own ×.
+// Keyboard: ↑ ↓ move, Enter ticks (or opens the rest), Backspace in the
+// empty field drops the last tag, Escape empties the field, then closes.
 const benefKey = (name, nid) => normalizeName(name) + '|' + toEnDigits(nid || '').replace(/[^0-9]/g, '');
 const peopleFilter = {
-  owner: { label: 'صاحب چک', input: filterOwnerInput, list: filterOwnerList, tags: document.getElementById('filterOwnerTags'),
-    source: () => allOwners().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.owner) },
-  party: { label: 'طرف حساب', input: filterPartyInput, list: filterPartyList, tags: document.getElementById('filterPartyTags'),
-    source: () => allParties().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.party) },
-  benef: { label: 'ذینفع', input: filterBenefInput, list: filterBenefList, tags: document.getElementById('filterBenefTags'),
+  owner: { label: 'صاحب چک', source: () => allOwners().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.owner) },
+  party: { label: 'طرف حساب', source: () => allParties().map(name => ({ name, key: normalizeName(name) })), chequeKey: c => normalizeName(c.party) },
+  benef: { label: 'ذینفع',
     source: () => peopleInRole('benef').map(p => ({ name: p.full_name, nid: p.national_id || '', key: benefKey(p.full_name, p.national_id) })),
     chequeKey: c => benefKey(c.benef, c.nid) },
 };
-Object.values(peopleFilter).forEach(f => { f.sel = []; f.active = -1; f.shown = []; });
+Object.values(peopleFilter).forEach(f => { f.sel = []; });
+const ROLE_ICON = {
+  owner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>',
+  party: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>',
+  benef: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+};
+const PEOPLE_TOP = 5;
+let peopleOpenRoles = new Set();   // roles whose whole list is open
+let peopleRows = [];               // what the list shows: { role, x } or { role, more: true }
+let peopleActive = -1;
+let pickSeq = 0;                   // the order people were ticked in, for Backspace
 
 // «الف، ب و ۲ نفر دیگر»
 function peopleSummary(sel) {
@@ -5567,107 +5881,121 @@ function peopleSummary(sel) {
   if (names.length <= 2) return names.join('، ');
   return `${names.slice(0, 2).join('، ')} و ${toFa(names.length - 2)} نفر دیگر`;
 }
+// everyone ticked, in the order they were
+function peoplePicked() {
+  return Object.keys(peopleFilter).flatMap((role) => peopleFilter[role].sel.map((s) => ({ ...s, role }))).sort((a, b) => a.at - b.at);
+}
 
 function clearPeopleFilter(role) {
-  const f = peopleFilter[role];
-  f.sel = [];
-  f.input.value = '';
-  renderPeopleTags(role);
-  if (f.list.classList.contains('show')) renderPeopleList(role);
+  peopleFilter[role].sel = [];
+  renderPeopleTags();
 }
 
-function renderPeopleTags(role) {
-  const f = peopleFilter[role];
-  f.tags.hidden = f.sel.length === 0;
-  f.tags.innerHTML = f.sel.map(s => `<span class="mf-tag">${escapeHtml(s.name)}<button type="button" data-key="${escapeHtml(s.key)}" aria-label="برداشتن ${escapeHtml(s.name)}" title="برداشتن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>`).join('');
+function renderPeopleTags() {
+  const all = peoplePicked();
+  peopleFilterTags.hidden = all.length === 0;
+  peopleFilterTags.innerHTML = all.map(s => `<span class="mf-tag" title="${peopleFilter[s.role].label}: ${escapeHtml(s.name)}">${ROLE_ICON[s.role]}<span class="mf-tag-name">${escapeHtml(s.name)}</span><button type="button" data-role="${s.role}" data-key="${escapeHtml(s.key)}" aria-label="برداشتن ${escapeHtml(s.name)} (${peopleFilter[s.role].label})" title="برداشتن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>`).join('');
 }
 
-function renderPeopleList(role) {
-  const f = peopleFilter[role];
-  const q = normalizeName(f.input.value);
-  const qDigits = toEnDigits(f.input.value).replace(/[^0-9]/g, '');
-  const counts = new Map();
-  sentCheques().forEach(c => { const k = f.chequeKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
-  let items = f.source();
-  if (q || qDigits) {
-    items = items.filter(x => (q && normalizeName(x.name).includes(q)) ||
-      (qDigits && toEnDigits(x.nid || '').replace(/[^0-9]/g, '').includes(qDigits)));
-  }
-  f.shown = items.slice(0, 60);
-  if (f.active >= f.shown.length) f.active = f.shown.length - 1;
-  const chosen = new Set(f.sel.map(s => s.key));
-  f.list.innerHTML = f.shown.length
-    ? f.shown.map((x, i) => `<div class="ac-item mf-item${i === f.active ? ' active' : ''}" role="option" id="${f.list.id}-o${i}" aria-selected="${chosen.has(x.key)}" data-i="${i}">
+function renderPeopleList() {
+  const raw = peopleFilterInput.value;
+  const q = looseName(raw);
+  const qDigits = toEnDigits(raw).replace(/[^0-9]/g, '');
+  const typed = !!(q || qDigits);
+  peopleRows = [];
+  let html = '';
+  Object.keys(peopleFilter).forEach((role) => {
+    const f = peopleFilter[role];
+    const counts = new Map();
+    filterCheques(role).forEach(c => { const k = f.chequeKey(c); counts.set(k, (counts.get(k) || 0) + 1); });
+    const chosen = new Set(f.sel.map(s => s.key));
+    const seen = new Set();
+    let items = f.source().filter((x) => !seen.has(x.key) && seen.add(x.key));
+    if (typed) {
+      items = items.filter(x => (q && looseName(x.name).includes(q)) ||
+        (qDigits && toEnDigits(x.nid || '').replace(/[^0-9]/g, '').includes(qDigits)));
+    }
+    if (!items.length) return;
+    items = items.map(x => ({ ...x, n: counts.get(x.key) || 0, on: chosen.has(x.key) }))
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'fa'));
+    let shown = items, rest = 0;
+    if (!typed && !peopleOpenRoles.has(role) && items.length > PEOPLE_TOP + 1) {
+      shown = items.filter((x, i) => i < PEOPLE_TOP || x.on);
+      rest = items.length - shown.length;
+    }
+    html += `<div class="pf-sec" role="group" aria-label="${f.label}"><div class="pf-group" aria-hidden="true">${ROLE_ICON[role]}${f.label}</div>`;
+    shown.forEach((x) => {
+      const i = peopleRows.push({ role, x }) - 1;
+      html += `<div class="ac-item mf-item${i === peopleActive ? ' active' : ''}${x.n ? '' : ' is-zero'}" role="option" id="pfo${i}" aria-selected="${x.on}" data-i="${i}">
         <span class="mf-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
         <span class="ac-main">${escapeHtml(x.name)}</span>${x.nid ? `<span class="ac-tag">${toFa(x.nid)}</span>` : ''}
-        <span class="mf-count" title="تعداد چک">${toFa(counts.get(x.key) || 0)}</span>
-      </div>`).join('')
-    : `<div class="ac-empty mf-empty">کسی با این نام پیدا نشد</div>`;
-  f.input.setAttribute('aria-activedescendant', f.active >= 0 ? `${f.list.id}-o${f.active}` : '');
-  f.list.classList.add('show');
-  f.input.setAttribute('aria-expanded', 'true');
-  const act = f.list.querySelector('.mf-item.active');
+        <span class="mf-count" title="تعداد چک">${toFa(x.n)}</span>
+      </div>`;
+    });
+    if (rest) {
+      const i = peopleRows.push({ role, more: true }) - 1;
+      html += `<div class="ac-item pf-more${i === peopleActive ? ' active' : ''}" role="option" id="pfo${i}" data-i="${i}">و ${toFa(rest)} ${f.label} دیگر</div>`;
+    }
+    html += '</div>';
+  });
+  if (!peopleRows.length) html = `<div class="mf-empty">${typed ? 'کسی با این نام یا کد ملی پیدا نشد' : 'هنوز کسی ثبت نشده'}</div>`;
+  if (peopleActive >= peopleRows.length) peopleActive = peopleRows.length - 1;
+  peopleFilterList.innerHTML = html;
+  peopleFilterInput.setAttribute('aria-activedescendant', peopleActive >= 0 ? `pfo${peopleActive}` : '');
+  const act = peopleFilterList.querySelector('.ac-item.active');
   if (act) act.scrollIntoView({ block: 'nearest' });
 }
 
-function closePeopleList(role) {
-  const f = peopleFilter[role];
-  f.list.classList.remove('show');
-  f.input.setAttribute('aria-expanded', 'false');
-  f.active = -1;
+function togglePersonRow(i) {
+  const r = peopleRows[i];
+  if (!r) return;
+  peopleActive = i;
+  if (r.more) { peopleOpenRoles.add(r.role); renderPeopleList(); return; }
+  const f = peopleFilter[r.role];
+  const at = f.sel.findIndex(s => s.key === r.x.key);
+  if (at >= 0) f.sel.splice(at, 1); else f.sel.push({ name: r.x.name, key: r.x.key, at: ++pickSeq });
+  renderPeopleTags();
+  refreshTable();   // draws the list again, its counts too
 }
 
-function togglePerson(role, x) {
-  const f = peopleFilter[role];
-  const i = f.sel.findIndex(s => s.key === x.key);
-  if (i >= 0) f.sel.splice(i, 1); else f.sel.push({ name: x.name, key: x.key });
-  renderPeopleTags(role);
-  renderPeopleList(role);
-  refreshTable();
-}
-
-Object.keys(peopleFilter).forEach((role) => {
-  const f = peopleFilter[role];
-  f.input.addEventListener('focus', () => renderPeopleList(role));
-  f.input.addEventListener('click', () => { if (!f.list.classList.contains('show')) renderPeopleList(role); });
-  f.input.addEventListener('input', () => { f.active = -1; renderPeopleList(role); });
-  f.input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== f.input) closePeopleList(role); }, 120));
-  f.input.addEventListener('keydown', (e) => {
-    const open = f.list.classList.contains('show');
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (!open) { renderPeopleList(role); return; }
-      const n = f.shown.length;
-      if (!n) return;
-      f.active = e.key === 'ArrowDown' ? (f.active + 1) % n : (f.active <= 0 ? n - 1 : f.active - 1);
-      renderPeopleList(role);
-    } else if (e.key === 'Enter') {
-      if (open && f.active >= 0 && f.shown[f.active]) { e.preventDefault(); e.stopPropagation(); togglePerson(role, f.shown[f.active]); }
-    } else if (e.key === 'Escape') {
-      if (open) { e.preventDefault(); e.stopPropagation(); closePeopleList(role); }
-    } else if (e.key === 'Backspace' && f.input.value === '' && f.sel.length) {
-      f.sel.pop();
-      renderPeopleTags(role);
-      if (open) renderPeopleList(role);
-      refreshTable();
-    }
-  });
-  // mousedown, not click: the field keeps focus, so the list stays open
-  f.list.addEventListener('mousedown', (e) => {
-    const item = e.target.closest('.mf-item');
+peopleFilterInput.addEventListener('input', () => { peopleActive = -1; renderPeopleList(); });
+peopleFilterInput.addEventListener('keydown', (e) => {
+  const n = peopleRows.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault();
-    if (!item) return;
-    f.active = parseInt(item.dataset.i, 10);
-    togglePerson(role, f.shown[f.active]);
-  });
-  f.tags.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-key]');
-    if (!btn) return;
-    f.sel = f.sel.filter(s => s.key !== btn.dataset.key);
-    renderPeopleTags(role);
-    if (f.list.classList.contains('show')) renderPeopleList(role);
+    if (!n) return;
+    peopleActive = e.key === 'ArrowDown' ? (peopleActive + 1) % n : (peopleActive <= 0 ? n - 1 : peopleActive - 1);
+    renderPeopleList();
+  } else if (e.key === 'Enter') {
+    if (peopleActive < 0 && n) peopleActive = 0;
+    if (peopleActive >= 0) { e.preventDefault(); e.stopPropagation(); togglePersonRow(peopleActive); }
+  } else if (e.key === 'Escape' && peopleFilterInput.value) {
+    e.preventDefault(); e.stopPropagation();
+    peopleFilterInput.value = '';
+    peopleActive = -1;
+    renderPeopleList();
+  } else if (e.key === 'Backspace' && peopleFilterInput.value === '') {
+    const last = peoplePicked().pop();
+    if (!last) return;
+    const f = peopleFilter[last.role];
+    f.sel = f.sel.filter(s => s.key !== last.key);
+    renderPeopleTags();
     refreshTable();
-  });
+  }
+});
+// mousedown, not click: the field keeps the caret
+peopleFilterList.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  const item = e.target.closest('[data-i]');
+  if (item) togglePersonRow(parseInt(item.dataset.i, 10));
+});
+peopleFilterTags.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-key]');
+  if (!btn) return;
+  const f = peopleFilter[btn.dataset.role];
+  f.sel = f.sel.filter(s => s.key !== btn.dataset.key);
+  renderPeopleTags();
+  refreshTable();
 });
 
 // Filtering by status went away with the board: the three columns already
@@ -5681,14 +6009,17 @@ filterClearBtn.addEventListener('click', () => {
   searchNote.textContent = '';
   searchClearBtn.classList.remove('show');
   document.querySelector('input[name="dateBasis"][value="dueDate"]').checked = true;
+  datePreset = null;
   rangeFrom = null;
   rangeTo = null;
   updateRangeDisplay();
   filterRangeField.classList.remove('error');
   filterAmountMin.value = '';
   filterAmountMax.value = '';
-  setActivePreset(null);
+  syncAmountSlider();
   Object.keys(peopleFilter).forEach(clearPeopleFilter);
+  peopleFilterInput.value = '';
+  peopleOpenRoles.clear();
   showArchivedCheckbox.checked = false;
   refreshTable();
 });

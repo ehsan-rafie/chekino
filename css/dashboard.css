@@ -606,26 +606,6 @@ html[data-theme="dark"] .theme-toggle-btn .icon-moon { display: block; }
 .amount-filter-box input::placeholder { color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); text-align: right; }
 .af-sep { padding-bottom: 10px; color: var(--muted); font-size: 13px; font-variation-settings: var(--f-hint); flex-shrink: 0; }
 
-.amount-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.af-preset {
-  padding: 6px 10px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--rad-card);
-  background: var(--surface);
-  color: var(--muted);
-  font-family: inherit;
-  font-size: 12px;
-  font-variation-settings: var(--f-micro);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.af-preset:hover { border-color: var(--blue-600); color: var(--blue-700); }
-.af-preset.active { background: var(--blue-700); border-color: var(--blue-700); color: #fff; }
-
-.filter-people-row { display: flex; flex-direction: column; gap: 16px; }
-#filterOwnerList, #filterPartyList, #filterBenefList { max-height: 150px; }
-.filter-people-row .form-field { margin-bottom: 0; }
-.filter-people-row .ac-input { height: 42px; font-size: 13px; padding: 0 12px; }
 
 /* Archiving is a function of how long a cheque has sat, so the toggle for
    it lives with the date filter now that the status filter is gone. */
@@ -4412,15 +4392,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .status-opt:hover,
 .ac-item:hover,
 .ac-item.active { background: var(--accent-wash); color: var(--ink); }
-.af-preset {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--rad-xs);
-  background: var(--surface);
-  color: var(--ink-2);
-}
-.af-preset:hover { background: var(--accent-wash); color: var(--ink); border-color: var(--border-strong); }
 .radio-opt input,
 .checkbox-row input { accent-color: var(--accent); }
 
@@ -4901,8 +4872,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .amount-filter-box input:focus { border-color: var(--focus-edge); box-shadow: var(--ring); }
 .amount-filter-box input::placeholder { text-align: right; }
 
-/* Filter by people: the same icons as the form */
-.filter-people-row .ac-input { height: 38px; font-size: var(--t-body); }
 
 /* People window: one search and the order, over the tabs */
 .people-tools { display: flex; gap: 8px; align-items: center; padding: 0 20px 12px; flex-shrink: 0; }
@@ -5536,7 +5505,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 /* Phones: the three facet filters share their row evenly */
 @media (max-width: 700px) {
   .board-search-box .filter-pill-group { flex: 1 1 100%; }
-  .board-search-box .filter-pill-group .filter-pill-btn { flex: 1 1 0; justify-content: center; }
+  .board-search-box .filter-pill-group .filter-pill { flex: 1 1 0; }
+  .board-search-box .filter-pill-group .filter-pill-btn { flex: 1 1 0; min-width: 0; justify-content: center; }
 }
 
 /* Whom it was spent to (2026-10-14): on the right of the bottom row, quiet,
@@ -5657,22 +5627,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 }
 .mf-tag button svg { width: 11px; height: 11px; }
 .mf-tag button:hover { background: var(--state-bad-bg); color: var(--state-bad-text); }
-/* in the popover's flow, under its field */
-.filter-popover .mf-list {
-  position: static;
-  display: none;
-  width: auto;
-  max-height: 196px;
-  margin-top: 6px;
-  padding: 4px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: none;
-  animation: none;
-}
-.filter-popover .mf-list.show { display: block; }
 
 /* ── Lanes carry their status ──
    The page read as one white sheet. Each lane takes a faint wash of its
@@ -5879,3 +5833,254 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .check-card:focus-within .eye-btn { width: 28px; margin-inline-start: 0; opacity: 1; }
 @media (hover: none) { .check-card .eye-btn { display: none; } }
 @media (max-width: 860px) { .chk-row-bottom { margin-top: 8px; padding-top: 0; } }
+
+/* ═══ The board's filters (the owner's ask, 2026-10-14) ═══
+   Smarter, not busier. A pill says what its filter is set to and carries
+   its own ×; each popover counts what its choices would show. */
+.filter-pill { position: relative; display: inline-flex; min-width: 0; }
+.filter-pill .filter-pill-btn { min-width: 0; }
+.filter-pill .fpb-label { min-width: 0; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-pill.is-on .filter-pill-btn { padding-inline-end: 32px; }
+.filter-pill-x {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--hl-text);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background var(--dur-1) var(--ease);
+}
+.filter-pill-x[hidden] { display: none; }
+.filter-pill-x svg { width: 12px; height: 12px; }
+.filter-pill-x:hover { background: color-mix(in srgb, var(--hl) 16%, transparent); }
+/* Phones: the pills keep their words — they share the row while they
+   fit, and it scrolls sideways once a set one needs more room; the clear
+   button stays at the row's end */
+@media (max-width: 700px) {
+  .board-search-box .filter-pill-group {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-wrap: nowrap;
+    margin: -3px;
+    padding: 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .board-search-box .filter-pill-group::-webkit-scrollbar { display: none; }
+  .board-search-box .filter-pill-group.is-scroll {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+    mask-image: linear-gradient(to left, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  }
+  .board-search-box .filter-pill-group .filter-pill { flex: 1 0 auto; }
+  .board-search-box .filter-pill-group .filter-pill-btn { flex: 1 0 auto; }
+  .filter-pill .fpb-label { max-width: 170px; }
+  .filter-pill-x::after { content: ''; position: absolute; inset: -11px -6px; }
+}
+
+.fp-date, .fp-amount { width: 340px; }
+.fp-people { width: 360px; }
+@media (max-width: 480px) { .fp-date, .fp-amount, .fp-people { width: calc(100vw - 32px); } }
+
+/* Which date: two tabs in a well (HeroUI's Tabs), the chosen one lifted */
+.fp-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: var(--rad-ctl);
+  background: var(--surface-sunken);
+}
+.fp-seg-opt { position: relative; display: block; cursor: pointer; }
+.fp-seg-opt input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.fp-seg-opt span {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--ink-2);
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.fp-seg-opt:hover span { color: var(--ink); }
+.fp-seg-opt input:checked + span { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1), var(--inset-hairline); }
+.fp-seg-opt input:focus-visible + span { outline: 2px solid var(--focus-outline); outline-offset: 1px; }
+
+/* Quick picks, two to a row, each with how many it would show */
+.date-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+.date-preset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--rad-xs);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-cap);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.date-preset:hover { background: var(--accent-wash); border-color: var(--border-strong); }
+.date-preset .dp-count { color: var(--muted); font-size: var(--t-micro); font-variation-settings: var(--f-num); }
+.date-preset.none { color: var(--muted); }
+.date-preset.on { border-color: color-mix(in srgb, var(--hl) 45%, transparent); background: var(--hl-soft); color: var(--hl-text); }
+.date-preset.on .dp-count { color: var(--hl-text); }
+#filterRangeInput::placeholder { color: var(--muted); font-variation-settings: var(--f-hint); }
+.fp-date .archive-toggle { margin-top: 12px; padding-top: 12px; }
+
+/* The calendar's span under the pointer, before its second day */
+.cal-day.range-hover { background: color-mix(in srgb, var(--hl-soft) 60%, transparent); color: var(--hl-text); }
+.cal-day.range-hover-end { box-shadow: inset 0 0 0 1.5px var(--hl); color: var(--hl-text); }
+
+/* Amount: the cheques as bars, smallest on the right; the chosen span dark */
+.amount-hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 56px;
+  padding: 0 9px;
+}
+.amount-hist[hidden], .amount-slider[hidden] { display: none; }
+.amount-hist i {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px 3px 0 0;
+  background: var(--border);
+  transition: background var(--dur-1) var(--ease), height var(--dur-2) var(--ease);
+}
+.amount-hist i.in { background: var(--ink-2); }
+/* two handles on one track (two range inputs, one over the other) */
+.amount-slider { position: relative; height: 22px; margin: -11px 0 10px; --lo: 0; --hi: 1; }
+.amount-slider::before,
+.amount-slider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+.amount-slider::before { inset-inline: 9px; background: var(--border); }
+.amount-slider::after {
+  inset-inline-start: calc(9px + (100% - 18px) * var(--lo));
+  inset-inline-end: calc(9px + (100% - 18px) * (1 - var(--hi)));
+  background: var(--ink);
+}
+.amount-slider input[type="range"] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.amount-slider input[type="range"]::-webkit-slider-runnable-track { height: 22px; background: none; }
+.amount-slider input[type="range"]::-moz-range-track { background: none; }
+.amount-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  cursor: grab;
+  pointer-events: auto;
+}
+.amount-slider input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: grab;
+  pointer-events: auto;
+}
+.amount-slider input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.08); }
+.amount-slider input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--hl-soft); border-color: var(--hl); }
+.amount-slider input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--hl-soft); border-color: var(--hl); }
+.amount-slider input[type="range"]:focus { outline: none; }
+.amount-filter-col { flex: 1; min-width: 0; }
+.amount-filter-col .amount-filter-box { flex: none; }
+.amount-filter-box input::placeholder { font-variation-settings: var(--f-hint); }
+.amount-filter-box input.is-words { direction: rtl; text-align: right; }
+.amount-words {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.amount-words:empty { display: none; }
+.amount-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.amount-suggest[hidden] { display: none; }
+.amount-sug {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--rad-xs);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.amount-sug:hover { border-style: solid; background: var(--accent-wash); }
+.amount-count { margin-top: 10px; color: var(--muted); font-size: var(--t-micro); }
+.amount-count:empty { display: none; }
+
+/* People: one search, the list by role under it */
+.fp-people .form-field { margin-bottom: 0; }
+.fp-people .ac-input { height: 38px; padding: 0 12px; font-size: var(--t-body); }
+.pf-tags { margin-top: 10px; }
+.mf-tag svg { flex: none; width: 12px; height: 12px; color: var(--muted); }
+.mf-tag button svg { color: inherit; }
+.mf-tag-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pf-list {
+  max-height: 300px;
+  margin: 8px -6px -6px;
+  padding: 0 6px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pf-sec + .pf-sec { margin-top: 4px; }
+.pf-group {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--t-micro);
+  font-variation-settings: var(--f-label);
+}
+.pf-group svg { width: 13px; height: 13px; }
+.pf-list .mf-item { padding: 8px; font-size: var(--t-cap); }
+.pf-list .mf-item.is-zero .ac-main { color: var(--muted); }
+.pf-more { justify-content: flex-start; padding: 6px 8px 6px 34px; color: var(--muted); font-size: var(--t-micro); padding-inline-start: 34px; }
+.pf-more:hover, .pf-more.active { color: var(--ink); }
