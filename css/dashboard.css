@@ -5951,7 +5951,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 56px;
+  height: 30px;
   padding: 0 9px;
 }
 .amount-hist[hidden], .amount-slider[hidden] { display: none; }
@@ -6023,6 +6023,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .amount-filter-col .amount-filter-box { flex: none; }
 .amount-filter-box input::placeholder { font-variation-settings: var(--f-hint); }
 .amount-filter-box input.is-words { direction: rtl; text-align: right; }
+/* a hint in words («۱۵۰ میلیون») reads right to left — a field set left to
+   right for its digits put the number after the word */
+.amount-filter-box input:placeholder-shown { direction: rtl; text-align: right; }
 .amount-words {
   margin-top: 4px;
   overflow: hidden;

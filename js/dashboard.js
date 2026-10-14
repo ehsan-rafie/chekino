@@ -5719,9 +5719,9 @@ function normalizeAmountInput(input) {
   if (plainDigits(input.value)) return;
   const v = parseAmountText(input.value);
   input.value = v ? toFa(groupDigits(String(v))) : '';
-  updateAmountWords();
+  updateAmountFilterWords();
 }
-function updateAmountWords() {
+function updateAmountFilterWords() {
   [[filterAmountMin, amountMinWords], [filterAmountMax, amountMaxWords]].forEach(([inp, out]) => {
     const v = parseAmountText(inp.value);
     out.textContent = v ? amountInWords(String(v)) : '';
@@ -5760,7 +5760,7 @@ function syncAmountSlider() {
     filterAmountMin.placeholder = compactAmount(niceAmount(d[0], false));
     filterAmountMax.placeholder = compactAmount(niceAmount(d[1], true));
   }
-  updateAmountWords();
+  updateAmountFilterWords();
 }
 function renderAmountHist() {
   const d = amountDomain = amountDomainOf();
@@ -5796,7 +5796,7 @@ function onAmountSlide(e) {
   if (e.target === amountLo) filterAmountMin.value = lo > 0 ? toFa(groupDigits(String(niceAmount(amountAt(lo, d), false)))) : '';
   else filterAmountMax.value = hi < SLIDER_MAX ? toFa(groupDigits(String(niceAmount(amountAt(hi, d), true)))) : '';
   paintAmountTrack();
-  updateAmountWords();
+  updateAmountFilterWords();
   refreshTable();
 }
 amountLo.addEventListener('input', onAmountSlide);
