@@ -659,7 +659,14 @@
   // ---- scans: a row a cheque ----
   const dropBtn = $('bulkDropBtn'), fileInput = $('bulkFile'), rowFileInput = $('bulkRowFile');
   dropBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => { const files = [...fileInput.files]; fileInput.value = ''; if (files.length) addScans(files); });
+  fileInput.addEventListener('change', () => {
+    const files = [...fileInput.files];
+    fileInput.value = '';
+    // picked from the window's two ways: the form opens with them
+    if (pickingNew) { pickingNew = false; if (files.length && choosing) startPhoto(files); return; }
+    if (files.length) addScans(files);
+  });
+  fileInput.addEventListener('cancel', () => { pickingNew = false; });
   let fileFor = null;
   function pickFileFor(row) { fileFor = row; rowFileInput.click(); }
   rowFileInput.addEventListener('change', () => {
@@ -722,7 +729,13 @@
     showScans();
     changed();
     pump();
-    if (made.length) { setActive(made[0]); made[0].ui.serial.focus(); }
+    // the first row's serial takes the cursor — unless a field is being
+    // typed in (the photos picked first: the party, as the rows come)
+    if (made.length) {
+      setActive(made[0]);
+      const a = document.activeElement;
+      if (!(a && overlay.contains(a) && a.matches('input, textarea'))) made[0].ui.serial.focus();
+    }
   }
 
   // «اصلاح برش اسکن»: the scan's frames again; what changed is cut again
@@ -794,7 +807,7 @@
   // ---- dropped or pasted: on a row it's that row's, elsewhere a scan ----
   const filesOf = (list) => [...(list || [])].filter(isImageFile);
   overlay.addEventListener('dragover', (e) => {
-    if (!st || !e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+    if ((!st && !choosing) || !e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
     e.preventDefault();
     overlay.classList.add('is-dragging');
     const rowEl = e.target.closest && e.target.closest('.bulk-row');
@@ -807,9 +820,10 @@
     rowsEl.querySelectorAll('.bulk-row.is-drop').forEach((r) => r.classList.remove('is-drop'));
   });
   overlay.addEventListener('drop', (e) => {
-    if (!st || !e.dataTransfer) return;
+    if ((!st && !choosing) || !e.dataTransfer) return;
     const files = filesOf(e.dataTransfer.files);
     overlay.classList.remove('is-dragging');
+    if (!st) { if (files.length) { e.preventDefault(); startPhoto(files); } return; }
     rowsEl.querySelectorAll('.bulk-row.is-drop').forEach((r) => r.classList.remove('is-drop'));
     if (!files.length) return;
     e.preventDefault();
@@ -819,10 +833,11 @@
     else addScans(files);
   });
   overlay.addEventListener('paste', (e) => {
-    if (!st || !e.clipboardData) return;
+    if ((!st && !choosing) || !e.clipboardData) return;
     const files = filesOf([...e.clipboardData.items].filter((it) => it.kind === 'file').map((it) => it.getAsFile()));
     if (!files.length) return;   // text: pasted as usual
     e.preventDefault();
+    if (!st) { startPhoto(files); return; }
     const rowEl = document.activeElement && document.activeElement.closest && document.activeElement.closest('.bulk-row');
     const row = rowEl ? st.rows.find((r) => r.ref === rowEl.dataset.ref) : null;
     if (row && !row.photo) rowPhotoFromFile(row, files[0]);
@@ -1380,7 +1395,15 @@
     else if (!me.serverId) mirrorDel(me.clientId);
   }
   function closePanel({ quiet } = {}) {
-    if (!st) { overlay.classList.remove('show'); return; }
+    if (!st) {
+      // only its two ways were open: nothing made; the bar over the board
+      // read again (a list just closed may have reached the server since)
+      leaveChooser();
+      overlay.classList.remove('show', 'is-dragging');
+      document.body.classList.remove('bulk-open');
+      refreshResume();
+      return;
+    }
     closeLists();
     closeCalendar();
     const kept = hasWork();
@@ -1397,7 +1420,44 @@
   }
   $('bulkClose').addEventListener('click', () => closePanel());
 
-  // «افزودن گروهی»: an unfinished one is offered first
+  // The window's two ways (the owner's ask, 2026-10-14): before anything is
+  // made it opens on two tiles in its middle — «افزودن دستی», the form;
+  // «افزودن با عکس», the photos picked first (or dropped, or pasted on the
+  // window), then the form with a row for each cheque found on them
+  const chooseEl = $('bulkChoose');
+  let choosing = false;     // the two ways on show
+  let pickingNew = false;   // the photo picker open for them
+  function openChooser() {
+    choosing = true;
+    pushBackGuard();
+    overlay.classList.remove('is-photo', 'has-photos');
+    overlay.classList.add('show', 'is-choosing');
+    document.body.classList.add('bulk-open');
+    chooseEl.hidden = false;
+    setTimeout(() => { if (choosing) chooseEl.querySelector('.bulk-tile').focus(); }, 50);
+  }
+  function leaveChooser() {
+    choosing = false;
+    pickingNew = false;
+    overlay.classList.remove('is-choosing');
+    chooseEl.hidden = true;
+  }
+  function startPhoto(files) { leaveChooser(); startNew('photo'); addScans(files); }
+  chooseEl.querySelector('[data-kind="manual"]').addEventListener('click', () => { leaveChooser(); startNew('manual'); });
+  chooseEl.querySelector('[data-kind="photo"]').addEventListener('click', () => { pickingNew = true; fileInput.click(); });
+  // right and left go between the two
+  chooseEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const tiles = [...chooseEl.querySelectorAll('.bulk-tile')];
+    const i = tiles.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    tiles[(i + 1) % tiles.length].focus();
+  });
+
+  // «افزودن گروهی»: an unfinished one is offered first; then its two ways
+  // (the palette names a way: «دستی» goes straight to the form, «با عکس»
+  // to the picker)
   async function openBulk(kind) {
     if (!enabled()) return;
     const open = await openBatches();
@@ -1412,24 +1472,11 @@
       if (answer === 'continue') { b.open(); return; }
       if (answer !== 'new') return;
     }
-    startNew(kind);
+    if (kind === 'manual') { startNew('manual'); return; }
+    openChooser();
+    if (kind === 'photo') { pickingNew = true; fileInput.click(); }
   }
-  // «افزودن گروهی»: its two ways, in a small menu under it (spec 5.1)
-  const entryBtn = $('bulkAddBtn'), entryMenu = $('bulkEntryMenu');
-  entryBtn.setAttribute('aria-haspopup', 'menu');
-  entryBtn.setAttribute('aria-expanded', 'false');
-  entryBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (togglePopover(entryMenu, entryBtn)) entryMenu.querySelector('button').focus();
-  });
-  entryMenu.addEventListener('click', (e) => e.stopPropagation());
-  entryMenu.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => { closePopover(); openBulk(b.dataset.kind); }));
-  entryMenu.addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
-    const items = [...entryMenu.querySelectorAll('button')];
-    items[(items.indexOf(document.activeElement) + 1) % items.length].focus();
-  });
+  $('bulkAddBtn').addEventListener('click', () => openBulk());
 
   // ---------------------------------------------------------------
   // The bar over the board: unfinished batches

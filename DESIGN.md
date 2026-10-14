@@ -763,11 +763,21 @@ holds it, and goes on Escape; it keeps its own place, and a plain message
 that comes meanwhile shows above it.
 
 **Bulk add** (`js/bulk-add.js`, `css/bulk.css`; photos: `js/bulk-photos.js`,
-`js/cheque-split.js` and its worker). For adding many cheques at once. An
-outlined «افزودن گروهی» sits beside «افزودن چک»; it opens a small menu of
-its two ways, each with a line under it: «با عکس اسکن» («عکسِ چند چک را بده،
-خودم جدا می‌کنم») and «دستی با سریال» («سریال‌ها را بچسبان»). Both open the
-same window; «با عکس» puts the scan button first.
+`js/cheque-split.js` and its worker). For adding many cheques at once.
+- **The way in** (the owner's ask, 2026-10-14). Beside «افزودن چک», an
+  outlined square with its icon; its words «افزودن گروهی» unroll beside it on
+  hover or keyboard focus (a phone keeps the square). Pressed — an
+  unfinished one is asked about first — the window opens on its two ways,
+  two tiles in its middle and nothing else yet: «افزودن دستی» («سریال‌ها را
+  بچسبان، یا ردیف به ردیف بنویس») opens the form; «افزودن با عکس» («عکس چند
+  چک را بده، خودم جدایشان می‌کنم») opens the picker for several photos first
+  and then the form with a row for each cheque found on them (picking
+  nothing stays on the tiles; photos dropped or pasted on the window take
+  the same way). A tile is an icon in a soft square over its name and a
+  line; a phone stacks them, each icon beside its words. ← → go between
+  them; × or Escape closes, nothing made. Rows found on a scan take the
+  cursor only when no field is being typed in. The palette's two entries go
+  straight to a way.
 - **The window.** A large window over the board in the cheque form's
   system: radius 24, the same fields and lists.
 - **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»

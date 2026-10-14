@@ -6,13 +6,17 @@
    footer counts and saves. On a phone each row becomes a card.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── the way in, beside «افزودن چک»: outlined, second to it ── */
+/* ── the way in, beside «افزودن چک»: an outlined square with its icon;
+   its words unroll beside it on hover or keyboard focus (2026-10-14) ── */
 .bulk-entry-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 0;
   height: 36px;
-  padding: 0 14px;
+  min-width: 36px;
+  padding: 0 9px;
+  overflow: hidden;
+  white-space: nowrap;
   border: 1px solid var(--border);
   border-radius: var(--rad-ctl);
   background: var(--surface);
@@ -23,8 +27,18 @@
   cursor: pointer;
   transition: background var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
 }
-.bulk-entry-btn svg { width: 16px; height: 16px; color: var(--ink-2); }
-.bulk-entry-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.bulk-entry-btn svg { flex-shrink: 0; width: 16px; height: 16px; color: var(--ink-2); }
+.bulk-entry-btn > span {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.32s var(--ease), opacity 0.22s var(--ease), margin 0.32s var(--ease);
+}
+.bulk-entry-btn:hover, .bulk-entry-btn:focus-visible { background: var(--surface-2); border-color: var(--border-strong); }
+.bulk-entry-btn:hover > span, .bulk-entry-btn:focus-visible > span { max-width: 140px; opacity: 1; margin-inline-start: 7px; }
+.bulk-entry-btn:hover svg, .bulk-entry-btn:focus-visible svg { color: var(--ink); }
+@media (hover: none) { .bulk-entry-btn > span { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .bulk-entry-btn > span { transition: opacity 0.15s var(--ease); } }
 .bulk-entry-btn[hidden] { display: none; }
 .board-page-head .bulk-entry-btn { margin-inline-start: 8px; margin-inline-end: auto; }
 
@@ -434,13 +448,61 @@ body.bulk-open { overflow: hidden; }
 .bulk-photo-menu button.is-danger { color: var(--state-bad-text); }
 
 /* «افزودن گروهی»: its two ways */
-.filter-popover.bulk-entry-menu { width: 300px; padding: 6px; }
-.bulk-entry-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; border-radius: 12px; background: none; color: var(--ink); font: inherit; text-align: start; cursor: pointer; }
-.bulk-entry-item svg { flex: none; width: 20px; height: 20px; color: var(--ink-2); }
-.bulk-entry-item span { display: flex; flex-direction: column; gap: 2px; }
-.bulk-entry-item b { font-size: var(--t-body); font-variation-settings: var(--f-label); }
-.bulk-entry-item small { font-size: var(--t-micro); color: var(--muted); }
-.bulk-entry-item:hover, .bulk-entry-item:focus-visible { outline: none; background: var(--surface-2); }
+/* ── its two ways, before anything is made: two tiles in the window's
+   middle; the rest of the window waits until one is taken ── */
+.bulk-overlay.is-choosing .bulk-common,
+.bulk-overlay.is-choosing .bulk-paste,
+.bulk-overlay.is-choosing .bulk-main,
+.bulk-overlay.is-choosing .bulk-foot { display: none; }
+.bulk-overlay.is-choosing .bulk-title-row { margin-bottom: 0; }
+.bulk-choose { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 32px 22px; overflow: auto; }
+.bulk-choose[hidden] { display: none; }
+.bulk-choose-tiles { display: grid; grid-template-columns: repeat(2, 300px); gap: 16px; }
+.bulk-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 22px 26px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.bulk-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--ink);
+  transition: background var(--dur-2) var(--ease);
+}
+.bulk-tile-icon svg { width: 26px; height: 26px; }
+.bulk-tile b { font-size: var(--t-value); font-variation-settings: 'wght' 620; }
+.bulk-tile small { font-size: var(--t-cap); line-height: 1.7; color: var(--muted); }
+.bulk-tile:hover { border-color: var(--border-strong); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.bulk-tile:hover .bulk-tile-icon { background: var(--surface-sunken); }
+.bulk-tile:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.bulk-tile:active { transform: translateY(0) scale(0.98); }
+/* photos dragged over the two ways: the photo way takes them */
+.bulk-overlay.is-choosing.is-dragging .bulk-tile[data-kind="photo"] { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 5%, var(--surface)); }
+@media (prefers-reduced-motion: reduce) { .bulk-tile:hover, .bulk-tile:active { transform: none; } }
+@media (max-width: 600px) {
+  /* a phone: one under the other, each its icon beside its words */
+  .bulk-choose { align-items: flex-start; padding: 20px 14px; }
+  .bulk-choose-tiles { grid-template-columns: minmax(0, 1fr); width: 100%; gap: 12px; }
+  .bulk-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; row-gap: 2px; align-items: center; padding: 16px; text-align: start; }
+  .bulk-tile-icon { grid-row: 1 / 3; width: 48px; height: 48px; margin: 0; border-radius: 14px; }
+  .bulk-tile-icon svg { width: 22px; height: 22px; }
+}
 
 /* the crop editor: a frame a cheque, numbered, on the photo editor's dark well */
 .se-card { max-width: 960px; }
