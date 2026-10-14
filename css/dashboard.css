@@ -5539,6 +5539,43 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   .board-search-box .filter-pill-group .filter-pill-btn { flex: 1 1 0; justify-content: center; }
 }
 
+/* Whom it was spent to (2026-10-14): on the right of the bottom row, quiet,
+   the house of «خرج شده به» before it */
+.chk-party {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--t-micro);
+  white-space: nowrap;
+}
+.chk-party svg { flex: none; width: 13px; height: 13px; opacity: 0.7; }
+
+/* Long words on a card (dashboard.js markClipped): cut at the edge they run
+   off, which fades; under the pointer they slide to show the rest */
+.mq { display: block; min-width: 0; overflow: hidden; white-space: nowrap; }
+.chk-benef .mq-in, .mq-in {
+  display: inline-block;
+  overflow: visible;
+  text-overflow: clip;
+  transform: translateX(0);
+  transition: transform 0.35s var(--ease);
+}
+.mq.is-clipped {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 18px);
+  mask-image: linear-gradient(to right, transparent, #000 18px);
+}
+.mq.is-moving {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+}
+.mq.is-moving .mq-in { transform: translateX(var(--mq-dist, 0px)); transition: transform var(--mq-dur, 1s) linear 0.25s; }
+@media (prefers-reduced-motion: reduce) {
+  .mq-in, .mq.is-moving .mq-in { transition-duration: 0s; transition-delay: 0s; }
+}
+
 /* A problem cheque's reason, in the bottom row beside its red mark */
 .chk-row-bottom { min-width: 0; }
 .chk-row-bottom .chk-icon-group { min-width: 0; flex: 0 1 auto; }
@@ -5709,14 +5746,19 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
    in a thin footer under a hairline, on a faint band, so the card reads as
    the cheque above and what to do with it below instead of one loose
    stack. The 28px buttons keep their 44px tap area on touch screens. */
-.check-card { --card-pad: 16px; padding: 14px var(--card-pad) 0; }
+.check-card { --card-pad: 16px; padding: 14px var(--card-pad) 12px; }
 .chk-row-mid { margin-top: 8px; }
+/* the bottom row (2026-10-14): no hairline, no band — the party on the
+   right, the buttons on the left, the eye beside the status only under the
+   pointer (a click on the card opens it all the same) */
 .chk-row-bottom {
-  margin: 12px calc(var(--card-pad) * -1) 0;
-  padding: 7px 12px;
-  border-top: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+  margin: 10px 0 0;
+  padding: 0;
+  border-top: none;
+  background: none;
+  gap: 10px;
 }
+.chk-row-bottom .chk-icon-group { margin-inline-start: auto; }
 .eye-btn, .receipt-btn, .status-dot-btn { width: 28px; height: 28px; border-radius: 8px !important; }
 .status-dot-btn svg { width: 14px; height: 14px; }
 
@@ -5758,20 +5800,6 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 :root[data-theme="dark"] .app-tooltip { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-2); }
 @media (prefers-reduced-motion: reduce) { .app-tooltip { transition: opacity 0.12s linear; transform: none; } }
 
-/* How long a card has waited (spec 9.4): days since it went to its owner,
-   with the channel's mark; a problem one, days since it was found */
-.chk-age {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  font-size: var(--t-micro);
-  color: var(--muted);
-  white-space: nowrap;
-}
-.chk-age-ch { display: inline-flex; width: 13px; height: 13px; flex: none; }
-.chk-age-ch svg { width: 13px; height: 13px; }
-.chk-age.is-stale { color: var(--state-bad-text); }
 /* under the search box: what a pasted list of serials found (H9) */
 .search-note { margin: -6px 0 12px; font-size: var(--t-micro); color: var(--ink-2); line-height: 1.7; }
 .search-note:empty { display: none; }
@@ -5834,3 +5862,20 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 .header-company::before { content: ''; flex-shrink: 0; width: 1px; height: 16px; background: var(--border-strong); }
 .header-company[hidden] { display: none; }
 @media (max-width: 720px) { .header-company { display: none; } }
+
+/* The card's eye (2026-10-14): beside the status button, folded away until
+   the pointer is on the card or the keyboard reaches it; with no pointer to
+   hover (a touch screen) it stays away — a tap on the card opens it */
+.check-card .eye-btn {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin-inline-start: -6px;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease), background var(--dur-1) var(--ease);
+}
+.check-card:hover .eye-btn,
+.check-card:focus-within .eye-btn { width: 28px; margin-inline-start: 0; opacity: 1; }
+@media (hover: none) { .check-card .eye-btn { display: none; } }
+@media (max-width: 860px) { .chk-row-bottom { margin-top: 8px; padding-top: 0; } }

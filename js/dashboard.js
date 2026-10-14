@@ -6030,6 +6030,8 @@ const ICON_CALENDAR = icon('calendar');
 const ICON_PERSON = icon('user');
 const ICON_SERIAL = icon('serial');
 const ICON_AMOUNT = icon('amount');
+// whom it was spent to: the house the cheque window's «خرج شده به» shows
+const ICON_PARTY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg>';
 
 // The serial is what a person actually says out loud to mean this specific
 // cheque ("چک ۴۸۲۹۱۰"), so it carries the card's strongest weight. Under it,
@@ -6045,28 +6047,43 @@ let flyingId = null;
 let flight = null;   // its copy's animation, while it runs
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
-// How long it has waited (spec 9.4): a pending one, days since it went to
-// its owner and by which channel; a problem one, days since it was found
-function cardAgeHtml(c) {
-  const status = c.status || 'pending';
-  if (status === 'pending' && c.sendDate) {
-    const d = daysSinceJalali(c.sendDate);
-    if (d < 0) return '';
-    const sent = (c.history || []).filter((h) => h.event === 'sent').pop();
-    const chs = c.channels || [];
-    const chId = channelIdOf((sent && sent.channel) || chs[chs.length - 1] || '');
-    const ch = CHANNELS.find((x) => x.id === chId);
-    const text = d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
-    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}`;
-    return `<span class="chk-age" data-tip="${escapeHtml(tip)}">${ch ? `<span class="chk-age-ch" aria-hidden="true">${ch.icon}</span>` : ''}${text}</span>`;
-  }
-  if (status === 'problem' && c.statusChangedAt) {
-    const d = daysSinceJalali(c.statusChangedAt);
-    if (d < 1) return '';
-    return `<span class="chk-age is-stale" data-tip="${toFa(d)} روز از «مشکل در ثبت»">${toFa(d)} روز</span>`;
-  }
-  return '';
+// Long words on a card — a name, a problem's reason (the owner's ask,
+// 2026-10-14): cut at the edge they run off, which fades; under the pointer
+// they slide, at an even pace, to show the rest, and back when it leaves.
+// (.mq is the window, .mq-in the words; markClipped marks the ones cut.)
+function markClipped(root) {
+  requestAnimationFrame(() => {
+    (root || document).querySelectorAll('.mq').forEach((m) => {
+      const inner = m.firstElementChild;
+      m.classList.toggle('is-clipped', !!inner && inner.offsetWidth > m.clientWidth + 1);
+    });
+  });
 }
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType === 'touch') return;
+  const m = e.target.closest && e.target.closest('.mq');
+  if (!m || m.classList.contains('is-moving')) return;
+  // measured once the card has settled under the pointer: the eye opening
+  // beside the status narrows the bottom row, and may cut what wasn't cut
+  setTimeout(() => {
+    if (!m.isConnected || !m.matches(':hover') || m.classList.contains('is-moving')) return;
+    const dist = m.firstElementChild.offsetWidth - m.clientWidth;
+    if (dist <= 1) return;
+    m.classList.add('is-clipped');
+    m.style.setProperty('--mq-dist', (dist + 6) + 'px');
+    m.style.setProperty('--mq-dur', Math.max(0.8, (dist + 6) / 45).toFixed(2) + 's');
+    m.classList.add('is-moving');
+  }, 240);
+});
+document.addEventListener('pointerout', (e) => {
+  const m = e.target.closest && e.target.closest('.mq.is-moving');
+  if (!m || (e.relatedTarget && m.contains(e.relatedTarget))) return;
+  m.classList.remove('is-moving');
+  // cut at rest or only while the eye was open: as it is now, once back
+  setTimeout(() => { if (!m.classList.contains('is-moving')) markClipped(m.parentElement); }, 400);
+});
+let clipTimer = 0;
+window.addEventListener('resize', () => { clearTimeout(clipTimer); clipTimer = setTimeout(() => markClipped(boardColumns), 150); });
 
 function checkCardHtml(c) {
   const st = statusById(c.status || 'pending');
@@ -6075,7 +6092,11 @@ function checkCardHtml(c) {
   // A problem cheque shows why, beside its red mark, in the bottom row's
   // free space — the reason is what someone opens that lane to find out.
   const reason = c.status === 'problem' && c.statusReason ? escapeHtml(c.statusReason) : '';
-  const reasonHtml = reason ? `<span class="chk-reason" data-tip="${reason}" data-tip-clipped>${reason}</span>` : '';
+  const reasonHtml = reason ? `<span class="chk-reason mq"><span class="mq-in">${reason}</span></span>` : '';
+  // Whom it was spent to (the owner's ask, 2026-10-14): on the right of the
+  // bottom row, quiet, with the house the cheque window's «خرج شده به» shows
+  const party = c.party ? escapeHtml(c.party) : '';
+  const partyHtml = party ? `<span class="chk-party" aria-label="خرج شده به ${party}">${ICON_PARTY}<span class="mq"><span class="mq-in">${party}</span></span></span>` : '';
   // No role="button"/tabindex here: the card has no click or key handler —
   // it announced as a control that does nothing, and wrapping the real
   // buttons inside a role="button" hid them from assistive tech
@@ -6087,15 +6108,15 @@ function checkCardHtml(c) {
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
-      <span class="chk-benef chk-owner">${ICON_PERSON}<span>${escapeHtml(c.owner || '—')}</span></span>
+      <span class="chk-benef chk-owner">${ICON_PERSON}<span class="mq"><span class="mq-in">${escapeHtml(c.owner || '—')}</span></span></span>
       <span class="chk-amount">${ICON_AMOUNT}${faAmountRial(c.amount)}</span>
     </div>
     <div class="chk-row chk-row-bottom">
-      <span class="row-actions">${eyeButtonHtml(c)}</span>
+      ${partyHtml}
       <div class="chk-icon-group">
-        ${cardAgeHtml(c)}
         ${reasonHtml}
         ${receiptButtonHtml(c)}
+        ${eyeButtonHtml(c)}
         ${statusDotTriggerHtml(c, st)}
       </div>
     </div>
@@ -6237,17 +6258,19 @@ function wireCardTooltips() {
 function cmpStr(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
 
 // Each column answers a different question, so each sorts by a different
-// clock. Pending is a queue: the cheque that has been waiting longest sits
-// on top, oldest registration first. Done and problem are activity, not a
-// queue — what just happened is what the user is here to check, so the most
-// recent status change sits on top; a cheque flagged five minutes ago
-// shouldn't be buried under nine that were flagged weeks ago.
+// clock. Pending is a queue by due date (the owner's call, 2026-10-14): the
+// cheque whose due date comes first — past due before all — sits on top,
+// since that is the one that must be registered soonest. Done and problem
+// are activity, not a queue — what just happened is what the user is here
+// to check, so the most recent status change sits on top; a cheque flagged
+// five minutes ago shouldn't be buried under nine that were flagged weeks ago.
 function sortColumnChecks(list, statusId) {
   const out = list.slice();
   if (statusId === 'pending') {
-    // the longest waiting first: by the day it was sent to its owner, then
-    // the moment (the «sent» event, or when it was added), then its id (H10)
-    out.sort((a, b) => cmpStr(a.sendDate || '', b.sendDate || '') || cmpStr(a.sentAtIso || a.createdAtIso || '', b.sentAtIso || b.createdAtIso || '') || (a.id - b.id));
+    // the nearest due date first (yyyy/mm/dd sorts as text); on one day,
+    // the longest waiting — by the day it was sent, then the moment (the
+    // «sent» event, or when it was added), then its id (H10)
+    out.sort((a, b) => cmpStr(a.dueDate || '￿', b.dueDate || '￿') || cmpStr(a.sendDate || '', b.sendDate || '') || cmpStr(a.sentAtIso || a.createdAtIso || '', b.sentAtIso || b.createdAtIso || '') || (a.id - b.id));
   } else {
     out.sort((a, b) => cmpStr(b.statusChangedAtIso || '', a.statusChangedAtIso || '') || (b.id - a.id));
   }
@@ -6300,6 +6323,8 @@ function renderTable() {
       ? colChecks.map(checkCardHtml).join('')
       : `<div class="board-col-empty">${emptyLane}</div>`;
   });
+
+  markClipped(boardColumns);
 
   document.querySelectorAll('[data-status-for]').forEach(btn => {
     btn.addEventListener('click', (e) => {

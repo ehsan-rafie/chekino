@@ -243,20 +243,27 @@ three lanes — before, a lane with a scrollbar had cards 5px narrower. Each hea
 the status colour — dot, name, and an outlined count (no totals). On the
 phone's lane tabs the chosen tab takes its lane's tint.
 Cards (HeroUI's Card: a body and a footer): white, 1px edge, radius 16,
-16px in. The body: the serial on top with the due date as an outlined
+16px in. The lanes' order: «منتظر ثبت» by due date, the nearest — past due
+first — on top (the owner's call, 2026-10-14; on one day, the earliest sent);
+«ثبت شد» and «مشکل در ثبت» the latest change of status on top. The body: the
+serial on top with the due date as an outlined
 badge (amber / red wash with a dot when due soon / overdue, and then how
 far in words after a hairline: «فردا»، «۳ روز دیگر»، «۲ روز گذشته» — a
 tooltip a finger can't open), and the owner
 — the customer the cheque was received from, the one to follow up with
 (not necessarily the account holder; the name printed on the cheque goes
-in the notes) — beside the amount. The party and the beneficiary are only
-in the view. The footer, under a hairline on a faint band: the tinted
-status square (radius 8) with the problem reason or the copy-receipt
-button beside it, and the eye at the other end — 28px buttons, 44px tap
-areas on touch. How long it has waited sits in the footer too, small and
-muted: a pending card «۴ روز از ارسال» with its channel's mark, a problem
-card «۱۲ روز» in the error red («۱۲ روز از «مشکل در ثبت»» in its tip). A click on a card's body opens it (not the click
-that ends a drag); the status square is a WAI-ARIA menu button — its
+in the notes) — beside the amount. The bottom row (the owner's asks,
+2026-10-14), with no hairline or band over it: the party on the right,
+quiet, after the house «خرج شده به» shows in the cheque window; on the left
+the tinted status square (radius 8) with the problem reason or the
+copy-receipt button beside it, and the eye folded away beside the square —
+it opens under the pointer or the keyboard and stays away on a touch screen,
+where a tap on the card opens it. 28px buttons, 44px tap areas on touch. No
+days waited on a card. Long words on a card — a name, the party, a problem's
+reason — fade at the edge they are cut at and, under the pointer, slide at
+an even pace to show the rest (measured once the eye has opened, which may
+cut what wasn't cut). The beneficiary is only in the view. A click on a
+card's body opens it (not the click that ends a drag); the status square is a WAI-ARIA menu button — its
 options are buttons, ↑/↓ between them, Escape back to the square — and a
 change of status offers «برگردون». Only «ثبت شد» goes to the archive after
 30 days («نمایش «ثبت شد»های قدیمی‌تر از ۳۰ روز» in the date filter); a
