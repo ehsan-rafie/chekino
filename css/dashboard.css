@@ -5759,7 +5759,7 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
 @media (prefers-reduced-motion: reduce) { .app-tooltip { transition: opacity 0.12s linear; transform: none; } }
 
 /* How long a card has waited (spec 9.4): days since it went to its owner,
-   with the channel's mark; a problem one, days without follow-up */
+   with the channel's mark; a problem one, days since it was found */
 .chk-age {
   display: inline-flex;
   align-items: center;

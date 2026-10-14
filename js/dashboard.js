@@ -412,10 +412,6 @@ const HISTORY_EVENTS = {
   owner_changed: () => 'صاحب چک عوض شد',
   bulk_edit: () => 'ویرایش گروهی',
   unsent: () => 'از بُرد برداشته شد',
-  followed_up: (h) => {
-    const ch = CHANNELS.find(x => x.id === h.channel);
-    return 'پیگیری شد' + (ch ? ` (${ch.name})` : '');
-  },
   undo: () => 'تغییر قبلی برگردانده شد',
 };
 // A status set by mistake and put back (the owner's ask, 2026-10-13): a
@@ -492,7 +488,6 @@ const veStTitle = document.getElementById('veStTitle');
 const veStDate = document.getElementById('veStDate');
 const veStReason = document.getElementById('veStReason');
 const cvSend = document.getElementById('cvSend');
-const cvFollow = document.getElementById('cvFollow');
 // The view's last two steps: sent to its owner — done, or the step it is at
 // — and Sayad's answer: its status as the title, the date it changed (once
 // registered or not), and a problem's reason. Not sent yet, the last is
@@ -501,10 +496,6 @@ function fillVeStatus(c) {
   const pre = isPreSend(c);
   cvSend.classList.toggle('is-current', pre);   // not sent yet: the step it is at
   cvSend.classList.toggle('is-done', !pre);
-  // the reminders sent since (the follow-up window's «پیگیری شد»)
-  const ups = (c.history || []).filter((h) => h.event === 'followed_up');
-  cvFollow.hidden = !ups.length || pre;
-  if (ups.length) cvFollow.textContent = `${ups.length === 1 ? 'یک بار' : toFa(ups.length) + ' بار'} پیگیری شد، آخرین بار ${faDate(ups[ups.length - 1].at)}`;
   veStDate.textContent = '';
   veStReason.hidden = true;
   if (pre) {
@@ -2320,7 +2311,7 @@ dupBody.addEventListener('click', async (e) => {
 
 // ---- A person's mobile, and a chat opened with it ----
 // Switched off for now (the owner's call): the mobile is kept on the
-// server, but the person's page and the send / follow-up windows show none
+// server, but the person's page and the send window show none
 // of it. true brings it all back.
 const SHOW_PHONE = false;
 // Kept as 09xxxxxxxxx (the server's rule too); shown in groups, left to right
@@ -2337,7 +2328,7 @@ function phoneOfPerson(id) { const p = SHOW_PHONE && id && findPersonById(id); r
 function chatLink(phone, text) {
   return `https://wa.me/98${phone.slice(1)}${text ? '?text=' + encodeURIComponent(text) : ''}`;
 }
-// «باز کردن چت» as a link button for a section of the send / follow-up window
+// «باز کردن چت» as a link button for a section of the send window
 function chatButton(phone, text) {
   const a = document.createElement('a');
   a.className = 'send-btn chat-btn';
@@ -5231,7 +5222,7 @@ function daysSinceJalali(dateStr) {
   return Math.round((now - then) / 86400000);
 }
 // Only what was registered goes to the archive (C7): a problem cheque stays
-// on the board however old, its card counting the days without follow-up
+// on the board however old, its card counting the days since it was found
 function isArchived(c) {
   if (c.status !== 'done') return false;
   return daysSinceJalali(c.statusChangedAt) >= ARCHIVE_AFTER_DAYS;
@@ -5274,30 +5265,14 @@ function searchListNote(raw) {
   return `${toFa(tokens.length)} سریال در فهرست${nowhere.length ? `؛ پیدا نشد: ${nowhere.map((x) => toFa(x.value)).join('، ')}` : ''}`;
 }
 
-// Today's two questions (the chips over the board): which owners to chase
-// — waiting for Sayad FOLLOW_UP_DAYS or more since sent — and which are due
-// soon or past due while still unregistered
-const FOLLOW_UP_DAYS = 3;
-// the last «پیگیری شد» after the cheque went out, if any
-function lastFollowUp(c) {
-  const f = (c.history || []).filter((h) => h.event === 'followed_up').pop();
-  return f && f.at ? f : null;
-}
-// days a waiting cheque has gone without word: since it was sent, or since
-// it was last followed up
-function chequeWaitDays(c) {
-  const sent = daysSinceJalali(c.sendDate);
-  const f = lastFollowUp(c);
-  const since = f ? daysSinceJalali(f.at) : -1;
-  return f && since >= 0 && (sent < 0 || since < sent) ? since : sent;
-}
-const needsFollowUp = (c) => c.stage === 'sent' && (c.status || 'pending') === 'pending' && chequeWaitDays(c) >= FOLLOW_UP_DAYS;
+// Today's question (the chip over the board): which are due soon or past
+// due while still unregistered. (The follow-up — owners to chase, its
+// window and its chip — went, the owner's call, 2026-10-14.)
 const dueNear = (c) => c.stage === 'sent' && !!dueUrgencyClass(c);
 const BOARD_FOCUS = {
-  followup: { test: needsFollowUp, label: `پیگیری: منتظر ثبتِ ${toFa(FOLLOW_UP_DAYS)} روز و بیشتر` },
   due: { test: dueNear, label: 'سررسید نزدیک: تا ۳ روز دیگر یا گذشته، هنوز ثبت‌نشده' },
 };
-let boardFocus = null;   // 'followup' | 'due' | null
+let boardFocus = null;   // 'due' | null
 function setBoardFocus(key) {
   boardFocus = BOARD_FOCUS[key] ? key : null;
   // on a phone the waiting lane is the one to look at
@@ -6070,9 +6045,8 @@ let flyingId = null;
 let flight = null;   // its copy's animation, while it runs
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
-// How long it has waited — what following a cheque up is about (spec 9.4):
-// a pending one, days since it went to its owner and by which channel; a
-// problem one, days since it was found, with nothing done since
+// How long it has waited (spec 9.4): a pending one, days since it went to
+// its owner and by which channel; a problem one, days since it was found
 function cardAgeHtml(c) {
   const status = c.status || 'pending';
   if (status === 'pending' && c.sendDate) {
@@ -6082,18 +6056,14 @@ function cardAgeHtml(c) {
     const chs = c.channels || [];
     const chId = channelIdOf((sent && sent.channel) || chs[chs.length - 1] || '');
     const ch = CHANNELS.find((x) => x.id === chId);
-    const f = lastFollowUp(c);
-    const fd = f ? daysSinceJalali(f.at) : -1;
-    const followed = f && fd >= 0 && fd < d;
-    const text = followed ? (fd === 0 ? 'امروز پیگیری شد' : `${toFa(fd)} روز از پیگیری`)
-      : d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
-    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}${followed ? `؛ پیگیری ${faDate(f.at)}` : ''}`;
+    const text = d === 0 ? 'امروز ارسال شد' : `${toFa(d)} روز از ارسال`;
+    const tip = `ارسال برای ثبت ${faDate(c.sendDate)}${ch ? `، با ${ch.name}` : ''}`;
     return `<span class="chk-age" data-tip="${escapeHtml(tip)}">${ch ? `<span class="chk-age-ch" aria-hidden="true">${ch.icon}</span>` : ''}${text}</span>`;
   }
   if (status === 'problem' && c.statusChangedAt) {
     const d = daysSinceJalali(c.statusChangedAt);
     if (d < 1) return '';
-    return `<span class="chk-age is-stale" data-tip="${toFa(d)} روز بدون پیگیری">${toFa(d)} روز</span>`;
+    return `<span class="chk-age is-stale" data-tip="${toFa(d)} روز از «مشکل در ثبت»">${toFa(d)} روز</span>`;
   }
   return '';
 }
@@ -7365,7 +7335,6 @@ document.addEventListener('keydown', (e) => {
   if (activePopover) { closePopover(); return; }
   if (openStatusMenu) { closeStatusMenu(true); return; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return; }
-  if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return; }
   if (submitCheckBtn.classList.contains('pending-confirm')) { cancelPendingSave(); return; }
@@ -7402,7 +7371,6 @@ function closeTopmostLayer() {
   if (dueDateCal.classList.contains('show')) { closeCalendar(); return true; }
   if (activePopover) { closePopover(); return true; }
   if (window.ChekinoSend && window.ChekinoSend.isOpen()) { window.ChekinoSend.escape(); return true; }
-  if (window.ChekinoFollow && window.ChekinoFollow.isOpen()) { window.ChekinoFollow.escape(); return true; }
   if (bulkPanelOpen()) { window.ChekinoBulk.escape(); return true; }
   if (exportCluster.classList.contains('open')) { closeExportMenu(); return true; }
   if (openStatusMenu) { closeStatusMenu(); return true; }
@@ -7772,7 +7740,7 @@ function resumeWhenReady() {
 // =========================================================
 (function trapDialogFocus() {
   // topmost first: the one on top is the one Tab stays inside
-  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'followOverlay', 'sendOverlay', 'bulkOverlay', 'modalOverlay'];
+  const OVERLAYS = ['sessionOverlay', 'confirmOverlay', 'scanEditOverlay', 'photoEditorOverlay', 'lightboxOverlay', 'personEditOverlay', 'peopleModalOverlay', 'sendOverlay', 'bulkOverlay', 'modalOverlay'];
   const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
   function openDialog() {

@@ -306,48 +306,8 @@ router.post('/mark-sent', [
   }
 });
 
-// «پیگیری شد»: the owners of cheques still waiting for Sayad were reminded
-// (spec 10, the follow-up window). Each such cheque gets a followed_up event
-// in its history — the board then counts its days from the latest of being
-// sent and being followed up. Only sent cheques still waiting take it; the
-// rest come back as skipped. A new version, as any change of the history.
-router.post('/follow-up', [
-  ...idsValidation,
-  body('channel').optional({ values: 'falsy' }).isString().trim().isLength({ max: 40 }),
-], validate, async (req, res) => {
-  const { ids } = req.body;
-  const channel = req.body.channel ? String(req.body.channel).trim() : '';
-  const db = await pool.connect();
-  try {
-    await db.query('BEGIN');
-    const rows = (await db.query(
-      'SELECT id, stage, status, status_history FROM checks WHERE company_id = $1 AND id = ANY($2::int[]) ORDER BY id FOR UPDATE',
-      [req.companyId, ids]
-    )).rows;
-    const waiting = rows.filter((r) => r.stage === 'sent' && r.status === 'pending');
-    const skipped = ids.filter((id) => !waiting.some((r) => r.id === id))
-      .map((id) => ({ id, reason: rows.some((r) => r.id === id) ? 'not_waiting' : 'not_found' }));
-    const at = new Date().toISOString();
-    for (const r of waiting) {
-      const history = [...(r.status_history || []), { event: 'followed_up', ...(channel ? { channel } : {}), at }];
-      await db.query(
-        'UPDATE checks SET status_history = $1::jsonb, version = version + 1, updated_at = now() WHERE id = $2',
-        [JSON.stringify(history), r.id]
-      );
-    }
-    await db.query('COMMIT');
-    const updated = waiting.length
-      ? (await pool.query(`SELECT ${SELECT_FIELDS} ${JOIN_CLAUSE} WHERE c.id = ANY($1::int[]) ORDER BY c.id`, [waiting.map((r) => r.id)])).rows
-      : [];
-    res.json({ updated, skipped });
-  } catch (err) {
-    await db.query('ROLLBACK').catch(() => {});
-    console.error('Follow-up error:', err);
-    res.status(500).json({ error: 'خطای سرور' });
-  } finally {
-    db.release();
-  }
-});
+// (The follow-up and its POST /checks/follow-up went, the owner's call,
+// 2026-10-14; the followed_up events already in histories stay, unshown.)
 
 // One cheque in full, with the list of its files (not their bytes: each is
 // GET /api/images/:id) — the PDF attachments included, which the list leaves

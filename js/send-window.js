@@ -494,22 +494,18 @@
     chips.appendChild(b);
     return b;
   }
-  let readyChip = null, followChip = null, dueChip = null, hint = null, hintIds = [];
+  let readyChip = null, dueChip = null, hint = null, hintIds = [];
   if (chips) {
     readyChip = chipButton('stage-chip');
     readyChip.addEventListener('click', () => open(loadCheques().filter((c) => c.stage === 'ready').map((c) => c.id)));
-    // today's two (dashboard.js BOARD_FOCUS): pressed, the board narrows to them
+    // today's question (dashboard.js BOARD_FOCUS): pressed, the board narrows to it
     const focusChip = (key, tip) => {
       const b = chipButton('stage-chip is-focus');
       b.title = tip;
       b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', () => {
-        if (key === 'followup' && window.ChekinoFollow && boardFocus !== key) { window.ChekinoFollow.open(); return; }
-        setBoardFocus(boardFocus === key ? null : key);
-      });
+      b.addEventListener('click', () => setBoardFocus(boardFocus === key ? null : key));
       return b;
     };
-    followChip = focusChip('followup', `منتظر ثبت، ${fa(FOLLOW_UP_DAYS)} روز یا بیشتر بی‌خبر: صاحب چک‌هایی که باید پیگیری شوند`);
     dueChip = focusChip('due', 'منتظر ثبت، سررسید تا ۳ روز دیگر یا گذشته');
     hint = document.createElement('div');
     hint.className = 'stage-hint';
@@ -534,11 +530,7 @@
     readyChip.innerHTML = `<span>آماده‌ی ارسال</span><b>${fa(ready)}</b>`;
     readyChip.hidden = !ready;
     const board = sentCheques();
-    const follow = board.filter(needsFollowUp).length;
     const due = board.filter(dueNear).length;
-    followChip.innerHTML = `<span>پیگیری</span><b>${fa(follow)}</b>`;
-    followChip.hidden = !follow && boardFocus !== 'followup';
-    followChip.setAttribute('aria-pressed', String(boardFocus === 'followup'));
     dueChip.innerHTML = `<span>سررسید نزدیک</span><b>${fa(due)}</b>`;
     dueChip.hidden = !due && boardFocus !== 'due';
     dueChip.setAttribute('aria-pressed', String(boardFocus === 'due'));
@@ -551,7 +543,7 @@
       hint.firstChild.textContent = `${fa(found.length)} چک با این جستجو در ${where} است`;
     }
     hint.hidden = !found.length;
-    chips.hidden = !ready && !found.length && followChip.hidden && dueChip.hidden;
+    chips.hidden = !ready && !found.length && dueChip.hidden;
     if (pop && pop.classList.contains('show') && pop._btn && (pop._btn.hidden || pop._btn.closest('[hidden]'))) closePopover();
   }
 

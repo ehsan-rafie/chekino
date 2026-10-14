@@ -254,9 +254,8 @@ in the view. The footer, under a hairline on a faint band: the tinted
 status square (radius 8) with the problem reason or the copy-receipt
 button beside it, and the eye at the other end — 28px buttons, 44px tap
 areas on touch. How long it has waited sits in the footer too, small and
-muted: a pending card «۴ روز از ارسال» with its channel's mark (the
-follow-up's own number), a problem card «۱۲ روز» in the error red («۱۲ روز
-بدون پیگیری» in its tip). A click on a card's body opens it (not the click
+muted: a pending card «۴ روز از ارسال» with its channel's mark, a problem
+card «۱۲ روز» in the error red («۱۲ روز از «مشکل در ثبت»» in its tip). A click on a card's body opens it (not the click
 that ends a drag); the status square is a WAI-ARIA menu button — its
 options are buttons, ↑/↓ between them, Escape back to the square — and a
 change of status offers «برگردون». Only «ثبت شد» goes to the archive after
@@ -358,8 +357,8 @@ takes the group off the list in this browser. Nothing is merged on its own.
 موبایل», or the number in groups, left to right («۰۹۱۲ ۱۲۳ ۴۵۶۷»), which opens
 their WhatsApp chat — edited in place (Enter saves, Escape lets go; an empty
 field clears it). Anything typed becomes 09…: Persian digits, +98, 0098; a
-landline is refused, said under the field. With it, the send and follow-up
-windows give that owner's section «باز کردن چت»: WhatsApp with the message
+landline is refused, said under the field. With it, the send window gives
+that owner's section «باز کردن چت»: WhatsApp with the message
 already written in (the photos are still copied by hand).
 
 **Cheque window** (`css/cheque-form.css`, `js/cheque-form.js`). One window,
@@ -585,8 +584,7 @@ two faces, switched by the `.ve-locked` class dashboard.js puts on
     when: «گرفته شد از» the owner, «خرج شده به» the party and the spend
     date, «ثبت به نام» the beneficiary with «کد ملی» / «شناسه ملی»
     (copyable), «ارسال به صاحب چک» (the form's own words) with each messenger's logo (a
-    message bubble for one written in), the send date and the reminders
-    sent («۲ بار پیگیری شد، آخرین بار …»), and «ثبت در صیاد» — Sayad's
+    message bubble for one written in) and the send date, and «ثبت در صیاد» — Sayad's
     answer as the title in its colour (green tick, red warning, slate
     clock), the date it changed once registered or not, and a problem's
     reason under it. A step's tooltip names its role. Done steps have an
@@ -894,22 +892,17 @@ their owners from here, so each owner can register them in Sayad.
   برای صاحب چک‌ها فرستادی؟»: «آره، همه» / «بعضی‌ها رو» (checkboxes on the
   sections, then «ثبت ارسالِ این‌ها») / «نه، بعداً».
 
-**Today, over the board.** The chips answer the day's question — whose
-cheques to chase: «آماده‌ی ارسال n», then «پیگیری n» (waiting
-for Sayad three days or more since sent, or since last followed up) and
-«سررسید نزدیک n» (waiting, due within three days or past due). «سررسید نزدیک»,
+**Today, over the board.** The chips answer the day's question: «آماده‌ی
+ارسال n», then «سررسید نزدیک n» (waiting, due within three days or past due). «سررسید نزدیک»,
 pressed, narrows the board to those cards — the blue of a pick, a filter chip
 with its own ×, and on a phone the waiting lane in front; pressed again, or
 «پاک کردن فیلترها», lets go. A chip with nothing in it isn't shown.
-**«پیگیری» opens the follow-up window** (`js/follow-window.js`, in the send
-window's look): the owners to remind, the longest wait first, each with its
-cheques («۱۲ روز از ارسال» in amber), «کپی متن» — a reminder in the send
-message's voice («یادآوری: چک‌های زیر هنوز در سامانه صیاد به نام «…» با کد
-ملی … ثبت نشده‌اند:», a line a cheque, «لطفاً ثبت کنید و رسیدش را بفرستید.
-ممنون») — and «پیگیری شد», which writes a «پیگیری شد» event to their history:
-the section greys with that word, the cards say «امروز پیگیری شد» and count
-their days from today. «نمایش در بُرد» narrows the board to them instead
-(the chip then shows pressed).
+**No follow-up** (the owner's call, 2026-10-14). The follow-up — its chip
+«پیگیری n», its window of owners to remind with «کپی متن» and «پیگیری شد»,
+its «امروز پیگیری شد» / «n روز از پیگیری» on the cards, its line in the
+cheque window and its history line, and POST /checks/follow-up — is gone.
+The followed_up events already in histories stay in the database, shown
+nowhere; a card counts its days from sending only.
 
 **Cheques off the board** (ready to send). A board search that matches
 cheques off the board says so beside the chips: «چک ۱۲۳۴۵۶ در «آماده‌ی
