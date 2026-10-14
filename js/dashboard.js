@@ -1841,11 +1841,37 @@ async function fetchPeopleCache() {
   const seq = ++peopleFetchSeq;
   try {
     const result = await apiJson('/people');
-    if (seq === peopleFetchSeq) peopleCache = result;
+    if (seq === peopleFetchSeq) {
+      peopleCache = result;
+      // a person changed — renamed, a national id given or fixed, here or
+      // as a cheque was saved: every cheque on the page that names them
+      // takes it at once, no reload (the owner's ask, 2026-10-14)
+      if (applyPeopleToCheques()) renderTable();
+    }
   } catch (e) {
     // keep the people already known; an empty list here would offer no one
   }
   return peopleCache;
+}
+// The cheques name their people by id and carry the names as the list
+// gave them: the people as they are now, laid over them. True when any
+// changed.
+function applyPeopleToCheques() {
+  if (!checksCache.length) return false;
+  const byId = new Map(peopleCache.map((p) => [p.id, p]));
+  let changed = false;
+  const take = (c, key, name) => { if (name && c[key] !== name) { c[key] = name; changed = true; } };
+  for (const c of checksCache) {
+    const o = byId.get(c.ownerId), p = byId.get(c.partyId), b = byId.get(c.benefId);
+    if (o) take(c, 'owner', o.full_name);
+    if (p) take(c, 'party', p.full_name);
+    if (b) {
+      take(c, 'benef', b.full_name);
+      const nid = b.national_id || '';
+      if (c.nid !== nid) { c.nid = nid; changed = true; }
+    }
+  }
+  return changed;
 }
 
 function findPersonByName(name) {
@@ -4404,11 +4430,17 @@ function putCheque(row) {
   const i = checksCache.findIndex((c) => c.id === rec.id);
   checksCache = i < 0 ? [rec, ...checksCache] : checksCache.map((c, n) => (n === i ? rec : c));
 }
-// Back to a page left a while: the list again, quietly (what other devices did)
+// Back to a page left a few seconds or more: the cheques and the people
+// again, quietly — what another tab or device did meanwhile (the owner's
+// ask, 2026-10-14: no change should wait for a reload)
 let checksSeenAt = Date.now();
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { checksSeenAt = Date.now(); return; }
-  if (Date.now() - checksSeenAt > 60 * 1000 && !checksLoadFailed) loadChecksFromApi().then(renderTable).catch(() => {});
+  if (Date.now() - checksSeenAt < 5 * 1000 || checksLoadFailed) return;
+  Promise.all([fetchPeopleCache(), loadChecksFromApi()]).then(() => {
+    renderTable();
+    if (peopleModalOverlay.classList.contains('show')) renderAllPeopleLists();
+  }).catch(() => {});
 });
 // The cheques on the board: sent to their owner. The board, its counts and
 // filters, the reports and «nothing registered yet» read these; duplicates,

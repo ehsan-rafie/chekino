@@ -293,7 +293,7 @@ scrolls on its own and fades out at an edge with more cards past it.
 The empty board (nothing registered yet) is a dashed box with a line of
 explanation and its own «افزودن اولین چک» button, and under it two more ways
 to start, as quiet outlined tiles with a title and a line each: «چند چک با
-هم» (opens bulk add's menu) and «اشخاص» (the people window).
+هم» (opens bulk add's window on its two ways) and «اشخاص» (the people window).
 
 **People.** One record per person. A beneficiary is identified by national
 id and belongs to no single party — the same one can be paid by several;
@@ -310,6 +310,16 @@ on file folds onto that record, and a national id the form fills in is
 selected when the field is entered, so typing it again replaces it instead
 of running on into an 11-digit id. The people panel's beneficiaries tab
 shows each beneficiary's parties under its name.
+**A change shows everywhere at once** (the owner's ask, 2026-10-14: a
+beneficiary renamed in «اشخاص» kept its old name on the cheques until a
+reload). The cheques name their people by id and carry the names the list
+gave them; whenever the people come back from the server — after an edit in
+«اشخاص», after a cheque saved with a national id — the people as they are
+now are laid over every cheque on the page (names and the beneficiary's
+national id) and the board drawn again: cards, search, the cheque window.
+Back to the page after five seconds or more away, the cheques and the
+people are read again, quietly — what another tab or device did meanwhile.
+
 **The people window** has one search over its three tabs (a name as it
 sounds — «رضائی» is «رضایی», a half-space is a space — or a national id's
 digits), each tab counting what it found, and an order beside it:
