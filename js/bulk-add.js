@@ -131,10 +131,10 @@
     input: partyInput, list: $('bulkPartyList'), field: partyField,
     search: (q) => allParties().filter((x) => normalizeName(x).includes(normalizeName(q))),
     primary: (x) => x,
-    allowNew: true, newLabel: (q) => (findPersonByName(q) ? 'طرف حساب موجود' : 'طرف حساب جدید'),
+    allowNew: true, newLabel: (q) => (findPersonByName(q, 'party') ? 'طرف حساب موجود' : 'طرف حساب جدید'),
     hasExact: (q) => allParties().some((x) => normalizeName(x) === normalizeName(q)),
     pick: (x) => { partyInput.value = x; },
-    onBlur: () => { foldOntoKnownPerson(partyInput); },
+    onBlur: () => { foldOntoKnownPerson(partyInput, 'party'); },
     onChange: () => { if (!st) return; st.header.party = { name: partyInput.value.trim() }; partyField.classList.remove('error'); changed(); },
     onEnter: () => spendDate.input.focus(),
   });
@@ -167,12 +167,12 @@
     input: benefInput, list: $('bulkBenefList'), field: benefField,
     search: (q) => benefsOfParty().filter((p) => normalizeName(p.name).includes(normalizeName(q))),
     primary: (p) => p.name, secondary: (p) => p.nid,
-    allowNew: true, newLabel: (q) => (findPersonByName(q) ? 'شخص موجود' : 'شخص جدید'),
+    allowNew: true, newLabel: (q) => (findPersonByName(q, 'benef') ? 'شخص موجود' : 'شخص جدید'),
     hasExact: (q) => benefsOfParty().some((p) => normalizeName(p.name) === normalizeName(q)),
     emptyText: 'برای این طرف حساب شخصی ثبت نشده',
     pick: (p) => setBenef(p.name, p.nid),
     onBlur: () => {
-      const person = foldOntoKnownPerson(benefInput);
+      const person = foldOntoKnownPerson(benefInput, 'benef');
       if (person && person.national_id && !digits(nidInput.value)) fillNid(person.national_id);
       syncBenef();
     },
@@ -306,11 +306,11 @@
       input: ui.owner, list: ui.ownerList, field: ui.cells.owner,
       search: (qq) => allOwners().filter((x) => normalizeName(x).includes(normalizeName(qq))),
       primary: (x) => x,
-      allowNew: true, newLabel: newPersonLabel,
+      allowNew: true, newLabel: newPersonLabel('owner'),
       hasExact: (qq) => allOwners().some((x) => normalizeName(x) === normalizeName(qq)),
       pick: (x) => { ui.owner.value = x; },
       // (the owner is needed now: judged like the other fields)
-      onBlur: () => { foldOntoKnownPerson(ui.owner); if (!isBlank(row)) { row.touched.owner = true; showRow(row); } },
+      onBlur: () => { foldOntoKnownPerson(ui.owner, 'owner'); if (!isBlank(row)) { row.touched.owner = true; showRow(row); } },
       onChange: () => { row.owner = ui.owner.value.trim() ? { name: ui.owner.value.trim() } : null; edited('owner'); },
       onEnter: () => moveFrom(row, 'owner', 1),
     });

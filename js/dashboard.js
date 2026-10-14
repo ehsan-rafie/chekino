@@ -1874,8 +1874,14 @@ function applyPeopleToCheques() {
   return changed;
 }
 
-function findPersonByName(name) {
-  return peopleCache.find(p => normalizeName(p.full_name) === normalizeName(name)) || null;
+// People are kept by role (the owner's call, 2026-10-14; migration 010): an
+// owner, a party and a beneficiary are three records even under one name.
+// With a role, only that role's people — or one not filed under any yet.
+const fitsRole = (p, role) => !role || !p.role || p.role === role;
+function findPersonByName(name, role) {
+  const n = normalizeName(name);
+  const same = peopleCache.filter(p => normalizeName(p.full_name) === n && fitsRole(p, role));
+  return same.find(p => p.role === role) || same[0] || null;
 }
 function findPersonById(id) {
   return peopleCache.find(p => p.id === id) || null;
@@ -1887,26 +1893,25 @@ function findPersonByNid(nid) {
   return peopleCache.find(p => nidDigits(p.national_id) === norm) || null;
 }
 
-// Finds the person before ever creating one, and returns their id (null if
-// the name was blank or the request failed). By national id first: the same
-// national id is the same person however the name was typed — which is what
-// lets one beneficiary serve several parties without a second record. Then
-// by name: a same-named person with no national id yet gains this one; a
-// same-named person holding a *different* one is someone else, a namesake,
-// and gets a record of their own rather than having their id overwritten.
-// The server refuses a second person with a national id already on file
-// (409, sending back the one it has), so even a race can't add a duplicate.
-// `role` only files a brand-new person under a tab of the people panel until
-// a cheque gives them a real one — see personInRole below.
+// Finds the person of this role before ever creating one, and returns their
+// id (null if the name was blank or the request failed). By national id
+// first: the same national id is the same beneficiary however the name was
+// typed — which is what lets one beneficiary serve several parties without a
+// second record. Then by name, within the role: a same-named person with no
+// national id yet gains this one; a same-named person holding a *different*
+// one is someone else, a namesake, and gets a record of their own rather
+// than having their id overwritten. The server refuses a second person with
+// a national id already on file (409, sending back the one it has), so even
+// a race can't add a duplicate.
 async function ensurePerson(name, nid, role) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) return null;
   const cleanNid = nidDigits(nid);
   if (cleanNid) {
     const byNid = findPersonByNid(cleanNid);
-    if (byNid) return byNid.id;
+    if (byNid && fitsRole(byNid, role)) return byNid.id;
   }
-  const sameName = peopleCache.filter(p => normalizeName(p.full_name) === normalizeName(trimmedName));
+  const sameName = peopleCache.filter(p => normalizeName(p.full_name) === normalizeName(trimmedName) && fitsRole(p, role));
   const existing = cleanNid ? sameName.find(p => !nidDigits(p.national_id)) : sameName[0];
   if (existing) {
     if (cleanNid) {
@@ -1947,28 +1952,6 @@ async function ensurePerson(name, nid, role) {
 function peopleRefs(rec) {
   const ref = (name, nid) => (String(name || '').trim() ? { name: String(name).trim(), ...(nid ? { national_id: nidDigits(nid) } : {}) } : null);
   return { owner: ref(rec.owner), party: ref(rec.party), beneficiary: ref(rec.benef, rec.nid) };
-}
-async function ensurePeople(rec) {
-  const slots = [
-    { name: rec.owner, nid: null, role: 'owner' },
-    { name: rec.party, nid: null, role: 'party' },
-    { name: rec.benef, nid: rec.nid, role: 'benef' },
-  ];
-  const byName = new Map();
-  slots.forEach((s) => {
-    const key = normalizeName((s.name || '').trim());
-    if (!key) return;
-    // A slot carrying a national id wins the shared call, so the id is not lost.
-    if (!byName.has(key) || s.nid) byName.set(key, s);
-  });
-  const resolved = new Map();
-  await Promise.all([...byName.entries()].map(async ([key, s]) => {
-    resolved.set(key, await ensurePerson(s.name, s.nid, s.role));
-  }));
-  return slots.map((s) => {
-    const key = normalizeName((s.name || '').trim());
-    return key ? (resolved.get(key) ?? null) : null;
-  });
 }
 
 // Arabic/Persian look-alikes and stray spacing differ between typists; fold them
@@ -2045,7 +2028,7 @@ function beneficiariesForParty(partyName = partyInput.value) {
     if (seen.has(key)) return;
     // Prefer the person record: the cheque carries the name and nid as they
     // were at write time, the record carries them as they are now.
-    const person = findPersonById(c.benefId) || findPersonByName(name);
+    const person = findPersonById(c.benefId) || findPersonByName(name, 'benef');
     seen.set(key, {
       name: person ? person.full_name : name,
       nid: toFa((person && person.national_id) || c.nid || ''),
@@ -2232,10 +2215,18 @@ document.querySelector('.people-sort').addEventListener('keydown', (e) => {
 const DUPS_KEY = () => `chekino_people_notdup_${PAGE_COMPANY}`;
 function notDups() { try { return new Set(JSON.parse(localStorage.getItem(DUPS_KEY()) || '[]')); } catch (e) { return new Set(); } }
 function dupGroups() {
+  // within a role: a party and a beneficiary under one name are two people
+  const idx = buildRoleIndex();
+  const roleOf = (p) => {
+    if (p.role) return p.role;
+    const used = idx.get(p.id) || {};
+    return ['owner', 'party', 'benef'].find((r) => used[r] > 0) || '';
+  };
   const by = new Map();
   for (const p of peopleCache) {
-    const k = looseName(p.full_name || '');
-    if (!k) continue;
+    const name = looseName(p.full_name || '');
+    if (!name) continue;
+    const k = roleOf(p) + '|' + name;
     if (!by.has(k)) by.set(k, []);
     by.get(k).push(p);
   }
@@ -2619,10 +2610,11 @@ function wirePeopleItem(item, cfg) {
   }
 }
 
-// Adding from a tab files the person under that tab. A name that already
-// exists is never inserted twice: if no cheque has given them a role yet they
-// simply move here, and if one has, they stay where their cheques put them and
-// the user is told why — the click used to just clear the box and look broken.
+// Adding from a tab files the person under that tab. People are kept by
+// role: the same name in another tab is someone else here, added as a
+// record of this tab; already in this tab, the user is told so (the click
+// used to just clear the box and look broken); someone not filed under any
+// tab yet is filed under this one.
 async function addPersonToRole(role, name, nid) {
   const trimmed = (name || '').trim();
   if (!trimmed) return;
@@ -2631,10 +2623,6 @@ async function addPersonToRole(role, name, nid) {
   if (id === null) { showToast('ثبت ناموفق بود'); return; }
   if (!known.has(id)) return;                             // brand new — already filed here
   const existed = findPersonById(id);
-  if (buildRoleIndex().has(id)) {
-    showToast(`«${existed.full_name}» ثبت شده و دسته‌اش از روی چک‌هایش تعیین می‌شود`);
-    return;
-  }
   if (existed.role === role) { showToast(`«${existed.full_name}» از قبل در این دسته است`); return; }
   try {
     await apiJson(`/people/${id}`, { method: 'PUT', body: JSON.stringify({ role }) });
@@ -2877,28 +2865,29 @@ function createAutocomplete(cfg) {
   return { close, render };
 }
 
-// A name typed by hand is folded onto the person already on file whenever one
-// matches, so ی/ک variants and stray spacing resolve to that record instead of
-// looking like someone new. The lookup is deliberately across the whole table,
-// not the role-scoped list: the *suggestions* are scoped, but a person is a
-// person, and a second row for the same human is never the right outcome.
-function foldOntoKnownPerson(input) {
+// A name typed by hand is folded onto the person of this field's role already
+// on file whenever one matches, so ی/ک variants and stray spacing resolve to
+// that record instead of looking like someone new. Only within the role:
+// people are kept by role (2026-10-14), a party is not a beneficiary of the
+// same name.
+function foldOntoKnownPerson(input, role) {
   const typed = input.value.trim();
   if (!typed) return null;
-  const person = findPersonByName(typed);
+  const person = findPersonByName(typed, role);
   if (person) input.value = person.full_name;
   return person;
 }
 
-// Tag for the "create" row: honest about whether this really is a new person.
-const newPersonLabel = q => (findPersonByName(q) ? 'شخص موجود' : 'شخص جدید');
+// Tag for the "create" row: honest about whether this really is a new person
+// of this role.
+const newPersonLabel = (role) => (q) => (findPersonByName(q, role) ? 'شخص موجود' : 'شخص جدید');
 
 // ---- صاحب چک ----
 const ownerAC = createAutocomplete({
   input: ownerInput, list: ownerList, field: ownerField, onChange: saveDraft,
   search: q => allOwners().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
-  allowNew: true, newLabel: newPersonLabel,
+  allowNew: true, newLabel: newPersonLabel('owner'),
   hasExact: q => allOwners().some(x => normalizeName(x) === normalizeName(q)),
   pick: x => { ownerInput.value = x; },
   // Leaving it empty isn't an error yet — a stray click-in-click-out with
@@ -2906,7 +2895,7 @@ const ownerAC = createAutocomplete({
   // matters at submit time (see the checks array there); blur here only
   // catches something actually typed.
   onBlur: () => {
-    foldOntoKnownPerson(ownerInput);
+    foldOntoKnownPerson(ownerInput, 'owner');
     if (ownerInput.value.trim()) validateOwner(); else ownerField.classList.remove('error');
   }
 });
@@ -2916,12 +2905,12 @@ const partyAC = createAutocomplete({
   input: partyInput, list: partyList, field: partyField, onChange: saveDraft,
   search: q => allParties().filter(x => normalizeName(x).includes(normalizeName(q))),
   primary: x => x,
-  allowNew: true, newLabel: q => (findPersonByName(q) ? 'طرف حساب موجود' : 'طرف حساب جدید'),
+  allowNew: true, newLabel: q => (findPersonByName(q, 'party') ? 'طرف حساب موجود' : 'طرف حساب جدید'),
   hasExact: q => allParties().some(x => normalizeName(x) === normalizeName(q)),
   pick: x => { partyInput.value = x; clearBeneficiaryPair(); benefAC.close(); nidAC.close(); },
   onType: () => clearBeneficiaryPair(),        // beneficiaries belong to a party
   onBlur: () => {
-    foldOntoKnownPerson(partyInput);
+    foldOntoKnownPerson(partyInput, 'party');
     if (partyInput.value.trim()) validateParty(); else partyField.classList.remove('error');
   }
 });
@@ -2971,7 +2960,7 @@ const benefAC = createAutocomplete({
   search: q => beneficiariesForParty().filter(p => normalizeName(p.name).includes(normalizeName(q))),
   primary: p => p.name,
   secondary: p => p.nid,
-  allowNew: true, newLabel: newPersonLabel,
+  allowNew: true, newLabel: newPersonLabel('benef'),
   hasExact: q => beneficiariesForParty().some(p => normalizeName(p.name) === normalizeName(q)),
   emptyText: 'برای این طرف حساب شخصی ثبت نشده',
   pick: selectBeneficiary,
@@ -2987,7 +2976,7 @@ const benefAC = createAutocomplete({
     } else {
       // Not one of this party's beneficiaries, but possibly someone already on
       // file under another role. Fold onto that record so the save reuses it.
-      const person = foldOntoKnownPerson(benefInput);
+      const person = foldOntoKnownPerson(benefInput, 'benef');
       if (person && person.national_id && !nidInput.value.trim()) fillNid(toFa(person.national_id));
     }
     validateBenef();

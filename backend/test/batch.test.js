@@ -58,10 +58,11 @@ function fakeDb(people) {
   return {
     writes,
     async query(sql, args) {
-      if (/^SELECT id, full_name, national_id FROM people/.test(sql)) return { rows: people.map((p) => ({ ...p })) };
+      if (/^SELECT id, full_name, national_id(, role)? FROM people/.test(sql)) return { rows: people.map((p) => ({ ...p })) };
       if (/^UPDATE people SET national_id/.test(sql)) { writes.push(['nid', args[1], args[0]]); return { rows: [] }; }
+      if (/^UPDATE people SET role/.test(sql)) { writes.push(['role', args[1], args[0]]); return { rows: [] }; }
       if (/^INSERT INTO people/.test(sql)) {
-        const p = { id: next++, full_name: args[1], national_id: args[2] };
+        const p = { id: next++, full_name: args[1], national_id: args[2], role: args[3] };
         writes.push(['add', p.full_name, args[3]]);
         return { rows: [p] };
       }
@@ -79,7 +80,8 @@ test('people: by id, by name in any spelling, or added — and added only once',
   const a = await people.resolve({ name: 'لنت' }, 'owner');
   const b = await people.resolve({ name: ' لنت ' }, 'owner');
   assert.ok(a.created && b.id === a.id && !b.created, 'the same new name twice is one person');
-  assert.deepStrictEqual(db.writes, [['add', 'لنت', 'owner']]);
+  // (the two on file had no role yet: each takes the one it is first named in)
+  assert.deepStrictEqual(db.writes, [['role', 2, 'owner'], ['role', 1, 'owner'], ['add', 'لنت', 'owner']]);
   assert.deepStrictEqual(await people.resolve(null, 'owner'), { id: null });
   assert.deepStrictEqual(await people.resolve({ name: '  ' }, 'owner'), { id: null });
 });
@@ -90,8 +92,30 @@ test('people: a national id finds its holder, is checked, and is given to a name
   assert.deepStrictEqual(await people.resolve({ name: 'هر نامی', national_id: '۰۸۳۰۱۶۶۱۳۰' }, 'benef'), { id: 2 });
   assert.strictEqual((await people.resolve({ name: 'علی', national_id: '0830166131' }, 'benef')).error.code, 'invalid_nid');
   assert.deepStrictEqual(await people.resolve({ name: 'علی رضایی', national_id: '5260181591' }, 'benef'), { id: 1 });
-  assert.deepStrictEqual(db.writes, [['nid', 1, '5260181591']]);
+  assert.deepStrictEqual(db.writes, [['role', 2, 'benef'], ['nid', 1, '5260181591'], ['role', 1, 'benef']]);
   assert.strictEqual((await people.resolve({ national_id: '1860913903' }, 'benef')).error.code, 'name_required');
+});
+
+test('people: kept by role — one name as a party and as a beneficiary is two people', async () => {
+  const db = fakeDb([
+    { id: 1, full_name: 'حمیدرضا جهانی', national_id: '0830166130', role: 'benef' },
+    { id: 2, full_name: 'علی رضایی', national_id: null, role: null },
+  ]);
+  const people = await peopleResolver(db, 7);
+  // the beneficiary's name, typed as a party: a party of its own
+  const party = await people.resolve({ name: 'حمیدرضا جهانی' }, 'party');
+  assert.ok(party.created && party.id !== 1, 'a new party, not the beneficiary');
+  assert.deepStrictEqual(await people.resolve({ name: 'حميدرضا جهانی' }, 'party'), { id: party.id }, 'found again as the party');
+  assert.deepStrictEqual(await people.resolve({ name: 'حمیدرضا جهانی' }, 'benef'), { id: 1 }, 'the beneficiary is still the beneficiary');
+  // a party named by the beneficiary's id: taken as the name, in its own role
+  assert.deepStrictEqual(await people.resolve({ id: 1 }, 'party'), { id: party.id });
+  // a national id held in another role is refused, not shared
+  assert.strictEqual((await people.resolve({ name: 'کسی', national_id: '0830166130' }, 'owner')).error.code, 'nid_other_role');
+  // one not filed yet takes the role it is first named in, and keeps it
+  assert.deepStrictEqual(await people.resolve({ name: 'علی رضایی' }, 'owner'), { id: 2 });
+  const again = await people.resolve({ name: 'علی رضایی' }, 'party');
+  assert.ok(again.created && again.id !== 2, 'as a party after that: another record');
+  assert.deepStrictEqual(db.writes, [['add', 'حمیدرضا جهانی', 'party'], ['role', 2, 'owner'], ['add', 'علی رضایی', 'party']]);
 });
 
 test('people: someone added by a row that was then rolled back is not found again', async () => {

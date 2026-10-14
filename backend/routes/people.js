@@ -210,7 +210,7 @@ router.post('/:id/merge', idParamValidation, [
   try {
     await db.query('BEGIN');
     const rows = (await db.query(
-      'SELECT id, full_name, national_id FROM people WHERE company_id = $1 AND id = ANY($2::int[]) FOR UPDATE',
+      'SELECT id, full_name, national_id, role FROM people WHERE company_id = $1 AND id = ANY($2::int[]) FOR UPDATE',
       [req.companyId, [id, into]]
     )).rows;
     const drop = rows.find((r) => r.id === id);
@@ -218,6 +218,12 @@ router.post('/:id/merge', idParamValidation, [
     if (!drop || !keep) {
       await db.query('ROLLBACK');
       return res.status(404).json({ error: 'شخص یافت نشد' });
+    }
+    // people are kept by role (migration 010): an owner, a party and a
+    // beneficiary under one name are three, and stay three
+    if (drop.role && keep.role && drop.role !== keep.role) {
+      await db.query('ROLLBACK');
+      return res.status(409).json({ error: 'این دو در دو نقش جدا هستند و یکی نمی‌شوند', code: 'different_roles' });
     }
     if (drop.national_id && keep.national_id && drop.national_id !== keep.national_id) {
       await db.query('ROLLBACK');

@@ -295,13 +295,28 @@ explanation and its own «افزودن اولین چک» button, and under it tw
 to start, as quiet outlined tiles with a title and a line each: «چند چک با
 هم» (opens bulk add's window on its two ways) and «اشخاص» (the people window).
 
-**People.** One record per person. A beneficiary is identified by national
-id and belongs to no single party — the same one can be paid by several;
-the parties it has been paid by are read off the cheques. Saving a cheque
-or adding in the people panel finds the person first: by national id (the
-same id is the same person, however the name was typed), then by name — a
+**People.** Kept by role (the owner's call, 2026-10-14; migration 010): an
+owner, a party and a beneficiary are three records even under one name —
+renaming a party never renames a beneficiary of the same name (before, one
+name typed as a cheque's party and as its beneficiary was one record, and
+renaming one renamed the other). Each record is filed under its role
+(`people.role`); one not filed yet takes the role it is first named in.
+Migration 010 split the records that played two roles: each kept the role
+that matters most to it (beneficiary, for its national id; then party;
+then owner) and every other role got a copy of it — the name and mobile,
+no national id — with that role's cheques moved to the copy
+(`people_role_split` remembers what was copied from what, for
+rollback_010.sql). A beneficiary is identified by national id and belongs
+to no single party — the same one can be paid by several; the parties it
+has been paid by are read off the cheques. Saving a cheque or adding in
+the people panel finds the person first, among their role's: by national
+id (the same id is the same beneficiary, however the name was typed; one
+per company, so held in another role it is refused), then by name — a
 same-named person without an id gains this one, one holding a different id
-is a namesake and gets a record of their own. The server refuses a second
+is a namesake and gets a record of their own; a person named by the id of
+someone in another role is taken as that name, in this role. The duplicates
+the panel offers are looked for within a role, and two roles are never
+merged (409 `different_roles`). The server refuses a second
 person with a national id already on file (409 with the one on file,
 backed by a unique index), so nothing duplicates even in a race. The
 cheque form's beneficiary list shows only the chosen party's own
