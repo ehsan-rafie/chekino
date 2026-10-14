@@ -5335,6 +5335,9 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   box-shadow: none;
 }
 .cal-today-btn { flex: 0 0 auto; width: auto; padding: 0 12px; }
+/* its words in the middle: the older 10px padding left a 30px button no
+   room and pushed «ثبت» down */
+.cal-confirm-btn { display: flex; align-items: center; justify-content: center; padding: 0 12px; }
 @media (min-width: 601px) {
   .cal-popup,
   .cal-popup.anchored { width: 280px; padding: 12px; }

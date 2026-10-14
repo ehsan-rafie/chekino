@@ -6684,7 +6684,10 @@ function renderTable() {
 // Sizes each column's own scroll area to the viewport, the same idea the
 // table used: one card short of a full screen, so the eye catches that
 // there's more below instead of the whole page growing underneath a
-// hundred-card pending pile.
+// hundred-card pending pile. The height is fixed, not a cap (the owner's
+// ask, 2026-10-14): the three lanes reach the screen's foot whether they
+// hold two cards or a hundred, so the board doesn't change shape with
+// every filter.
 //
 // This has to account for .main's own bottom padding too, not just the
 // 16px gap below the column itself — that padding sits below the whole
@@ -6696,10 +6699,13 @@ function updateBoardHeight() {
   const mainEl = document.querySelector('.main');
   const mainPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
   document.querySelectorAll('.board-col-list').forEach((list) => {
-    if (window.innerWidth <= 860) { list.style.maxHeight = ''; return; }
+    if (window.innerWidth <= 860) { list.style.maxHeight = list.style.height = list.style.flex = ''; return; }
     const top = list.getBoundingClientRect().top;
     const available = window.innerHeight - top - mainPad - 16;
-    list.style.maxHeight = Math.max(160, available) + 'px';
+    // flex: none, or the lane's basis (flex: 1) would take its cards'
+    // height over this one
+    list.style.flex = 'none';
+    list.style.height = list.style.maxHeight = Math.max(320, available) + 'px';
   });
   updateLaneFades();
 }
@@ -6718,6 +6724,9 @@ document.addEventListener('scroll', (e) => {
   if (e.target.classList && e.target.classList.contains('board-col-list')) updateLaneFades(e.target);
 }, { capture: true, passive: true });
 window.addEventListener('resize', updateBoardHeight);
+// cards that are still moving in measure taller than they'll be: the fades
+// are measured again once they've settled
+boardColumns.addEventListener('animationend', () => requestAnimationFrame(() => updateLaneFades()));
 
 // ---- Drag a card between columns to change its status ----
 // Pointer Events rather than the native HTML5 drag API: the native API has
