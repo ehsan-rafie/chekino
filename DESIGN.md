@@ -292,7 +292,7 @@ quiet, after the house «خرج شده به» shows in the cheque window; on the
 the tinted status square (radius 8) with the problem reason or the
 copy-receipt button beside it, and the eye folded away at the head of these
 buttons (2026-10-15: it opens outward, so the receipt and the status don't
-move) — it opens under the pointer or the keyboard and stays away on a touch screen,
+move; on a problem card it opens between the reason and the status square) — it opens under the pointer or the keyboard and stays away on a touch screen,
 where a tap on the card opens it. 28px buttons, 44px tap areas on touch. No
 days waited on a card. Long words on a card — a name, the party, a problem's
 reason — fade at the edge they are cut at and, under the pointer, slide at

@@ -6438,8 +6438,8 @@ function checkCardHtml(c) {
     <div class="chk-row chk-row-bottom">
       ${partyHtml}
       <div class="chk-icon-group">
-        ${eyeButtonHtml(c)}
         ${reasonHtml}
+        ${eyeButtonHtml(c)}
         ${receiptButtonHtml(c)}
         ${statusDotTriggerHtml(c, st)}
       </div>

@@ -5800,7 +5800,8 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
    the pointer is on the card or the keyboard reaches it; with no pointer to
    hover (a touch screen) it stays away — a tap on the card opens it */
 /* first of the buttons (2026-10-15): it opens outward, at the far side of
-   the receipt and the status, so neither moves */
+   the receipt and the status, so neither moves; on a problem card, between
+   the reason and the status square */
 .check-card .eye-btn {
   width: 0;
   min-width: 0;
