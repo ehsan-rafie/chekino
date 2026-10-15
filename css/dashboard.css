@@ -5811,6 +5811,11 @@ body.is-entering .board-col-list > .check-card:nth-child(n+6) { --i: 5; }
   overflow: hidden;
   transition: width 0.2s var(--ease), opacity 0.15s var(--ease), margin 0.2s var(--ease), background var(--dur-1) var(--ease);
 }
+/* Names first (2026-10-15): the party keeps its width (up to 70% of the
+   row, past that it slides like any long word); a problem's reason takes
+   what's left, cut and fading, in full under the pointer */
+.chk-row-bottom .chk-party { flex-shrink: 0; max-width: 70%; }
+.chk-row-bottom .chk-reason { flex: 0 1 auto; min-width: 0; }
 .check-card:hover .eye-btn,
 .check-card:focus-within .eye-btn { width: 28px; margin-inline-end: 0; opacity: 1; }
 @media (hover: none) { .check-card .eye-btn { display: none; } }

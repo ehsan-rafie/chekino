@@ -297,7 +297,8 @@ where a tap on the card opens it. 28px buttons, 44px tap areas on touch. No
 days waited on a card. Long words on a card — a name, the party, a problem's
 reason — fade at the edge they are cut at and, under the pointer, slide at
 an even pace to show the rest (measured once the eye has opened, which may
-cut what wasn't cut). The beneficiary is only in the view. A click on a
+cut what wasn't cut). Names come first: the party keeps its width (up to
+70% of the row) and a problem's reason takes what's left (2026-10-15). The beneficiary is only in the view. A click on a
 card's body opens it (not the click that ends a drag); the status square is a WAI-ARIA menu button — its
 options are buttons, ↑/↓ between them, Escape back to the square — and a
 change of status offers «برگردون». Only «ثبت شد» goes to the archive after
