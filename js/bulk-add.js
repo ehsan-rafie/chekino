@@ -1456,7 +1456,7 @@
   });
 
   // «افزودن گروهی»: an unfinished one is offered first; then its two ways
-  // (the palette names a way: «دستی» goes straight to the form, «با عکس»
+  // (a caller may name a way: «manual» goes straight to the form, «photo»
   // to the picker)
   async function openBulk(kind) {
     if (!enabled()) return;
@@ -1585,21 +1585,6 @@
     open: openBulk,
     refreshResume,
   };
-
-  if (window.ChekinoPalette) {
-    window.ChekinoPalette.register({
-      title: 'افزودن گروهی با عکس', hint: 'عکسِ چند چک را بده، خودم جدا می‌کنم', group: 'چک‌ها', order: 1.49,
-      keywords: 'bulk add photo scan cheques گروهی عکس اسکن',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="m21 16-4.5-4.5L8 19"/></svg>',
-      when: enabled, run: () => openBulk('photo'),
-    });
-    window.ChekinoPalette.register({
-      title: 'افزودن گروهی دستی', hint: 'سریال‌ها را بچسبان', group: 'چک‌ها', order: 1.5,
-      keywords: 'bulk add many cheques گروهی چند چک سریال دستی',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M8 20h8"/></svg>',
-      when: enabled, run: () => openBulk('manual'),
-    });
-  }
 
   // On load: the button, and the bar of anything unfinished — once the
   // dashboard's lists are in, so names and duplicates are known

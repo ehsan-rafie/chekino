@@ -601,14 +601,5 @@
     },
     open, refreshChips,
   };
-  if (window.ChekinoPalette) {
-    window.ChekinoPalette.register({
-      title: 'ارسال به صاحب چک‌ها', hint: 'چک‌های آماده‌ی ارسال', group: 'چک‌ها', order: 1.6,
-      keywords: 'send ready owners ارسال آماده صاحب چک',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
-      when: () => enabled() && loadCheques().some((c) => c.stage === 'ready'),
-      run: () => open(loadCheques().filter((c) => c.stage === 'ready').map((c) => c.id)),
-    });
-  }
   refreshChips();
 })();

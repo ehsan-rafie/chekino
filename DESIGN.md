@@ -161,11 +161,11 @@ sunrise, sunset, the end of a choice, another tab — is a soft fade. Saved
 as `chekino_theme_v3` ({theme, until}), shared by the dashboard, the admin
 panel and the login page.
 
-Nothing in the middle: the Ctrl+K palette's button is the search icon
-among the others (a phone has no Ctrl+K). The palette finds cheques (by
-the board search's own rules: serial, sayad id, name, amount — every
-stage) and people by name before its commands; a cheque opens in its
-window, a person on their page. The floating support button is hidden on the dashboard, since
+Nothing in the middle, and no command palette on the board (the owner's
+call, 2026-10-15: «نیاز نیست» — the search box and the buttons do it). The
+one-letter shortcuts stay, by the key's place so a Persian layout works:
+N a new cheque, / the search, P the people, E the report, T the theme —
+never while typing or under an open window. The floating support button is hidden on the dashboard, since
 the header already has one. The bar spans the window but its content is
 set to the page's width (1320px, 32px in), so the brand sits over
 «افزودن چک» and the icons over «مدیریت اشخاص». The account button opens
@@ -281,17 +281,18 @@ Cards (HeroUI's Card: a body and a footer): white, 1px edge, radius 16,
 first — on top (the owner's call, 2026-10-14; on one day, the earliest sent);
 «ثبت شد» and «مشکل در ثبت» the latest change of status on top. The body: the
 serial on top with the due date as an outlined
-badge (amber / red wash with a dot when due soon / overdue, and then how
-far in words after a hairline: «فردا»، «۳ روز دیگر»، «۲ روز گذشته» — a
-tooltip a finger can't open), and the owner
+badge — amber / red wash when due soon / overdue, the colour alone (the
+owner's call, 2026-10-15: no «۳ روز دیگر», no dot); how far in words is in
+its tooltip and its label — and the owner
 — the customer the cheque was received from, the one to follow up with
 (not necessarily the account holder; the name printed on the cheque goes
 in the notes) — beside the amount. The bottom row (the owner's asks,
 2026-10-14), with no hairline or band over it: the party on the right,
 quiet, after the house «خرج شده به» shows in the cheque window; on the left
 the tinted status square (radius 8) with the problem reason or the
-copy-receipt button beside it, and the eye folded away beside the square —
-it opens under the pointer or the keyboard and stays away on a touch screen,
+copy-receipt button beside it, and the eye folded away at the head of these
+buttons (2026-10-15: it opens outward, so the receipt and the status don't
+move) — it opens under the pointer or the keyboard and stays away on a touch screen,
 where a tap on the card opens it. 28px buttons, 44px tap areas on touch. No
 days waited on a card. Long words on a card — a name, the party, a problem's
 reason — fade at the edge they are cut at and, under the pointer, slide at
@@ -802,7 +803,7 @@ ancestor.
 
 **Modals.** Radius 24, header and footer framed by hairlines, a ghost
 close button. The people window uses segmented tabs and outlined rows.
-The command palette follows shadcn's Command.
+The admin panel's command palette follows shadcn's Command.
 
 **Questions** (`askChoice`; `askConfirm` is its yes/no case). A small
 alert dialog: a title, one line, the answers. Two answers sit side by
@@ -840,8 +841,7 @@ that comes meanwhile shows above it.
   the same way). A tile is an icon in a soft square over its name and a
   line; a phone stacks them, each icon beside its words. ← → go between
   them; × or Escape closes, nothing made. Rows found on a scan take the
-  cursor only when no field is being typed in. The palette's two entries go
-  straight to a way.
+  cursor only when no field is being typed in.
 - **The window.** A large window over the board in the cheque form's
   system: radius 24, the same fields and lists.
 - **The header.** At the top, once for all rows: «طرف حساب», «تاریخ خرج»
@@ -909,8 +909,8 @@ that comes meanwhile shows above it.
 **Send window** (`js/send-window.js`, its part of `css/bulk.css`). The
 cheques that are ready (owner and beneficiary known, not yet sent) go to
 their owners from here, so each owner can register them in Sayad.
-- **Opening it.** The chip «آماده‌ی ارسال n» over the board, the command
-  palette, «ارسال برای صاحب چک» in a ready cheque's window, or by itself
+- **Opening it.** The chip «آماده‌ی ارسال n» over the board,
+  «ارسال برای صاحب چک» in a ready cheque's window, or by itself
   after a bulk add.
 - **Layout.** The beneficiary once at the top («ذینفع: …، کد ملی …»),
   each part with a copy button; the national id in Latin digits, as Sayad

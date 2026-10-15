@@ -6317,13 +6317,6 @@ function dueTip(c) {
   if (pending) return d === -1 ? 'یک روز از سررسید گذشته' : `${toFa(-d)} روز از سررسید گذشته`;
   return d === -1 ? 'سررسید: دیروز' : `سررسید: ${toFa(-d)} روز پیش`;
 }
-// The same, in two or three words on the card (only when it's urgent)
-function dueRelHtml(c) {
-  if (!dueUrgencyClass(c)) return '';
-  const d = daysUntilDue(c.dueDate);
-  const t = d === 0 ? 'امروز' : d === 1 ? 'فردا' : d > 1 ? `${toFa(d)} روز دیگر` : d === -1 ? 'دیروز' : `${toFa(-d)} روز گذشته`;
-  return `<span class="chk-due-rel">${t}</span>`;
-}
 function dueUrgencyClass(c) {
   if (c.status !== 'pending') return '';
   const days = daysUntilDue(c.dueDate);
@@ -6435,7 +6428,7 @@ function checkCardHtml(c) {
   // keyboard path to the same change is the status button inside.
   return `<div class="check-card ${st.cls}${justChanged}" data-id="${c.id}">
     <div class="chk-row">
-      <span class="chk-due${urgency}" data-tip="${dueTip(c)}">${ICON_CALENDAR}${faDate(c.dueDate)}${dueRelHtml(c)}</span>
+      <span class="chk-due${urgency}" data-tip="${dueTip(c)}" aria-label="${dueTip(c)}">${ICON_CALENDAR}${faDate(c.dueDate)}</span>
       <span class="chk-serial">${ICON_SERIAL}<b>${toFa(c.serial)}</b></span>
     </div>
     <div class="chk-row chk-row-mid">
@@ -6445,9 +6438,9 @@ function checkCardHtml(c) {
     <div class="chk-row chk-row-bottom">
       ${partyHtml}
       <div class="chk-icon-group">
+        ${eyeButtonHtml(c)}
         ${reasonHtml}
         ${receiptButtonHtml(c)}
-        ${eyeButtonHtml(c)}
         ${statusDotTriggerHtml(c, st)}
       </div>
     </div>
@@ -7981,118 +7974,34 @@ function resumeWhenReady() {
   resumeWhenReady();
 })();
 
-// ==========================================================
-// Command palette registration (⌘K)
-// ==========================================================
-// Commands drive the existing controls rather than calling internals: a
-// command is "press this button for me", so the palette can never diverge
-// from what clicking actually does, and nothing here has to be kept in
-// step when a handler changes.
-(function registerCommands() {
-  if (!window.ChekinoPalette) return;
+// =========================================================
+// ---- Keyboard shortcuts ----
+// One letter, by where the key sits (event.code), so they work on a Persian
+// layout too («د» is N's place): N a new cheque, / the search, P the
+// people, E the report, T the theme. Never while something is being typed,
+// nor under an open window. (They rode the command palette, which left the
+// board, the owner's call, 2026-10-15: «نیاز نیست».)
+// =========================================================
+(function boardShortcuts() {
+  const OPEN = '.modal-overlay.show, .bulk-overlay.show, .send-overlay.show, .confirm-overlay.show, .photo-editor-overlay.show, .lightbox-overlay.show';
   const click = (id) => () => { const el = document.getElementById(id); if (el) el.click(); };
-  const icon = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-
-  // the header's own way in (a phone has no Ctrl+K)
-  const paletteBtn = document.getElementById('headerPaletteBtn');
-  paletteBtn.title = `جستجو و فرمان‌ها (${window.ChekinoPalette.modLabel}+K)`;
-  paletteBtn.addEventListener('click', () => window.ChekinoPalette.open());
-
-  // Cheques and people by what's typed: the board search's own matcher
-  // (serial, sayad id, a name, an amount, a pasted list) — every stage, the
-  // cheque opening in its window — and people by name, opening their page
-  const STAGE_NAMES = { ready: 'آماده‌ی ارسال' };
-  window.ChekinoPalette.registerSource((q) => {
-    const out = [];
-    const m = searchMatcher(q);
-    if (m) {
-      loadCheques().filter(m).slice(0, 6).forEach((c) => out.push({
-        group: 'چک‌ها',
-        title: `چک ${toFa(c.serial)}، ${c.owner || 'صاحب چک نامعلوم'}`,
-        hint: c.stage === 'sent' ? statusById(c.status).name : STAGE_NAMES[c.stage] || '',
-        icon: icon('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h8M6 14h5"/>'),
-        run: () => openModalForView(c.id),
-      }));
-    }
-    if (!/^[\d۰-۹٠-٩\s,،٬٫./-]+$/.test(q)) {
-      const n = looseName(q);
-      const idx = buildRoleIndex();
-      peopleCache.filter((p) => looseName(p.full_name).includes(n)).slice(0, 5).forEach((p) => {
-        const used = idx.get(p.id) || {};
-        const top = ['owner', 'party', 'benef'].sort((a, b) => (used[b] || 0) - (used[a] || 0))[0];
-        const role = used[top] ? top : (ROLE_LABELS[p.role] ? p.role : 'owner');
-        const total = (used.owner || 0) + (used.party || 0) + (used.benef || 0);
-        out.push({
-          group: 'اشخاص',
-          title: p.full_name,
-          hint: total ? `${ROLE_LABELS[role]}، ${toFa(total)} چک` : ROLE_LABELS[role],
-          icon: icon('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
-          run: () => { openPeopleModal(); openPerson(p.id, role); },
-        });
-      });
-    }
-    return out;
+  const KEYS = {
+    n: click('addCheckBtn'),
+    '/': () => { searchInput.focus(); searchInput.select(); },
+    p: click('peopleMgmtBtn'),
+    e: click('reportBtn'),
+    t: () => window.chekinoToggleTheme && window.chekinoToggleTheme(),
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = e.target;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+    if (document.querySelector(OPEN)) return;
+    const key = /^Key[A-Z]$/.test(e.code || '') ? e.code.slice(3).toLowerCase()
+      : e.code === 'Slash' && !e.shiftKey ? '/' : e.key.length === 1 ? e.key.toLowerCase() : '';
+    const run = KEYS[key];
+    if (run) { e.preventDefault(); run(); }
   });
-
-  window.ChekinoPalette.register([
-    {
-      title: 'افزودن چک جدید', group: 'چک‌ها', key: 'n', shortcut: 'N', order: 1,
-      keywords: 'ثبت چک جدید add new cheque',
-      icon: icon('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
-      run: click('addCheckBtn'),
-    },
-    {
-      title: 'جستجوی چک', hint: 'سریال یا شناسه صیادی', group: 'چک‌ها', key: '/', shortcut: '/', order: 2,
-      keywords: 'search serial sayad جستجو',
-      icon: icon('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
-      run: () => {
-        const el = document.getElementById('searchInput');
-        if (el) { el.focus(); el.select(); }
-      },
-    },
-    {
-      title: 'پاک کردن فیلترها', group: 'چک‌ها', order: 3,
-      keywords: 'clear filters پاک کردن فیلتر',
-      icon: icon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'),
-      run: click('filterClearBtn'),
-    },
-    {
-      title: 'مدیریت اشخاص', group: 'اشخاص', key: 'p', shortcut: 'P', order: 4,
-      keywords: 'people owners parties beneficiaries صاحب طرف حساب ذینفع',
-      icon: icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>'),
-      run: click('peopleMgmtBtn'),
-    },
-    {
-      title: 'دریافت گزارش', hint: 'PDF یا اکسل', group: 'گزارش', key: 'e', shortcut: 'E', order: 5,
-      keywords: 'report export excel pdf خروجی',
-      icon: icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'),
-      run: click('reportBtn'),
-    },
-    {
-      title: 'تغییر تم روشن و تاریک', group: 'نمایش', key: 't', shortcut: 'T', order: 6,
-      keywords: 'theme dark light تم تیره روشن',
-      icon: icon('<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
-      run: () => window.chekinoToggleTheme && window.chekinoToggleTheme(),
-    },
-    {
-      title: 'برو به بالای صفحه', group: 'نمایش', order: 7,
-      keywords: 'scroll top بالا',
-      icon: icon('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
-      run: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-    },
-    {
-      title: 'پشتیبانی تلگرام', group: 'حساب', order: 8,
-      keywords: 'support telegram پشتیبانی',
-      icon: icon('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
-      run: click('tgBtn'),
-    },
-    {
-      title: 'خروج از حساب', group: 'حساب', order: 9,
-      keywords: 'logout signout خروج',
-      icon: icon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'),
-      run: click('logoutBtn'),
-    },
-  ]);
 })();
 
 // =========================================================
